@@ -1,0 +1,252 @@
+import 'package:bloc/bloc.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
+import '../../../../entities/vos/network_computer_vo.dart';
+import '../../../../utils/log_utils.dart';
+import '../../domain/use_cases/auto_connect_to_default_folder.dart';
+import '../../domain/use_cases/connect_and_write_to_folder.dart';
+import '../../domain/use_cases/connect_to_shopfront.dart';
+import '../../domain/use_cases/fetch_network_pcs.dart';
+import '../../domain/use_cases/fetch_stock_data.dart';
+import '../../domain/use_cases/get_to_shared_folder.dart';
+import '../../models/home_screen_models.dart';
+
+class FetchingNetworkPCBloc
+    extends Bloc<HomeScreenEvents, FetchingNetworkPCStates> {
+  final FetchNetworkPcs fetchNetworkPcs;
+
+  FetchingNetworkPCBloc({required this.fetchNetworkPcs})
+    : super(FetchingNetworkPCInitial()) {
+    on<FetchNetworkPCEvent>(_onFetchNetworkPC);
+  }
+
+  Future<void> _onFetchNetworkPC(
+    FetchNetworkPCEvent event,
+    Emitter<FetchingNetworkPCStates> emit,
+  ) async {
+    emit(FetchingNetworkPCs());
+    try {
+      final pcList = await fetchNetworkPcs();
+
+      emit(NetworkPCsLoaded(pcList: pcList));
+    } catch (error) {
+      emit(
+        ErrorFetchingNetworkPCs(
+          message: "Error fetching network computers: $error",
+        ),
+      );
+    }
+  }
+}
+
+class GettingDirectoryBloc
+    extends Bloc<HomeScreenEvents, GettingDirectoryStates> {
+  final GetToSharedFolder getToSharedFolder;
+
+  GettingDirectoryBloc({required this.getToSharedFolder})
+    : super(GettingDirectoryInitial()) {
+    on<GetDirectoryEvent>(_onGetDirectoryEvent);
+  }
+
+  Future<void> _onGetDirectoryEvent(
+    GetDirectoryEvent event,
+    Emitter<GettingDirectoryStates> emit,
+  ) async {
+    emit(GettingDirectory());
+    try {
+      final folders = await getToSharedFolder(
+        event.ipAddress,
+        event.path,
+        event.userName,
+        event.pwd,
+      );
+
+      emit(DirectoryLoaded(directList: folders));
+    } catch (error) {
+      if (error is String) {
+        emit(ErrorGettingDirectory(message: error));
+      } else {
+        var e = error as dynamic;
+        emit(ErrorGettingDirectory(message: e.message.toString()));
+      }
+    }
+  }
+}
+
+class ConnectingFolderBloc
+    extends Bloc<HomeScreenEvents, ConnectingFolderStates> {
+  final ConnectAndWriteToFolder connectAndWriteToFolder;
+
+  ConnectingFolderBloc({required this.connectAndWriteToFolder})
+    : super(ConnectingFolderInitial()) {
+    on<ConnectToFolderEvent>(_onConnectFolderEvent);
+  }
+
+  Future<void> _onConnectFolderEvent(
+    ConnectToFolderEvent event,
+    Emitter<ConnectingFolderStates> emit,
+  ) async {
+    emit(ConnectingFolder(event.path.split('/').last));
+    try {
+      await connectAndWriteToFolder(
+        event.ipAddress,
+        event.hostName,
+        event.path,
+        event.userName,
+        event.pwd,
+      );
+
+      emit(FolderConnected(message: "Connected to SharedFolder!"));
+    } catch (e) {
+      emit(ErrorConnectingFolder(message: e.toString()));
+    }
+  }
+}
+
+class ShopfrontBloc extends Bloc<HomeScreenEvents, ShopFrontStates> {
+  final FetchShopfrontList fetchShopfrontList;
+
+  ShopfrontBloc({required this.fetchShopfrontList}) : super(ShopInitial()) {
+    on<FetchShops>(_onFetchShops);
+  }
+
+  Future<void> _onFetchShops(
+    FetchShops event,
+    Emitter<ShopFrontStates> emit,
+  ) async {
+    emit(ShopsLoading());
+    try {
+      final shops = await fetchShopfrontList(
+        event.ipAddress,
+        event.path,
+        event.userName,
+        event.pwd,
+      );
+
+      emit(ShopsLoaded(shops));
+    } catch (error) {
+      emit(ShopsError("Error fetching shops: $error"));
+    }
+  }
+}
+
+class ShopFrontConnectionBloc
+    extends Bloc<HomeScreenEvents, ShopfrontConnectionStates> {
+  final ConnectToShopfront connectToShopfront;
+
+  ShopFrontConnectionBloc({required this.connectToShopfront})
+    : super(ConnectionInitial()) {
+    on<ConnectToShopfrontEvent>(_onConnectToShopfront);
+  }
+
+  Future<void> _onConnectToShopfront(
+    ConnectToShopfrontEvent event,
+    Emitter<ShopfrontConnectionStates> emit,
+  ) async {
+    emit(ConnectingToShopfront());
+    try {
+      await connectToShopfront(
+        event.ip,
+        event.shopName,
+        event.userName,
+        event.pwd,
+      );
+      emit(ConnectedToShopfront("Shopfront Connected!"));
+    } catch (error) {
+      if (error is String) {
+        emit(ShopfrontConnectionError(error));
+      } else {
+        var e = error as dynamic;
+        emit(ShopfrontConnectionError(e.message.toString()));
+      }
+    }
+  }
+}
+
+class AutoConnectionBloc extends Bloc<HomeScreenEvents, AutoConnectionStates> {
+  final AutoConnectToDefaultFolder autoConnectToDefaultFolder;
+
+  AutoConnectionBloc({required this.autoConnectToDefaultFolder})
+    : super(AutoConnectionStatesInitial()) {
+    on<AutoConnectToDefaultFolderEvent>(_onAutoConnectToPublicFolder);
+  }
+
+  Future<void> _onAutoConnectToPublicFolder(
+    AutoConnectToDefaultFolderEvent event,
+    Emitter<AutoConnectionStates> emit,
+  ) async {
+    emit(LoadingAutoConnection(event.ipAddress));
+    try {
+      await autoConnectToDefaultFolder(event.ipAddress, event.hostName).then((
+        value,
+      ) {
+        logger.d('AutoConnection in bloc Was Triggered!');
+        emit(AutoConnectedToPublicFolder("Connected to SharedFolder!"));
+      });
+    } catch (e) {
+      emit(
+        ErrorAutoConnection(
+          e.toString(),
+          NetworkComputerVO(
+            ipAddress: event.ipAddress,
+            hostName: event.hostName ?? "",
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class FetchStockBloc extends Bloc<FetchStockEvents, FetchStockStates> {
+  final FetchStockData fetchStockData;
+
+  FetchStockBloc({required this.fetchStockData}) : super(FetchStockInitial()) {
+    on<StartSyncEvent>(_onStartSyncEvent);
+  }
+
+  Future<void> _onStartSyncEvent(
+    StartSyncEvent event,
+    Emitter<FetchStockStates> emit,
+  ) async {
+    if (state is FetchStockProgress) return;
+
+    emit(
+      FetchStockProgress(
+        currentCount: 0,
+        totalCount: 1,
+        message: "Initializing connection...",
+      ),
+    );
+
+    try {
+      await emit.forEach<SyncStatus>(
+        fetchStockData(event.ipAddress, event.username, event.password),
+        onData: (status) {
+          return FetchStockProgress(
+            currentCount: status.processed,
+            totalCount: status.total,
+            message: status.message,
+          );
+        },
+        onError: (error, stackTrace) {
+          return FetchStockError(message: error.toString());
+        },
+      );
+
+      if (state is FetchStockProgress) {
+        emit(FetchStockSuccess());
+        await Future.delayed(const Duration(seconds: 3));
+        emit(FetchStockInitial());
+      }
+      // else if (state is FetchStockError) {
+      //   await Future.delayed(const Duration(seconds: 3));
+      //   emit(FetchStockInitial());
+      // }
+    } catch (e) {
+      emit(FetchStockError(message: e.toString()));
+      // await Future.delayed(const Duration(seconds: 3));
+      // emit(FetchStockInitial());
+    }
+  }
+}
