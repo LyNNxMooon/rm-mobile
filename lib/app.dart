@@ -1,16 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/utils/dependency_injection_utils.dart';
+import 'package:rmstock_scanner/utils/log_utils.dart';
 
 import 'features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import 'features/loading_splash/presentation/BLoC/loading_splash_events.dart';
 import 'features/loading_splash/presentation/screens/index_screen.dart';
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndRequestPermission();
+    });
+    super.initState();
+  }
+
+  Future<void> _checkAndRequestPermission() async {
+    var status = await Permission.locationWhenInUse.status;
+
+    if (!status.isGranted) {
+      status = await Permission.locationWhenInUse.request();
+    }
+
+    logger.d("Location Status: $status");
+
+    if (status.isPermanentlyDenied) {
+      _showSettingsDialog();
+      return;
+    }
+  }
+
+  void _showSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Location Access Required"),
+        content: Text(
+          "To scan your local network, please enable 'While Using the App' and 'Precise Location' in Settings.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: Text("Open Settings"),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

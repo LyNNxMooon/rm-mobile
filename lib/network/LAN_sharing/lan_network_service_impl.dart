@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:permission_handler/permission_handler.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
 import 'package:rmstock_scanner/network/LAN_sharing/lan_network_service.dart';
@@ -19,17 +20,22 @@ class LanNetworkServiceImpl implements LanNetworkService {
 
   @override
   Future<List<NetworkComputerVO>> scanNetwork() async {
+    //await Permission.locationWhenInUse.request();
+
     List<NetworkComputerVO> devices = [];
 
     final String? ip = await _networkInfo.getWifiIP();
-    if (ip == null) return [];
+    if (ip == null || ip == '0.0.0.0') {
+      print("Could not get IP or connected to cellular.");
+      return [];
+    }
 
     final String subnetId = ip.substring(0, ip.lastIndexOf('.'));
     final List<String> targetIps = List.generate(
       254,
       (i) => '$subnetId.${i + 1}',
     );
-    final int batchSize = 30;
+    final int batchSize = 20;
 
     for (int i = 0; i < targetIps.length; i += batchSize) {
       final end = (i + batchSize < targetIps.length)
@@ -52,7 +58,7 @@ class LanNetworkServiceImpl implements LanNetworkService {
       final socket = await Socket.connect(
         targetIp,
         445,
-        timeout: Duration(milliseconds: 1000),
+        timeout: Duration(milliseconds: 400),
       );
       socket.destroy();
 

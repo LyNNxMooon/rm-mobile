@@ -9,6 +9,7 @@ import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_b
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/screens/stock_take_list_screen.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:vibration/vibration.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
@@ -62,11 +63,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        backgroundColor: kBgColor,
-        body: LayoutBuilder(
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      backgroundColor: kBgColor,
+      body: SafeArea(
+        child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
@@ -76,7 +77,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   child: Column(
                     children: [
                       StocktakeAppbarSession(),
-
+            
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 25.0,
@@ -91,9 +92,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
                           },
                         ),
                       ),
-
+            
                       Scanner(constraints: constraints),
-
+            
                       Container(
                         margin: const EdgeInsets.symmetric(
                           vertical: 15,
@@ -106,7 +107,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                           function: (value) {},
                         ),
                       ),
-
+            
                       Expanded(child: _buildProductDetailsPanel()),
                     ],
                   ),
@@ -308,8 +309,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 },
                 child: CustomStocktakeBtn(
                   function: () async {
-                    HapticFeedback.vibrate();
-                    await _audioPlayer.play(AssetSource('assets/audio/beep.mp3'));
+                    await HapticFeedback.vibrate();
+
+                    // if (await Vibration.hasVibrator()) {
+                    //   Vibration.vibrate();
+                    // }
+
+                    await HapticFeedback.heavyImpact();
+
+                    await _audioPlayer.play(AssetSource('audio/beep.mp3'));
                   },
                   icon: Icons.add_shopping_cart,
                   bgColor: Colors.lightGreen,

@@ -41,68 +41,68 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        floatingActionButton:
-        BlocListener<CommittingStocktakeBloc, CommitingStocktakeStates>(
-          listener: (context, state) {
-            if (state is LoadingToCommitStocktake) {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) => const LoadingStocktakeDialog(),
+    return Scaffold(
+      floatingActionButton:
+      BlocListener<CommittingStocktakeBloc, CommitingStocktakeStates>(
+        listener: (context, state) {
+          if (state is LoadingToCommitStocktake) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => const LoadingStocktakeDialog(),
+            );
+          }
+    
+          if (state is ErrorCommitingStocktake) {
+            context.navigateBack();
+            showErrorDialog(context, message: state.message);
+          }
+    
+          if (state is CommittedStocktake) {
+            context.navigateBack();
+            showTopSnackBar(
+              Overlay.of(context),
+              CustomSnackBar.success(message: state.message),
+            );
+            context.read<FetchingStocktakeListBloc>().add(
+              FetchStocktakeListEvent(),
+            );
+          }
+        },
+        child: FloatingActionButton.extended(
+          onPressed: () async {
+    
+            final unSyncedList = await LocalDbDAO.instance
+                .getUnsyncedStocks(AppGlobals.instance.shopfront ?? "");
+    
+            if (unSyncedList.isNotEmpty) {
+              context.read<CommittingStocktakeBloc>().add(
+                CommittingStocktakeEvent(),
               );
-            }
-
-            if (state is ErrorCommitingStocktake) {
-              context.navigateBack();
-              showErrorDialog(context, message: state.message);
-            }
-
-            if (state is CommittedStocktake) {
-              context.navigateBack();
+            } else {
+    
               showTopSnackBar(
                 Overlay.of(context),
-                CustomSnackBar.success(message: state.message),
-              );
-              context.read<FetchingStocktakeListBloc>().add(
-                FetchStocktakeListEvent(),
+                const CustomSnackBar.info(message: "No unsynced stocks found."),
               );
             }
           },
-          child: FloatingActionButton.extended(
-            onPressed: () async {
-
-              final unSyncedList = await LocalDbDAO.instance
-                  .getUnsyncedStocks(AppGlobals.instance.shopfront ?? "");
-
-              if (unSyncedList.isNotEmpty) {
-                context.read<CommittingStocktakeBloc>().add(
-                  CommittingStocktakeEvent(),
-                );
-              } else {
-
-                showTopSnackBar(
-                  Overlay.of(context),
-                  const CustomSnackBar.info(message: "No unsynced stocks found."),
-                );
-              }
-            },
-            elevation: 4,
-            backgroundColor: kPrimaryColor,
-
-            label: Text(
-              "Send Stocktake to RM",
-              style: TextStyle(
-                color: kSecondaryColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
+          elevation: 4,
+          backgroundColor: kPrimaryColor,
+    
+          label: Text(
+            "Send Stocktake to RM",
+            style: TextStyle(
+              color: kSecondaryColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
             ),
           ),
         ),
-        backgroundColor: kBgColor,
-        body: ListView(
+      ),
+      backgroundColor: kBgColor,
+      body: SafeArea(
+        child: ListView(
           physics: const BouncingScrollPhysics(),
           children: [
             StocktakeListAppBar(),
@@ -119,7 +119,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
               },
             ),
             const SizedBox(height: 10),
-
+            
             itemsList(),
           ],
         ),
@@ -153,7 +153,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           if (state.stocktakeList.isEmpty) {
             return Padding(
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).size.height * 0.25,
+                top: MediaQuery.of(context).size.height * 0.23,
               ),
               child: Center(
                 child: Column(

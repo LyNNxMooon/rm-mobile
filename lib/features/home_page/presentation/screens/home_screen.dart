@@ -75,10 +75,16 @@ class _HomeScreenState extends State<HomeScreen> {
           _showNetworkDialog();
         }
       },
-      child: SafeArea(
-        child: Scaffold(
-          body: Container(
-            decoration: BoxDecoration(gradient: kGColor),
+      child: Scaffold(
+        extendBody: true,
+        backgroundColor: kPrimaryColor,
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(gradient: kGColor),
+          child: SafeArea(
+            bottom: false,
+            top: true,
             child: Stack(
               children: [
                 Column(

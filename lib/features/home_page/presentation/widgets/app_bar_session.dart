@@ -1,3 +1,6 @@
+import 'dart:io';
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../constants/colors.dart';
@@ -50,7 +53,6 @@ class AppBarSession extends StatelessWidget {
                   );
 
                   showDialog(
-
                     context: context,
                     builder: (context) {
                       return NetworkPcDialog();
@@ -66,7 +68,19 @@ class AppBarSession extends StatelessWidget {
               const SizedBox(width: 10),
               IconButton(
                 iconSize: 26,
-                onPressed: () {},
+                onPressed: () async {          
+                  try {
+                    final socket = await Socket.connect(
+                      '192.168.1.14', // ← known SMB machine
+                      445,
+                      timeout: const Duration(seconds: 3),
+                    );
+                    print('CONNECTED');
+                    socket.destroy();
+                  } catch (e) {
+                    print('FAILED: $e');
+                  }
+                },
                 icon: Icon(
                   Icons.notifications_active_outlined,
                   color: kSecondaryColor,

@@ -1,9 +1,9 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../constants/colors.dart';
-import '../../../../constants/txt_styles.dart';
 import '../../../../utils/log_utils.dart';
 import '../screens/scanner_screen.dart';
 
@@ -17,6 +17,8 @@ class Scanner extends StatefulWidget {
 }
 
 class _ScannerState extends State<Scanner> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -34,7 +36,15 @@ class _ScannerState extends State<Scanner> {
                       //barcodes.last.rawValue.toString()
 
                       logger.d(capture);
-                      HapticFeedback.heavyImpact();
+                      await HapticFeedback.vibrate();
+
+                      // if (await Vibration.hasVibrator()) {
+                      //   Vibration.vibrate();
+                      // }
+
+                      await HapticFeedback.heavyImpact();
+
+                      await _audioPlayer.play(AssetSource('audio/beep.mp3'));
                       if (!isManualCount) {
                         setState(() {
                           int currentQty =

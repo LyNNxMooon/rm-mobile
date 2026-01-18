@@ -99,10 +99,10 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: kBgColor,
-        body: Column(
+    return Scaffold(
+      backgroundColor: kBgColor,
+      body: SafeArea(
+        child: Column(
           // shrinkWrap: true,
           // physics: const BouncingScrollPhysics(),
           children: [
@@ -124,7 +124,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                   String searchCol = _dbFilterCol == "quantity"
                       ? "description"
                       : _dbFilterCol;
-
+            
                   context.read<StockListBloc>().add(
                     FetchFirstPageEvent(
                       query: _searchQuery,
@@ -143,7 +143,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 );
               },
             ),
-
+            
             // Chip states and Count Text
             BlocBuilder<StockListBloc, StockListState>(
               builder: (context, state) {
@@ -167,13 +167,13 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                 _selectedFilterChip = newLabel;
                                 _dbFilterCol = _mapChipToColumn(newLabel);
                               });
-
+            
                               // Search logic: If Qty selected, search disabled or defaults to Desc?
                               // Assuming search applies to currently selected sort column if possible
                               String searchCol = _dbFilterCol == "quantity"
                                   ? "description"
                                   : _dbFilterCol;
-
+            
                               context.read<StockListBloc>().add(
                                 FetchFirstPageEvent(
                                   query: _searchQuery,
@@ -198,7 +198,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 return const SizedBox();
               },
             ),
-
+            
             //Item lists state
             itemsList(),
           ],
