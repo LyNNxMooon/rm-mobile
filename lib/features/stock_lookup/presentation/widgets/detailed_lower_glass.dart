@@ -39,7 +39,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
+          // Margin handled by parent padding
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
           decoration: BoxDecoration(
             color: kSecondaryColor.withOpacity(0.1),
@@ -52,116 +52,109 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
           child: Column(
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.greenAccent.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Icon(
-                          Icons.monetization_on,
-                          size: 15,
+                  // Icon
+                  Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: Colors.greenAccent.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: const Icon(
+                      Icons.monetization_on,
+                      size: 15,
+                      color: kSecondaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Label
+                  const Text(
+                    "Inc RRP",
+                    style: TextStyle(fontSize: 13, color: kSecondaryColor), // Increased font
+                  ),
+                  const SizedBox(width: 10),
+
+                  // Input Field (Flexible)
+                  Expanded(
+                    child: SizedBox(
+                      height: 35, // Taller touch target
+                      child: TextField(
+                        controller: _rrpController,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(
+                          fontSize: 13, // Increased font
                           color: kSecondaryColor,
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Inc RRP",
-                        style: TextStyle(fontSize: 12, color: kSecondaryColor),
-                      ),
-                      const SizedBox(width: 10),
-                      SizedBox(
-                        width: 120,
-                        height: 30,
-                        child: TextField(
-                          controller: _rrpController,
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(
+                        decoration: InputDecoration(
+                          hintText: "Sell",
+                          hintStyle: const TextStyle(
+                            color: kGreyColor,
                             fontSize: 12,
-                            color: kSecondaryColor,
                           ),
-                          decoration: InputDecoration(
-                            hintText: "Sell",
-                            hintStyle: TextStyle(
-                              color: kGreyColor,
-                              fontSize: 12,
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(7),
+                            borderSide: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 0.5,
                             ),
-                            filled: true,
-                            fillColor: Colors.transparent,
-                            contentPadding: const EdgeInsets.only(
-                              //top: 6,
-                              right: 10,
-                              left: 10,
-                            ),
-                            // The Border styling (Preserved)
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(7),
-                              borderSide: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 0.5,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(7),
-                              borderSide: BorderSide(
-                                color: kPrimaryColor,
-                                width: 1,
-                              ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(7),
+                            borderSide: const BorderSide(
+                              color: kPrimaryColor,
+                              width: 1,
                             ),
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
 
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 15,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          kSecondaryColor.withOpacity(
-                            0.95,
-                          ), // Solid white at top-left
-                          kSecondaryColor.withOpacity(
-                            0.70,
-                          ), // See-through at bottom-right
+                  const SizedBox(width: 10),
+
+                  // Action Button (Fixed Width or Intrinsic)
+                  InkWell(
+                    onTap: () {
+                      // Update Logic
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 8, // Taller touch target
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            kSecondaryColor.withOpacity(0.95),
+                            kSecondaryColor.withOpacity(0.70),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(7),
+                        border: Border.all(
+                          color: kSecondaryColor.withOpacity(0.6),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: kThirdColor.withOpacity(0.05),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(7),
-
-                      // 2. The Glass Border: Crucial for the "edge" definition
-                      border: Border.all(
-                        color: kSecondaryColor.withOpacity(0.6),
-                        width: 1.5,
-                      ),
-
-                      // 3. Soft Glow Shadow: Helps it separate from the background
-                      boxShadow: [
-                        BoxShadow(
-                          color: kThirdColor.withOpacity(0.05),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
+                      child: const Text(
+                        "UPDATE",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: kPrimaryColor,
                         ),
-                      ],
-                    ),
-                    child: Text(
-                      "UPDATE",
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: kPrimaryColor,
                       ),
                     ),
                   ),

@@ -11,11 +11,11 @@ class CountAndSaveToLocaldb {
 
   Future<void> call({required StockVO stock, required String qty}) async {
     try {
-      if (stock.staticQuantity == "True") {
+      if (stock.staticQuantity) {
         return Future.error("Static/Package items cannot be counted!");
       }
 
-      if (stock.package == "True") {
+      if (stock.package) {
         return Future.error("Static/Package items cannot be counted!");
       }
 
@@ -23,9 +23,21 @@ class CountAndSaveToLocaldb {
         return Future.error("Enter qty to count!");
       }
 
+      //Determine the numeric value based on fractional support
+      num parsedQty;
+      if (stock.allowFractions == true) {
+        // If fractional is allowed, parse directly to double
+        parsedQty = double.tryParse(qty) ?? 0.0;
+      } else {
+        // If not allowed, parse input and round to nearest integer
+        // We parse as double first in case the user typed a dot by accident
+        double inputAsDouble = double.tryParse(qty) ?? 0.0;
+        parsedQty = inputAsDouble.round();
+      }
+
       final processedStock = CountedStockVO(
         stockID: stock.stockID.toInt(),
-        quantity: int.parse(qty),
+        quantity: parsedQty.toDouble(),
         stocktakeDate: DateTime.now(),
         dateModified: DateTime.now(),
         isSynced: false,

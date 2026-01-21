@@ -32,10 +32,10 @@ class _FoldersDialogState extends State<FoldersDialog> {
   );
 
   Future<void> _handleFolderSelection(
-    String path, {
-    String? username,
-    String? password,
-  }) async {
+      String path, {
+        String? username,
+        String? password,
+      }) async {
     await useCaseOfCheckingIfShopfrontFileExists(
       widget.pc.ipAddress,
       path,
@@ -89,20 +89,24 @@ class _FoldersDialogState extends State<FoldersDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Dynamic height calculation
+    final double safeMaxHeight = MediaQuery.of(context).size.height * 0.8;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 10,
       backgroundColor: kBgColor,
       child: Container(
-        constraints: const BoxConstraints(maxHeight: 500),
+        // Responsive constraints
+        constraints: BoxConstraints(maxHeight: safeMaxHeight),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: kGColor,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(10),
                   topRight: Radius.circular(10),
                 ),
@@ -119,6 +123,8 @@ class _FoldersDialogState extends State<FoldersDialog> {
                     child: Text(
                       "Select a Folder",
                       style: getSmartTitle(fontSize: 16),
+                      maxLines: 1, // Prevent header overflow
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   InkWell(
@@ -142,7 +148,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                         );
                       }
                     },
-                    child: Icon(
+                    child: const Icon(
                       CupertinoIcons.arrow_turn_down_left,
                       size: 24,
                       color: kSecondaryColor,
@@ -182,6 +188,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                   } else if (state is ErrorGettingDirectory) {
                     return Padding(
                       padding: const EdgeInsets.all(20.0),
+                      // SingleChildScrollView prevents keyboard overflow
                       child: SingleChildScrollView(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -198,11 +205,9 @@ class _FoldersDialogState extends State<FoldersDialog> {
                               style: const TextStyle(color: kGreyColor),
                             ),
                             const SizedBox(height: 20),
-                            Container(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              height: 40,
+                            // Safe Container usage
+                            SizedBox(
+                              height: 45, // Slightly increased for touch safety
                               child: CustomTextField(
                                 hintText: 'UserName',
                                 controller: _userNameController,
@@ -210,11 +215,8 @@ class _FoldersDialogState extends State<FoldersDialog> {
                               ),
                             ),
                             const SizedBox(height: 5),
-                            Container(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              height: 40,
+                            SizedBox(
+                              height: 45,
                               child: CustomTextField(
                                 hintText: 'Password',
                                 controller: _pwdController,
@@ -243,7 +245,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                                           ),
                                         ),
                                         padding: const EdgeInsets.symmetric(
-                                          vertical: 1,
+                                          vertical: 12, // Increased padding
                                         ),
                                       ),
                                       child: Text(
@@ -253,6 +255,8 @@ class _FoldersDialogState extends State<FoldersDialog> {
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
                                         ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ),
@@ -275,16 +279,18 @@ class _FoldersDialogState extends State<FoldersDialog> {
                                           ),
                                         ),
                                         padding: const EdgeInsets.symmetric(
-                                          vertical: 1,
+                                          vertical: 12,
                                         ),
                                       ),
-                                      child: Text(
+                                      child: const Text(
                                         "Try Logging in",
                                         style: TextStyle(
                                           color: kSecondaryColor,
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
                                         ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ),
@@ -373,15 +379,17 @@ class _FoldersDialogState extends State<FoldersDialog> {
         color: Colors.transparent,
         child: Row(
           children: [
-            Icon(CupertinoIcons.folder_fill, size: 22, color: Colors.yellow),
+            const Icon(CupertinoIcons.folder_fill, size: 22, color: Colors.yellow),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 direct,
-                style: TextStyle(
+                style: const TextStyle(
                   color: kThirdColor,
                   fontWeight: FontWeight.normal,
                 ),
+                maxLines: 1, // Fix list overflow
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             BlocBuilder<ConnectingFolderBloc, ConnectingFolderStates>(
@@ -404,97 +412,3 @@ class _FoldersDialogState extends State<FoldersDialog> {
     );
   }
 }
-
-/*
-  String finalPath = "";
-  Widget _buildActionButtons(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: kGreyColor.withOpacity(0.1))),
-      ),
-      child: ElevatedButton(
-        onPressed: () {
-          if (_selectedFolder == null) {
-            finalPath = "//${widget.pc.ipAddress}/$_currentPath";
-          } else {
-            finalPath = _currentPath.isEmpty
-                ? "//${widget.pc.ipAddress}/$_selectedFolder"
-                : "//${widget.pc.ipAddress}/$_currentPath/$_selectedFolder";
-          }
-          logger.d(finalPath);
-
-          context.read<ConnectingFolderBloc>().add(
-            ConnectToFolderEvent(
-              ipAddress: widget.pc.ipAddress,
-              hostName: widget.pc.hostName,
-              path: finalPath,
-              pwd: _pwdController.text,
-              userName: _userNameController.text,
-            ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: kPrimaryColor,
-          minimumSize: const Size(double.infinity, 45),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: BlocConsumer<ConnectingFolderBloc, ConnectingFolderStates>(
-          listener: (context, state) {
-            if (state is FolderConnected) {
-              AlertInfo.show(
-                context: context,
-                text: state.message,
-                typeInfo: TypeInfo.success,
-                backgroundColor: kSecondaryColor,
-                iconColor: kPrimaryColor,
-                textColor: kThirdColor,
-              );
-
-              context.navigateUntilFirst();
-
-              context.read<ShopfrontBloc>().add(
-                FetchShops(
-                  path: finalPath,
-                  ipAddress: widget.pc.ipAddress,
-                  userName: _userNameController.text,
-                  pwd: _pwdController.text,
-                ),
-              );
-              showDialog(
-                barrierDismissible: false,
-                context: context,
-                builder: (context) {
-                  return ShopfrontsDialog(
-                    pc: widget.pc,
-                    previousPath: finalPath,
-                  );
-                },
-              );
-            }
-
-            if (state is ErrorConnectingFolder) {
-              showTopSnackBar(
-                Overlay.of(context),
-                CustomSnackBar.error(message: state.message),
-              );
-            }
-          },
-          builder: (context, state) {
-            if (state is ConnectingFolder) {
-              return const Center(
-                child: CupertinoActivityIndicator(color: kSecondaryColor),
-              );
-            } else {
-              return Text(
-                "Network To",
-                style: getSmartTitle(fontSize: 16, color: kSecondaryColor),
-              );
-            }
-          },
-        ),
-      ),
-    );
-  }
-}
-*/

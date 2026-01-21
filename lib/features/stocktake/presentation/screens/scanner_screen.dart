@@ -1,19 +1,19 @@
+import 'dart:async';
+
 import 'package:alert_info/alert_info.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/screens/stock_take_list_screen.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
-import 'package:vibration/vibration.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/enums.dart';
+import '../../../../utils/log_utils.dart';
 import '../BLoC/stocktake_events.dart';
 import '../widgets/app_bar_session.dart';
 import '../widgets/custom_btn.dart';
@@ -21,17 +21,31 @@ import '../widgets/scanner.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 
+class Debouncer {
+  final int milliseconds;
+  Timer? _timer;
+
+  Debouncer({required this.milliseconds});
+
+  void run(VoidCallback action) {
+    _timer?.cancel();
+    _timer = Timer(Duration(milliseconds: milliseconds), action);
+  }
+}
+
 //Common Variables
-final Debouncer debouncer = Debouncer();
-const duration = Duration(milliseconds: 250);
 bool isTorchOn = false;
 bool isManualCount = true;
 bool isScan = false;
+StockVO? countingStock;
+
 final MobileScannerController scannerController = MobileScannerController(
-  detectionSpeed: DetectionSpeed.noDuplicates,
+  detectionSpeed: DetectionSpeed.normal,
+  detectionTimeoutMs: 1000,
   returnImage: false,
 );
 final TextEditingController qtyController = TextEditingController();
+final FocusNode qtyFocusNode = FocusNode();
 
 //Screen Starts here
 class ScannerScreen extends StatefulWidget {
@@ -42,9 +56,8 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> {
+  final Debouncer _debouncer = Debouncer(milliseconds: 500);
   final TextEditingController _bcController = TextEditingController();
-
-  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -56,6 +69,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     if (!mounted) {
       scannerController.dispose();
       qtyController.dispose();
+      qtyFocusNode.dispose();
       _bcController.dispose();
     }
     super.dispose();
@@ -76,12 +90,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 child: IntrinsicHeight(
                   child: Column(
                     children: [
-                      StocktakeAppbarSession(),
-            
+                      const StocktakeAppbarSession(),
+
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 25.0,
-                          vertical: 12.0,
+                        padding: const EdgeInsets.only(
+                          left: 25.0,
+                          right: 25,
+                          bottom: 10.0,
+                          top: 5,
                         ),
                         child: ScanModeSelector(
                           onModeChanged: (newMode) {
@@ -92,23 +108,34 @@ class _ScannerScreenState extends State<ScannerScreen> {
                           },
                         ),
                       ),
-            
+
                       Scanner(constraints: constraints),
-            
-                      Container(
-                        margin: const EdgeInsets.symmetric(
-                          vertical: 15,
-                          horizontal: 25,
-                        ),
-                        height: 35,
-                        child: CustomTextField(
-                          hintText: 'Manual Barcode Entry',
-                          controller: _bcController,
-                          function: (value) {},
+
+                      Expanded(
+                        child: BlocConsumer<ScannerBloc, ScannerStates>(
+                          builder: (context, state) {
+                            if (state is StockLoaded) {
+                              countingStock = state.stock;
+
+                              return _buildProductDetailsPanel(state.stock);
+                            } else {
+                              countingStock = null;
+                              return _buildProductDetailsPanel(null);
+                            }
+                          },
+                          listener: (context, state) {
+                            if (state is StockError) {
+                              showTopSnackBar(
+                                Overlay.of(context),
+                                CustomSnackBar.error(message: state.message),
+                              );
+                            }
+                          },
                         ),
                       ),
-            
-                      Expanded(child: _buildProductDetailsPanel()),
+
+                      //Listener for stock count states
+                      _stockCountSaveListener(),
                     ],
                   ),
                 ),
@@ -120,9 +147,38 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
-  Widget _buildProductDetailsPanel() {
+  Widget _buildProductDetailsPanel(StockVO? stock) {
+    String qty = stock == null
+        ? "..."
+        : ((stock.quantity % 1 == 0)
+              ? stock.quantity.toInt().toString()
+              : double.parse(stock.quantity.toStringAsFixed(2)).toString());
+
+    String layby = stock == null
+        ? "-"
+        : ((stock.laybyQuantity % 1 == 0)
+              ? stock.laybyQuantity.toInt().toString()
+              : double.parse(
+                  stock.laybyQuantity.toStringAsFixed(2),
+                ).toString());
+
+    String soQty = stock == null
+        ? "-"
+        : ((stock.salesOrderQuantity % 1 == 0)
+              ? stock.salesOrderQuantity.toInt().toString()
+              : double.parse(
+                  stock.salesOrderQuantity.toStringAsFixed(2),
+                ).toString());
+    num total = stock == null
+        ? 0
+        : (stock.quantity + stock.laybyQuantity + stock.salesOrderQuantity);
+
+    String totalString = (total % 1 == 0)
+        ? total.toInt().toString()
+        : double.parse(total.toStringAsFixed(2)).toString();
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16, left: 25, right: 25),
+      padding: const EdgeInsets.only(bottom: 16, left: 25, right: 25, top: 15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -146,10 +202,18 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      "Stock Barcode",
-                      style: getSmartTitle(fontSize: 16, color: kThirdColor),
+                    Expanded(
+                      child: Text(
+                        stock == null ? "Stock Barcode" : stock.barcode,
+                        style: getSmartTitle(
+                          fontSize: 18,
+                          color: kThirdColor,
+                        ), // Larger Font
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -160,8 +224,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        "In System: ...",
-                        style: TextStyle(fontSize: 12, color: kPrimaryColor),
+                        "In System: $qty",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: kPrimaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -172,60 +240,79 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   color: Colors.green,
                   title: "Description",
                   icon: Icons.description,
-                  value: "RM - Stock Description",
+                  value: stock == null
+                      ? "RM - Stock Description"
+                      : stock.description,
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 8), // Increased Spacing
                 _stockDetailsListTile(
                   color: Colors.orangeAccent,
                   title: "Categories",
                   icon: Icons.category_outlined,
-                  value: "- / -",
+                  value: stock == null
+                      ? "- / - / -"
+                      : "${stock.category1} / ${stock.category2} / ${stock.category3}",
                 ),
 
-                const SizedBox(height: 5),
+                const SizedBox(height: 8),
                 _stockDetailsListTile(
                   color: Colors.blue,
                   title: "Custom 1",
                   icon: Icons.format_paint,
-                  value: "-",
+                  value: stock == null ? "-" : stock.custom1 ?? "-",
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 8),
                 _stockDetailsListTile(
                   color: Colors.deepOrange,
                   title: "Custom 2",
                   icon: Icons.settings,
-                  value: "-",
+                  value: stock == null ? "-" : stock.custom2 ?? "-",
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 8),
                 _stockDetailsListTile(
                   color: Colors.purple,
                   title: "Lay-By",
                   icon: Icons.numbers,
-                  value: "-",
+                  value: layby,
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 8),
                 _stockDetailsListTile(
                   color: Colors.yellow,
                   title: "Sales Order",
                   icon: Icons.history,
-                  value: "-",
+                  value: soQty,
                 ),
 
-                const SizedBox(height: 5),
+                const SizedBox(height: 8),
                 _stockDetailsListTile(
                   color: Colors.lightBlue,
                   title: "Total",
                   icon: Icons.check,
-                  value: "-",
+                  value: totalString,
+                  isBold: true, // Make Total Stand Out
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 16),
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 15),
+            height: 40, // Taller Input
+            child: CustomTextField(
+              hintText: 'Manual Barcode Entry',
+              controller: _bcController,
+              function: (value) {
+                _debouncer.run(() {
+                  context.read<ScannerBloc>().add(
+                    FetchStockDetails(barcode: value),
+                  );
+                });
+              },
+            ),
+          ),
 
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
             decoration: BoxDecoration(
               color: kSecondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
@@ -241,16 +328,45 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
             child: Row(
               children: [
-                Text("Counted Qty : ", style: TextStyle(color: kGreyColor)),
+                const Text(
+                  "Counted Qty : ",
+                  style: TextStyle(color: kGreyColor, fontSize: 14),
+                ), // Larger Label
                 const SizedBox(width: 15),
                 Expanded(
                   child: SizedBox(
-                    height: 35,
+                    height: 35, // Taller Input
                     width: 100,
                     child: CustomTextField(
+                      submitFunction: (value) {
+                        if (countingStock != null) {
+                          if (context.mounted) {
+                            context.read<StocktakeBloc>().add(
+                              Stocktake(
+                                qty: qtyController.text,
+                                stock: countingStock!,
+                              ),
+                            );
+                          }
+                        }
+                        logger.d("Stocktake saved with: ${qtyController.text}");
+
+                        qtyController.clear();
+
+                        context.read<ScannerBloc>().add(
+                          ResetStocktakeEvent(ScannerInitial()),
+                        );
+
+                        setState(() {
+                          _bcController.text = "";
+                        });
+                      },
                       controller: qtyController,
+                      focusNode: qtyFocusNode,
                       hintText: "Qty",
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       isEnabled: isManualCount,
                     ),
                   ),
@@ -258,70 +374,42 @@ class _ScannerScreenState extends State<ScannerScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              CustomStocktakeBtn(
-                function: () {
-                  context.read<FetchingStocktakeListBloc>().add(
-                    FetchStocktakeListEvent(),
-                  );
-                  context.navigateToNext(StockTakeListScreen());
-                },
-                icon: Icons.list,
-                bgColor: kPrimaryColor,
-                name: "LIST",
-              ),
-
-              CustomStocktakeBtn(
-                function: () {
-                  setState(() {
-                    isScan = !isScan;
-                  });
-                },
-                icon: Icons.qr_code_scanner,
-                bgColor: kPrimaryColor,
-                name: isScan ? "CLOSE" : "SCAN",
-              ),
-
-              BlocListener<StocktakeBloc, StocktakeStates>(
-                listener: (context, state) {
-                  if (state is StocktakeError) {
-                    showTopSnackBar(
-                      Overlay.of(context),
-                      CustomSnackBar.error(message: state.message),
-                    );
-                  }
-
-                  if (state is StockTaken) {
-                    qtyController.clear();
-                    AlertInfo.show(
-                      context: context,
-                      text: 'Successfully Counted!',
-                      typeInfo: TypeInfo.success,
-                      backgroundColor: kSecondaryColor,
-                      iconColor: kPrimaryColor,
-                      textColor: kThirdColor,
-                    );
-                  }
-                },
+              Expanded(
                 child: CustomStocktakeBtn(
-                  function: () async {
-                    await HapticFeedback.vibrate();
-
-                    // if (await Vibration.hasVibrator()) {
-                    //   Vibration.vibrate();
-                    // }
-
-                    await HapticFeedback.heavyImpact();
-
-                    await _audioPlayer.play(AssetSource('audio/beep.mp3'));
+                  function: () {
+                    context.read<FetchingStocktakeListBloc>().add(
+                      FetchStocktakeListEvent(),
+                    );
+                    context.navigateToNext(const StockTakeListScreen());
                   },
-                  icon: Icons.add_shopping_cart,
+                  icon: Icons.list,
+                  bgColor: kPrimaryColor,
+                  name: "LIST",
+                ),
+              ),
+              const SizedBox(width: 15),
+
+              Expanded(
+                child: CustomStocktakeBtn(
+                  function: () {
+                    qtyController.clear();
+                    context.read<ScannerBloc>().add(
+                      ResetStocktakeEvent(ScannerInitial()),
+                    );
+
+                    setState(() {
+                      isScan = !isScan;
+                      _bcController.text = "";
+                    });
+                  },
+                  icon: Icons.qr_code_scanner,
                   bgColor: Colors.lightGreen,
-                  name: "SAVE",
+                  name: isScan ? "CLOSE" : "SCAN",
                 ),
               ),
             ],
@@ -331,11 +419,48 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
+  Widget _stockCountSaveListener() {
+    return BlocListener<StocktakeBloc, StocktakeStates>(
+      listener: (context, state) {
+        if (state is StocktakeError) {
+          showTopSnackBar(
+            Overlay.of(context),
+
+            CustomSnackBar.error(message: state.message),
+          );
+        }
+
+        if (state is StockTaken) {
+          qtyController.clear();
+
+          if (isManualCount) {
+            AlertInfo.show(
+              context: context,
+
+              text: 'Successfully Counted!',
+
+              typeInfo: TypeInfo.success,
+
+              backgroundColor: kSecondaryColor,
+
+              iconColor: kPrimaryColor,
+
+              textColor: kThirdColor,
+            );
+          }
+        }
+      },
+
+      child: const SizedBox(),
+    );
+  }
+
   Widget _stockDetailsListTile({
     required IconData icon,
     required Color color,
     required String title,
     required String value,
+    bool isBold = false,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -348,16 +473,32 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 color: color.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(icon, size: 15, color: color),
+              child: Icon(icon, size: 16, color: color), // Icon Size bump
             ),
 
             const SizedBox(width: 8),
 
-            Text(title, style: TextStyle(fontSize: 10, color: kGreyColor)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 13, color: kGreyColor),
+            ), // Increased Font
           ],
         ),
 
-        Text(value, style: TextStyle(fontSize: 10)),
+        // Flexible Value Text to avoid overflow
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 14, // Increased Font
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: isBold ? kPrimaryColor : kThirdColor,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }

@@ -1,6 +1,7 @@
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
 
+import '../../../entities/vos/filter_criteria.dart';
 import '../../../local_db/local_db_dao.dart';
 
 class StockLookupModels implements StockLookupRepo {
@@ -13,6 +14,7 @@ class StockLookupModels implements StockLookupRepo {
     required String sortColumn,
     required bool ascending,
     required int page,
+    FilterCriteria? filters,
     int pageSize = 100,
   }) async {
     try {
@@ -25,6 +27,7 @@ class StockLookupModels implements StockLookupRepo {
         ascending: ascending,
         limit: pageSize,
         offset: offset,
+        filters: filters,
       );
     } on Exception catch (error) {
       return Future.error(error);

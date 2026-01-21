@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
@@ -8,6 +7,8 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../entities/vos/filter_criteria.dart';
+import '../BLoC/stock_lookup_events.dart';
 
 //Common Variables
 final custom1Controller = TextEditingController();
@@ -23,6 +24,24 @@ class StocklookupFilterDialog extends StatefulWidget {
 }
 
 class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
+  @override
+  void initState() {
+    final currentState = context.read<StockListBloc>().state;
+    if (currentState is StockListLoaded && currentState.activeFilters != null) {
+      final filters = currentState.activeFilters!;
+      selectedDept = filters.dept;
+      selectedCat1 = filters.cat1;
+      selectedCat2 = filters.cat2;
+      selectedCat3 = filters.cat3;
+
+      //Populate text controllers from active filters
+      supplierController.text = filters.supplier ?? "";
+      custom1Controller.text = filters.custom1 ?? "";
+      custom2Controller.text = filters.custom2 ?? "";
+      super.initState();
+    }
+  }
+
   String? selectedDept;
   String? selectedCat1;
   String? selectedCat2;
@@ -201,7 +220,17 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        setState(() {
+                          selectedDept = null;
+                          selectedCat1 = null;
+                          selectedCat2 = null;
+                          selectedCat3 = null;
+                        });
+                        supplierController.clear();
+                        custom1Controller.clear();
+                        custom2Controller.clear();
+                      },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: BorderSide(color: kGreyColor.withOpacity(0.3)),
@@ -219,7 +248,33 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
 
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        final criteria = FilterCriteria(
+                          dept: selectedDept,
+                          cat1: selectedCat1,
+                          cat2: selectedCat2,
+                          cat3: selectedCat3,
+                          supplier: supplierController.text.trim(),
+                          custom1: custom1Controller.text.trim(),
+                          custom2: custom2Controller.text.trim(),
+                        );
+
+                        // 2. Dispatch Event to Main Bloc
+                        // Note: We reset query/sort to defaults or keep them.
+                        // Usually applying heavy filters resets search query to empty.
+                        context.read<StockListBloc>().add(
+                          FetchFirstPageEvent(
+                            query:
+                                "", // Reset text search when applying heavy filters? Or keep it?
+                            // If you want to keep it, you need to pass it in constructor or
+                            // access it via context if stored in a provider.
+                            // For now, let's reset query for clean results.
+                            filters: criteria,
+                          ),
+                        );
+
+                        context.navigateBack();
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kPrimaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -290,7 +345,12 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
               .map(
                 (e) => DropdownMenuItem(
                   value: e,
-                  child: Text(e, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12),),
+                  child: Text(
+                    e,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ),
               )
               .toList(),

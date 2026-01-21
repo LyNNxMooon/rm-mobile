@@ -35,7 +35,8 @@ class FetchStockData {
           AppGlobals.instance.currentPath ?? "",
           finalUser,
           finalPwd,
-          mobileInfo.name,
+          mobileInfo.deviceId,
+          AppGlobals.instance.shopfront ?? "",
         );
       } else {
         yield* Stream.error("Please connect to a network!");

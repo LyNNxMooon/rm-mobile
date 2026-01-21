@@ -24,7 +24,7 @@ class SyncInfoWidget extends StatelessWidget {
         builder: (context, state) {
           if (state is FetchStockProgress) {
             return Container(
-              margin: const EdgeInsets.only(bottom: 15),
+              margin: const EdgeInsets.only(top: 5, bottom: 2),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: kSecondaryColor,
@@ -78,7 +78,7 @@ class SyncInfoWidget extends StatelessWidget {
             );
           } else if (state is FetchStockError) {
             return Container(
-              margin: const EdgeInsets.only(bottom: 15),
+              margin: const EdgeInsets.only(top: 5, bottom: 2),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Colors.red.shade50,
@@ -100,7 +100,7 @@ class SyncInfoWidget extends StatelessWidget {
             );
           } else if (state is FetchStockSuccess) {
             return Container(
-              margin: const EdgeInsets.only(bottom: 15),
+              margin: const EdgeInsets.only(top: 5, bottom: 2),
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(
                 color: Colors.green.shade50,

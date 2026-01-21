@@ -10,6 +10,8 @@ class CustomTextField extends StatelessWidget {
   final IconData? leadingIcon;
   final TextInputType? keyboardType;
   final void Function(String)? function;
+  final void Function(String)? submitFunction;
+  final FocusNode? focusNode;
 
   const CustomTextField({
     super.key,
@@ -19,12 +21,16 @@ class CustomTextField extends StatelessWidget {
     this.leadingIcon,
     this.keyboardType,
     this.function,
+    this.focusNode,
+    this.submitFunction,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      focusNode: focusNode,
       onChanged: function,
+      onSubmitted: submitFunction,
       controller: controller,
       keyboardType: keyboardType,
       enabled: isEnabled,

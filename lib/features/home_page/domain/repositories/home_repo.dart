@@ -49,5 +49,6 @@ abstract class HomeRepo {
     String? username,
     String? password,
     String mobileName,
+    String shopfront,
   );
 }

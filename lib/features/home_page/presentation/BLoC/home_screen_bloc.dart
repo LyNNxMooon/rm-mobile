@@ -236,7 +236,7 @@ class FetchStockBloc extends Bloc<FetchStockEvents, FetchStockStates> {
 
       if (state is FetchStockProgress) {
         emit(FetchStockSuccess());
-        await Future.delayed(const Duration(seconds: 3));
+        await Future.delayed(const Duration(seconds: 5));
         emit(FetchStockInitial());
       }
       // else if (state is FetchStockError) {

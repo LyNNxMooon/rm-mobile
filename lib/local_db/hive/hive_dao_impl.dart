@@ -1,5 +1,6 @@
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
+import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import '../../entities/vos/stock_vo.dart';
 
@@ -133,6 +134,7 @@ class HiveDAOImpl extends LocalDbDAO {
     required bool ascending,
     required int limit,
     required int offset,
+    FilterCriteria? filters
   }) {
     // TODO: implement searchAndSortStocks
     throw UnimplementedError();
@@ -159,6 +161,18 @@ class HiveDAOImpl extends LocalDbDAO {
   @override
   Future<List<String>> getDistinctValues(String columnName) {
     // TODO: implement getDistinctValues
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<String?> getAppConfig(String key) {
+    // TODO: implement getAppConfig
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> saveAppConfig(String key, String value) {
+    // TODO: implement saveAppConfig
     throw UnimplementedError();
   }
 }

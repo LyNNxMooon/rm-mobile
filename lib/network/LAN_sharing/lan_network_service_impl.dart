@@ -1,7 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
-import 'package:permission_handler/permission_handler.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
 import 'package:rmstock_scanner/network/LAN_sharing/lan_network_service.dart';
@@ -26,7 +24,7 @@ class LanNetworkServiceImpl implements LanNetworkService {
 
     final String? ip = await _networkInfo.getWifiIP();
     if (ip == null || ip == '0.0.0.0') {
-      print("Could not get IP or connected to cellular.");
+      logger.e("Could not get IP or connected to cellular.");
       return [];
     }
 
@@ -35,7 +33,7 @@ class LanNetworkServiceImpl implements LanNetworkService {
       254,
       (i) => '$subnetId.${i + 1}',
     );
-    final int batchSize = 20;
+    final int batchSize = 30;
 
     for (int i = 0; i < targetIps.length; i += batchSize) {
       final end = (i + batchSize < targetIps.length)
@@ -58,7 +56,7 @@ class LanNetworkServiceImpl implements LanNetworkService {
       final socket = await Socket.connect(
         targetIp,
         445,
-        timeout: Duration(milliseconds: 400),
+        timeout: Duration(milliseconds: 750),
       );
       socket.destroy();
 
@@ -297,6 +295,7 @@ class LanNetworkServiceImpl implements LanNetworkService {
     required String password,
     required String fileName,
     required String fileContent,
+    required String mobileID,
   }) async {
     final connect = await SmbConnect.connectAuth(
       host: address,
@@ -314,6 +313,18 @@ class LanNetworkServiceImpl implements LanNetworkService {
       if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
       if (cleanedPath.endsWith('/')) {
         cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
+      }
+
+      final String outgoingPath = '$cleanedPath/outgoing';
+
+      final folder = await connect.file(outgoingPath);
+      final files = await connect.listFiles(folder);
+
+      for (final file in files) {
+        if (!file.isDirectory() &&
+            file.name.startsWith('${mobileID}_request_')) {
+          await connect.delete(file);
+        }
       }
 
       final String destinationPath = "$cleanedPath/outgoing/$fileName";
@@ -465,6 +476,7 @@ class LanNetworkServiceImpl implements LanNetworkService {
             )
             .toList();
 
+        //this compare the time and leave the old stale files
         if (targetFile.isNotEmpty) {
           targetFile.sort(
             (a, b) => (b.createTime ?? 0).compareTo(a.createTime ?? 0),

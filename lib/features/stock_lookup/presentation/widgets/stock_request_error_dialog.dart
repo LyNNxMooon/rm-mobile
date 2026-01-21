@@ -4,7 +4,6 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
-import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
 import '../../../home_page/presentation/BLoC/home_screen_events.dart';

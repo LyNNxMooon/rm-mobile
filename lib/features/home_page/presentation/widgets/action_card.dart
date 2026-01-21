@@ -30,12 +30,10 @@ class ActionCard extends StatelessWidget {
             ],
           ),
           borderRadius: BorderRadius.circular(15),
-
           border: Border.all(
             color: kSecondaryColor.withOpacity(0.6),
             width: 1.5,
           ),
-
           boxShadow: [
             BoxShadow(
               color: kThirdColor.withOpacity(0.05),
@@ -48,6 +46,7 @@ class ActionCard extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
+            borderRadius: BorderRadius.circular(15), // Match container radius
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 17),
               child: Row(
@@ -62,16 +61,20 @@ class ActionCard extends StatelessWidget {
                             fontSize: 16,
                             color: kPrimaryColor,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 6),
                         Text(
                           subtitle,
-                          style: TextStyle(fontSize: 12, color: kGreyColor),
+                          style: const TextStyle(fontSize: 12, color: kGreyColor),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-
+                  const SizedBox(width: 10), // Prevent text touching icon
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(

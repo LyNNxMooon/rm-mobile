@@ -2,7 +2,7 @@ import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 
 abstract class StocktakeRepo {
-  Future<StockVO> fetchStockDetails(String barcode);
+  Future<StockVO?> fetchStockDetails(String barcode, String shopfront);
 
   Future stocktakeAndSaveToLocalDb(CountedStockVO stock, String shopfront);
 

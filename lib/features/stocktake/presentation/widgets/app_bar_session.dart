@@ -20,7 +20,7 @@ class _StocktakeAppbarSessionState extends State<StocktakeAppbarSession> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -29,25 +29,26 @@ class _StocktakeAppbarSessionState extends State<StocktakeAppbarSession> {
                 icon: const Icon(
                   Icons.arrow_back_ios,
                   color: kThirdColor,
-                  size: 15,
+                  size: 20, // Increased touch target
                 ),
               ),
-              Text(
-                (AppGlobals.instance.shopfront ?? "RM-Shopfront")
-                            .split('\\')
-                            .last
-                            .length >
-                        22
-                    ? "${(AppGlobals.instance.shopfront ?? "RM-Shopfront").split('\\').last.substring(0, 22)}..."
-                    : (AppGlobals.instance.shopfront ?? "RM-Shopfront")
-                          .split('\\')
-                          .last,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              Expanded( // Ensure text doesn't overflow
+                child: Center(
+                  child: Text(
+                    (AppGlobals.instance.shopfront ?? "RM-Shopfront")
+                        .split('\\')
+                        .last,
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
               IconButton(
                 icon: Icon(
                   isTorchOn ? Icons.light_mode : Icons.light_mode_outlined,
                   color: kThirdColor,
+                  size: 24, // Increased size
                 ),
                 onPressed: () {
                   setState(() {
@@ -81,14 +82,18 @@ class _ScanModeSelectorState extends State<ScanModeSelector> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildRadioOption(
-          text: "Scan and Manual Count",
-          value: ScanMode.manualCount,
+        Expanded(
+          child: _buildRadioOption(
+            text: "Scan and Manual Count",
+            value: ScanMode.manualCount,
+          ),
         ),
-        const SizedBox(width: 18),
-        _buildRadioOption(
-          text: "Scan and Auto Count",
-          value: ScanMode.autoCount,
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildRadioOption(
+            text: "Scan and Auto Count",
+            value: ScanMode.autoCount,
+          ),
         ),
       ],
     );
@@ -112,12 +117,11 @@ class _ScanModeSelectorState extends State<ScanModeSelector> {
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 16,
-              height: 16,
+              width: 18, // Slightly larger radio
+              height: 18,
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-
                 border: Border.all(
                   color: isSelected ? kPrimaryColor : kGreyColor,
                   width: 2,
@@ -132,13 +136,17 @@ class _ScanModeSelectorState extends State<ScanModeSelector> {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
 
-            Text(
-              text,
-              style: getSmartTitle(
-                fontSize: 11,
-                color: isSelected ? kThirdColor : kGreyColor,
+            Flexible(
+              child: Text(
+                text,
+                style: getSmartTitle(
+                  fontSize: 11, // Increased readability
+                  color: isSelected ? kThirdColor : kGreyColor,
+                ),
+                maxLines: 2, // Allow wrapping
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

@@ -7,7 +7,7 @@ class CountedStockVO {
   final DateTime stocktakeDate;
   @JsonKey(name: 'stock_id')
   final int stockID;
-  final int quantity;
+  final num quantity;
   @JsonKey(name: 'date_modified')
   final DateTime dateModified;
   @JsonKey(name: 'is_synced')

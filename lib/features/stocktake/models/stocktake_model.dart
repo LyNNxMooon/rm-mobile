@@ -10,8 +10,12 @@ class StocktakeModel implements StocktakeRepo {
   //Data manipulation can be done here (E.g. substituting data for null values returned from API)
 
   @override
-  Future<StockVO> fetchStockDetails(String barcode) async {
-    throw UnimplementedError();
+  Future<StockVO?> fetchStockDetails(String barcode, String shopfront) async {
+    try {
+      return LocalDbDAO.instance.getStockBySearch(barcode, shopfront);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
   }
 
   @override
@@ -45,7 +49,7 @@ class StocktakeModel implements StocktakeRepo {
           "${_pad(now.minute)}"
           "${_pad(now.second)}";
 
-      final String fileName = "${mobileName}_initCheck_$timestamp.json";
+      final String fileName = "${mobileID}_initCheck_$timestamp.json";
 
       return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(
         address: address,

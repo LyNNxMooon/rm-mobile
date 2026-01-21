@@ -69,36 +69,29 @@ class _GlassDrawerState extends State<GlassDrawer> {
                   const SizedBox(height: 15),
 
                   Padding(
-                    padding: const EdgeInsets.only(left: 28),
-                    child:
-                        BlocBuilder<
-                          NetworkSavedPathValidationBloc,
-                          LoadingSplashStates
-                        >(
-                          builder: (context, state) {
-                            if (state is ConnectionValid) {
-                              return Text(
-                                AppGlobals.instance.shopfront == null
-                                    ? "RM-Shopfront"
-                                    : (AppGlobals.instance.shopfront!)
-                                          .split(r'\')
-                                          .last,
-                                style: TextStyle(
-                                  color: kSecondaryColor,
-                                  fontSize: 16,
-                                ),
-                              );
-                            } else {
-                              return Text(
-                                "Connect to a shopfront...",
-                                style: TextStyle(
-                                  color: kSecondaryColor,
-                                  fontSize: 16,
-                                ),
-                              );
-                            }
-                          },
-                        ),
+                    padding: const EdgeInsets.only(left: 28, right: 28), // Added right padding
+                    child: BlocBuilder<NetworkSavedPathValidationBloc, LoadingSplashStates>(
+                      builder: (context, state) {
+                        String shopText;
+                        if (state is ConnectionValid) {
+                          shopText = AppGlobals.instance.shopfront == null
+                              ? "RM-Shopfront"
+                              : (AppGlobals.instance.shopfront!).split(r'\').last;
+                        } else {
+                          shopText = "Connect to a shopfront...";
+                        }
+
+                        return Text(
+                          shopText,
+                          style: const TextStyle(
+                            color: kSecondaryColor,
+                            fontSize: 16,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      },
+                    ),
                   ),
 
                   Expanded(child: dashBoardView(scrollController)),
@@ -147,9 +140,9 @@ class _GlassDrawerState extends State<GlassDrawer> {
                   },
                 );
               } else if (index == 1) {
-                context.navigateToNext(StockLookupScreen());
+                context.navigateToNext(const StockLookupScreen());
               } else {
-                context.navigateToNext(ComingSoonScreen());
+                context.navigateToNext(const ComingSoonScreen());
               }
             },
             child: _buildGridItem(
@@ -166,12 +159,12 @@ class _GlassDrawerState extends State<GlassDrawer> {
   }
 
   Widget _buildGridItem(
-    String title,
-    String subTitle,
-    IconData icon,
-    BuildContext context,
-    int index,
-  ) {
+      String title,
+      String subTitle,
+      IconData icon,
+      BuildContext context,
+      int index,
+      ) {
     return AnimationConfiguration.staggeredGrid(
       position: index,
       duration: const Duration(milliseconds: 1500),
@@ -193,7 +186,6 @@ class _GlassDrawerState extends State<GlassDrawer> {
                 color: kSecondaryColor.withOpacity(0.6),
                 width: 1.5,
               ),
-
               boxShadow: [
                 BoxShadow(
                   color: kThirdColor.withOpacity(0.05),
@@ -212,11 +204,10 @@ class _GlassDrawerState extends State<GlassDrawer> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        SizedBox(
-                          width: 100,
+                        // Responsive Fix: Use Expanded instead of hardcoded width
+                        Expanded(
                           child: Text(
                             title,
-
                             style: getSmartTitle(
                               color: kPrimaryColor,
                               fontSize: 12,
@@ -225,6 +216,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        const SizedBox(width: 5), // Prevent overlap
                         Icon(icon, size: 22, color: kPrimaryColor),
                       ],
                     ),
@@ -235,16 +227,17 @@ class _GlassDrawerState extends State<GlassDrawer> {
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Row(
                       children: [
-                        Text(
-                          subTitle,
-
-                          style: const TextStyle(
-                            color: kGreyColor,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: Text(
+                            subTitle,
+                            style: const TextStyle(
+                              color: kGreyColor,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),

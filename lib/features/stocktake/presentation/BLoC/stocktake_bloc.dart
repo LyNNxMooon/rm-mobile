@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/repositories/stocktake_repo.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/commit_stocktake.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counting_stock.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 
@@ -9,10 +9,14 @@ import '../../domain/use_cases/count_and_save_to_localDb.dart';
 import '../../domain/use_cases/fetch_all_stocktake_list.dart';
 
 class ScannerBloc extends Bloc<StocktakeEvent, ScannerStates> {
-  final StocktakeRepo stocktakeRepo;
+  final FetchCountingStock fetchCountingStock;
 
-  ScannerBloc({required this.stocktakeRepo}) : super(ScannerInitial()) {
+  ScannerBloc({required this.fetchCountingStock}) : super(ScannerInitial()) {
     on<FetchStockDetails>(_onFetchStockDetails);
+
+    on<ResetStocktakeEvent>((event, emit) {
+      emit(event.targetState); // Instantly switches to the provided state
+    });
   }
 
   Future<void> _onFetchStockDetails(
@@ -21,11 +25,17 @@ class ScannerBloc extends Bloc<StocktakeEvent, ScannerStates> {
   ) async {
     emit(StockLoading());
     try {
-      final stockResponse = await stocktakeRepo.fetchStockDetails(
-        event.barcode,
-      );
+      final stockResponse = await fetchCountingStock(event.barcode);
 
-      emit(StockLoaded(stockResponse));
+      if (stockResponse == null) {
+        emit(
+          StockError(
+            "Stock not found! Please check in Stock Lookup screen to see whether you have loaded your stock!",
+          ),
+        );
+      } else {
+        emit(StockLoaded(stockResponse));
+      }
     } catch (error) {
       emit(StockError("Error fetching stock: $error"));
     }

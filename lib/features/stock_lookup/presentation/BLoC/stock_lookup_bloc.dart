@@ -23,19 +23,9 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
         isAscending = !prevState.isAscending;
       }
 
+      final criteria = event.filters ?? prevState?.activeFilters;
+
       emit(StockListLoading());
-      // String currentSortCol = "description";
-      // bool isAscending = true;
-      // // Logic: If clicking same sort col, toggle order. If new, reset to ASC.
-      // if (state is StockListLoaded) {
-      //   final curr = state as StockListLoaded;
-      //   if (event.sortColumn == currentSortCol) {
-      //     isAscending = !isAscending; // Toggle between A-Z and Z-A
-      //   } else {
-      //     isAscending = true; // New column, start with A-Z
-      //     currentSortCol = event.sortColumn;
-      //   }
-      // }
 
       try {
         final result = await getPaginatedStock.call(
@@ -45,6 +35,7 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
           sortCol: event.sortColumn,
           ascending: isAscending,
           page: 1,
+          filters: criteria,
         );
 
         emit(
@@ -57,6 +48,7 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
             currentSortCol: event.sortColumn,
             currentFilterCol: event.filterColumn,
             isAscending: isAscending,
+            activeFilters: criteria,
           ),
         );
       } catch (e) {
@@ -79,6 +71,7 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
             sortCol: curr.currentSortCol,
             ascending: curr.isAscending,
             page: nextPage,
+            filters: curr.activeFilters,
           );
 
           emit(

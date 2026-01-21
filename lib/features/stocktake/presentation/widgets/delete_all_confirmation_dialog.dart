@@ -8,8 +8,8 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
   const StocktakeDeleteConfirmationDialog({
     super.key,
     required this.onConfirm,
-    this.title = "Are you sure?",
-    this.message = "This will permanently remove all counted stock items.",
+    this.title = "Are you really sure?",
+    this.message = "This will permanently remove all counted stock items and they have not been committed to RM!",
   });
 
   final VoidCallback onConfirm;
@@ -28,17 +28,17 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
                 color: kErrorColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: const Center(
                 child: Icon(
-                  Icons.delete_sweep_rounded,
+                  Icons.warning,
                   color: kErrorColor,
-                  size: 32,
+                  size: 72,
                 ),
               ),
             ),
@@ -47,18 +47,18 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: kThirdColor,
+                color: kErrorColor,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
             Text(
               message,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
-                color: kThirdColor.withOpacity(0.8),
+                fontSize: 16,
+                color: kThirdColor,
                 height: 1.5,
               ),
             ),

@@ -51,6 +51,7 @@ abstract class LanNetworkService {
     required String password,
     required String fileName,
     required String fileContent,
+    required String mobileID,
   });
 
   Future<Uint8List?> fetchLatestStockFile({

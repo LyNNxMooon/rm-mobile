@@ -9,6 +9,7 @@ import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_states.dart';
+import '../../../stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import '../../../stock_lookup/presentation/widgets/stock_request_error_dialog.dart';
 import '../../../stocktake/presentation/screens/scanner_screen.dart';
 import '../BLoC/home_screen_bloc.dart';
@@ -43,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (currentParamState is ConnectionValid &&
         context.read<ShopFrontConnectionBloc>().state
-            is! ConnectedToShopfront) {
+        is! ConnectedToShopfront) {
       context.read<ShopFrontConnectionBloc>().add(
         ConnectToShopfrontEvent(
           ip: AppGlobals.instance.currentHostIp ?? "",
@@ -54,14 +55,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showNetworkDialog() {
-    // Check if a dialog is already showing to prevent duplicates
     if (ModalRoute.of(context)?.isCurrent != true) return;
     logger.d("State is noticed");
     context.read<FetchingNetworkPCBloc>().add(FetchNetworkPCEvent());
     showDialog(
       context: context,
       builder: (context) {
-        return NetworkPcDialog();
+        return const NetworkPcDialog();
       },
     );
   }
@@ -81,40 +81,62 @@ class _HomeScreenState extends State<HomeScreen> {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: BoxDecoration(gradient: kGColor),
+          decoration: const BoxDecoration(gradient: kGColor),
           child: SafeArea(
             bottom: false,
             top: true,
             child: Stack(
               children: [
-                Column(
-                  children: [
-                    const SizedBox(height: 10),
+                // 1. Wrap Column in SingleChildScrollView to prevent overflow on small screens
+                SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 10),
 
-                    const AppBarSession(),
+                      const AppBarSession(),
 
-                    const SizedBox(height: 38),
+                      const SizedBox(height: 38),
 
-                    logo(),
+                      logo(),
 
-                    const SizedBox(height: 40),
+                      const SizedBox(height: 32),
 
-                    headerTitle(),
+                      headerTitle(),
 
-                    const SizedBox(height: 15),
+                      const SizedBox(height: 15),
 
-                    ActionCard(
-                      onTap: () => context.navigateToNext(ScannerScreen()),
-                      title: "Start Stocktaking",
-                      subtitle: "Begin Counting Inventory Items",
-                    ),
+                      ActionCard(
+                        onTap: () {
+                          final currentState = context
+                              .read<FetchStockBloc>()
+                              .state;
 
-                    syncWatcher(),
+                          if (currentState is! FetchStockProgress) {
+                            context.read<ShopFrontConnectionBloc>().add(
+                              ConnectToShopfrontEvent(
+                                ip: AppGlobals.instance.currentHostIp ?? "",
+                                shopName: AppGlobals.instance.shopfront ?? "",
+                              ),
+                            );
+                          }
 
-                    const SizedBox(height: 100),
-                  ],
+                          context.navigateToNext(const ScannerScreen());
+                        },
+                        title: "Start Stocktaking",
+                        subtitle: "Begin Counting Inventory Items",
+                      ),
+
+                      syncWatcher(),
+
+                      // Ensure enough space at bottom so drawer doesn't cover content completely
+                      const SizedBox(height: 120),
+                    ],
+                  ),
                 ),
-                GlassDrawer(),
+
+                // 2. Drawer sits on top
+                const GlassDrawer(),
               ],
             ),
           ),
@@ -129,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 25),
         width: double.infinity,
         height: 75,
-        child: Image.asset("assets/images/trademark.png", fit: BoxFit.fill),
+        child: Image.asset("assets/images/trademark.png", fit: BoxFit.contain), // Changed to contain for safety
       ),
     );
   }
@@ -137,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget headerTitle() {
     return ShaderMask(
       shaderCallback: (bounds) {
-        return LinearGradient(
+        return const LinearGradient(
           begin: Alignment.bottomLeft,
           end: Alignment.topRight,
           colors: [
@@ -150,9 +172,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ).createShader(bounds);
       },
-
       blendMode: BlendMode.srcIn,
-      child: Text(
+      child: const Text(
         "Welcome to RM - Mobile",
         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
         textAlign: TextAlign.center,
@@ -163,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget syncWatcher() {
     return BlocListener<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
       listenWhen: (previous, current) =>
-          previous is! ConnectedToShopfront && current is ConnectedToShopfront,
+      previous is! ConnectedToShopfront && current is ConnectedToShopfront,
       listener: (context, state) {
         if (state is ConnectedToShopfront) {
           context.read<FetchStockBloc>().add(

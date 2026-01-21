@@ -24,90 +24,71 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
     return Column(
       children: [
         const SizedBox(height: 15),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                //const SizedBox(width: 15),
-                IconButton(
-                  onPressed: () => context.navigateBack(),
-                  icon: Icon(
-                    Icons.arrow_back_ios,
-                    color: kPrimaryColor,
-                    size: 15,
-                  ),
-                ),
-                //const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5), // Added padding
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Left side (Back + Titles)
+              Expanded(
+                child: Row(
                   children: [
-                    Text(
-                      (AppGlobals.instance.shopfront ?? "RM-Shopfront")
-                                  .split('\\')
-                                  .last
-                                  .length >
-                              18
-                          ? "${(AppGlobals.instance.shopfront ?? "RM-Shopfront").split('\\').last.substring(0, 18)}.."
-                          : (AppGlobals.instance.shopfront ?? "RM-Shopfront")
+                    IconButton(
+                      onPressed: () => context.navigateBack(),
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: kPrimaryColor,
+                        size: 18,
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Responsive Shop Name
+                          Text(
+                            (AppGlobals.instance.shopfront ?? "RM-Shopfront")
                                 .split('\\')
                                 .last,
-                      style: getSmartTitle(color: kThirdColor, fontSize: 16),
-                    ),
-                    Text(
-                      "Stocktake List",
-                      // style: getSmartTitle(color: kThirdColor, fontSize: 16),
+                            style: getSmartTitle(color: kThirdColor, fontSize: 16),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const Text(
+                            "Stocktake List",
+                            style: TextStyle(fontSize: 12, color: kGreyColor),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
-            Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 3),
-                  child: IconButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => StocktakeDeleteConfirmationDialog(
-                          onConfirm: () {
-                            LocalDbDAO.instance.deleteAllStocktake();
-                            context.read<FetchingStocktakeListBloc>().add(
-                              FetchStocktakeListEvent(),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                    icon: Icon(
-                      CupertinoIcons.delete_solid,
-                      size: 18,
-                      color: kErrorColor,
-                    ),
-                  ),
-                ),
-                //const SizedBox(width: 3),
-                Text(
-                  "1-50 of 4,795",
-                  style: TextStyle(color: kPrimaryColor, fontSize: 12),
-                ),
-                const SizedBox(width: 10),
-                Icon(Icons.arrow_back_ios_new, size: 12, color: kPrimaryColor),
-                const SizedBox(width: 15),
-                Icon(Icons.arrow_forward_ios, size: 12, color: kPrimaryColor),
+              ),
 
-                const SizedBox(width: 15),
-              ],
-            ),
-          ],
+              // Right side (Controls)
+              const Row(
+                mainAxisSize: MainAxisSize.min, // Keep compact
+                children: [
+                  Text(
+                    "1-50 of 4,795", // This should likely be dynamic later
+                    style: TextStyle(color: kPrimaryColor, fontSize: 12),
+                  ),
+                  SizedBox(width: 10),
+                  Icon(Icons.arrow_back_ios_new, size: 14, color: kPrimaryColor),
+                  SizedBox(width: 15),
+                  Icon(Icons.arrow_forward_ios, size: 14, color: kPrimaryColor),
+                  SizedBox(width: 10),
+                ],
+              ),
+            ],
+          ),
         ),
+        const SizedBox(height: 5),
         const Divider(
           indent: 15,
           endIndent: 15,
-          thickness: 0.3,
-          color: Colors.grey,
-          height: 20,
+          thickness: 0.5,
+          color: kGreyColor,
         ),
       ],
     );

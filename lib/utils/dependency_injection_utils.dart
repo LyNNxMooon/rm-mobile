@@ -24,6 +24,7 @@ import '../features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import '../features/stocktake/domain/use_cases/commit_stocktake.dart';
 import '../features/stocktake/domain/use_cases/count_and_save_to_localDb.dart';
 import '../features/stocktake/domain/use_cases/fetch_all_stocktake_list.dart';
+import '../features/stocktake/domain/use_cases/fetch_counting_stock.dart';
 import '../features/stocktake/models/stocktake_model.dart';
 import '../features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 
@@ -55,6 +56,7 @@ Future<void> init() async {
   sl.registerFactory(() => FetchStockBloc(fetchStockData: sl()));
   sl.registerFactory(() => StockListBloc(getPaginatedStock: sl()));
   sl.registerFactory(() => FilterOptionsBloc(getFilterOptions: sl()));
+  sl.registerFactory(() => ScannerBloc(fetchCountingStock: sl()));
 
   //Repos
   sl.registerLazySingleton<HomeRepo>(() => HomeScreenModels());
@@ -78,4 +80,5 @@ Future<void> init() async {
   sl.registerLazySingleton(() => FetchStockData(sl()));
   sl.registerLazySingleton(() => GetPaginatedStock(sl()));
   sl.registerLazySingleton(() => GetFilterOptions(sl()));
+  sl.registerLazySingleton(() => FetchCountingStock(sl()));
 }

@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:intl/intl.dart';
@@ -15,11 +18,13 @@ import '../../../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/images.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../entities/vos/filter_criteria.dart';
 import '../BLoC/stock_lookup_bloc.dart';
 import '../BLoC/stock_lookup_events.dart';
 import '../widgets/filter_chip_row.dart';
 import '../widgets/search_filter.dart';
 import '../widgets/stock_lookup_appbar.dart';
+import '../widgets/stock_lookup_scanner.dart';
 import '../widgets/stocklookup_filter_dialog.dart';
 import '../widgets/sync_info_widget.dart';
 
@@ -50,6 +55,13 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   String _selectedFilterChip = "Description"; // UI Label
   String _dbFilterCol = "description"; // DB Column Name
   String _searchQuery = "";
+
+  final AudioPlayer _audioPlayer = AudioPlayer()
+    ..setReleaseMode(ReleaseMode.stop);
+
+  final _beepSource = AssetSource('audio/beep.mp3');
+
+  bool isScanner = false;
 
   @override
   void initState() {
@@ -100,108 +112,313 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: kBgColor,
       body: SafeArea(
-        child: Column(
-          // shrinkWrap: true,
-          // physics: const BouncingScrollPhysics(),
+        child: Stack(
           children: [
-            const SizedBox(height: 25),
-            StockLookupAppbar(),
-            const Divider(
-              indent: 15,
-              endIndent: 15,
-              thickness: 0.8,
-              color: kGreyColor,
-              height: 40,
-            ),
-            SyncInfoWidget(),
-            SearchFilterBar(
-              onChanged: (value) {
-                _searchQuery = value;
-                _debouncer.run(() {
-                  // Search using the currently selected chip (except Qty)
-                  String searchCol = _dbFilterCol == "quantity"
-                      ? "description"
-                      : _dbFilterCol;
-            
-                  context.read<StockListBloc>().add(
-                    FetchFirstPageEvent(
-                      query: _searchQuery,
-                      filterColumn: searchCol,
-                      sortColumn: _dbFilterCol,
-                    ),
-                  );
-                });
-              },
-              onFilterTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return const StocklookupFilterDialog();
+            Column(
+              // shrinkWrap: true,
+              // physics: const BouncingScrollPhysics(),
+              children: [
+                const SizedBox(height: 25),
+                const StockLookupAppbar(), // Added const
+                const SizedBox(height: 10),
+                const Divider(
+                  indent: 15,
+                  endIndent: 15,
+                  thickness: 0.5,
+                  color: kGreyColor,
+                ),
+                const SyncInfoWidget(), // Added const
+                // Chip states and Count Text
+                BlocBuilder<StockListBloc, StockListState>(
+                  builder: (context, state) {
+                    final isAscending = state is StockListLoaded
+                        ? state.isAscending
+                        : true;
+                    if (state is StockListLoaded) {
+                      return Padding(
+                        padding: const EdgeInsets.only(
+                          left: 15,
+                          right: 15,
+                          bottom: 18,
+                          top: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: FilterChipRow(
+                                selectedFilter: _selectedFilterChip,
+                                isAscending: isAscending,
+                                onFilterChanged: (newLabel) {
+                                  setState(() {
+                                    _selectedFilterChip = newLabel;
+                                    _dbFilterCol = _mapChipToColumn(newLabel);
+                                  });
+
+                                  String searchCol = _dbFilterCol == "quantity"
+                                      ? "description"
+                                      : _dbFilterCol;
+
+                                  final currentState = context
+                                      .read<StockListBloc>()
+                                      .state;
+                                  FilterCriteria? currentFilters;
+                                  if (currentState is StockListLoaded) {
+                                    currentFilters = currentState.activeFilters;
+                                  }
+
+                                  context.read<StockListBloc>().add(
+                                    FetchFirstPageEvent(
+                                      query: _searchQuery,
+                                      filterColumn: searchCol,
+                                      sortColumn: _dbFilterCol,
+                                      filters: currentFilters,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "${state.stocks.length} of ${NumberFormat('#,###').format(state.totalCount)}",
+                              style: const TextStyle(
+                                color: kGreyColor,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return  Padding(
+                      padding: const EdgeInsets.only(
+                        left: 15,
+                        right: 15,
+                        bottom: 18,
+                        top: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: FilterChipRow(
+                              selectedFilter: _selectedFilterChip,
+                              isAscending: isAscending,
+                              onFilterChanged: (newLabel) {
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "0 of ${NumberFormat('#,###').format(0)}",
+                            style: const TextStyle(
+                              color: kGreyColor,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   },
-                );
-              },
+                ),
+
+                //Lookup Scanner
+                scanner(),
+
+                //Item lists state
+                itemsList(),
+              ],
             ),
-            
-            // Chip states and Count Text
-            BlocBuilder<StockListBloc, StockListState>(
-              builder: (context, state) {
-                final isAscending = state is StockListLoaded
-                    ? state.isAscending
-                    : true;
-                if (state is StockListLoaded) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 15,
-                      vertical: 20,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: FilterChipRow(
-                            selectedFilter: _selectedFilterChip,
-                            isAscending: isAscending,
-                            onFilterChanged: (newLabel) {
-                              setState(() {
-                                _selectedFilterChip = newLabel;
-                                _dbFilterCol = _mapChipToColumn(newLabel);
-                              });
-            
-                              // Search logic: If Qty selected, search disabled or defaults to Desc?
-                              // Assuming search applies to currently selected sort column if possible
-                              String searchCol = _dbFilterCol == "quantity"
-                                  ? "description"
-                                  : _dbFilterCol;
-            
-                              context.read<StockListBloc>().add(
-                                FetchFirstPageEvent(
-                                  query: _searchQuery,
-                                  filterColumn:
-                                      searchCol, // Search in this column
-                                  sortColumn:
-                                      _dbFilterCol, // Sort by this column
-                                ),
-                              );
-                            },
+
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: AnimatedPadding(
+                duration: const Duration(milliseconds: 170),
+                curve: Curves.easeOut,
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    // Glass blur background
+                    ClipRect(
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
+                        child: Container(
+                          height: 100,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.white.withOpacity(0.0),
+                                Colors.white.withOpacity(0.5),
+                                Colors.white.withOpacity(0.9),
+                              ],
+                              stops: const [0.0, 0.4, 1.0],
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "${state.stocks.length} of ${NumberFormat('#,###').format(state.totalCount)}",
-                          style: TextStyle(color: kGreyColor, fontSize: 11),
-                        ),
-                      ],
+                      ),
                     ),
-                  );
-                }
-                return const SizedBox();
-              },
+
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        bottom: 42,
+                      ),
+                      child: _buildGlassSearchBar(),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            
-            //Item lists state
-            itemsList(),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget scanner() {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.topCenter,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, -0.08),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: isScanner
+            ? StockLookupScanner(
+                key: const ValueKey('scanner'),
+                function: (capture) async {
+                  final String currentBarcode =
+                      capture.barcodes.first.rawValue ?? "";
+
+                  final barcodes = capture.barcodes;
+                  if (barcodes.isEmpty) return;
+
+                  HapticFeedback.vibrate();
+                  HapticFeedback.heavyImpact();
+                  await _audioPlayer.stop();
+                  _audioPlayer.play(_beepSource);
+
+                  if (mounted) {
+                    _searchQuery = currentBarcode;
+
+                    final currentState = context.read<StockListBloc>().state;
+                    FilterCriteria? currentFilters;
+                    if (currentState is StockListLoaded) {
+                      currentFilters = currentState.activeFilters;
+                    }
+
+                    context.read<StockListBloc>().add(
+                      FetchFirstPageEvent(
+                        query: _searchQuery,
+                        filterColumn: "Barcode",
+                        sortColumn: _dbFilterCol,
+                        filters: currentFilters,
+                      ),
+                    );
+                  }
+                },
+              )
+            : const SizedBox(key: ValueKey('empty')),
+      ),
+    );
+  }
+
+  Widget _buildGlassSearchBar() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          height: 56,
+          decoration: BoxDecoration(
+            border: Border.all(color: kGreyColor.withOpacity(0.6), width: 0.6),
+            color: Colors.white.withOpacity(0.65),
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: SearchFilterBar(
+            onChanged: (value) {
+              _searchQuery = value;
+              _debouncer.run(() {
+                final searchCol = _dbFilterCol == "quantity"
+                    ? "description"
+                    : _dbFilterCol;
+
+                final currentState = context.read<StockListBloc>().state;
+                FilterCriteria? currentFilters;
+                if (currentState is StockListLoaded) {
+                  currentFilters = currentState.activeFilters;
+                }
+
+                context.read<StockListBloc>().add(
+                  FetchFirstPageEvent(
+                    query: _searchQuery,
+                    filterColumn: searchCol,
+                    sortColumn: _dbFilterCol,
+                    filters: currentFilters,
+                  ),
+                );
+              });
+            },
+            onFilterTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => const StocklookupFilterDialog(),
+              );
+            },
+            onScannerTap: () {
+              FocusScope.of(context).unfocus();
+              setState(() {
+                isScanner = !isScanner;
+              });
+
+              if (!isScanner) {
+                _searchQuery = "";
+                final currentState = context.read<StockListBloc>().state;
+                FilterCriteria? currentFilters;
+                if (currentState is StockListLoaded) {
+                  currentFilters = currentState.activeFilters;
+                }
+
+                context.read<StockListBloc>().add(
+                  FetchFirstPageEvent(
+                    query: "",
+                    filterColumn: "Barcode",
+                    sortColumn: _dbFilterCol,
+                    filters: currentFilters,
+                  ),
+                );
+              }
+            },
+          ),
         ),
       ),
     );
@@ -221,10 +438,15 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               child: ListView.separated(
                 controller: _scrollController,
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 15),
+                padding: const EdgeInsets.only(
+                  left: 15,
+                  right: 15,
+                  top: 0,
+                  bottom: 100,
+                ),
                 itemCount: state.hasReachedMax
                     ? state.stocks.length
-                    : state.stocks.length + 1, // +1 for loading spinner
+                    : state.stocks.length + 1,
                 separatorBuilder: (ctx, i) => const SizedBox(height: 7),
                 itemBuilder: (context, index) {
                   if (index >= state.stocks.length) {
@@ -261,7 +483,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         ),
         const SizedBox(height: 30),
         Text(
-          "Your stocks are not ready yet...",
+          "Your stock(s) are not ready yet...",
           style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
         ),
         const SizedBox(height: 100),
@@ -287,7 +509,10 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           ),
           child: ModernLoadingBar(),
         ),
-        Text("This may take a few seconds.", style: TextStyle(fontSize: 11)),
+        const Text(
+          "This may take a few seconds.",
+          style: TextStyle(fontSize: 11),
+        ),
         const SizedBox(height: 60),
       ],
     );
@@ -295,13 +520,10 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
   Widget itemTile(StockVO stock, int index) {
     return RepaintBoundary(
-      // Optimizes rendering for long lists
       child: AnimationConfiguration.staggeredList(
         position: index,
-        duration: const Duration(milliseconds: 650),
-
+        duration: const Duration(milliseconds: 500),
         child: ScaleAnimation(
-          //verticalOffset: 50.0,
           child: FadeInAnimation(
             child: GestureDetector(
               onTap: () {
@@ -311,7 +533,6 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 decoration: BoxDecoration(
                   color: kSecondaryColor,
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
-
                   boxShadow: [
                     BoxShadow(
                       color: kThirdColor.withOpacity(0.05),
@@ -328,86 +549,86 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: Hero(
-                              tag: 'stock_image_${stock.stockID}',
-                              child: CachedNetworkImage(
-                                fit: BoxFit.fill,
-                                imageUrl: stock.imageUrl ?? "",
-                                placeholder: (_, url) => Image.asset(
-                                  overviewPlaceholder,
-                                  fit: BoxFit.fill,
-                                ),
-                                errorWidget: (_, url, error) => Image.asset(
-                                  overviewPlaceholder,
-                                  fit: BoxFit.fill,
-                                ),
-                              ),
+                    // IMAGE
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Hero(
+                          tag: 'stock_image_${stock.stockID}',
+                          child: CachedNetworkImage(
+                            fit: BoxFit.fill,
+                            imageUrl: stock.imageUrl ?? "",
+                            placeholder: (_, url) => Image.asset(
+                              overviewPlaceholder,
+                              fit: BoxFit.fill,
+                            ),
+                            errorWidget: (_, url, error) => Image.asset(
+                              overviewPlaceholder,
+                              fit: BoxFit.fill,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 15),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.54,
+                      ),
+                    ),
+                    const SizedBox(width: 15),
 
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      stock.description ?? " - ",
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: getSmartTitle(
-                                        color: kThirdColor,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
+                    // TEXT COLUMN (Responsive Fix: Wrapped in Expanded)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Allow horizontal scrolling if text is extremely long,
+                          // but constrained within the Expanded width.
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                Text(
+                                  stock.description ?? " - ",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: getSmartTitle(
+                                    color: kThirdColor,
+                                    fontSize: 12,
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                            const SizedBox(height: 3),
-                            Text(
-                              stock.barcode ?? " - ",
-                              style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 10,
-                                color: Colors.blueGrey,
-                              ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            stock.barcode ?? " - ",
+                            maxLines: 1, // Ensure no wrapping vertically
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 10,
+                              color: kPrimaryColor,
+                              fontWeight: FontWeight.w600,
                             ),
-                            const SizedBox(height: 3),
-                            Text(
-                              "Custom1: ${stock.custom1 ?? " - "}",
-                              style: getSmartTitle(
-                                color: kPrimaryColor,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
 
+                    const SizedBox(width: 8), // Gap before quantity
+                    // QUANTITY
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: stock.quantity > 0
+                            ? Colors.blue.withOpacity(0.1)
+                            : stock.quantity == 0
+                            ? Colors.yellow.withOpacity(0.4)
+                            : Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -423,11 +644,14 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           }
                           return qtyString;
                         }(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w900,
-                          color: kPrimaryColor,
-
+                          color: stock.quantity > 0
+                              ? kPrimaryColor
+                              : stock.quantity == 0
+                              ? kThirdColor
+                              : kErrorColor,
                           letterSpacing: -0.5,
                         ),
                         maxLines: 1,

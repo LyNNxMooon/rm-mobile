@@ -5,6 +5,7 @@ import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/local_db/sqlite/sqlite_constants.dart';
 import 'package:sqflite/sqflite.dart';
+import '../../entities/vos/filter_criteria.dart';
 import '../../utils/log_utils.dart';
 
 class SQLiteDAOImpl extends LocalDbDAO {
@@ -208,6 +209,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
     required bool ascending,
     required int limit,
     required int offset,
+    FilterCriteria? filters,
   }) async {
     try {
       final db = _database!;
@@ -222,6 +224,39 @@ class SQLiteDAOImpl extends LocalDbDAO {
         // Use LIKE for partial matches
         whereClause += ' AND $filterColumn LIKE ?';
         args.add('%$query%');
+      }
+
+      //ADD FILTER LOGIC (New)
+      if (filters != null) {
+        if (filters.dept != null) {
+          whereClause += ' AND dept_name = ?';
+          args.add(filters.dept);
+        }
+        if (filters.cat1 != null) {
+          whereClause += ' AND cat1 = ?';
+          args.add(filters.cat1);
+        }
+        if (filters.cat2 != null) {
+          whereClause += ' AND cat2 = ?';
+          args.add(filters.cat2);
+        }
+        if (filters.cat3 != null) {
+          whereClause += ' AND cat3 = ?';
+          args.add(filters.cat3);
+        }
+        // Text fields use LIKE for partial matching
+        if (filters.supplier != null && filters.supplier!.isNotEmpty) {
+          whereClause += ' AND supplier LIKE ?';
+          args.add('%${filters.supplier}%');
+        }
+        if (filters.custom1 != null && filters.custom1!.isNotEmpty) {
+          whereClause += ' AND custom1 LIKE ?';
+          args.add('%${filters.custom1}%');
+        }
+        if (filters.custom2 != null && filters.custom2!.isNotEmpty) {
+          whereClause += ' AND custom2 LIKE ?';
+          args.add('%${filters.custom2}%');
+        }
       }
 
       //Get filtered count (Parallel query for performance)
@@ -275,11 +310,44 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<String?> getAppConfig(String key, {String? shopfront}) async {
+    final db = _database!;
+    final String effectiveKey = shopfront != null ? "${key}_$shopfront" : key;
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'AppConfig',
+      where: 'key = ?',
+      whereArgs: [effectiveKey],
+    );
+
+    if (maps.isNotEmpty) {
+      return maps.first['value'] as String;
+    }
+    return null;
+  }
+
   //Save Data
+
+  @override
+  Future<void> saveAppConfig(
+    String key,
+    String value, {
+    String? shopfront,
+  }) async {
+    final db = _database!;
+    final String effectiveKey = shopfront != null ? "${key}_$shopfront" : key;
+    await db.insert('AppConfig', {
+      'key': effectiveKey,
+      'value': value,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
   @override
   Future<void> saveCountedStock(Map<String, dynamic> stockData) async {
     try {
       final db = _database!;
+
       await db.insert(
         'Stocktake',
         stockData,
@@ -477,9 +545,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
       final batch = db.batch();
 
       for (final id in stockIds) {
-        batch.update(
+        // Use delete instead of update to remove the records
+        batch.delete(
           'Stocktake',
-          {'is_synced': 1},
           where: 'stock_id = ? AND shopfront = ?',
           whereArgs: [id, shopfront],
         );
@@ -487,10 +555,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       await batch.commit(noResult: true);
 
-      logger.d('Successfully marked commited stocktake list');
+      logger.d('Successfully deleted committed stocktake records');
     } catch (error) {
-      logger.e('Error updating stocktake list in local db: $error');
-      return Future.error("Error updating stocktake list: $error");
+      logger.e('Error deleting stocktake list in local db: $error');
+      return Future.error("Error deleting stocktake records: $error");
     }
   }
 }

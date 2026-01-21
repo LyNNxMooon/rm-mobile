@@ -34,16 +34,17 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
               child: TextField(
                 onChanged: onChanged,
                 decoration: InputDecoration(
-                  hintText: "Search by name or SKU...",
-                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  hintText: "Search name or SKU...", // Shortened hint
+                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 13),
                   prefixIcon: Icon(
                     Icons.search,
                     color: Colors.blue[700],
-                    size: 24,
+                    size: 20,
                   ),
                   filled: true,
                   fillColor: kSecondaryColor,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  isDense: true, // Compact
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
@@ -60,8 +61,9 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 5),
+          const SizedBox(width: 8),
 
+          // Filter Button
           Material(
             color: kSecondaryColor,
             borderRadius: BorderRadius.circular(12),
@@ -69,19 +71,20 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
               onTap: onFilterTap,
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                height: 48,
+                height: 42, // Matched height
                 width: 42,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey[300]!, width: 1),
                 ),
-                child: Icon(Icons.tune, color: Colors.blueGrey[800], size: 24),
+                child: Icon(Icons.tune, color: Colors.blueGrey[800], size: 20),
               ),
             ),
           ),
 
-          const SizedBox(width: 5),
+          const SizedBox(width: 8),
 
+          // History Button
           Material(
             color: kSecondaryColor,
             borderRadius: BorderRadius.circular(12),
@@ -89,13 +92,13 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
               onTap: () {},
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                height: 48,
+                height: 42,
                 width: 42,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey[300]!, width: 1),
                 ),
-                child: Icon(Icons.history, color: Colors.blueGrey[800], size: 24),
+                child: Icon(Icons.history, color: Colors.blueGrey[800], size: 20),
               ),
             ),
           ),

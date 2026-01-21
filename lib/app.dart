@@ -101,6 +101,7 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<FetchStockBloc>(create: (_) => sl<FetchStockBloc>()),
         BlocProvider<StockListBloc>(create: (_) => sl<StockListBloc>()),
         BlocProvider<FilterOptionsBloc>(create: (_) => sl<FilterOptionsBloc>()),
+        BlocProvider<ScannerBloc>(create: (_) => sl<ScannerBloc>()),
       ],
       child: MaterialApp(
         title: 'RM-Mobile',

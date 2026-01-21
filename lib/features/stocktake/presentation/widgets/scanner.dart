@@ -1,10 +1,14 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../utils/log_utils.dart';
+import '../BLoC/stocktake_events.dart';
 import '../screens/scanner_screen.dart';
 
 class Scanner extends StatefulWidget {
@@ -17,10 +21,17 @@ class Scanner extends StatefulWidget {
 }
 
 class _ScannerState extends State<Scanner> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _audioPlayer = AudioPlayer()
+    ..setReleaseMode(ReleaseMode.stop);
+
+  final _beepSource = AssetSource('audio/beep.mp3');
+
+  String? _lastScannedBarcode;
 
   @override
   Widget build(BuildContext context) {
+    // Dynamic height based on screen size, but ensuring minimum visibility
+    // 25% of available height is often better than 20% for readability
     return SizedBox(
       height: widget.constraints.maxHeight * 0.2,
       child: isScan
@@ -30,27 +41,66 @@ class _ScannerState extends State<Scanner> {
                 children: [
                   MobileScanner(
                     controller: scannerController,
-                    tapToFocus: true,
+                    // returnImage: false, // Ensure this matches controller init in main screen
                     onDetect: (capture) async {
+                      // ... (Your logic kept intact) ...
+                      final String currentBarcode =
+                          capture.barcodes.first.rawValue ?? "";
+
                       final barcodes = capture.barcodes;
-                      //barcodes.last.rawValue.toString()
+                      if (barcodes.isEmpty) return;
 
-                      logger.d(capture);
-                      await HapticFeedback.vibrate();
+                      logger.d(capture.barcodes);
+                      HapticFeedback.vibrate();
+                      HapticFeedback.heavyImpact();
+                      await _audioPlayer.stop();
+                      _audioPlayer.play(_beepSource);
 
-                      // if (await Vibration.hasVibrator()) {
-                      //   Vibration.vibrate();
-                      // }
+                      if (isManualCount) {
+                        final String code =
+                            capture.barcodes.first.rawValue ?? "";
 
-                      await HapticFeedback.heavyImpact();
+                        if (context.mounted) {
+                          context.read<ScannerBloc>().add(
+                            FetchStockDetails(barcode: code),
+                          );
+                        }
 
-                      await _audioPlayer.play(AssetSource('audio/beep.mp3'));
-                      if (!isManualCount) {
+                        qtyFocusNode.requestFocus();
+                        qtyController.selection = TextSelection(
+                          baseOffset: 0,
+                          extentOffset: qtyController.text.length,
+                        );
+                      } else {
                         setState(() {
-                          int currentQty =
-                              int.tryParse(qtyController.text) ?? 0;
-                          qtyController.text = (currentQty + 1).toString();
+                          if (_lastScannedBarcode == currentBarcode) {
+                            int currentQty =
+                                int.tryParse(qtyController.text) ?? 0;
+                            qtyController.text = (currentQty + 1).toString();
+                          } else {
+                            if (context.mounted) {
+                              context.read<ScannerBloc>().add(
+                                FetchStockDetails(barcode: currentBarcode),
+                              );
+                            }
+                            _lastScannedBarcode = currentBarcode;
+                            qtyController.text = "1";
+                          }
                         });
+
+                        if (countingStock != null) {
+                          if (context.mounted) {
+                            context.read<StocktakeBloc>().add(
+                              Stocktake(
+                                qty: qtyController.text,
+                                stock: countingStock!,
+                              ),
+                            );
+                          }
+                        }
+                        logger.d(
+                          "Stocktake saved with : ${qtyController.text}",
+                        );
                       }
                     },
                   ),
@@ -80,7 +130,6 @@ class _ScannerState extends State<Scanner> {
       decoration: BoxDecoration(
         gradient: kGColor,
         borderRadius: const BorderRadius.all(Radius.circular(10)),
-
         boxShadow: [
           BoxShadow(
             color: kThirdColor.withOpacity(0.05),
@@ -92,19 +141,24 @@ class _ScannerState extends State<Scanner> {
       ),
       child: Center(
         child: SingleChildScrollView(
+          // Prevent overflow if screen extremely short
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 CupertinoIcons.barcode_viewfinder,
                 weight: 1,
-                fontWeight: FontWeight.w100,
-                size: 100,
+                size: 80, // Slightly reduced to fit better
                 color: kSecondaryColor,
               ),
-              Text(
+              const SizedBox(height: 10),
+              const Text(
                 "Scan Barcode",
-                style: TextStyle(fontSize: 16, color: kSecondaryColor),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: kSecondaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),

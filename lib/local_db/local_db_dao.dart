@@ -1,4 +1,5 @@
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
+import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 
 import '../entities/response/paginated_stock_response.dart';
@@ -37,8 +38,10 @@ abstract class LocalDbDAO {
     required bool ascending,
     required int limit,
     required int offset,
+    FilterCriteria? filters
   });
   Future<List<String>> getDistinctValues(String columnName);
+  Future<String?> getAppConfig(String key);
 
   // Setters to save data
   Future<void> saveCountedStock(Map<String, dynamic> stockData);
@@ -51,6 +54,8 @@ abstract class LocalDbDAO {
 
   Future<void> addNetworkPath(String path, String shopfront, String hostName);
   Future<void> insertStocks(List<StockVO> stocks, String shopfront);
+  Future<void> saveAppConfig(String key, String value);
+
 
   //Update Data
   Future<void> updateShopfrontByIp({

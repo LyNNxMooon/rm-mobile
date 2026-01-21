@@ -92,10 +92,15 @@ class HomeScreenModels implements HomeRepo {
     String mobileName,
   ) async {
     try {
+      final String shopKey = selectedShopfront;
+
+      String? lastSyncTime = await LocalDbDAO.instance.getAppConfig(shopKey);
+
       final String jsonContent = _StockRequestJsonBuilder.buildJson(
         mobileID,
         mobileName,
         selectedShopfront,
+        lastSyncTime,
       );
 
       final now = DateTime.now();
@@ -110,7 +115,7 @@ class HomeScreenModels implements HomeRepo {
           "${_pad(now.minute)}"
           "${_pad(now.second)}";
 
-      final String fileName = "${mobileName}_request_$timestamp.json";
+      final String fileName = "${mobileID}_request_$timestamp.json";
 
       await LanNetworkServiceImpl.instance.sendStockRequest(
         address: ipAddress,
@@ -119,6 +124,7 @@ class HomeScreenModels implements HomeRepo {
         password: password ?? "",
         fileName: fileName,
         fileContent: jsonContent,
+        mobileID: mobileID,
       );
 
       await LocalDbDAO.instance.updateShopfrontByIp(
@@ -155,9 +161,10 @@ class HomeScreenModels implements HomeRepo {
     String fullPath,
     String? username,
     String? password,
-    String mobileName,
+    String mobileID,
+    String shopfront,
   ) async* {
-    final sanitizedName = mobileName.replaceAll(" ", "_");
+    final sanitizedName = mobileID.replaceAll(" ", "_");
 
     yield SyncStatus(0, 0, "Waiting for agent...");
 
@@ -167,7 +174,7 @@ class HomeScreenModels implements HomeRepo {
       username: username ?? "Guest",
       password: password ?? "",
       fileNamePattern: "${sanitizedName}_stocklookup_part1_of_",
-      maxRetries: 60
+      maxRetries: 60,
     );
 
     if (firstFile == null) {
@@ -188,9 +195,15 @@ class HomeScreenModels implements HomeRepo {
 
     yield SyncStatus(0, totalParts * 10000, "Starting Sync...");
 
-    await LocalDbDAO.instance.clearStocksForShop(
-      AppGlobals.instance.shopfront ?? "",
-    );
+    final String shopKey = shopfront;
+    // IMPORTANT: Only clear the whole database if it is a FULL SYNC
+    // If it's a Delta Sync, do NOT call clearStocksForShop.
+    final String? lastSync = await LocalDbDAO.instance.getAppConfig(shopKey);
+    if (lastSync == null || lastSync.isEmpty) {
+      await LocalDbDAO.instance.clearStocksForShop(
+        AppGlobals.instance.shopfront ?? "",
+      );
+    }
 
     for (int i = 1; i <= totalParts; i++) {
       String partPattern = "part${i}_of_${totalParts}_$timestamp";
@@ -241,6 +254,8 @@ class HomeScreenModels implements HomeRepo {
         "Syncing part $i of $totalParts...",
       );
     }
+    final String completionTime = DateTime.now().toString();
+    await LocalDbDAO.instance.saveAppConfig(shopKey, completionTime);
   }
 }
 
@@ -249,6 +264,7 @@ class _StockRequestJsonBuilder {
     String mobileId,
     String mobileName,
     String shopfrontName,
+    String? lastSync,
   ) {
     final requestedDate = DateTime.now();
 
@@ -257,6 +273,7 @@ class _StockRequestJsonBuilder {
       "mobile_device_name": mobileName,
       "shopfront": shopfrontName,
       "date_requested": requestedDate.toString(),
+      "last_sync_timestamp": lastSync ?? "",
     };
 
     return const JsonEncoder.withIndent('  ').convert(finalMap);

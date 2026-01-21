@@ -52,12 +52,12 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
               builder: (_) => const LoadingStocktakeDialog(),
             );
           }
-    
+
           if (state is ErrorCommitingStocktake) {
             context.navigateBack();
             showErrorDialog(context, message: state.message);
           }
-    
+
           if (state is CommittedStocktake) {
             context.navigateBack();
             showTopSnackBar(
@@ -71,26 +71,27 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         },
         child: FloatingActionButton.extended(
           onPressed: () async {
-    
             final unSyncedList = await LocalDbDAO.instance
                 .getUnsyncedStocks(AppGlobals.instance.shopfront ?? "");
-    
+
             if (unSyncedList.isNotEmpty) {
-              context.read<CommittingStocktakeBloc>().add(
-                CommittingStocktakeEvent(),
-              );
+              if (context.mounted) {
+                context.read<CommittingStocktakeBloc>().add(
+                  CommittingStocktakeEvent(),
+                );
+              }
             } else {
-    
-              showTopSnackBar(
-                Overlay.of(context),
-                const CustomSnackBar.info(message: "No unsynced stocks found."),
-              );
+              if (context.mounted) {
+                showTopSnackBar(
+                  Overlay.of(context),
+                  const CustomSnackBar.info(message: "No unsynced stocks found."),
+                );
+              }
             }
           },
           elevation: 4,
           backgroundColor: kPrimaryColor,
-    
-          label: Text(
+          label: const Text(
             "Send Stocktake to RM",
             style: TextStyle(
               color: kSecondaryColor,
@@ -102,11 +103,10 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
       ),
       backgroundColor: kBgColor,
       body: SafeArea(
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
+        child: Column(
           children: [
-            StocktakeListAppBar(),
-            const SizedBox(height: 10),
+            const StocktakeListAppBar(),
+            const SizedBox(height: 8),
             StocktakeSearchAndFilterBar(
               onChanged: (value) {},
               onFilterTap: () {
@@ -119,8 +119,9 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
               },
             ),
             const SizedBox(height: 10),
-            
-            itemsList(),
+
+            // Expanded List to take remaining space
+            Expanded(child: itemsList()),
           ],
         ),
       ),
@@ -131,32 +132,24 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     return BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
       builder: (context, state) {
         if (state is LoadingStocktakeList) {
-          return Padding(
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).size.height * 0.3,
-            ),
-            child: Center(child: CupertinoActivityIndicator()),
-          );
+          return const Center(child: CupertinoActivityIndicator());
         } else if (state is StocktakeListError) {
-          return Padding(
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).size.height * 0.3,
-            ),
-            child: Center(
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
               child: Text(
                 state.message,
+                textAlign: TextAlign.center,
                 style: getSmartTitle(color: kErrorColor, fontSize: 16),
               ),
             ),
           );
         } else if (state is StocktakeListLoaded) {
           if (state.stocktakeList.isEmpty) {
-            return Padding(
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).size.height * 0.23,
-              ),
-              child: Center(
+            return Center(
+              child: SingleChildScrollView(
                 child: Column(
+                  //mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(
                       width: 100,
@@ -166,6 +159,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                         fit: BoxFit.fill,
                       ),
                     ),
+                    const SizedBox(height: 20),
                     Text(
                       "Your Stocktake list is empty!",
                       style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
@@ -175,34 +169,29 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
               ),
             );
           } else {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: AnimationLimiter(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 7),
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: state.stocktakeList.length,
-                  itemBuilder: (context, index) {
-                    return itemTile(state.stocktakeList[index], index);
-                  },
-                ),
+            return AnimationLimiter(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(15, 0, 15, 80), // Bottom padding for FAB
+                separatorBuilder: (context, index) => const SizedBox(height: 7),
+                physics: const BouncingScrollPhysics(),
+                itemCount: state.stocktakeList.length,
+                itemBuilder: (context, index) {
+                  return itemTile(state.stocktakeList[index], index);
+                },
               ),
             );
           }
         } else {
-          return SizedBox();
+          return const SizedBox();
         }
       },
     );
   }
 
   Widget itemTile(CountedStockVO stock, int index) {
-    return AnimationConfiguration.staggeredGrid(
+    return AnimationConfiguration.staggeredList(
       position: index,
-      duration: const Duration(milliseconds: 1000),
-      columnCount: 1,
+      duration: const Duration(milliseconds: 500),
       child: ScaleAnimation(
         child: FadeInAnimation(
           child: Slidable(
@@ -235,6 +224,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                   foregroundColor: kSecondaryColor,
                   icon: Icons.delete,
                   label: 'Delete',
+                  borderRadius: const BorderRadius.horizontal(right: Radius.circular(10)),
                 ),
               ],
             ),
@@ -242,7 +232,6 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
               decoration: BoxDecoration(
                 color: kSecondaryColor,
                 borderRadius: const BorderRadius.all(Radius.circular(10)),
-
                 boxShadow: [
                   BoxShadow(
                     color: kThirdColor.withOpacity(0.05),
@@ -252,44 +241,52 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        stock.description,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: getSmartTitle(color: kThirdColor, fontSize: 12),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        stock.barcode ?? "",
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 10,
-                          color: kGreyColor,
+                  // Responsive Text Column
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          stock.description,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: getSmartTitle(color: kThirdColor, fontSize: 13),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          stock.barcode ?? "",
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 11,
+                            color: kGreyColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
 
+                  const SizedBox(width: 10),
+
+                  // Quantity Badge
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
+                      horizontal: 10,
+                      vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: kPrimaryColor.withOpacity(0.2),
+                      color: kPrimaryColor.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       stock.quantity.toString(),
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w900,
                         color: kPrimaryColor,
                       ),

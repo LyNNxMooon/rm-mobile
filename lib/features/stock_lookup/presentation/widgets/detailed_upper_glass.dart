@@ -61,7 +61,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
+          // Margin handled by parent padding in main screen for better control
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
           decoration: BoxDecoration(
             color: kSecondaryColor.withOpacity(0.1),
@@ -76,10 +76,15 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    widget.barcode,
-                    style: getSmartTitle(color: kSecondaryColor, fontSize: 16),
+                  Expanded( // Responsive Text
+                    child: Text(
+                      widget.barcode,
+                      style: getSmartTitle(color: kSecondaryColor, fontSize: 16), // Increased readability
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -91,84 +96,81 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                     ),
                     child: Text(
                       widget.qty,
-                      style: TextStyle(fontSize: 12, color: kSecondaryColor),
+                      style: const TextStyle(fontSize: 12, color: kSecondaryColor),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 15),
-              // Description
+
+              // Description Field
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center, // Align center vertically
                 children: [
+                  // Label & Icon Group
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 5,
-                        ),
+                        padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
                           color: Colors.green.withOpacity(0.7),
                           borderRadius: BorderRadius.circular(15),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.description,
                           size: 15,
                           color: kSecondaryColor,
                         ),
                       ),
-
                       const SizedBox(width: 8),
-
-                      Text(
+                      const Text(
                         "Description",
-                        style: TextStyle(fontSize: 12, color: kSecondaryColor),
+                        style: TextStyle(fontSize: 12, color: kSecondaryColor), // Readability
                       ),
                     ],
                   ),
 
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.48,
-                    height: 30,
-                    child: LanguageToolTextField(
-                      controller: _languageToolController,
+                  const SizedBox(width: 10),
 
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: kSecondaryColor,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: "Description",
-                        hintStyle: TextStyle(color: kGreyColor, fontSize: 12),
-                        filled: true,
-                        fillColor: Colors.transparent,
-                        contentPadding: const EdgeInsets.only(
-                          //top: 6,
-                          right: 10,
-                          left: 10,
+                  // Responsive TextField
+                  Expanded(
+                    child: SizedBox(
+                      height: 35, // Slightly taller for better touch target
+                      child: LanguageToolTextField(
+                        controller: _languageToolController,
+                        style: const TextStyle(
+                          fontSize: 13, // Increased font size
+                          color: kSecondaryColor,
                         ),
-                        // The Border styling (Preserved)
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(7),
-                          borderSide: BorderSide(
-                            color: Colors.grey[300]!,
-                            width: 0.5,
+                        decoration: InputDecoration(
+                          hintText: "Description",
+                          hintStyle: const TextStyle(color: kGreyColor, fontSize: 12),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(7),
+                            borderSide: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 0.5,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(7),
+                            borderSide: const BorderSide(
+                              color: kPrimaryColor,
+                              width: 1,
+                            ),
                           ),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(7),
-                          borderSide: BorderSide(
-                            color: kPrimaryColor,
-                            width: 1,
-                          ),
-                        ),
+                        language: 'en-AU',
                       ),
-                      language: 'en-AU',
                     ),
                   ),
                 ],
               ),
+
               const SizedBox(height: 8),
               StockInfoRow(
                 icon: Icons.category_outlined,
@@ -236,12 +238,13 @@ class StockInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0), // Increased padding for touchability
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Left Side: Icon and Label
           Row(
+            mainAxisSize: MainAxisSize.min, // Shrink wrap
             children: [
               Container(
                 padding: const EdgeInsets.all(5),
@@ -254,21 +257,24 @@ class StockInfoRow extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(fontSize: 12, color: kSecondaryColor),
+                style: const TextStyle(fontSize: 13, color: kSecondaryColor), // Increased font size
               ),
             ],
           ),
 
-          // Wrap in Flexible/Sized box to prevent overflow if text is long
-          Flexible(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 20),
-              child: Text(
-                value,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-                style: const TextStyle(fontSize: 12, color: kSecondaryColor),
+          const SizedBox(width: 15), // Gap
+
+          // Flexible Value Text (Right Aligned)
+          Expanded(
+            child: Text(
+              value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 13, // Increased font size for readability
+                color: kSecondaryColor,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),

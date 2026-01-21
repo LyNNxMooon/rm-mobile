@@ -1,3 +1,5 @@
+import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
+
 import '../../../../entities/vos/stock_vo.dart';
 
 abstract class StockListState {}
@@ -17,6 +19,7 @@ class StockListLoaded extends StockListState {
   final String currentSortCol;
   final String currentFilterCol;
   final bool isAscending;
+  final FilterCriteria? activeFilters;
 
   StockListLoaded({
     required this.stocks,
@@ -27,6 +30,7 @@ class StockListLoaded extends StockListState {
     required this.currentSortCol,
     required this.currentFilterCol,
     required this.isAscending,
+    this.activeFilters,
   });
 
   StockListLoaded copyWith({
@@ -38,6 +42,7 @@ class StockListLoaded extends StockListState {
     String? currentSortCol,
     String? currentFilterCol,
     bool? isAscending,
+    FilterCriteria? activeFilters,
   }) {
     return StockListLoaded(
       stocks: stocks ?? this.stocks,
@@ -48,6 +53,7 @@ class StockListLoaded extends StockListState {
       currentSortCol: currentSortCol ?? this.currentSortCol,
       currentFilterCol: currentFilterCol ?? this.currentFilterCol,
       isAscending: isAscending ?? this.isAscending,
+      activeFilters: activeFilters ?? this.activeFilters,
     );
   }
 }

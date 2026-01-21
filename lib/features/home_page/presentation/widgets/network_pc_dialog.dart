@@ -25,21 +25,24 @@ class NetworkPcDialog extends StatefulWidget {
 class _NetworkPcDialogState extends State<NetworkPcDialog> {
   @override
   Widget build(BuildContext context) {
+    // Calculate a safe max height (e.g., 70% of screen)
+    final double safeMaxHeight = MediaQuery.of(context).size.height * 0.7;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 10,
       backgroundColor: kBgColor,
-
       child: Container(
-        constraints: const BoxConstraints(maxHeight: 500),
+        // Responsive constraint
+        constraints: BoxConstraints(maxHeight: safeMaxHeight),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 26),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: kGColor,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(10),
                   topRight: Radius.circular(10),
                 ),
@@ -52,102 +55,107 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                     child: Text(
                       "Network PCs",
                       style: getSmartTitle(fontSize: 18),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
             ),
             Flexible(
-              child:
-                  BlocBuilder<FetchingNetworkPCBloc, FetchingNetworkPCStates>(
-                    builder: (context, state) {
-                      if (state is FetchingNetworkPCs) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Finding Network PCs...",
-                                style: getSmartTitle(
-                                  color: kThirdColor,
-                                  fontSize: 16,
-                                ),
+              child: BlocBuilder<FetchingNetworkPCBloc, FetchingNetworkPCStates>(
+                builder: (context, state) {
+                  if (state is FetchingNetworkPCs) {
+                    return Center(
+                      child: SingleChildScrollView( // Prevent overflow if screen is very short
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Finding Network PCs...",
+                              style: getSmartTitle(
+                                color: kThirdColor,
+                                fontSize: 16,
                               ),
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 25,
-                                  left: 60,
-                                  right: 60,
-                                  bottom: 5,
-                                ),
-                                child: ModernLoadingBar(),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: 25,
+                                left: 60,
+                                right: 60,
+                                bottom: 5,
                               ),
-                              Text(
-                                "This may take a few seconds.",
-                                style: TextStyle(fontSize: 11),
+                              child: ModernLoadingBar(),
+                            ),
+                            const Text(
+                              "This may take a few seconds.",
+                              style: TextStyle(fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else if (state is ErrorFetchingNetworkPCs) {
+                    return Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: kErrorColor,
+                              size: 40,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              state.message,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: kGreyColor),
+                            ),
+                            const SizedBox(height: 10),
+                            TextButton(
+                              onPressed: () {
+                                context.read<FetchingNetworkPCBloc>().add(
+                                  FetchNetworkPCEvent(),
+                                );
+                              },
+                              child: const Text(
+                                "Retry",
+                                style: TextStyle(color: kPrimaryColor),
                               ),
-                            ],
-                          ),
-                        );
-                      } else if (state is ErrorFetchingNetworkPCs) {
-                        return Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: kErrorColor,
-                                size: 40,
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                state.message,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: kGreyColor),
-                              ),
-                              const SizedBox(height: 10),
-                              TextButton(
-                                onPressed: () {
-                                  context.read<FetchingNetworkPCBloc>().add(
-                                    FetchNetworkPCEvent(),
-                                  );
-                                },
-                                child: const Text(
-                                  "Retry",
-                                  style: TextStyle(color: kPrimaryColor),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      } else if (state is NetworkPCsLoaded) {
-                        if (state.pcList.isEmpty) {
-                          return const Padding(
-                            padding: EdgeInsets.all(30),
-                            child: Text("No computers found on the network."),
-                          );
-                        }
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else if (state is NetworkPCsLoaded) {
+                    if (state.pcList.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.all(30),
+                        child: Text("No computers found on the network."),
+                      );
+                    }
 
-                        return ListView.separated(
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          itemCount: state.pcList.length,
-                          separatorBuilder: (ctx, i) => Divider(
-                            color: kGreyColor.withOpacity(0.2),
-                            height: 1,
-                            indent: 16,
-                            endIndent: 16,
-                          ),
-                          itemBuilder: (context, index) {
-                            return _buildPCTile(state.pcList[index], context);
-                          },
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      itemCount: state.pcList.length,
+                      separatorBuilder: (ctx, i) => Divider(
+                        color: kGreyColor.withOpacity(0.2),
+                        height: 1,
+                        indent: 16,
+                        endIndent: 16,
+                      ),
+                      itemBuilder: (context, index) {
+                        return _buildPCTile(state.pcList[index], context);
+                      },
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
             ),
           ],
         ),
@@ -181,6 +189,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
               child: Text(
                 pc.hostName ?? "Unknown-PC",
                 style: const TextStyle(color: kThirdColor),
+                maxLines: 1, // Fix overflow
+                overflow: TextOverflow.ellipsis, // Fix overflow
               ),
             ),
             BlocConsumer<AutoConnectionBloc, AutoConnectionStates>(
@@ -200,8 +210,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
                   ctx.read<ShopfrontBloc>().add(
                     FetchShops(
-                      path:
-                          AppGlobals.instance.currentPath ??
+                      path: AppGlobals.instance.currentPath ??
                           "//${AppGlobals.instance.currentHostIp ?? ""}/Users/Public/AAAPOS RM-Mobile",
                       ipAddress: AppGlobals.instance.currentHostIp ?? "",
                     ),
@@ -209,21 +218,18 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
                   showDialog(
                     context: ctx,
-
                     builder: (_) => ShopfrontsDialog(
                       pc: NetworkComputerVO(
                         ipAddress: AppGlobals.instance.currentHostIp ?? "",
                         hostName: AppGlobals.instance.hostName ?? "",
                       ),
-                      previousPath:
-                          AppGlobals.instance.currentPath ??
+                      previousPath: AppGlobals.instance.currentPath ??
                           "//${AppGlobals.instance.currentHostIp ?? ""}/Users/Public/AAAPOS RM-Mobile",
                     ),
                   );
                 }
 
                 if (state is ErrorAutoConnection) {
-
                   Navigator.of(ctx, rootNavigator: true).pop();
 
                   ctx.read<GettingDirectoryBloc>().add(
