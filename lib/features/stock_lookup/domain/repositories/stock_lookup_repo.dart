@@ -13,5 +13,5 @@ abstract class StockLookupRepo {
     int pageSize,
   });
 
-  Future<Map<String, List<String>>> getFilterOptions();
+  Future<Map<String, List<String>>> getFilterOptions(String shopfront);
 }

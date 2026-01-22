@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
 
-import '../../../../utils/log_utils.dart';
-
 class SearchFilterBar extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onFilterTap;

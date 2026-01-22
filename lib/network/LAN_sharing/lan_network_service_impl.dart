@@ -384,7 +384,7 @@ class LanNetworkServiceImpl implements LanNetworkService {
 
       if (targetFile.isNotEmpty) {
         targetFile.sort(
-          (a, b) => (b.createTime ?? 0).compareTo(a.createTime ?? 0),
+          (a, b) => (b.createTime).compareTo(a.createTime),
         );
       } else {
         return null;
@@ -479,7 +479,7 @@ class LanNetworkServiceImpl implements LanNetworkService {
         //this compare the time and leave the old stale files
         if (targetFile.isNotEmpty) {
           targetFile.sort(
-            (a, b) => (b.createTime ?? 0).compareTo(a.createTime ?? 0),
+            (a, b) => (b.createTime).compareTo(a.createTime),
           );
           return targetFile.first;
         }

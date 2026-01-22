@@ -9,7 +9,6 @@ import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_states.dart';
-import '../../../stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import '../../../stock_lookup/presentation/widgets/stock_request_error_dialog.dart';
 import '../../../stocktake/presentation/screens/scanner_screen.dart';
 import '../BLoC/home_screen_bloc.dart';
@@ -198,8 +197,12 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: kSecondaryColor,
             iconColor: kPrimaryColor,
             textColor: kThirdColor,
+            position: MessagePosition.top,
+            padding: 70,
           );
         }
+
+        
 
         if (state is ShopfrontConnectionError) {
           showTopSnackBar(

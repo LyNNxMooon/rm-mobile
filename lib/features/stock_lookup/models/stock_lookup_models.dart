@@ -35,13 +35,13 @@ class StockLookupModels implements StockLookupRepo {
   }
 
   @override
-  Future<Map<String, List<String>>> getFilterOptions() async {
+  Future<Map<String, List<String>>> getFilterOptions(String shopfront) async {
     try {
       final results = await Future.wait([
-        LocalDbDAO.instance.getDistinctValues('dept_name'),
-        LocalDbDAO.instance.getDistinctValues('cat1'),
-        LocalDbDAO.instance.getDistinctValues('cat2'),
-        LocalDbDAO.instance.getDistinctValues('cat3'),
+        LocalDbDAO.instance.getDistinctValues('dept_name', shopfront),
+        LocalDbDAO.instance.getDistinctValues('cat1',shopfront),
+        LocalDbDAO.instance.getDistinctValues('cat2',shopfront),
+        LocalDbDAO.instance.getDistinctValues('cat3',shopfront),
       ]);
 
       return {

@@ -290,7 +290,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
       curve: Curves.easeOutCubic,
       alignment: Alignment.topCenter,
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 200),
         switchInCurve: Curves.easeOut,
         switchOutCurve: Curves.easeIn,
         transitionBuilder: (child, animation) {
@@ -589,7 +589,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             child: Row(
                               children: [
                                 Text(
-                                  stock.description ?? " - ",
+                                  stock.description,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: getSmartTitle(
@@ -602,7 +602,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            stock.barcode ?? " - ",
+                            stock.barcode,
                             maxLines: 1, // Ensure no wrapping vertically
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(

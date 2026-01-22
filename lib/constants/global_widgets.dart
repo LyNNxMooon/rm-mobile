@@ -12,6 +12,7 @@ class CustomTextField extends StatelessWidget {
   final void Function(String)? function;
   final void Function(String)? submitFunction;
   final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
 
   const CustomTextField({
     super.key,
@@ -23,11 +24,13 @@ class CustomTextField extends StatelessWidget {
     this.function,
     this.focusNode,
     this.submitFunction,
+    this.textInputAction
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      textInputAction: textInputAction,
       focusNode: focusNode,
       onChanged: function,
       onSubmitted: submitFunction,

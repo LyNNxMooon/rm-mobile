@@ -159,7 +159,7 @@ class HiveDAOImpl extends LocalDbDAO {
   }
 
   @override
-  Future<List<String>> getDistinctValues(String columnName) {
+  Future<List<String>> getDistinctValues(String columnName,String shopfront) {
     // TODO: implement getDistinctValues
     throw UnimplementedError();
   }

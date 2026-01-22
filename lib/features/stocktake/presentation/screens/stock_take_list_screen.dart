@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart'
-    show CupertinoActivityIndicator, CupertinoIcons;
+    show CupertinoActivityIndicator;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -278,7 +278,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              stock.barcode ?? "",
+                              stock.barcode,
                               style: const TextStyle(
                                 fontFamily: 'monospace',
                                 fontSize: 11,

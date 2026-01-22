@@ -204,6 +204,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                     backgroundColor: kSecondaryColor,
                     iconColor: kPrimaryColor,
                     textColor: kThirdColor,
+                    padding: 70,
+                    position: MessagePosition.top
                   );
 
                   ctx.navigateUntilFirst();

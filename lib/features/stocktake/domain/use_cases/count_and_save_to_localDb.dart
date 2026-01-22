@@ -41,8 +41,8 @@ class CountAndSaveToLocaldb {
         stocktakeDate: DateTime.now(),
         dateModified: DateTime.now(),
         isSynced: false,
-        description: stock.description ?? "-",
-        barcode: stock.barcode ?? "-",
+        description: stock.description,
+        barcode: stock.barcode,
       );
 
       await repository.stocktakeAndSaveToLocalDb(

@@ -292,20 +292,28 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
-  Future<List<String>> getDistinctValues(String columnName) async {
+  Future<List<String>> getDistinctValues(
+    String columnName,
+    String shopfront,
+  ) async {
     try {
       final db = _database!;
 
-      final List<Map<String, dynamic>> result = await db.rawQuery('''
+      final List<Map<String, dynamic>> result = await db.rawQuery(
+        '''
       SELECT DISTINCT $columnName 
       FROM Stocks 
-      WHERE $columnName IS NOT NULL AND $columnName != '' 
+      WHERE shopfront = ? 
+        AND $columnName IS NOT NULL 
+        AND $columnName != '' 
       ORDER BY $columnName ASC
-    ''');
+    ''',
+        [shopfront],
+      ); 
 
       return result.map((row) => row[columnName] as String).toList();
     } catch (error) {
-      logger.e('Error fetching distinct $columnName: $error');
+      logger.e('Error fetching distinct $columnName for $shopfront: $error');
       return [];
     }
   }
@@ -344,20 +352,52 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
-  Future<void> saveCountedStock(Map<String, dynamic> stockData) async {
-    try {
-      final db = _database!;
+Future<void> saveCountedStock(Map<String, dynamic> stockData) async {
+  try {
+    final db = _database!;
+    final int stockId = stockData['stock_id'];
+    final String shopfront = stockData['shopfront'];
+    final num newQty = stockData['quantity'];
 
-      await db.insert(
+    // Use a transaction to ensure reading and writing happens atomically
+    await db.transaction((txn) async {
+      //Check if the stock already exists for this shop
+      final List<Map<String, dynamic>> existingRecords = await txn.query(
         'Stocktake',
-        stockData,
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        columns: ['quantity'],
+        where: 'stock_id = ? AND shopfront = ?',
+        whereArgs: [stockId, shopfront],
       );
-    } catch (error) {
-      logger.e('Error saving counted stock to local db: $error');
-      return Future.error("Error saving counted stock to local db: $error");
-    }
+
+      if (existingRecords.isNotEmpty) {
+        //Calculate the new total (Existing + New)
+        final num currentQty = existingRecords.first['quantity'];
+        final double totalQty = currentQty.toDouble() + newQty.toDouble();
+
+        // We copy the incoming stockData so we update the 'date_modified' 
+        // and other fields to the latest scan details, but force the new total qty.
+        final Map<String, dynamic> updateData = Map.from(stockData);
+        updateData['quantity'] = totalQty;
+
+        await txn.update(
+          'Stocktake',
+          updateData,
+          where: 'stock_id = ? AND shopfront = ?',
+          whereArgs: [stockId, shopfront],
+        );
+      } else {
+        await txn.insert(
+          'Stocktake',
+          stockData,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  } catch (error) {
+    logger.e('Error saving counted stock to local db: $error');
+    return Future.error("Error saving counted stock to local db: $error");
   }
+}
 
   @override
   Future<void> saveNetworkCredential({

@@ -11,8 +11,7 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/network_computer_vo.dart';
 import '../../../../utils/global_var_utils.dart';
-import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart'
-    hide kPrimaryColor;
+import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
 import '../screens/coming_soon_screen.dart';

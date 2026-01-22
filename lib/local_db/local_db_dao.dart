@@ -40,7 +40,7 @@ abstract class LocalDbDAO {
     required int offset,
     FilterCriteria? filters
   });
-  Future<List<String>> getDistinctValues(String columnName);
+  Future<List<String>> getDistinctValues(String columnName, String shopfront);
   Future<String?> getAppConfig(String key);
 
   // Setters to save data

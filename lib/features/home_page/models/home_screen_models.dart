@@ -150,7 +150,7 @@ class HomeScreenModels implements HomeRepo {
         username: userName ?? "Guest",
         password: pwd ?? "",
       );
-    } on Exception catch (error) {
+    } on Exception catch (_) {
       return false;
     }
   }

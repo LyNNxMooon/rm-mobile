@@ -72,7 +72,7 @@ class CheckPathConnection {
             } else {
               return Future.error("Please connect to a network!");
             }
-          } on Exception catch (e) {
+          } on Exception catch (_) {
             return false;
           }
         }

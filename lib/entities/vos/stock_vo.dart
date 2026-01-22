@@ -1,7 +1,5 @@
-import 'package:hive/hive.dart';
-import 'package:json_annotation/json_annotation.dart';
 
-import '../../local_db/hive/hive_constants.dart';
+import 'package:json_annotation/json_annotation.dart';
 part 'stock_vo.g.dart';
 
 @JsonSerializable()

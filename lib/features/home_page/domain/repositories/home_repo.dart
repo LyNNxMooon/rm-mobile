@@ -1,5 +1,4 @@
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
-import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 
 import '../../../../entities/vos/network_computer_vo.dart';
 import '../../models/home_screen_models.dart';

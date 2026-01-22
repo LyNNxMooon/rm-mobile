@@ -14,8 +14,8 @@ StockListResponse _$StockListResponseFromJson(Map<String, dynamic> json) =>
           .toList(),
     );
 
-Map<String, dynamic> _$StockListResponseToJson(StockListResponse instance) =>
-    <String, dynamic>{
-      'totalItems': instance.totalItems,
-      'data': instance.data,
-    };
+// Map<String, dynamic> _$StockListResponseToJson(StockListResponse instance) =>
+//     <String, dynamic>{
+//       'totalItems': instance.totalItems,
+//       'data': instance.data,
+//     };

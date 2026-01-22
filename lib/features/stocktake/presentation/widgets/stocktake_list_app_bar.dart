@@ -1,15 +1,11 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/widgets/delete_all_confirmation_dialog.dart';
+
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../../local_db/local_db_dao.dart';
+
 import '../../../../utils/global_var_utils.dart';
-import '../BLoC/stocktake_events.dart';
 
 class StocktakeListAppBar extends StatefulWidget {
   const StocktakeListAppBar({super.key});
@@ -50,7 +46,10 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                             (AppGlobals.instance.shopfront ?? "RM-Shopfront")
                                 .split('\\')
                                 .last,
-                            style: getSmartTitle(color: kThirdColor, fontSize: 16),
+                            style: getSmartTitle(
+                              color: kThirdColor,
+                              fontSize: 16,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -74,7 +73,11 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                     style: TextStyle(color: kPrimaryColor, fontSize: 12),
                   ),
                   SizedBox(width: 10),
-                  Icon(Icons.arrow_back_ios_new, size: 14, color: kPrimaryColor),
+                  Icon(
+                    Icons.arrow_back_ios_new,
+                    size: 14,
+                    color: kPrimaryColor,
+                  ),
                   SizedBox(width: 15),
                   Icon(Icons.arrow_forward_ios, size: 14, color: kPrimaryColor),
                   SizedBox(width: 10),
