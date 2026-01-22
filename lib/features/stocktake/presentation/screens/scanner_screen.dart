@@ -13,7 +13,6 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/enums.dart';
-import '../../../../utils/log_utils.dart';
 import '../BLoC/stocktake_events.dart';
 import '../widgets/app_bar_session.dart';
 import '../widgets/custom_btn.dart';
@@ -33,20 +32,6 @@ class Debouncer {
   }
 }
 
-//Common Variables
-bool isTorchOn = false;
-bool isManualCount = true;
-bool isScan = false;
-StockVO? countingStock;
-
-final MobileScannerController scannerController = MobileScannerController(
-  detectionSpeed: DetectionSpeed.normal,
-  detectionTimeoutMs: 1000,
-  returnImage: false,
-);
-final TextEditingController qtyController = TextEditingController();
-final FocusNode qtyFocusNode = FocusNode();
-
 //Screen Starts here
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -58,20 +43,67 @@ class ScannerScreen extends StatefulWidget {
 class _ScannerScreenState extends State<ScannerScreen> {
   final Debouncer _debouncer = Debouncer(milliseconds: 500);
   final TextEditingController _bcController = TextEditingController();
+  //Common Variables
+  bool isTorchOn = false;
+  bool isManualCount = true;
+  bool isScan = false;
+  StockVO? countingStock;
+
+  late MobileScannerController scannerController;
+  final TextEditingController qtyController = TextEditingController();
+  final FocusNode qtyFocusNode = FocusNode();
+
+  String? _lastAutoBarcode;
+  int _autoQty = 0;
+
+  // Helper to handle saving the count
+  void _submitCount() {
+    if (countingStock == null) {
+      if (isManualCount) {
+        // Only show error toast in manual mode to avoid spam in auto
+        showTopSnackBar(
+          Overlay.of(context),
+          const CustomSnackBar.error(message: "No valid stock selected!"),
+        );
+      }
+      return;
+    }
+
+    if (qtyController.text.isEmpty) return;
+
+    context.read<StocktakeBloc>().add(
+      Stocktake(qty: qtyController.text, stock: countingStock!),
+    );
+
+    // If manual, clear after submit to be ready for next
+    // If auto, we leave it as is or handle in the listener
+    if (isManualCount) {
+      qtyController.clear();
+      setState(() {
+        _bcController.clear();
+        countingStock = null;
+      });
+      // Reset scanner state to ready for next item
+      context.read<ScannerBloc>().add(ResetStocktakeEvent(ScannerInitial()));
+    }
+  }
 
   @override
   void initState() {
+    scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      detectionTimeoutMs: 500,
+      returnImage: false,
+    );
     super.initState();
   }
 
   @override
   void dispose() {
-    if (!mounted) {
-      scannerController.dispose();
-      qtyController.dispose();
-      qtyFocusNode.dispose();
-      _bcController.dispose();
-    }
+    scannerController.dispose();
+    qtyController.dispose();
+    qtyFocusNode.dispose();
+    _bcController.dispose();
     super.dispose();
   }
 
@@ -90,45 +122,107 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 child: IntrinsicHeight(
                   child: Column(
                     children: [
-                      const StocktakeAppbarSession(),
+                      StocktakeAppbarSession(
+                        onTorchToggle: () {
+                          setState(() {
+                            scannerController.toggleTorch();
+                            isTorchOn = !isTorchOn;
+                          });
+                        },
+                        isTorchOn: isTorchOn,
+                      ),
 
                       Padding(
                         padding: const EdgeInsets.only(
-                          left: 25.0,
-                          right: 25,
+                          left: 15.0,
+                          right: 15,
                           bottom: 10.0,
                           top: 5,
                         ),
                         child: ScanModeSelector(
                           onModeChanged: (newMode) {
-                            setState(
-                              () => isManualCount =
-                                  (newMode == ScanMode.manualCount),
-                            );
+                            setState(() {
+                              isManualCount = (newMode == ScanMode.manualCount);
+
+                              qtyController.clear();
+                              _bcController.clear();
+                              countingStock = null;
+                              _lastAutoBarcode = null;
+                              _autoQty = 0;
+                              context.read<ScannerBloc>().add(
+                                ResetStocktakeEvent(ScannerInitial()),
+                              );
+                            });
                           },
                         ),
                       ),
 
-                      Scanner(constraints: constraints),
+                      Scanner(
+                        constraints: constraints,
+                        controller: scannerController,
+                        isScan: isScan,
+                        isManualCount: isManualCount,
+                        onScan: (String barcode) {
+                          context.read<ScannerBloc>().add(
+                            FetchStockDetails(barcode: barcode),
+                          );
+
+                          if (isManualCount) {
+                            qtyFocusNode.requestFocus();
+                            qtyController.selection = TextSelection(
+                              baseOffset: 0,
+                              extentOffset: qtyController.text.length,
+                            );
+                          }
+                        },
+                      ),
 
                       Expanded(
                         child: BlocConsumer<ScannerBloc, ScannerStates>(
                           builder: (context, state) {
                             if (state is StockLoaded) {
-                              countingStock = state.stock;
-
                               return _buildProductDetailsPanel(state.stock);
                             } else {
-                              countingStock = null;
                               return _buildProductDetailsPanel(null);
                             }
                           },
                           listener: (context, state) {
                             if (state is StockError) {
-                              showTopSnackBar(
-                                Overlay.of(context),
-                                CustomSnackBar.error(message: state.message),
+                              countingStock = null;
+
+                              AlertInfo.show(
+                                context: context,
+
+                                text: 'Not Found!',
+
+                                typeInfo: TypeInfo.error,
+
+                                backgroundColor: kSecondaryColor,
+
+                                iconColor: kErrorColor,
+
+                                textColor: kErrorColor,
                               );
+                            }
+                            if (state is StockLoaded) {
+                              countingStock = state.stock;
+                              // If Auto-Count is ON, we trigger the save immediately after load
+                              if (!isManualCount && isScan) {
+                                final barcode = state.stock.barcode;
+
+                                // Same item → increment
+                                if (_lastAutoBarcode == barcode) {
+                                  _autoQty++;
+                                } else {
+                                  // New item → reset
+                                  _lastAutoBarcode = barcode;
+                                  _autoQty = 1;
+                                }
+
+                                qtyController.text = _autoQty.toString();
+
+                                _submitCount();
+                              }
                             }
                           },
                         ),
@@ -178,7 +272,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         : double.parse(total.toStringAsFixed(2)).toString();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16, left: 25, right: 25, top: 15),
+      padding: const EdgeInsets.only(bottom: 16, left: 15, right: 15, top: 15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -244,7 +338,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       ? "RM - Stock Description"
                       : stock.description,
                 ),
-                const SizedBox(height: 8), // Increased Spacing
+                const SizedBox(height: 8),
                 _stockDetailsListTile(
                   color: Colors.orangeAccent,
                   title: "Categories",
@@ -289,7 +383,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   title: "Total",
                   icon: Icons.check,
                   value: totalString,
-                  isBold: true, // Make Total Stand Out
+                  isBold: true,
                 ),
               ],
             ),
@@ -331,36 +425,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 const Text(
                   "Counted Qty : ",
                   style: TextStyle(color: kGreyColor, fontSize: 14),
-                ), // Larger Label
+                ),
                 const SizedBox(width: 15),
                 Expanded(
                   child: SizedBox(
-                    height: 35, // Taller Input
+                    height: 35,
                     width: 100,
                     child: CustomTextField(
-                      submitFunction: (value) {
-                        if (countingStock != null) {
-                          if (context.mounted) {
-                            context.read<StocktakeBloc>().add(
-                              Stocktake(
-                                qty: qtyController.text,
-                                stock: countingStock!,
-                              ),
-                            );
-                          }
-                        }
-                        logger.d("Stocktake saved with: ${qtyController.text}");
-
-                        qtyController.clear();
-
-                        context.read<ScannerBloc>().add(
-                          ResetStocktakeEvent(ScannerInitial()),
-                        );
-
-                        setState(() {
-                          _bcController.text = "";
-                        });
-                      },
+                      submitFunction: (value) => _submitCount(),
                       controller: qtyController,
                       focusNode: qtyFocusNode,
                       hintText: "Qty",
@@ -405,11 +477,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     setState(() {
                       isScan = !isScan;
                       _bcController.text = "";
+                      countingStock = null;
+
+                      _lastAutoBarcode = null;
+                      _autoQty = 0;
                     });
                   },
                   icon: Icons.qr_code_scanner,
-                  bgColor: Colors.lightGreen,
-                  name: isScan ? "CLOSE" : "SCAN",
+                  bgColor: isScan ? Colors.redAccent : Colors.lightGreen,
+                  name: isScan ? "STOP" : "SCAN",
                 ),
               ),
             ],
@@ -431,8 +507,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
         }
 
         if (state is StockTaken) {
-          qtyController.clear();
-
           if (isManualCount) {
             AlertInfo.show(
               context: context,
@@ -473,7 +547,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 color: color.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(icon, size: 16, color: color), // Icon Size bump
+              child: Icon(icon, size: 16, color: color),
             ),
 
             const SizedBox(width: 8),
@@ -481,17 +555,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
             Text(
               title,
               style: const TextStyle(fontSize: 13, color: kGreyColor),
-            ), // Increased Font
+            ),
           ],
         ),
 
-        // Flexible Value Text to avoid overflow
         Flexible(
           child: Text(
             value,
             textAlign: TextAlign.right,
             style: TextStyle(
-              fontSize: 14, // Increased Font
+              fontSize: 14,
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               color: isBold ? kPrimaryColor : kThirdColor,
             ),

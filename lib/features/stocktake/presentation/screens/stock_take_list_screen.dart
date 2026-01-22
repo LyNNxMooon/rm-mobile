@@ -43,64 +43,66 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton:
-      BlocListener<CommittingStocktakeBloc, CommitingStocktakeStates>(
-        listener: (context, state) {
-          if (state is LoadingToCommitStocktake) {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (_) => const LoadingStocktakeDialog(),
-            );
-          }
-
-          if (state is ErrorCommitingStocktake) {
-            context.navigateBack();
-            showErrorDialog(context, message: state.message);
-          }
-
-          if (state is CommittedStocktake) {
-            context.navigateBack();
-            showTopSnackBar(
-              Overlay.of(context),
-              CustomSnackBar.success(message: state.message),
-            );
-            context.read<FetchingStocktakeListBloc>().add(
-              FetchStocktakeListEvent(),
-            );
-          }
-        },
-        child: FloatingActionButton.extended(
-          onPressed: () async {
-            final unSyncedList = await LocalDbDAO.instance
-                .getUnsyncedStocks(AppGlobals.instance.shopfront ?? "");
-
-            if (unSyncedList.isNotEmpty) {
-              if (context.mounted) {
-                context.read<CommittingStocktakeBloc>().add(
-                  CommittingStocktakeEvent(),
+          BlocListener<CommittingStocktakeBloc, CommitingStocktakeStates>(
+            listener: (context, state) {
+              if (state is LoadingToCommitStocktake) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => const LoadingStocktakeDialog(),
                 );
               }
-            } else {
-              if (context.mounted) {
+
+              if (state is ErrorCommitingStocktake) {
+                context.navigateBack();
+                showErrorDialog(context, message: state.message);
+              }
+
+              if (state is CommittedStocktake) {
+                context.navigateBack();
                 showTopSnackBar(
                   Overlay.of(context),
-                  const CustomSnackBar.info(message: "No unsynced stocks found."),
+                  CustomSnackBar.success(message: state.message),
+                );
+                context.read<FetchingStocktakeListBloc>().add(
+                  FetchStocktakeListEvent(),
                 );
               }
-            }
-          },
-          elevation: 4,
-          backgroundColor: kPrimaryColor,
-          label: const Text(
-            "Send Stocktake to RM",
-            style: TextStyle(
-              color: kSecondaryColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
+            },
+            child: FloatingActionButton.extended(
+              onPressed: () async {
+                final unSyncedList = await LocalDbDAO.instance
+                    .getUnsyncedStocks(AppGlobals.instance.shopfront ?? "");
+
+                if (unSyncedList.isNotEmpty) {
+                  if (context.mounted) {
+                    context.read<CommittingStocktakeBloc>().add(
+                      CommittingStocktakeEvent(),
+                    );
+                  }
+                } else {
+                  if (context.mounted) {
+                    showTopSnackBar(
+                      Overlay.of(context),
+                      const CustomSnackBar.info(
+                        message: "No unsynced stocks found.",
+                      ),
+                    );
+                  }
+                }
+              },
+              elevation: 4,
+              backgroundColor: kPrimaryColor,
+              label: const Text(
+                "Send Stocktake to RM",
+                style: TextStyle(
+                  color: kSecondaryColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
             ),
           ),
-        ),
-      ),
       backgroundColor: kBgColor,
       body: SafeArea(
         child: Column(
@@ -171,7 +173,12 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           } else {
             return AnimationLimiter(
               child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(15, 0, 15, 80), // Bottom padding for FAB
+                padding: const EdgeInsets.fromLTRB(
+                  15,
+                  0,
+                  15,
+                  80,
+                ), // Bottom padding for FAB
                 separatorBuilder: (context, index) => const SizedBox(height: 7),
                 physics: const BouncingScrollPhysics(),
                 itemCount: state.stocktakeList.length,
@@ -224,7 +231,9 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                   foregroundColor: kSecondaryColor,
                   icon: Icons.delete,
                   label: 'Delete',
-                  borderRadius: const BorderRadius.horizontal(right: Radius.circular(10)),
+                  borderRadius: const BorderRadius.horizontal(
+                    right: Radius.circular(10),
+                  ),
                 ),
               ],
             ),
@@ -241,31 +250,45 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Responsive Text Column
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          stock.description,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: getSmartTitle(color: kThirdColor, fontSize: 13),
+                        Icon(
+                          Icons.cloud_done_outlined,
+                          size: 18,
+                          color: kGreyColor,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          stock.barcode ?? "",
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 11,
-                            color: kGreyColor,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        const SizedBox(width: 15),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              stock.description,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: getSmartTitle(
+                                color: kThirdColor,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              stock.barcode ?? "",
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: kPrimaryColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ],
                     ),

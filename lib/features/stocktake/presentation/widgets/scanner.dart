@@ -1,20 +1,24 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
-
 import '../../../../constants/colors.dart';
-import '../../../../utils/log_utils.dart';
-import '../BLoC/stocktake_events.dart';
-import '../screens/scanner_screen.dart';
 
 class Scanner extends StatefulWidget {
-  const Scanner({super.key, required this.constraints});
+  const Scanner({
+    super.key,
+    required this.constraints,
+    required this.onScan,
+    required this.controller,
+    required this.isScan,
+    required this.isManualCount,
+  });
 
   final BoxConstraints constraints;
+  final Function(String) onScan;
+  final MobileScannerController controller;
+  final bool isScan;
+  final bool isManualCount;
 
   @override
   State<Scanner> createState() => _ScannerState();
@@ -23,84 +27,64 @@ class Scanner extends StatefulWidget {
 class _ScannerState extends State<Scanner> {
   final AudioPlayer _audioPlayer = AudioPlayer()
     ..setReleaseMode(ReleaseMode.stop);
-
   final _beepSource = AssetSource('audio/beep.mp3');
 
   String? _lastScannedBarcode;
+  DateTime? _lastScanTime;
 
   @override
   Widget build(BuildContext context) {
-    // Dynamic height based on screen size, but ensuring minimum visibility
-    // 25% of available height is often better than 20% for readability
     return SizedBox(
       height: widget.constraints.maxHeight * 0.2,
-      child: isScan
+      child: widget.isScan
           ? Container(
               color: kThirdColor,
               child: Stack(
                 children: [
                   MobileScanner(
-                    controller: scannerController,
-                    // returnImage: false, // Ensure this matches controller init in main screen
+                    controller: widget.controller,
                     onDetect: (capture) async {
-                      // ... (Your logic kept intact) ...
-                      final String currentBarcode =
-                          capture.barcodes.first.rawValue ?? "";
-
                       final barcodes = capture.barcodes;
                       if (barcodes.isEmpty) return;
 
-                      logger.d(capture.barcodes);
+                      final String currentBarcode =
+                          barcodes.first.rawValue ?? "";
+                      if (currentBarcode.isEmpty) return;
+
+                      // Debounce: prevent double processing of same frame
+                      final now = DateTime.now();
+                      if (_lastScanTime != null &&
+                          now.difference(_lastScanTime!).inMilliseconds <
+                              1000 &&
+                          currentBarcode == _lastScannedBarcode) {
+                        return;
+                      }
+                      _lastScanTime = now;
+
+                      // Feedback
                       HapticFeedback.vibrate();
                       HapticFeedback.heavyImpact();
                       await _audioPlayer.stop();
                       _audioPlayer.play(_beepSource);
 
-                      if (isManualCount) {
-                        final String code =
-                            capture.barcodes.first.rawValue ?? "";
-
-                        if (context.mounted) {
-                          context.read<ScannerBloc>().add(
-                            FetchStockDetails(barcode: code),
-                          );
-                        }
-
-                        qtyFocusNode.requestFocus();
-                        qtyController.selection = TextSelection(
-                          baseOffset: 0,
-                          extentOffset: qtyController.text.length,
-                        );
+                      // Logic Branching
+                      if (widget.isManualCount) {
+                        // Manual Mode: Just fetch and let user type
+                        widget.onScan(currentBarcode);
                       } else {
+                        // Auto Count Mode
                         setState(() {
-                          if (_lastScannedBarcode == currentBarcode) {
-                            int currentQty =
-                                int.tryParse(qtyController.text) ?? 0;
-                            qtyController.text = (currentQty + 1).toString();
-                          } else {
-                            if (context.mounted) {
-                              context.read<ScannerBloc>().add(
-                                FetchStockDetails(barcode: currentBarcode),
-                              );
-                            }
-                            _lastScannedBarcode = currentBarcode;
-                            qtyController.text = "1";
-                          }
-                        });
+                          // Auto Count Logic
+                          // Just trigger the scan callback.
+                          // The logic for "Increment & Save" is now in the Parent's BlocListener
+                          // We reset _lastScannedBarcode only if needed, but for "rapid fire"
+                          // distinct scans, we rely on the debounce above.
 
-                        if (countingStock != null) {
-                          if (context.mounted) {
-                            context.read<StocktakeBloc>().add(
-                              Stocktake(
-                                qty: qtyController.text,
-                                stock: countingStock!,
-                              ),
-                            );
-                          }
-                        }
-                        logger.d(
-                          "Stocktake saved with : ${qtyController.text}",
-                        );
+                          setState(() {
+                            _lastScannedBarcode = currentBarcode;
+                          });
+                          widget.onScan(currentBarcode);
+                        });
                       }
                     },
                   ),
@@ -126,7 +110,7 @@ class _ScannerState extends State<Scanner> {
 
   Widget _scannerPlaceHolder() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 25),
+      margin: const EdgeInsets.symmetric(horizontal: 15),
       decoration: BoxDecoration(
         gradient: kGColor,
         borderRadius: const BorderRadius.all(Radius.circular(10)),
@@ -141,14 +125,12 @@ class _ScannerState extends State<Scanner> {
       ),
       child: Center(
         child: SingleChildScrollView(
-          // Prevent overflow if screen extremely short
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
                 CupertinoIcons.barcode_viewfinder,
-                weight: 1,
-                size: 80, // Slightly reduced to fit better
+                size: 80,
                 color: kSecondaryColor,
               ),
               const SizedBox(height: 10),

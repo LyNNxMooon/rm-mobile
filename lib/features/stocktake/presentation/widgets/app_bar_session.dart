@@ -5,10 +5,16 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/enums.dart';
 import '../../../../utils/global_var_utils.dart';
-import '../screens/scanner_screen.dart';
 
 class StocktakeAppbarSession extends StatefulWidget {
-  const StocktakeAppbarSession({super.key});
+  const StocktakeAppbarSession({
+    super.key,
+    required this.onTorchToggle,
+    required this.isTorchOn,
+  });
+
+  final VoidCallback onTorchToggle;
+  final bool isTorchOn;
 
   @override
   State<StocktakeAppbarSession> createState() => _StocktakeAppbarSessionState();
@@ -20,7 +26,7 @@ class _StocktakeAppbarSessionState extends State<StocktakeAppbarSession> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -29,16 +35,20 @@ class _StocktakeAppbarSessionState extends State<StocktakeAppbarSession> {
                 icon: const Icon(
                   Icons.arrow_back_ios,
                   color: kThirdColor,
-                  size: 20, // Increased touch target
+                  size: 20,
                 ),
               ),
-              Expanded( // Ensure text doesn't overflow
+              Expanded(
+                // Ensure text doesn't overflow
                 child: Center(
                   child: Text(
                     (AppGlobals.instance.shopfront ?? "RM-Shopfront")
                         .split('\\')
                         .last,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -46,16 +56,13 @@ class _StocktakeAppbarSessionState extends State<StocktakeAppbarSession> {
               ),
               IconButton(
                 icon: Icon(
-                  isTorchOn ? Icons.light_mode : Icons.light_mode_outlined,
+                  widget.isTorchOn
+                      ? Icons.light_mode
+                      : Icons.light_mode_outlined,
                   color: kThirdColor,
-                  size: 24, // Increased size
+                  size: 24,
                 ),
-                onPressed: () {
-                  setState(() {
-                    scannerController.toggleTorch();
-                    isTorchOn = !isTorchOn;
-                  });
-                },
+                onPressed: widget.onTorchToggle,
               ),
             ],
           ),
@@ -117,7 +124,7 @@ class _ScanModeSelectorState extends State<ScanModeSelector> {
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 18, // Slightly larger radio
+              width: 18,
               height: 18,
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
@@ -142,10 +149,10 @@ class _ScanModeSelectorState extends State<ScanModeSelector> {
               child: Text(
                 text,
                 style: getSmartTitle(
-                  fontSize: 11, // Increased readability
+                  fontSize: 12.5,
                   color: isSelected ? kThirdColor : kGreyColor,
                 ),
-                maxLines: 2, // Allow wrapping
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
