@@ -34,13 +34,13 @@ class FilterChipRow extends StatelessWidget {
         children: _filters.map((filter) {
           final isSelected = selectedFilter == filter;
           return Padding(
-            padding: const EdgeInsets.only(right: 12.0),
+            padding: const EdgeInsets.only(right: 6.0),
             child: InkWell(
               onTap: () => onFilterChanged(filter),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
+                  horizontal: 7,
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(

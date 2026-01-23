@@ -46,14 +46,14 @@ class SyncInfoWidget extends StatelessWidget {
                       Text(
                         state.message,
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       Text(
                         "${(state.percentage * 100).toStringAsFixed(0)}%",
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           color: kPrimaryColor,
                           fontWeight: FontWeight.bold,
                         ),
@@ -71,7 +71,7 @@ class SyncInfoWidget extends StatelessWidget {
                   const SizedBox(height: 5),
                   Text(
                     "${state.currentCount} / ${state.totalCount} records",
-                    style: TextStyle(fontSize: 10, color: kGreyColor),
+                    style: TextStyle(fontSize: 12, color: kGreyColor),
                   ),
                 ],
               ),
@@ -92,7 +92,7 @@ class SyncInfoWidget extends StatelessWidget {
                   Expanded(
                     child: Text(
                       state.message,
-                      style: TextStyle(color: kErrorColor, fontSize: 12),
+                      style: TextStyle(color: kErrorColor, fontSize: 14),
                     ),
                   ),
                 ],
@@ -116,7 +116,7 @@ class SyncInfoWidget extends StatelessWidget {
                     "Stock Database Updated Successfully",
                     style: TextStyle(
                       color: Colors.green.shade800,
-                      fontSize: 12,
+                      fontSize: 14,
                     ),
                   ),
                 ],

@@ -37,7 +37,7 @@ class AppBarSession extends StatelessWidget {
                   displayText,
                   style: getSmartTitle(fontSize: 18, color: kSecondaryColor),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis, // Safe handling of long names
+                  overflow: TextOverflow.ellipsis, 
                 );
               },
             ),
