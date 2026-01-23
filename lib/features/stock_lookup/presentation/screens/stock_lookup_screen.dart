@@ -68,7 +68,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     // Initial Load
-    context.read<StockListBloc>().add(FetchFirstPageEvent());
+    context.read<StockListBloc>().add(
+      FetchFirstPageEvent(),
+    );
     context.read<FilterOptionsBloc>().add(LoadFilterOptionsEvent());
   }
 
@@ -175,6 +177,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                       filterColumn: searchCol,
                                       sortColumn: _dbFilterCol,
                                       filters: currentFilters,
+                                    
                                     ),
                                   );
                                 },
@@ -192,7 +195,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                         ),
                       );
                     }
-                    return  Padding(
+                    return Padding(
                       padding: const EdgeInsets.only(
                         left: 15,
                         right: 15,
@@ -205,8 +208,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             child: FilterChipRow(
                               selectedFilter: _selectedFilterChip,
                               isAscending: isAscending,
-                              onFilterChanged: (newLabel) {
-                              },
+                              onFilterChanged: (newLabel) {},
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -335,6 +337,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                         filterColumn: "Barcode",
                         sortColumn: _dbFilterCol,
                         filters: currentFilters,
+                      
                       ),
                     );
                   }
@@ -384,6 +387,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     filterColumn: searchCol,
                     sortColumn: _dbFilterCol,
                     filters: currentFilters,
+                    
                   ),
                 );
               });
@@ -414,6 +418,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     filterColumn: "Barcode",
                     sortColumn: _dbFilterCol,
                     filters: currentFilters,
+                    
                   ),
                 );
               }

@@ -27,6 +27,7 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
   @override
   void initState() {
     final currentState = context.read<StockListBloc>().state;
+
     if (currentState is StockListLoaded && currentState.activeFilters != null) {
       final filters = currentState.activeFilters!;
       selectedDept = filters.dept;
@@ -116,6 +117,12 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
                   c1 = state.cat1;
                   c2 = state.cat2;
                   c3 = state.cat3;
+
+                  //Validate selections against current shopfront
+                  if (!depts.contains(selectedDept)) selectedDept = null;
+                  if (!c1.contains(selectedCat1)) selectedCat1 = null;
+                  if (!c2.contains(selectedCat2)) selectedCat2 = null;
+                  if (!c3.contains(selectedCat3)) selectedCat3 = null;
                 }
 
                 if (state is FiltersLoading) {

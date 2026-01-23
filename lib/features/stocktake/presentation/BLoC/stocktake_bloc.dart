@@ -5,7 +5,7 @@ import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counti
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 
-import '../../domain/use_cases/count_and_save_to_localDb.dart';
+import '../../domain/use_cases/count_and_save_to_localdb.dart';
 import '../../domain/use_cases/fetch_all_stocktake_list.dart';
 
 class ScannerBloc extends Bloc<StocktakeEvent, ScannerStates> {

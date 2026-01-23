@@ -22,7 +22,7 @@ import '../features/stock_lookup/domain/use_cases/get_paginated_stock.dart';
 import '../features/stock_lookup/models/stock_lookup_models.dart';
 import '../features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import '../features/stocktake/domain/use_cases/commit_stocktake.dart';
-import '../features/stocktake/domain/use_cases/count_and_save_to_localDb.dart';
+import '../features/stocktake/domain/use_cases/count_and_save_to_localdb.dart';
 import '../features/stocktake/domain/use_cases/fetch_all_stocktake_list.dart';
 import '../features/stocktake/domain/use_cases/fetch_counting_stock.dart';
 import '../features/stocktake/models/stocktake_model.dart';

@@ -49,7 +49,7 @@ class StocktakeModel implements StocktakeRepo {
           "${pad(now.minute)}"
           "${pad(now.second)}";
 
-      final String fileName = "${mobileID}_initCheck_$timestamp.json";
+      final String fileName = "${mobileID}_initCheck_$timestamp.json.gz";
 
       return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(
         address: address,

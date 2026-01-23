@@ -17,7 +17,11 @@ class SyncInfoWidget extends StatelessWidget {
       child: BlocConsumer<FetchStockBloc, FetchStockStates>(
         listener: (context, state) {
           if (state is FetchStockSuccess) {
-            context.read<StockListBloc>().add(FetchFirstPageEvent());
+            context.read<StockListBloc>().add(
+              FetchFirstPageEvent(
+                
+              ),
+            );
             context.read<FilterOptionsBloc>().add(LoadFilterOptionsEvent());
           }
         },

@@ -211,45 +211,48 @@ class LanNetworkServiceImpl implements LanNetworkService {
   }
 
   @override
-  Future<void> writeStocktakeDataToSharedFolder({
-    required String address,
-    required String fullPath,
-    required String username,
-    required String password,
-    required String fileName,
-    required String fileContent,
-  }) async {
-    final connect = await SmbConnect.connectAuth(
-      host: address,
-      domain: "",
-      username: username,
-      password: password,
-    );
+Future<void> writeStocktakeDataToSharedFolder({
+  required String address,
+  required String fullPath,
+  required String username,
+  required String password,
+  required String fileName,
+  required String fileContent,
+}) async {
+  final connect = await SmbConnect.connectAuth(
+    host: address,
+    domain: "",
+    username: username,
+    password: password,
+  );
 
-    try {
-      String cleanedPath = fullPath
-          .replaceFirst(RegExp(r'^//'), '')
-          .replaceFirst(address, '')
-          .replaceFirst(RegExp(r'^/'), '');
+  try {
+    String cleanedPath = fullPath
+        .replaceFirst(RegExp(r'^//'), '')
+        .replaceFirst(address, '')
+        .replaceFirst(RegExp(r'^/'), '');
 
-      if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
-      if (cleanedPath.endsWith('/')) {
-        cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
-      }
-
-      final String destinationPath = "$cleanedPath/incoming/$fileName";
-      final file = await connect.createFile(destinationPath);
-      IOSink writer = await connect.openWrite(file);
-      writer.add(utf8.encode(fileContent));
-
-      await writer.flush();
-      await writer.close();
-    } catch (e) {
-      return Future.error(e.toString());
-    } finally {
-      await connect.close();
+    if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
+    if (cleanedPath.endsWith('/')) {
+      cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
     }
+
+    final String destinationPath = "$cleanedPath/incoming/$fileName";
+    final file = await connect.createFile(destinationPath);
+    IOSink writer = await connect.openWrite(file);
+
+    final List<int> gzBytes = GZipCodec().encode(utf8.encode(fileContent));
+    writer.add(gzBytes);
+
+    await writer.flush();
+    await writer.close();
+  } catch (e) {
+    return Future.error(e.toString());
+  } finally {
+    await connect.close();
   }
+}
+
 
   @override
   Future<bool> isShopfrontsFileExists({
