@@ -58,7 +58,7 @@ class FilterChipRow extends StatelessWidget {
                         color: isSelected
                             ? kSecondaryColor
                             : Colors.blueGrey[700],
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

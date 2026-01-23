@@ -79,7 +79,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                   Expanded( // Responsive Text
                     child: Text(
                       widget.barcode,
-                      style: getSmartTitle(color: kSecondaryColor, fontSize: 16), // Increased readability
+                      style: getSmartTitle(color: kSecondaryColor, fontSize: 18), // Increased readability
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -96,7 +96,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                     ),
                     child: Text(
                       widget.qty,
-                      style: const TextStyle(fontSize: 12, color: kSecondaryColor),
+                      style: const TextStyle(fontSize: 14, color: kSecondaryColor),
                     ),
                   ),
                 ],
@@ -126,7 +126,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       const SizedBox(width: 8),
                       const Text(
                         "Description",
-                        style: TextStyle(fontSize: 12, color: kSecondaryColor), // Readability
+                        style: TextStyle(fontSize: 14, color: kSecondaryColor), // Readability
                       ),
                     ],
                   ),
@@ -140,12 +140,12 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       child: LanguageToolTextField(
                         controller: _languageToolController,
                         style: const TextStyle(
-                          fontSize: 13, // Increased font size
+                          fontSize: 14, // Increased font size
                           color: kSecondaryColor,
                         ),
                         decoration: InputDecoration(
                           hintText: "Description",
-                          hintStyle: const TextStyle(color: kGreyColor, fontSize: 12),
+                          hintStyle: const TextStyle(color: kGreyColor, fontSize: 14),
                           filled: true,
                           fillColor: Colors.transparent,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 10),
@@ -257,7 +257,7 @@ class StockInfoRow extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(fontSize: 13, color: kSecondaryColor), // Increased font size
+                style: const TextStyle(fontSize: 14, color: kSecondaryColor), // Increased font size
               ),
             ],
           ),
@@ -272,7 +272,7 @@ class StockInfoRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
               style: const TextStyle(
-                fontSize: 13, // Increased font size for readability
+                fontSize: 14, // Increased font size for readability
                 color: kSecondaryColor,
                 fontWeight: FontWeight.w500,
               ),

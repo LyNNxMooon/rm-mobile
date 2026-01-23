@@ -55,7 +55,7 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                           ),
                           const Text(
                             "Stocktake List",
-                            style: TextStyle(fontSize: 12, color: kGreyColor),
+                            style: TextStyle(fontSize: 14, color: kGreyColor),
                           ),
                         ],
                       ),
@@ -70,7 +70,7 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                 children: [
                   Text(
                     "1-50 of 4,795", // This should likely be dynamic later
-                    style: TextStyle(color: kPrimaryColor, fontSize: 12),
+                    style: TextStyle(color: kPrimaryColor, fontSize: 14),
                   ),
                   SizedBox(width: 10),
                   Icon(

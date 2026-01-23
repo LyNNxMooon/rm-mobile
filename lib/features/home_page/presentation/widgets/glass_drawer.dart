@@ -68,29 +68,38 @@ class _GlassDrawerState extends State<GlassDrawer> {
                   const SizedBox(height: 15),
 
                   Padding(
-                    padding: const EdgeInsets.only(left: 28, right: 28), // Added right padding
-                    child: BlocBuilder<NetworkSavedPathValidationBloc, LoadingSplashStates>(
-                      builder: (context, state) {
-                        String shopText;
-                        if (state is ConnectionValid) {
-                          shopText = AppGlobals.instance.shopfront == null
-                              ? "RM-Shopfront"
-                              : (AppGlobals.instance.shopfront!).split(r'\').last;
-                        } else {
-                          shopText = "Connect to a shopfront...";
-                        }
+                    padding: const EdgeInsets.only(
+                      left: 28,
+                      right: 28,
+                    ), // Added right padding
+                    child:
+                        BlocBuilder<
+                          NetworkSavedPathValidationBloc,
+                          LoadingSplashStates
+                        >(
+                          builder: (context, state) {
+                            String shopText;
+                            if (state is ConnectionValid) {
+                              shopText = AppGlobals.instance.shopfront == null
+                                  ? "RM-Shopfront"
+                                  : (AppGlobals.instance.shopfront!)
+                                        .split(r'\')
+                                        .last;
+                            } else {
+                              shopText = "Connect to a shopfront...";
+                            }
 
-                        return Text(
-                          shopText,
-                          style: const TextStyle(
-                            color: kSecondaryColor,
-                            fontSize: 16,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        );
-                      },
-                    ),
+                            return Text(
+                              shopText,
+                              style: const TextStyle(
+                                color: kSecondaryColor,
+                                fontSize: 18,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          },
+                        ),
                   ),
 
                   Expanded(child: dashBoardView(scrollController)),
@@ -158,12 +167,12 @@ class _GlassDrawerState extends State<GlassDrawer> {
   }
 
   Widget _buildGridItem(
-      String title,
-      String subTitle,
-      IconData icon,
-      BuildContext context,
-      int index,
-      ) {
+    String title,
+    String subTitle,
+    IconData icon,
+    BuildContext context,
+    int index,
+  ) {
     return AnimationConfiguration.staggeredGrid(
       position: index,
       duration: const Duration(milliseconds: 1500),
@@ -209,7 +218,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
                             title,
                             style: getSmartTitle(
                               color: kPrimaryColor,
-                              fontSize: 12,
+                              fontSize: 14,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -231,8 +240,8 @@ class _GlassDrawerState extends State<GlassDrawer> {
                             subTitle,
                             style: const TextStyle(
                               color: kGreyColor,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -253,42 +262,42 @@ class _GlassDrawerState extends State<GlassDrawer> {
   final List<Map<String, dynamic>> _menuItems = [
     {
       "title": "RM Shopfront",
-      "subTitle": "Connect to your Shopfront",
+      "subTitle": "Select Shopfront",
       "icon": Icons.shop_2_outlined,
     },
     {
       "title": "Stock-Lookup",
-      "subTitle": "Search your inventory",
+      "subTitle": "Search inventory",
       "icon": Icons.inventory_2_outlined,
     },
     {
       "title": "Mobile Sales",
-      "subTitle": "Do instant counter sales",
+      "subTitle": "Do Counter sales",
       "icon": Icons.point_of_sale_outlined,
     },
     {
+      "title": "Quotes & SO",
+      "subTitle": "Issue Quotes & SO",
+      "icon": Icons.request_quote_outlined,
+    },
+    {
       "title": "Purchase Orders",
-      "subTitle": "Order directly to supplier",
+      "subTitle": "Order to supplier",
       "icon": Icons.shopping_bag_outlined,
     },
     {
       "title": "Goods Received",
-      "subTitle": "Easily receive arrivals",
+      "subTitle": "Receive arrivals",
       "icon": Icons.local_shipping_outlined,
     },
     {
-      "title": "Quotes & SO",
-      "subTitle": "Issue quotes & Sales Orders",
-      "icon": Icons.request_quote_outlined,
-    },
-    {
       "title": "Returns",
-      "subTitle": "Return goods to supplier",
+      "subTitle": "Return goods",
       "icon": Icons.assignment_return_outlined,
     },
     {
       "title": "Pricing Changes",
-      "subTitle": "Instantly update your pricing",
+      "subTitle": "Update pricing",
       "icon": Icons.price_change_outlined,
     },
     {
@@ -298,17 +307,17 @@ class _GlassDrawerState extends State<GlassDrawer> {
     },
     {
       "title": "Reporting",
-      "subTitle": "View & Print out Reports",
+      "subTitle": "Print Reports",
       "icon": Icons.newspaper_outlined,
     },
     {
       "title": "Customers",
-      "subTitle": "Search customers' details",
+      "subTitle": "Search customers",
       "icon": Icons.people,
     },
     {
       "title": "Suppliers",
-      "subTitle": "Search suppliers' details",
+      "subTitle": "Search suppliers",
       "icon": Icons.newspaper_outlined,
     },
   ];

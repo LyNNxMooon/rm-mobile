@@ -58,7 +58,7 @@ class ActionCard extends StatelessWidget {
                         Text(
                           title,
                           style: getSmartTitle(
-                            fontSize: 16,
+                            fontSize: 18,
                             color: kPrimaryColor,
                           ),
                           maxLines: 1,
@@ -67,7 +67,7 @@ class ActionCard extends StatelessWidget {
                         const SizedBox(height: 6),
                         Text(
                           subtitle,
-                          style: const TextStyle(fontSize: 12, color: kGreyColor),
+                          style: const TextStyle(fontSize: 14, color: kGreyColor),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),

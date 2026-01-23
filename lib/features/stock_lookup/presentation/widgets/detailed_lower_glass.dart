@@ -71,7 +71,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                   // Label
                   const Text(
                     "Inc RRP",
-                    style: TextStyle(fontSize: 13, color: kSecondaryColor), // Increased font
+                    style: TextStyle(fontSize: 14, color: kSecondaryColor), // Increased font
                   ),
                   const SizedBox(width: 10),
 
@@ -83,14 +83,14 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                         controller: _rrpController,
                         keyboardType: TextInputType.number,
                         style: const TextStyle(
-                          fontSize: 13, // Increased font
+                          fontSize: 14, // Increased font
                           color: kSecondaryColor,
                         ),
                         decoration: InputDecoration(
                           hintText: "Sell",
                           hintStyle: const TextStyle(
                             color: kGreyColor,
-                            fontSize: 12,
+                            fontSize: 14,
                           ),
                           filled: true,
                           fillColor: Colors.transparent,
@@ -151,7 +151,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                       child: const Text(
                         "UPDATE",
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: kPrimaryColor,
                         ),

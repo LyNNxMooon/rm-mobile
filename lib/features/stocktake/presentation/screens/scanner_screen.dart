@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:alert_info/alert_info.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -349,7 +348,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       child: Text(
                         "In System: $qty",
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 14,
                           color: kPrimaryColor,
                           fontWeight: FontWeight.bold,
                         ),
@@ -623,7 +622,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
             Text(
               title,
-              style: const TextStyle(fontSize: 13, color: kGreyColor),
+              style: const TextStyle(fontSize: 14, color: kGreyColor),
             ),
           ],
         ),

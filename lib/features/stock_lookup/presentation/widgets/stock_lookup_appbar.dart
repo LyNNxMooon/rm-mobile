@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
@@ -51,13 +51,13 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Stock List", style: TextStyle(fontSize: 13)),
+                    const Text("Stock List", style: TextStyle(fontSize: 14)),
                     const SizedBox(height: 5),
                     Text(
                       (AppGlobals.instance.shopfront ?? "RM-Shopfront")
                           .split('\\')
                           .last,
-                      style: getSmartTitle(color: kPrimaryColor, fontSize: 14),
+                      style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
                       maxLines: 1, // Prevent vertical overflow
                       overflow: TextOverflow.ellipsis, // Handle long names gracefully
                     ),

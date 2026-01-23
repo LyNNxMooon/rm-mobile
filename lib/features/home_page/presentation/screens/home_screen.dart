@@ -174,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
       blendMode: BlendMode.srcIn,
       child: const Text(
         "Welcome to RM - Mobile",
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         textAlign: TextAlign.center,
       ),
     );

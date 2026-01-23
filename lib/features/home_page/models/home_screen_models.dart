@@ -105,15 +105,15 @@ class HomeScreenModels implements HomeRepo {
 
       final now = DateTime.now();
 
-      String _pad(int value) => value.toString().padLeft(2, '0');
+      String pad(int value) => value.toString().padLeft(2, '0');
 
       final String timestamp =
           "${now.year}"
-          "${_pad(now.month)}"
-          "${_pad(now.day)}"
-          "${_pad(now.hour)}"
-          "${_pad(now.minute)}"
-          "${_pad(now.second)}";
+          "${pad(now.month)}"
+          "${pad(now.day)}"
+          "${pad(now.hour)}"
+          "${pad(now.minute)}"
+          "${pad(now.second)}";
 
       final String fileName = "${mobileID}_request_$timestamp.json";
 

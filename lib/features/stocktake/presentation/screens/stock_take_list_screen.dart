@@ -273,7 +273,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: getSmartTitle(
                                 color: kThirdColor,
-                                fontSize: 13,
+                                fontSize: 14,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -281,7 +281,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                               stock.barcode,
                               style: const TextStyle(
                                 fontFamily: 'monospace',
-                                fontSize: 11,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: kPrimaryColor,
                               ),

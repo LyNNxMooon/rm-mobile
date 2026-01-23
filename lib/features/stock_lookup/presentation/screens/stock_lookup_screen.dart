@@ -594,7 +594,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   overflow: TextOverflow.ellipsis,
                                   style: getSmartTitle(
                                     color: kThirdColor,
-                                    fontSize: 12,
+                                    fontSize: 14,
                                   ),
                                 ),
                               ],
@@ -607,7 +607,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontFamily: 'monospace',
-                              fontSize: 10,
+                              fontSize: 13,
                               color: kPrimaryColor,
                               fontWeight: FontWeight.w600,
                             ),
@@ -645,7 +645,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           return qtyString;
                         }(),
                         style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 12,
                           fontWeight: FontWeight.w900,
                           color: stock.quantity > 0
                               ? kPrimaryColor
