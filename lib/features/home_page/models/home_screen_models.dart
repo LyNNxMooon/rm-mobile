@@ -236,7 +236,7 @@ class HomeScreenModels implements HomeRepo {
 
       String jsonString = utf8.decode(GZipCodec().decode(bytes));
       List<StockVO> chunk = (jsonDecode(jsonString) as List)
-          .map((e) => StockVO.fromJson(e))
+          .map((e) => StockVO.fromJsonNetwork(e))
           .toList();
 
       await LocalDbDAO.instance.insertStocks(

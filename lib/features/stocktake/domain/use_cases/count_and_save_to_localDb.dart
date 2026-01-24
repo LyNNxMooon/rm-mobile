@@ -11,13 +11,13 @@ class CountAndSaveToLocaldb {
 
   Future<void> call({required StockVO stock, required String qty}) async {
     try {
-      if (stock.staticQuantity) {
-        return Future.error("Static/Package items cannot be counted!");
-      }
+      // if (stock.staticQuantity) {
+      //   return Future.error("Static/Package items cannot be counted!");
+      // }
 
-      if (stock.package) {
-        return Future.error("Static/Package items cannot be counted!");
-      }
+      // if (stock.package) {
+      //   return Future.error("Static/Package items cannot be counted!");
+      // }
 
       if (qty.isEmpty) {
         return Future.error("Enter qty to count!");

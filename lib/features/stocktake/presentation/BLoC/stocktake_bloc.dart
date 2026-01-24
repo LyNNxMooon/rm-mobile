@@ -58,6 +58,11 @@ class StocktakeBloc extends Bloc<StocktakeEvent, StocktakeStates> {
     Stocktake event,
     Emitter<StocktakeStates> emit,
   ) async {
+    if (event.stock.staticQuantity || event.stock.package) {
+      emit(StocktakeError("Static/Package items cannot be counted!"));
+      return; // Stop execution here
+    }
+
     emit(StocktakeLoading());
     try {
       await countAndSaveToLocaldb(qty: event.qty, stock: event.stock);
@@ -186,7 +191,6 @@ class SendingFinalStocktakeBloc
       await sendFinalStocktakeToRm(event.auditData);
 
       emit(SentStocktakeToRM("Stocktake data commited to RetailManager!"));
-
     } catch (error) {
       emit(ErrorSendingStocktake("Error sending stocktake list: $error"));
     }

@@ -261,20 +261,23 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 100,
-            height: 100,
-            child: Image.asset("assets/images/box.png", fit: BoxFit.fill),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            "Your Stocktake list is empty!",
-            style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 50),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 100,
+              height: 100,
+              child: Image.asset("assets/images/box.png", fit: BoxFit.fill),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              "Your Stocktake list is empty!",
+              style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
+            ),
+          ],
+        ),
       ),
     );
   }

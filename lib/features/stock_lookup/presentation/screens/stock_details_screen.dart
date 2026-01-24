@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
@@ -24,6 +25,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
   @override
   void initState() {
+    logger.d("Static: ${widget.stock.staticQuantity}");
+
     if ((widget.stock.goodsTax ?? "") == "GST") {
       cost = widget.stock.cost * 1.1;
     } else {
@@ -66,51 +69,54 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   // Product Image Session
                   // Using LayoutBuilder to safely constrain height based on available screen space
                   LayoutBuilder(
-                      builder: (context, constraints) {
-                        // Adjust height dynamically: max 42% of screen, but cap at 350px for large screens
-                        double imageHeight = MediaQuery.of(context).size.height * 0.42;
-                        if (imageHeight > 350) imageHeight = 350;
+                    builder: (context, constraints) {
+                      // Adjust height dynamically: max 42% of screen, but cap at 350px for large screens
+                      double imageHeight =
+                          MediaQuery.of(context).size.height * 0.42;
+                      if (imageHeight > 350) imageHeight = 350;
 
-                        return Hero(
-                          tag: 'stock_image_${widget.stock.stockID}',
-                          child: SizedBox(
-                            width: double.infinity,
-                            height: imageHeight,
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                bottomRight: Radius.circular(20),
-                                bottomLeft: Radius.circular(20),
-                              ),
-                              child: CachedNetworkImage(
+                      return Hero(
+                        tag: 'stock_image_${widget.stock.stockID}',
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: imageHeight,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              bottomRight: Radius.circular(20),
+                              bottomLeft: Radius.circular(20),
+                            ),
+                            child: CachedNetworkImage(
+                              fit: BoxFit.fill,
+                              imageUrl: widget.stock.imageUrl ?? "",
+                              placeholder: (_, url) => Image.asset(
+                                overviewPlaceholder,
                                 fit: BoxFit.fill,
-                                imageUrl: widget.stock.imageUrl ?? "",
-                                placeholder: (_, url) => Image.asset(
-                                  overviewPlaceholder,
-                                  fit: BoxFit.fill,
-                                ),
-                                errorWidget: (_, url, error) => Image.asset(
-                                  overviewPlaceholder,
-                                  fit: BoxFit.fill,
-                                ),
+                              ),
+                              errorWidget: (_, url, error) => Image.asset(
+                                overviewPlaceholder,
+                                fit: BoxFit.fill,
                               ),
                             ),
                           ),
-                        );
-                      }
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 20),
 
                   // Detailed Upper Glass
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20), // Padding moved outside for safety
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                    ), // Padding moved outside for safety
                     child: DetailedUpperGlass(
                       barcode: widget.stock.barcode,
                       qty:
-                      "In System: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
+                          "In System: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
                       description: widget.stock.description,
                       cats:
-                      "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
+                          "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
                       cost: cost,
                       sell: sell,
                       custom1: widget.stock.custom1 ?? "-",
@@ -118,13 +124,15 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                       layByQty: (widget.stock.laybyQuantity % 1 == 0)
                           ? widget.stock.laybyQuantity.toInt().toString()
                           : double.parse(
-                        widget.stock.laybyQuantity.toStringAsFixed(2),
-                      ).toString(),
+                              widget.stock.laybyQuantity.toStringAsFixed(2),
+                            ).toString(),
                       soQty: (widget.stock.salesOrderQuantity % 1 == 0)
                           ? widget.stock.salesOrderQuantity.toInt().toString()
                           : double.parse(
-                        widget.stock.salesOrderQuantity.toStringAsFixed(2),
-                      ).toString(),
+                              widget.stock.salesOrderQuantity.toStringAsFixed(
+                                2,
+                              ),
+                            ).toString(),
                     ),
                   ),
 

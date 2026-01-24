@@ -1,4 +1,3 @@
-
 import 'package:json_annotation/json_annotation.dart';
 part 'stock_vo.g.dart';
 
@@ -63,6 +62,9 @@ class StockVO {
 
   factory StockVO.fromJson(Map<String, dynamic> json) =>
       _$StockVOFromJson(json);
+
+  factory StockVO.fromJsonNetwork(Map<String, dynamic> json) =>
+      _$StockVOFromJsonNetwork(json);
 
   Map<String, dynamic> toJson(String currentShopfront) =>
       _$StockVOToJson(this, currentShopfront);
