@@ -1,4 +1,5 @@
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 
 abstract class StocktakeEvent {}
@@ -26,3 +27,9 @@ class FetchStocktakeListEvent extends StocktakeEvent {}
 class CommittingStocktakeEvent extends StocktakeEvent {}
 
 class StartStocktakeValidationEvent extends StocktakeEvent {}
+
+class SendingFinalStocktakeEvent extends StocktakeEvent {
+  final List<AuditWithStockVO> auditData;
+
+  SendingFinalStocktakeEvent(this.auditData);
+}

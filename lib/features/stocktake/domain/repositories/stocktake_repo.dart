@@ -18,6 +18,18 @@ abstract class StocktakeRepo {
     required List<CountedStockVO> dataToSync,
   });
 
+  Future finalSendingStocktaketoRM({
+    required String address,
+    required String fullPath,
+    required String? username,
+    required String? password,
+    required String mobileName,
+    required String mobileID,
+    required String shopfrontName,
+    required List<CountedStockVO> dataToSync,
+    required List<AuditWithStockVO> auditData
+  });
+
   Future<List<CountedStockVO>> getAllStocktakeList(String shopfront);
 
   Stream<AuditSyncStatus> fetchStocktakeAuditReport({

@@ -69,6 +69,77 @@ class StocktakeModel implements StocktakeRepo {
   }
 
   @override
+  Future finalSendingStocktaketoRM({
+    required String address,
+    required String fullPath,
+    required String? username,
+    required String? password,
+    required String mobileName,
+    required String mobileID,
+    required String shopfrontName,
+    required List<CountedStockVO> dataToSync,
+    required List<AuditWithStockVO> auditData,
+  }) async {
+    try {
+      List<CountedStockVO> adjustedData = List.from(dataToSync);
+
+      for (var auditRecord in auditData) {
+        final audit = auditRecord.audit;
+
+        int index = adjustedData.indexWhere((s) => s.stockID == audit.stockId);
+
+        if (index != -1) {
+          final currentStock = adjustedData[index];
+
+          final newQuantity = currentStock.quantity + audit.movement;
+
+          adjustedData[index] = CountedStockVO(
+            stockID: currentStock.stockID,
+            stocktakeDate: currentStock.stocktakeDate,
+            quantity: newQuantity,
+            dateModified: DateTime.now(),
+            isSynced: currentStock.isSynced,
+            barcode: currentStock.barcode,
+            description: currentStock.description,
+          );
+        }
+      }
+
+      final String jsonContent = _StocktakeJsonBuilder.buildJson(
+        adjustedData,
+        mobileID,
+        mobileName,
+        shopfrontName,
+      );
+
+      final now = DateTime.now();
+
+      String pad(int value) => value.toString().padLeft(2, '0');
+
+      final String timestamp =
+          "${now.year}"
+          "${pad(now.month)}"
+          "${pad(now.day)}"
+          "${pad(now.hour)}"
+          "${pad(now.minute)}"
+          "${pad(now.second)}";
+
+      final String fileName = "${mobileID}_stocktake_$timestamp.json.gz";
+
+      return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(
+        address: address,
+        fullPath: fullPath,
+        username: username ?? "Guest",
+        password: password ?? "",
+        fileName: fileName,
+        fileContent: jsonContent,
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
   Future stocktakeAndSaveToLocalDb(
     CountedStockVO stock,
     String shopfront,
@@ -234,42 +305,54 @@ class _StocktakeJsonBuilder {
   }
 }
 
-
 class TransactionTypeHelper {
   static String translate(String code) {
     switch (code) {
-      // Sales & Orders
-      case "IV": return "Invoice";
-      case "SA": return "Sale";
-      case "LB": return "Lay-by";
-      case "SO": return "Sales Order";
-      case "QU": return "Quote";
-      case "CS": return "Special Order";
-      
-      // Goods Movement
-      case "GR": return "Goods Received";
-      case "RG": return "Returned Goods";
-      case "PO": return "Purchase Order";
-      
-      // Audits & Adjustments
-      case "ST": return "Stocktake";
-      case "SL": return "Partial Stocktake";
-      case "SI": return "Single Stocktake";
-      case "MR": return "Merge";
-      case "VC": return "Cost Change";
-      case "VS": return "Sell Price Change";
-      
-      // Payments & Conversions
-      case "IP": return "Invoice Payment";
-      case "LP": return "Lay-by Payment";
-      case "SP": return "Sales Order Payment";
-      case "LC": return "Lay-by Conversion";
-      case "SC": return "Sales Order Conversion";
-      
-      default: return code; 
+      case "IV":
+        return "Invoice";
+      case "SA":
+        return "Sale";
+      case "LB":
+        return "Lay-by";
+      case "SO":
+        return "Sales Order";
+      case "QU":
+        return "Quote";
+      case "CS":
+        return "Special Order";
+      case "GR":
+        return "Goods Received";
+      case "RG":
+        return "Returned Goods";
+      case "PO":
+        return "Purchase Order";
+      case "ST":
+        return "Stocktake";
+      case "SL":
+        return "Partial Stocktake";
+      case "SI":
+        return "Single Stocktake";
+      case "MR":
+        return "Merge";
+      case "VC":
+        return "Cost Change";
+      case "VS":
+        return "Sell Price Change";
+      case "IP":
+        return "Invoice Payment";
+      case "LP":
+        return "Lay-by Payment";
+      case "SP":
+        return "Sales Order Payment";
+      case "LC":
+        return "Lay-by Conversion";
+      case "SC":
+        return "Sales Order Conversion";
+
+      default:
+        return code;
     }
   }
-  
 
   static IconData getIcon(String code) {
     if (["SA", "IV", "LB"].contains(code)) return Icons.shopping_cart_outlined;

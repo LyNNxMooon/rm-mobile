@@ -103,3 +103,21 @@ class StocktakeValidationError extends StocktakeValidationState {
   StocktakeValidationError(this.message);
 }
 
+//final commiting
+abstract class SendingFinalStocktakeStates {}
+
+class SendingFinalStocktakeInitial extends SendingFinalStocktakeStates {}
+
+class LoadingToSendStocktake extends SendingFinalStocktakeStates {}
+
+class SentStocktakeToRM extends SendingFinalStocktakeStates {
+  final String message;
+
+  SentStocktakeToRM(this.message);
+}
+
+class ErrorSendingStocktake extends SendingFinalStocktakeStates {
+  final String message;
+
+  ErrorSendingStocktake(this.message);
+}

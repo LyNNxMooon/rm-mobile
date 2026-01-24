@@ -303,94 +303,95 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     );
   }
 
-  Widget _buildValidationDialog(StocktakeValidationHasAudits state) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: kSecondaryColor,
-      titlePadding: EdgeInsets.zero,
-      insetPadding: EdgeInsets.symmetric(horizontal: 15),
-      contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-      title: _buildDialogHeader(),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: Text(
-                "The following items were modified recently. How would you like to proceed?",
-                style: TextStyle(fontSize: 13, color: kGreyColor),
+Widget _buildValidationDialog(StocktakeValidationHasAudits state) {
+  
+  final double safeMaxHeight = MediaQuery.of(context).size.height * 0.7;
+
+  return AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    backgroundColor: kSecondaryColor,
+    titlePadding: EdgeInsets.zero,
+    insetPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 24),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+    title: _buildDialogHeader(),
+    content: SizedBox(
+      width: double.maxFinite,
+      child: Column(
+        mainAxisSize: MainAxisSize.min, 
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Text(
+              "The following items were modified recently. How would you like to proceed?",
+              style: TextStyle(fontSize: 13, color: kGreyColor),
+            ),
+          ),
+          
+   
+          Flexible(
+            child: Container(
+    
+              constraints: BoxConstraints(maxHeight: safeMaxHeight),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade200),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListView.separated(
+                shrinkWrap: true, 
+                itemCount: state.rows.length,
+                separatorBuilder: (_, _) => const Divider(height: 1, indent: 60),
+                itemBuilder: (context, i) => _buildAuditTile(state.rows[i]),
               ),
             ),
-            Flexible(
-              child: Container(
-                height: 300,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade200),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: state.rows.length,
-                  separatorBuilder: (_, _) =>
-                      const Divider(height: 1, indent: 60),
-                  itemBuilder: (context, i) => _buildAuditTile(state.rows[i]),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 20),
-      actions: [
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  side: BorderSide(color: kPrimaryColor),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(
-                  "Adjust & Commit",
-                  style: TextStyle(
-                    color: kPrimaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+    ),
+    actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 20),
+    actions: [
+      Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () {
+                Navigator.pop(context);
+        
+              },
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                side: BorderSide(color: kPrimaryColor),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text(
+                "Adjust & Commit",
+                style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  "Ignore & Commit",
-                  style: TextStyle(
-                    color: kSecondaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+            
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryColor,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text(
+                "Ignore & Commit",
+                style: TextStyle(color: kSecondaryColor, fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ),
-          ],
-        ),
-      ],
-    );
-  }
+          ),
+        ],
+      ),
+    ],
+  );
+}
 
   Widget _buildDialogHeader() {
     return Container(

@@ -3,6 +3,7 @@ import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/commit_stocktake.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counting_stock.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
@@ -109,9 +110,7 @@ class CommittingStocktakeBloc
     try {
       await commitStocktake();
 
-      emit(
-        CommittedStocktake("Stocktake data sent for validation!"),
-      );
+      emit(CommittedStocktake("Stocktake data sent for validation!"));
     } catch (error) {
       emit(ErrorCommitingStocktake("Error commiting stocktake list: $error"));
     }
@@ -165,6 +164,30 @@ class StocktakeValidationBloc
       );
     } catch (e) {
       emit(StocktakeValidationError(e.toString()));
+    }
+  }
+}
+
+class SendingFinalStocktakeBloc
+    extends Bloc<StocktakeEvent, SendingFinalStocktakeStates> {
+  final SendFinalStocktakeToRm sendFinalStocktakeToRm;
+
+  SendingFinalStocktakeBloc({required this.sendFinalStocktakeToRm})
+    : super(SendingFinalStocktakeInitial()) {
+    on<SendingFinalStocktakeEvent>(_onSendingStocktake);
+  }
+
+  Future<void> _onSendingStocktake(
+    SendingFinalStocktakeEvent event,
+    Emitter<SendingFinalStocktakeStates> emit,
+  ) async {
+    emit(LoadingToSendStocktake());
+    try {
+      await sendFinalStocktakeToRm(event.auditData);
+
+      emit(SentStocktakeToRM("Stocktake data commited to RetailManager!"));
+    } catch (error) {
+      emit(ErrorSendingStocktake("Error sending stocktake list: $error"));
     }
   }
 }
