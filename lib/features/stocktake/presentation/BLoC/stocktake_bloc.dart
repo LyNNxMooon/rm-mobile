@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/commit_stocktake.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counting_stock.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
+import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 
@@ -108,10 +110,61 @@ class CommittingStocktakeBloc
       await commitStocktake();
 
       emit(
-        CommittedStocktake("Stocktake committed to Lan Folder Successfully!"),
+        CommittedStocktake("Stocktake data sent for validation!"),
       );
     } catch (error) {
       emit(ErrorCommitingStocktake("Error commiting stocktake list: $error"));
+    }
+  }
+}
+
+class StocktakeValidationBloc
+    extends Bloc<StocktakeEvent, StocktakeValidationState> {
+  final FetchStocktakeAuditReport fetchStocktakeAuditReport;
+
+  StocktakeValidationBloc({required this.fetchStocktakeAuditReport})
+    : super(StocktakeValidationInitial()) {
+    on<StartStocktakeValidationEvent>(_onStart);
+  }
+
+  Future<void> _onStart(
+    StartStocktakeValidationEvent event,
+    Emitter<StocktakeValidationState> emit,
+  ) async {
+    emit(
+      StocktakeValidationProgress(
+        current: 0,
+        total: 60,
+        message: "Waiting for agent...",
+      ),
+    );
+
+    try {
+      await emit.forEach<AuditSyncStatus>(
+        fetchStocktakeAuditReport(),
+        onData: (status) {
+          // progress messages
+          if (status.rows == null) {
+            return StocktakeValidationProgress(
+              current: status.processed,
+              total: status.total,
+              message: status.message,
+            );
+          }
+
+          // finished
+          if (status.rows!.isEmpty) {
+            return StocktakeValidationClear();
+          } else {
+            return StocktakeValidationHasAudits(status.rows!);
+          }
+        },
+        onError: (error, stackTrace) {
+          return StocktakeValidationError(error.toString());
+        },
+      );
+    } catch (e) {
+      emit(StocktakeValidationError(e.toString()));
     }
   }
 }

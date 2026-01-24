@@ -24,3 +24,5 @@ class Stocktake extends StocktakeEvent {
 class FetchStocktakeListEvent extends StocktakeEvent {}
 
 class CommittingStocktakeEvent extends StocktakeEvent {}
+
+class StartStocktakeValidationEvent extends StocktakeEvent {}

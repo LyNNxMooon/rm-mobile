@@ -149,4 +149,10 @@ class HiveDAOImpl extends LocalDbDAO {
   Future<void> saveAppConfig(String key, String value) {
     throw UnimplementedError();
   }
+  
+  @override
+  Future<Map<num, StockVO>> getStocksByIds({required String shopfront, required List<num> stockIds}) {
+    // TODO: implement getStocksByIds
+    throw UnimplementedError();
+  }
 }

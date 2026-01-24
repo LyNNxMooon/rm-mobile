@@ -1,5 +1,6 @@
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 
 abstract class StocktakeRepo {
   Future<StockVO?> fetchStockDetails(String barcode, String shopfront);
@@ -18,4 +19,13 @@ abstract class StocktakeRepo {
   });
 
   Future<List<CountedStockVO>> getAllStocktakeList(String shopfront);
+
+  Stream<AuditSyncStatus> fetchStocktakeAuditReport({
+    required String ipAddress,
+    required String fullPath,
+    required String? username,
+    required String? password,
+    required String mobileID,
+    required String shopfront,
+  });
 }

@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/repositories/stocktake_repo.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
 import '../features/home_page/domain/use_cases/auto_connect_to_default_folder.dart';
 import '../features/home_page/domain/use_cases/check_if_shopfront_file_exists.dart';
 import '../features/home_page/domain/use_cases/connect_and_write_to_folder.dart';
@@ -57,6 +58,9 @@ Future<void> init() async {
   sl.registerFactory(() => StockListBloc(getPaginatedStock: sl()));
   sl.registerFactory(() => FilterOptionsBloc(getFilterOptions: sl()));
   sl.registerFactory(() => ScannerBloc(fetchCountingStock: sl()));
+  sl.registerFactory(
+    () => StocktakeValidationBloc(fetchStocktakeAuditReport: sl()),
+  );
 
   //Repos
   sl.registerLazySingleton<HomeRepo>(() => HomeScreenModels());
@@ -81,4 +85,5 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetPaginatedStock(sl()));
   sl.registerLazySingleton(() => GetFilterOptions(sl()));
   sl.registerLazySingleton(() => FetchCountingStock(sl()));
+  sl.registerLazySingleton(() => FetchStocktakeAuditReport(sl()));
 }

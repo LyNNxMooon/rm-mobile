@@ -309,7 +309,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
       ORDER BY $columnName ASC
     ''',
         [shopfront],
-      ); 
+      );
 
       return result.map((row) => row[columnName] as String).toList();
     } catch (error) {
@@ -335,6 +335,45 @@ class SQLiteDAOImpl extends LocalDbDAO {
     return null;
   }
 
+  @override
+  Future<Map<num, StockVO>> getStocksByIds({
+    required String shopfront,
+    required List<num> stockIds,
+  }) async {
+    try {
+      final db = _database!;
+      final Map<num, StockVO> out = {};
+
+      if (stockIds.isEmpty) return out;
+
+      final ids = stockIds.where((e) => e > 0).toSet().toList();
+      if (ids.isEmpty) return out;
+
+      const int batchSize = 900;
+
+      for (int i = 0; i < ids.length; i += batchSize) {
+        final chunk = ids.skip(i).take(batchSize).toList();
+        final placeholders = List.filled(chunk.length, '?').join(',');
+
+        final rows = await db.query(
+          'Stocks',
+          where: 'shopfront = ? AND stock_id IN ($placeholders)',
+          whereArgs: [shopfront, ...chunk],
+        );
+
+        for (final row in rows) {
+          final stock = StockVO.fromJson(row);
+          out[stock.stockID] = stock;
+        }
+      }
+
+      return out;
+    } catch (error) {
+      logger.e('Error loading stocks by ids in $shopfront: $error');
+      return Future.error("Error loading stocks by ids: $error");
+    }
+  }
+
   //Save Data
 
   @override
@@ -352,52 +391,52 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
-Future<void> saveCountedStock(Map<String, dynamic> stockData) async {
-  try {
-    final db = _database!;
-    final int stockId = stockData['stock_id'];
-    final String shopfront = stockData['shopfront'];
-    final num newQty = stockData['quantity'];
+  Future<void> saveCountedStock(Map<String, dynamic> stockData) async {
+    try {
+      final db = _database!;
+      final int stockId = stockData['stock_id'];
+      final String shopfront = stockData['shopfront'];
+      final num newQty = stockData['quantity'];
 
-    // Use a transaction to ensure reading and writing happens atomically
-    await db.transaction((txn) async {
-      //Check if the stock already exists for this shop
-      final List<Map<String, dynamic>> existingRecords = await txn.query(
-        'Stocktake',
-        columns: ['quantity'],
-        where: 'stock_id = ? AND shopfront = ?',
-        whereArgs: [stockId, shopfront],
-      );
-
-      if (existingRecords.isNotEmpty) {
-        //Calculate the new total (Existing + New)
-        final num currentQty = existingRecords.first['quantity'];
-        final double totalQty = currentQty.toDouble() + newQty.toDouble();
-
-        // We copy the incoming stockData so we update the 'date_modified' 
-        // and other fields to the latest scan details, but force the new total qty.
-        final Map<String, dynamic> updateData = Map.from(stockData);
-        updateData['quantity'] = totalQty;
-
-        await txn.update(
+      // Use a transaction to ensure reading and writing happens atomically
+      await db.transaction((txn) async {
+        //Check if the stock already exists for this shop
+        final List<Map<String, dynamic>> existingRecords = await txn.query(
           'Stocktake',
-          updateData,
+          columns: ['quantity'],
           where: 'stock_id = ? AND shopfront = ?',
           whereArgs: [stockId, shopfront],
         );
-      } else {
-        await txn.insert(
-          'Stocktake',
-          stockData,
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-    });
-  } catch (error) {
-    logger.e('Error saving counted stock to local db: $error');
-    return Future.error("Error saving counted stock to local db: $error");
+
+        if (existingRecords.isNotEmpty) {
+          //Calculate the new total (Existing + New)
+          final num currentQty = existingRecords.first['quantity'];
+          final double totalQty = currentQty.toDouble() + newQty.toDouble();
+
+          // We copy the incoming stockData so we update the 'date_modified'
+          // and other fields to the latest scan details, but force the new total qty.
+          final Map<String, dynamic> updateData = Map.from(stockData);
+          updateData['quantity'] = totalQty;
+
+          await txn.update(
+            'Stocktake',
+            updateData,
+            where: 'stock_id = ? AND shopfront = ?',
+            whereArgs: [stockId, shopfront],
+          );
+        } else {
+          await txn.insert(
+            'Stocktake',
+            stockData,
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      });
+    } catch (error) {
+      logger.e('Error saving counted stock to local db: $error');
+      return Future.error("Error saving counted stock to local db: $error");
+    }
   }
-}
 
   @override
   Future<void> saveNetworkCredential({
@@ -533,6 +572,30 @@ Future<void> saveCountedStock(Map<String, dynamic> stockData) async {
     }
   }
 
+  @override
+  Future<void> markStockAsSynced(List<int> stockIds, String shopfront) async {
+    try {
+      final db = _database!;
+      final batch = db.batch();
+
+      for (final id in stockIds) {
+        // Use delete instead of update to remove the records
+        batch.delete(
+          'Stocktake',
+          where: 'stock_id = ? AND shopfront = ?',
+          whereArgs: [id, shopfront],
+        );
+      }
+
+      await batch.commit(noResult: true);
+
+      logger.d('Successfully deleted committed stocktake records');
+    } catch (error) {
+      logger.e('Error deleting stocktake list in local db: $error');
+      return Future.error("Error deleting stocktake records: $error");
+    }
+  }
+
   //Update Data
   @override
   Future<void> updateShopfrontByIp({
@@ -575,30 +638,6 @@ Future<void> saveCountedStock(Map<String, dynamic> stockData) async {
     } catch (error) {
       logger.e('Error updating path in local db: $error');
       return Future.error("Error updating path: $error");
-    }
-  }
-
-  @override
-  Future<void> markStockAsSynced(List<int> stockIds, String shopfront) async {
-    try {
-      final db = _database!;
-      final batch = db.batch();
-
-      for (final id in stockIds) {
-        // Use delete instead of update to remove the records
-        batch.delete(
-          'Stocktake',
-          where: 'stock_id = ? AND shopfront = ?',
-          whereArgs: [id, shopfront],
-        );
-      }
-
-      await batch.commit(noResult: true);
-
-      logger.d('Successfully deleted committed stocktake records');
-    } catch (error) {
-      logger.e('Error deleting stocktake list in local db: $error');
-      return Future.error("Error deleting stocktake records: $error");
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
+import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 
 import '../../../../entities/vos/stock_vo.dart';
 
@@ -70,3 +71,35 @@ class ErrorCommitingStocktake extends CommitingStocktakeStates {
 
   ErrorCommitingStocktake(this.message);
 }
+
+//Stocktake Validation
+abstract class StocktakeValidationState {}
+
+class StocktakeValidationInitial extends StocktakeValidationState {}
+
+class StocktakeValidationProgress extends StocktakeValidationState {
+  final int current;
+  final int total;
+  final String message;
+
+  StocktakeValidationProgress({
+    required this.current,
+    required this.total,
+    required this.message,
+  });
+
+  double get percentage => total == 0 ? 0 : (current / total).clamp(0.0, 1.0);
+}
+
+class StocktakeValidationClear extends StocktakeValidationState {}
+
+class StocktakeValidationHasAudits extends StocktakeValidationState {
+  final List<AuditWithStockVO> rows;
+  StocktakeValidationHasAudits(this.rows);
+}
+
+class StocktakeValidationError extends StocktakeValidationState {
+  final String message;
+  StocktakeValidationError(this.message);
+}
+

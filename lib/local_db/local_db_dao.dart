@@ -42,6 +42,11 @@ abstract class LocalDbDAO {
   });
   Future<List<String>> getDistinctValues(String columnName, String shopfront);
   Future<String?> getAppConfig(String key);
+  Future<Map<num, StockVO>> getStocksByIds({
+  required String shopfront,
+  required List<num> stockIds,
+});
+
 
   // Setters to save data
   Future<void> saveCountedStock(Map<String, dynamic> stockData);

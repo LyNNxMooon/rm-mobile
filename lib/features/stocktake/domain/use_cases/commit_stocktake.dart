@@ -48,11 +48,6 @@ class CommitStocktake {
           password: pwd,
           dataToSync: unsyncedStocks,
         );
-
-        final List<int> syncedIds = unsyncedStocks
-            .map((e) => e.stockID)
-            .toList();
-        await LocalDbDAO.instance.markStockAsSynced(syncedIds, shopfront);
       } else {
         return Future.error("Please connect to a network!");
       }

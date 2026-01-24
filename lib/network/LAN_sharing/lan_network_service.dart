@@ -54,15 +54,24 @@ abstract class LanNetworkService {
     required String mobileID,
   });
 
-  Future<Uint8List?> fetchLatestStockFile({
+  // Future<Uint8List?> fetchLatestStockFile({
+  //   required String address,
+  //   required String fullPath,
+  //   required String username,
+  //   required String password,
+  //   required String mobileName,
+  // });
+
+  Future<SmbFile?> pollForFile({
     required String address,
     required String fullPath,
     required String username,
     required String password,
-    required String mobileName,
+    required String fileNamePattern,
+    required int maxRetries,
   });
 
-  Future<SmbFile?> pollForFile({
+  Future<SmbFile?> pollForStocktakeValidationFile({
     required String address,
     required String fullPath,
     required String username,

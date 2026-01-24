@@ -15,7 +15,7 @@ const stocksTableCreationQuery = '''
     supplier TEXT,
     cat1 TEXT,
     cat2 TEXT,
-    cat3 TEXT,
+    cat3 TEXT, 
     cost REAL,
     sell REAL,
     inactive INTEGER,

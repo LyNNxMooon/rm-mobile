@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/widgets/stocktake_validation_info.dart';
 
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
@@ -93,6 +94,7 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
           thickness: 0.5,
           color: kGreyColor,
         ),
+        StocktakeValidationInfo()
       ],
     );
   }

@@ -237,7 +237,22 @@ Future<void> writeStocktakeDataToSharedFolder({
       cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
     }
 
-    final String destinationPath = "$cleanedPath/incoming/$fileName";
+    final String incomingPath = "$cleanedPath/incoming";
+    final folder = await connect.file(incomingPath);
+    final files = await connect.listFiles(folder);
+
+    final int lastUnderscore = fileName.lastIndexOf('_');
+    final String filePrefix = lastUnderscore > 0
+        ? fileName.substring(0, lastUnderscore + 1)
+        : fileName;
+
+    for (final file in files) {
+      if (!file.isDirectory() && file.name.startsWith(filePrefix)) {
+        await connect.delete(file);
+      }
+    }
+
+    final String destinationPath = "$incomingPath/$fileName";
     final file = await connect.createFile(destinationPath);
     IOSink writer = await connect.openWrite(file);
 
@@ -344,73 +359,129 @@ Future<void> writeStocktakeDataToSharedFolder({
     }
   }
 
+  // @override
+  // Future<Uint8List?> fetchLatestStockFile({
+  //   required String address,
+  //   required String fullPath,
+  //   required String username,
+  //   required String password,
+  //   required String mobileName,
+  // }) async {
+  //   final connect = await SmbConnect.connectAuth(
+  //     host: address,
+  //     domain: "",
+  //     username: username,
+  //     password: password,
+  //   );
+
+  //   try {
+  //     String cleanedPath = fullPath
+  //         .replaceFirst(RegExp(r'^//'), '')
+  //         .replaceFirst(address, '')
+  //         .replaceFirst(RegExp(r'^/'), '');
+
+  //     if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
+  //     if (cleanedPath.endsWith('/')) {
+  //       cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
+  //     }
+
+  //     final String targetDir = "$cleanedPath/outgoing";
+
+  //     logger.d(mobileName);
+  //     final folder = await connect.file(targetDir);
+
+  //     List<SmbFile> files = await connect.listFiles(folder);
+
+  //     final sanitizedMobileName = mobileName.replaceAll(' ', '_');
+
+  //     final targetFile = files.where((f) {
+  //       final nameMatch = f.name.contains("${sanitizedMobileName}_stocklookup");
+  //       final extensionMatch = f.name.endsWith(".gz");
+  //       return nameMatch && extensionMatch;
+  //     }).toList();
+
+  //     if (targetFile.isNotEmpty) {
+  //       targetFile.sort(
+  //         (a, b) => (b.createTime).compareTo(a.createTime),
+  //       );
+  //     } else {
+  //       return null;
+  //     }
+
+  //     final fileToDownload = targetFile.first;
+  //     logger.d("Target file identified: ${fileToDownload.name}");
+
+  //     final stream = await connect.openRead(fileToDownload);
+  //     final List<int> bytes = [];
+  //     await for (var data in stream) {
+  //       bytes.addAll(data);
+  //     }
+
+  //     await connect.delete(fileToDownload);
+
+  //     return Uint8List.fromList(bytes);
+  //   } catch (e) {
+  //     return Future.error("SMB Error: ${e.toString()}");
+  //   } finally {
+  //     await connect.close();
+  //   }
+  // }
+
   @override
-  Future<Uint8List?> fetchLatestStockFile({
-    required String address,
-    required String fullPath,
-    required String username,
-    required String password,
-    required String mobileName,
-  }) async {
-    final connect = await SmbConnect.connectAuth(
-      host: address,
-      domain: "",
-      username: username,
-      password: password,
-    );
+  Future<SmbFile?> pollForStocktakeValidationFile({
+  required String address,
+  required String fullPath,
+  required String username,
+  required String password,
+  required String fileNamePattern,
+  required int maxRetries,
+}) async {
+  final connect = await SmbConnect.connectAuth(
+    host: address,
+    domain: "",
+    username: username,
+    password: password,
+  );
 
-    try {
-      String cleanedPath = fullPath
-          .replaceFirst(RegExp(r'^//'), '')
-          .replaceFirst(address, '')
-          .replaceFirst(RegExp(r'^/'), '');
+  try {
+    String cleanedPath = fullPath
+        .replaceFirst(RegExp(r'^//'), '')
+        .replaceFirst(address, '')
+        .replaceFirst(RegExp(r'^/'), '');
 
-      if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
-      if (cleanedPath.endsWith('/')) {
-        cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
-      }
-
-      final String targetDir = "$cleanedPath/outgoing";
-
-      logger.d(mobileName);
-      final folder = await connect.file(targetDir);
-
-      List<SmbFile> files = await connect.listFiles(folder);
-
-      final sanitizedMobileName = mobileName.replaceAll(' ', '_');
-
-      final targetFile = files.where((f) {
-        final nameMatch = f.name.contains("${sanitizedMobileName}_stocklookup");
-        final extensionMatch = f.name.endsWith(".gz");
-        return nameMatch && extensionMatch;
-      }).toList();
-
-      if (targetFile.isNotEmpty) {
-        targetFile.sort(
-          (a, b) => (b.createTime).compareTo(a.createTime),
-        );
-      } else {
-        return null;
-      }
-
-      final fileToDownload = targetFile.first;
-      logger.d("Target file identified: ${fileToDownload.name}");
-
-      final stream = await connect.openRead(fileToDownload);
-      final List<int> bytes = [];
-      await for (var data in stream) {
-        bytes.addAll(data);
-      }
-
-      await connect.delete(fileToDownload);
-
-      return Uint8List.fromList(bytes);
-    } catch (e) {
-      return Future.error("SMB Error: ${e.toString()}");
-    } finally {
-      await connect.close();
+    if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
+    if (cleanedPath.endsWith('/')) {
+      cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
     }
+
+    final String targetDir = "$cleanedPath/outgoing/stocktakeValidation";
+    final folder = await connect.file(targetDir);
+
+    for (int i = 0; i < maxRetries; i++) {
+      final files = await connect.listFiles(folder);
+
+      final matches = files
+          .where((f) =>
+              !f.isDirectory() &&
+              f.name.contains(fileNamePattern) &&
+              f.name.endsWith(".gz"))
+          .toList();
+
+      if (matches.isNotEmpty) {
+        matches.sort((a, b) => (b.createTime).compareTo(a.createTime));
+        return matches.first;
+      }
+
+      await Future.delayed(const Duration(seconds: 1));
+      logger.d("Polling for $fileNamePattern... Attempt ${i + 1}");
+    }
+
+    return null;
+  } finally {
+    await connect.close();
   }
+}
+
 
   @override
   Future<Uint8List> downloadAndDeleteFile({
