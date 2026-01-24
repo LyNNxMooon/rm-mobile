@@ -14,7 +14,7 @@ class SendFinalStocktakeToRm {
 
   SendFinalStocktakeToRm(this.repository);
 
-  Future<void> call(List<AuditWithStockVO> auditData,) async {
+  Future<void> call(List<AuditWithStockVO> auditData) async {
     try {
       final ip = AppGlobals.instance.currentHostIp ?? "";
       final fullPath = AppGlobals.instance.currentPath ?? "";
@@ -48,8 +48,16 @@ class SendFinalStocktakeToRm {
           username: user,
           password: pwd,
           dataToSync: unsyncedStocks,
-          auditData: auditData
+          auditData: auditData,
         );
+
+        // We will store to back up synced stocks table later here
+
+        final List<int> stockIds = unsyncedStocks
+            .map((s) => s.stockID)
+            .toList();
+
+        await LocalDbDAO.instance.markStockAsSynced(stockIds, shopfront);
       } else {
         return Future.error("Please connect to a network!");
       }

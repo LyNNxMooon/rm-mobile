@@ -211,63 +211,65 @@ class LanNetworkServiceImpl implements LanNetworkService {
   }
 
   @override
-Future<void> writeStocktakeDataToSharedFolder({
-  required String address,
-  required String fullPath,
-  required String username,
-  required String password,
-  required String fileName,
-  required String fileContent,
-}) async {
-  final connect = await SmbConnect.connectAuth(
-    host: address,
-    domain: "",
-    username: username,
-    password: password,
-  );
+  Future<void> writeStocktakeDataToSharedFolder({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String fileName,
+    required String fileContent,
+    required bool isCheck,
+  }) async {
+    final connect = await SmbConnect.connectAuth(
+      host: address,
+      domain: "",
+      username: username,
+      password: password,
+    );
 
-  try {
-    String cleanedPath = fullPath
-        .replaceFirst(RegExp(r'^//'), '')
-        .replaceFirst(address, '')
-        .replaceFirst(RegExp(r'^/'), '');
+    try {
+      String cleanedPath = fullPath
+          .replaceFirst(RegExp(r'^//'), '')
+          .replaceFirst(address, '')
+          .replaceFirst(RegExp(r'^/'), '');
 
-    if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
-    if (cleanedPath.endsWith('/')) {
-      cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
-    }
-
-    final String incomingPath = "$cleanedPath/incoming";
-    final folder = await connect.file(incomingPath);
-    final files = await connect.listFiles(folder);
-
-    final int lastUnderscore = fileName.lastIndexOf('_');
-    final String filePrefix = lastUnderscore > 0
-        ? fileName.substring(0, lastUnderscore + 1)
-        : fileName;
-
-    for (final file in files) {
-      if (!file.isDirectory() && file.name.startsWith(filePrefix)) {
-        await connect.delete(file);
+      if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
+      if (cleanedPath.endsWith('/')) {
+        cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
       }
+
+      final String incomingPath = "$cleanedPath/incoming";
+      final folder = await connect.file(incomingPath);
+      final files = await connect.listFiles(folder);
+
+      final int lastUnderscore = fileName.lastIndexOf('_');
+      final String filePrefix = lastUnderscore > 0
+          ? fileName.substring(0, lastUnderscore + 1)
+          : fileName;
+
+      if (isCheck) {
+        for (final file in files) {
+          if (!file.isDirectory() && file.name.startsWith(filePrefix)) {
+            await connect.delete(file);
+          }
+        }
+      }
+
+      final String destinationPath = "$incomingPath/$fileName";
+      final file = await connect.createFile(destinationPath);
+      IOSink writer = await connect.openWrite(file);
+
+      final List<int> gzBytes = GZipCodec().encode(utf8.encode(fileContent));
+      writer.add(gzBytes);
+
+      await writer.flush();
+      await writer.close();
+    } catch (e) {
+      return Future.error(e.toString());
+    } finally {
+      await connect.close();
     }
-
-    final String destinationPath = "$incomingPath/$fileName";
-    final file = await connect.createFile(destinationPath);
-    IOSink writer = await connect.openWrite(file);
-
-    final List<int> gzBytes = GZipCodec().encode(utf8.encode(fileContent));
-    writer.add(gzBytes);
-
-    await writer.flush();
-    await writer.close();
-  } catch (e) {
-    return Future.error(e.toString());
-  } finally {
-    await connect.close();
   }
-}
-
 
   @override
   Future<bool> isShopfrontsFileExists({
@@ -429,59 +431,60 @@ Future<void> writeStocktakeDataToSharedFolder({
 
   @override
   Future<SmbFile?> pollForStocktakeValidationFile({
-  required String address,
-  required String fullPath,
-  required String username,
-  required String password,
-  required String fileNamePattern,
-  required int maxRetries,
-}) async {
-  final connect = await SmbConnect.connectAuth(
-    host: address,
-    domain: "",
-    username: username,
-    password: password,
-  );
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String fileNamePattern,
+    required int maxRetries,
+  }) async {
+    final connect = await SmbConnect.connectAuth(
+      host: address,
+      domain: "",
+      username: username,
+      password: password,
+    );
 
-  try {
-    String cleanedPath = fullPath
-        .replaceFirst(RegExp(r'^//'), '')
-        .replaceFirst(address, '')
-        .replaceFirst(RegExp(r'^/'), '');
+    try {
+      String cleanedPath = fullPath
+          .replaceFirst(RegExp(r'^//'), '')
+          .replaceFirst(address, '')
+          .replaceFirst(RegExp(r'^/'), '');
 
-    if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
-    if (cleanedPath.endsWith('/')) {
-      cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
-    }
-
-    final String targetDir = "$cleanedPath/outgoing/stocktakeValidation";
-    final folder = await connect.file(targetDir);
-
-    for (int i = 0; i < maxRetries; i++) {
-      final files = await connect.listFiles(folder);
-
-      final matches = files
-          .where((f) =>
-              !f.isDirectory() &&
-              f.name.contains(fileNamePattern) &&
-              f.name.endsWith(".gz"))
-          .toList();
-
-      if (matches.isNotEmpty) {
-        matches.sort((a, b) => (b.createTime).compareTo(a.createTime));
-        return matches.first;
+      if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
+      if (cleanedPath.endsWith('/')) {
+        cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
       }
 
-      await Future.delayed(const Duration(seconds: 1));
-      logger.d("Polling for $fileNamePattern... Attempt ${i + 1}");
+      final String targetDir = "$cleanedPath/outgoing/stocktakeValidation";
+      final folder = await connect.file(targetDir);
+
+      for (int i = 0; i < maxRetries; i++) {
+        final files = await connect.listFiles(folder);
+
+        final matches = files
+            .where(
+              (f) =>
+                  !f.isDirectory() &&
+                  f.name.contains(fileNamePattern) &&
+                  f.name.endsWith(".gz"),
+            )
+            .toList();
+
+        if (matches.isNotEmpty) {
+          matches.sort((a, b) => (b.createTime).compareTo(a.createTime));
+          return matches.first;
+        }
+
+        await Future.delayed(const Duration(seconds: 1));
+        logger.d("Polling for $fileNamePattern... Attempt ${i + 1}");
+      }
+
+      return null;
+    } finally {
+      await connect.close();
     }
-
-    return null;
-  } finally {
-    await connect.close();
   }
-}
-
 
   @override
   Future<Uint8List> downloadAndDeleteFile({
@@ -552,9 +555,7 @@ Future<void> writeStocktakeDataToSharedFolder({
 
         //this compare the time and leave the old stale files
         if (targetFile.isNotEmpty) {
-          targetFile.sort(
-            (a, b) => (b.createTime).compareTo(a.createTime),
-          );
+          targetFile.sort((a, b) => (b.createTime).compareTo(a.createTime));
           return targetFile.first;
         }
 

@@ -48,6 +48,7 @@ class CommitStocktake {
           password: pwd,
           dataToSync: unsyncedStocks,
         );
+
       } else {
         return Future.error("Please connect to a network!");
       }

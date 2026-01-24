@@ -62,6 +62,7 @@ class StocktakeModel implements StocktakeRepo {
         password: password ?? "",
         fileName: fileName,
         fileContent: jsonContent,
+        isCheck: true
       );
     } on Exception catch (error) {
       return Future.error(error);
@@ -83,25 +84,29 @@ class StocktakeModel implements StocktakeRepo {
     try {
       List<CountedStockVO> adjustedData = List.from(dataToSync);
 
-      for (var auditRecord in auditData) {
-        final audit = auditRecord.audit;
+      if (auditData.isNotEmpty) {
+        for (var auditRecord in auditData) {
+          final audit = auditRecord.audit;
 
-        int index = adjustedData.indexWhere((s) => s.stockID == audit.stockId);
-
-        if (index != -1) {
-          final currentStock = adjustedData[index];
-
-          final newQuantity = currentStock.quantity + audit.movement;
-
-          adjustedData[index] = CountedStockVO(
-            stockID: currentStock.stockID,
-            stocktakeDate: currentStock.stocktakeDate,
-            quantity: newQuantity,
-            dateModified: DateTime.now(),
-            isSynced: currentStock.isSynced,
-            barcode: currentStock.barcode,
-            description: currentStock.description,
+          int index = adjustedData.indexWhere(
+            (s) => s.stockID == audit.stockId,
           );
+
+          if (index != -1) {
+            final currentStock = adjustedData[index];
+
+            final newQuantity = currentStock.quantity + audit.movement;
+
+            adjustedData[index] = CountedStockVO(
+              stockID: currentStock.stockID,
+              stocktakeDate: currentStock.stocktakeDate,
+              quantity: newQuantity,
+              dateModified: DateTime.now(),
+              isSynced: currentStock.isSynced,
+              barcode: currentStock.barcode,
+              description: currentStock.description,
+            );
+          }
         }
       }
 
@@ -133,6 +138,7 @@ class StocktakeModel implements StocktakeRepo {
         password: password ?? "",
         fileName: fileName,
         fileContent: jsonContent,
+        isCheck: false
       );
     } on Exception catch (error) {
       return Future.error(error);

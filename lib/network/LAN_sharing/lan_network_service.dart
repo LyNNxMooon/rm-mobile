@@ -42,6 +42,7 @@ abstract class LanNetworkService {
     required String password,
     required String fileName,
     required String fileContent,
+    required bool isCheck
   });
 
   Future<void> sendStockRequest({

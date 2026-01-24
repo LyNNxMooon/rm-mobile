@@ -65,6 +65,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         child: Column(
           children: [
             const StocktakeListAppBar(),
+            finalStocktakeLoading(),
             const SizedBox(height: 5),
             StocktakeSearchAndFilterBar(
               onChanged: (value) {},
@@ -73,11 +74,91 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                 builder: (_) => const FilterDialog(),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 15),
             Expanded(child: _buildItemsList()),
           ],
         ),
       ),
+    );
+  }
+
+  Widget finalStocktakeLoading() {
+    return BlocConsumer<SendingFinalStocktakeBloc, SendingFinalStocktakeStates>(
+      listener: (context, state) {
+        if (state is ErrorSendingStocktake) {
+          _showError(state.message);
+        }
+
+        if (state is SentStocktakeToRM) {
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.success(message: state.message),
+          );
+
+          context.read<FetchingStocktakeListBloc>().add(
+            FetchStocktakeListEvent(),
+          );
+        }
+      },
+      builder: (context, state) {
+        if (state is LoadingToSendStocktake) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 6, left: 15, right: 15),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: kSecondaryColor,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: kThirdColor.withOpacity(0.05),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Sending final Stocktake...",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      "${(0.5 * 100).toStringAsFixed(0)}%",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: kPrimaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                LinearProgressIndicator(
+                  value: 0.5,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
+                  minHeight: 6,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  "This may take a few seconds",
+                  style: TextStyle(fontSize: 12, color: kGreyColor),
+                ),
+              ],
+            ),
+          );
+        } else {
+          return SizedBox.shrink();
+        }
+      },
     );
   }
 
@@ -120,12 +201,9 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                 builder: (_) => _buildValidationDialog(state),
               );
             } else if (state is StocktakeValidationClear) {
-              // showTopSnackBar(
-              //   Overlay.of(context),
-              //   const CustomSnackBar.success(
-              //     message: "Stocktake fully synced!",
-              //   ),
-              // );
+              context.read<SendingFinalStocktakeBloc>().add(
+                SendingFinalStocktakeEvent([]),
+              );
             }
           },
         ),
@@ -233,7 +311,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
               ],
             ),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: kSecondaryColor,
                 borderRadius: BorderRadius.circular(10),
@@ -303,95 +381,109 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     );
   }
 
-Widget _buildValidationDialog(StocktakeValidationHasAudits state) {
-  
-  final double safeMaxHeight = MediaQuery.of(context).size.height * 0.7;
+  Widget _buildValidationDialog(StocktakeValidationHasAudits state) {
+    final double safeMaxHeight = MediaQuery.of(context).size.height * 0.7;
 
-  return AlertDialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    backgroundColor: kSecondaryColor,
-    titlePadding: EdgeInsets.zero,
-    insetPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 24),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-    title: _buildDialogHeader(),
-    content: SizedBox(
-      width: double.maxFinite,
-      child: Column(
-        mainAxisSize: MainAxisSize.min, 
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: Text(
-              "The following items were modified recently. How would you like to proceed?",
-              style: TextStyle(fontSize: 13, color: kGreyColor),
-            ),
-          ),
-          
-   
-          Flexible(
-            child: Container(
-    
-              constraints: BoxConstraints(maxHeight: safeMaxHeight),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade200),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListView.separated(
-                shrinkWrap: true, 
-                itemCount: state.rows.length,
-                separatorBuilder: (_, _) => const Divider(height: 1, indent: 60),
-                itemBuilder: (context, i) => _buildAuditTile(state.rows[i]),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-    actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 20),
-    actions: [
-      Row(
-        children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () {
-                Navigator.pop(context);
-        
-              },
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                side: BorderSide(color: kPrimaryColor),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: kSecondaryColor,
+      titlePadding: EdgeInsets.zero,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 24),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+      title: _buildDialogHeader(),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
               child: Text(
-                "Adjust & Commit",
-                style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold, fontSize: 13),
+                "The following items were modified recently. How would you like to proceed?",
+                style: TextStyle(fontSize: 13, color: kGreyColor),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-            
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: Text(
-                "Ignore & Commit",
-                style: TextStyle(color: kSecondaryColor, fontWeight: FontWeight.bold, fontSize: 13),
+
+            Flexible(
+              child: Container(
+                constraints: BoxConstraints(maxHeight: safeMaxHeight),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: state.rows.length,
+                  separatorBuilder: (_, _) =>
+                      const Divider(height: 1, indent: 60),
+                  itemBuilder: (context, i) => _buildAuditTile(state.rows[i]),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ],
-  );
-}
+      actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 20),
+      actions: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  context.read<SendingFinalStocktakeBloc>().add(
+                    SendingFinalStocktakeEvent(state.rows),
+                  );
+                  Navigator.pop(context);
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(color: kPrimaryColor),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  "Adjust & Commit",
+                  style: TextStyle(
+                    color: kPrimaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  context.read<SendingFinalStocktakeBloc>().add(
+                    SendingFinalStocktakeEvent([]),
+                  );
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kPrimaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  "Ignore & Commit",
+                  style: TextStyle(
+                    color: kSecondaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
   Widget _buildDialogHeader() {
     return Container(

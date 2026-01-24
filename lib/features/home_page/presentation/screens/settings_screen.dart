@@ -117,12 +117,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 30),
                       Text(
                         "App Version 1.0.0 (AAAPOS Pty Ltd)",
                         style: TextStyle(
                           color: kSecondaryColor.withOpacity(0.6),
-                          fontSize: 11,
+                          fontSize: 12,
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -161,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Text(
             "Settings",
-            style: getSmartTitle(fontSize: 20, color: kSecondaryColor),
+            style: getSmartTitle(fontSize: 22, color: kSecondaryColor),
           ),
           const SizedBox(width: 40), // Spacer to balance back button
         ],
@@ -177,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Text(
           title.toUpperCase(),
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
             color: kSecondaryColor.withOpacity(0.7),
             letterSpacing: 1.2,
@@ -228,14 +228,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(fontSize: 11, color: kSecondaryColor),
+                  style: const TextStyle(fontSize: 13, color: kSecondaryColor),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: getSmartTitle(fontSize: 15, color: kSecondaryColor),
+                  style: getSmartTitle(fontSize: 16, color: kSecondaryColor),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -267,6 +267,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: const Text(
             "Sign Off",
             style: TextStyle(
+              fontSize: 16,
               color: kSecondaryColor,
               fontWeight: FontWeight.bold,
             ),
@@ -290,6 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: TextStyle(
                   color: kSecondaryColor,
                   fontWeight: FontWeight.w600,
+                  fontSize: 16
                 ),
               ),
               Container(
@@ -302,7 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   "${retentionDays.toInt()} Days",
                   style: const TextStyle(
                     color: kSecondaryColor,
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -332,7 +334,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             "Determines how long committed stocktake data is kept locally before auto-deletion.",
             style: TextStyle(
               color: kSecondaryColor.withOpacity(0.8),
-              fontSize: 10,
+              fontSize: 12,
             ),
           ),
         ],
@@ -360,6 +362,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: const TextStyle(
                     color: kSecondaryColor,
                     fontWeight: FontWeight.w600,
+                    fontSize: 16
                   ),
                   maxLines: 2, // Prevent overflow
                   overflow: TextOverflow.ellipsis,
@@ -369,7 +372,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle,
                   style: TextStyle(
                     color: kSecondaryColor.withOpacity(0.8),
-                    fontSize: 10,
+                    fontSize: 12,
                   ),
                   maxLines: 3, // Prevent overflow
                   overflow: TextOverflow.ellipsis,
@@ -419,6 +422,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title,
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
+                        fontSize: 16,
                         color: color
                     ),
                     maxLines: 1, // Prevent overflow
@@ -429,7 +433,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     subtitle,
                     style: TextStyle(
                       color: kSecondaryColor.withOpacity(0.8),
-                      fontSize: 10,
+                      fontSize: 12,
                     ),
                     maxLines: 2, // Prevent overflow
                     overflow: TextOverflow.ellipsis,
