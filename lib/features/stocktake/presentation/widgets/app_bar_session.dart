@@ -120,6 +120,7 @@ class _ScanModeSelectorState extends State<ScanModeSelector> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedContainer(
