@@ -135,6 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               title: "Start Stocktaking",
                               subtitle: "Begin Counting Inventory Items",
                             ),
+                            SizedBox(height: screenHeight * 0.03),
                           ],
                         ),
                       ),

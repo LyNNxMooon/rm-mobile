@@ -10,7 +10,6 @@ import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import 'features/loading_splash/presentation/BLoC/loading_splash_events.dart';
 import 'features/loading_splash/presentation/screens/index_screen.dart';
-import 'features/loading_splash/presentation/screens/loading_screen.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});

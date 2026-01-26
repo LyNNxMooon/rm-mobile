@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
-import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
