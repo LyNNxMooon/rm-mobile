@@ -30,9 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    final currentParamState = context
-        .read<NetworkSavedPathValidationBloc>()
-        .state;
+    final currentParamState = context.read<NetworkSavedPathValidationBloc>().state;
 
     if (currentParamState is ErrorFetchingSavedPaths ||
         currentParamState is ErrorCheckingConnection) {
@@ -42,8 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (currentParamState is ConnectionValid &&
-        context.read<ShopFrontConnectionBloc>().state
-        is! ConnectedToShopfront) {
+        context.read<ShopFrontConnectionBloc>().state is! ConnectedToShopfront) {
       context.read<ShopFrontConnectionBloc>().add(
         ConnectToShopfrontEvent(
           ip: AppGlobals.instance.currentHostIp ?? "",
@@ -67,6 +64,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate the available height above the drawer (approx 45% of screen)
+    // We use this to center the content dynamically.
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double topContentHeight = screenHeight * 0.42;
+
     return BlocListener<NetworkSavedPathValidationBloc, LoadingSplashStates>(
       listener: (context, state) {
         if (state is ErrorFetchingSavedPaths ||
@@ -86,7 +88,6 @@ class _HomeScreenState extends State<HomeScreen> {
             top: true,
             child: Stack(
               children: [
-                // 1. Wrap Column in SingleChildScrollView to prevent overflow on small screens
                 SingleChildScrollView(
                   physics: const ClampingScrollPhysics(),
                   child: Column(
@@ -95,46 +96,57 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const AppBarSession(),
 
-                      const SizedBox(height: 38),
+                      // Replaces fixed SizedBoxes. This container fills 42% of the screen
+                      // (fitting perfectly above the 53.5% drawer) and centers the items.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: 300, // Ensure it doesn't crush on small phones
+                          maxHeight: topContentHeight < 300 ? 300 : topContentHeight,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center, // Center Vertically
+                          children: [
+                            logo(),
 
-                      logo(),
+                            // Use flexible spacing inside the block if needed,
+                            // or smaller fixed gaps that look good when centered.
+                            SizedBox(height: screenHeight * 0.03),
 
-                      const SizedBox(height: 32),
+                            headerTitle(),
 
-                      headerTitle(),
+                            SizedBox(height: screenHeight * 0.02),
 
-                      const SizedBox(height: 15),
+                            ActionCard(
+                              onTap: () {
+                                final currentState =
+                                    context.read<FetchStockBloc>().state;
 
-                      ActionCard(
-                        onTap: () {
-                          final currentState = context
-                              .read<FetchStockBloc>()
-                              .state;
+                                if (currentState is! FetchStockProgress) {
+                                  context.read<ShopFrontConnectionBloc>().add(
+                                    ConnectToShopfrontEvent(
+                                      ip: AppGlobals.instance.currentHostIp ?? "",
+                                      shopName: AppGlobals.instance.shopfront ?? "",
+                                    ),
+                                  );
+                                }
 
-                          if (currentState is! FetchStockProgress) {
-                            context.read<ShopFrontConnectionBloc>().add(
-                              ConnectToShopfrontEvent(
-                                ip: AppGlobals.instance.currentHostIp ?? "",
-                                shopName: AppGlobals.instance.shopfront ?? "",
-                              ),
-                            );
-                          }
-
-                          context.navigateToNext(const ScannerScreen());
-                        },
-                        title: "Start Stocktaking",
-                        subtitle: "Begin Counting Inventory Items",
+                                context.navigateToNext(const ScannerScreen());
+                              },
+                              title: "Start Stocktaking",
+                              subtitle: "Begin Counting Inventory Items",
+                            ),
+                          ],
+                        ),
                       ),
 
                       syncWatcher(),
 
-                      // Ensure enough space at bottom so drawer doesn't cover content completely
+
                       const SizedBox(height: 120),
                     ],
                   ),
                 ),
 
-                // 2. Drawer sits on top
                 const GlassDrawer(),
               ],
             ),
@@ -149,8 +161,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 25),
         width: double.infinity,
+        // Slightly dynamic height for the logo container
         height: 75,
-        child: Image.asset("assets/images/trademark.png", fit: BoxFit.contain), // Changed to contain for safety
+        child: Image.asset("assets/images/trademark.png", fit: BoxFit.contain),
       ),
     );
   }
@@ -187,7 +200,8 @@ class _HomeScreenState extends State<HomeScreen> {
       listener: (context, state) {
         if (state is ConnectedToShopfront) {
           context.read<FetchStockBloc>().add(
-            StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
+            StartSyncEvent(
+                ipAddress: AppGlobals.instance.currentHostIp ?? ""),
           );
 
           AlertInfo.show(
@@ -201,8 +215,6 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: 70,
           );
         }
-
-        
 
         if (state is ShopfrontConnectionError) {
           showTopSnackBar(

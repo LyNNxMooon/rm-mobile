@@ -1,3 +1,4 @@
+import 'dart:ui'; // Required for ImageFilter
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,8 +26,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
   @override
   void initState() {
-    logger.d("Static: ${widget.stock.staticQuantity}");
-
     if ((widget.stock.goodsTax ?? "") == "GST") {
       cost = widget.stock.cost * 1.1;
     } else {
@@ -38,7 +37,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     } else {
       sell = widget.stock.sell;
     }
-
     super.initState();
   }
 
@@ -61,19 +59,18 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
           decoration: const BoxDecoration(gradient: kGColor),
           child: Stack(
             children: [
-              // Use CustomScrollView for sliver effects if desired,
-              // but ListView is fine if handled correctly for height.
               ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  // Product Image Session
-                  // Using LayoutBuilder to safely constrain height based on available screen space
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      // Adjust height dynamically: max 42% of screen, but cap at 350px for large screens
-                      double imageHeight =
-                          MediaQuery.of(context).size.height * 0.42;
-                      if (imageHeight > 350) imageHeight = 350;
+                      // Dynamic Height: 42% of screen, but capped between 250px and 400px
+                      // This prevents it from being too small on landscape or too huge on giant tablets
+                      double screenHeight = MediaQuery.of(context).size.height;
+                      double imageHeight = screenHeight * 0.42;
+
+                      if (imageHeight > 400) imageHeight = 400;
+                      if (imageHeight < 250) imageHeight = 250;
 
                       return Hero(
                         tag: 'stock_image_${widget.stock.stockID}',
@@ -85,17 +82,40 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                               bottomRight: Radius.circular(20),
                               bottomLeft: Radius.circular(20),
                             ),
-                            child: CachedNetworkImage(
-                              fit: BoxFit.fill,
-                              imageUrl: widget.stock.imageUrl ?? "",
-                              placeholder: (_, url) => Image.asset(
-                                overviewPlaceholder,
-                                fit: BoxFit.fill,
-                              ),
-                              errorWidget: (_, url, error) => Image.asset(
-                                overviewPlaceholder,
-                                fit: BoxFit.fill,
-                              ),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+
+                                CachedNetworkImage(
+                                  imageUrl: widget.stock.imageUrl ?? "",
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, _) => Container(color: kSecondaryColor),
+                                  errorWidget: (_, _, _) => Container(color: kSecondaryColor),
+                                ),
+
+
+                                BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
+                                  child: Container(
+                                    color: Colors.black.withOpacity(0.2),
+                                  ),
+                                ),
+
+                                Center(
+                                  child: CachedNetworkImage(
+                                    imageUrl: widget.stock.imageUrl ?? "",
+                                    fit: BoxFit.contain,
+                                    placeholder: (_, url) => Image.asset(
+                                      overviewPlaceholder,
+                                      fit: BoxFit.contain,
+                                    ),
+                                    errorWidget: (_, url, error) => Image.asset(
+                                      overviewPlaceholder,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -105,46 +125,35 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Detailed Upper Glass
+
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                    ), // Padding moved outside for safety
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: DetailedUpperGlass(
                       barcode: widget.stock.barcode,
-                      qty:
-                          "In System: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
+                      qty: "In System: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
                       description: widget.stock.description,
-                      cats:
-                          "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
+                      cats: "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
                       cost: cost,
                       sell: sell,
                       custom1: widget.stock.custom1 ?? "-",
                       custom2: widget.stock.custom2 ?? "-",
                       layByQty: (widget.stock.laybyQuantity % 1 == 0)
                           ? widget.stock.laybyQuantity.toInt().toString()
-                          : double.parse(
-                              widget.stock.laybyQuantity.toStringAsFixed(2),
-                            ).toString(),
+                          : double.parse(widget.stock.laybyQuantity.toStringAsFixed(2)).toString(),
                       soQty: (widget.stock.salesOrderQuantity % 1 == 0)
                           ? widget.stock.salesOrderQuantity.toInt().toString()
-                          : double.parse(
-                              widget.stock.salesOrderQuantity.toStringAsFixed(
-                                2,
-                              ),
-                            ).toString(),
+                          : double.parse(widget.stock.salesOrderQuantity.toStringAsFixed(2)).toString(),
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Detailed Lower Glass
+
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: DetailedLowerGlass(sell: sell),
                   ),
 
-                  // Add bottom padding to ensure content isn't cut off by navbar or safe area
                   const SizedBox(height: 100),
                 ],
               ),
@@ -157,7 +166,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     );
   }
 
-  // Top Floating Icons Row above item image
   Widget topIconsRow() {
     return Positioned(
       top: 0,
@@ -173,7 +181,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                 icon: Icons.arrow_back_ios_new_rounded,
                 onTap: () => context.navigateBack(),
               ),
-
               _buildCircularIcon(icon: Icons.camera_alt_rounded, onTap: () {}),
             ],
           ),

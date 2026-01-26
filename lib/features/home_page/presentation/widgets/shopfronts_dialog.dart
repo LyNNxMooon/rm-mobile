@@ -1,4 +1,3 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,12 +46,13 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    //final double safeMaxWidth = MediaQuery.of(context).size.width * 0.8;
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 10,
       backgroundColor: kBgColor,
       child: Container(
-        constraints: const BoxConstraints(maxHeight: 500),
+        constraints: BoxConstraints(maxHeight: 500),
 
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -55,11 +55,10 @@ class _LoadingStocktakeDialogState extends State<LoadingStocktakeDialog> {
                       "Validating Stocktake Data...",
                       style: getSmartTitle(color: kThirdColor, fontSize: 16),
                     ),
-                    Padding(
+                    Container(
+                      width: 200,
                       padding: const EdgeInsets.only(
                         top: 25,
-                        left: 60,
-                        right: 60,
                         bottom: 5,
                       ),
                       child: ModernLoadingBar(),

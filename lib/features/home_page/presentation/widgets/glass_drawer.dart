@@ -71,38 +71,39 @@ class _GlassDrawerState extends State<GlassDrawer> {
                     padding: const EdgeInsets.only(
                       left: 28,
                       right: 28,
-                    ), // Added right padding
+                    ),
                     child:
-                        BlocBuilder<
-                          NetworkSavedPathValidationBloc,
-                          LoadingSplashStates
-                        >(
-                          builder: (context, state) {
-                            String shopText;
-                            if (state is ConnectionValid) {
-                              shopText = AppGlobals.instance.shopfront == null
-                                  ? "RM-Shopfront"
-                                  : (AppGlobals.instance.shopfront!)
-                                        .split(r'\')
-                                        .last;
-                            } else {
-                              shopText = "Connect to a shopfront...";
-                            }
+                    BlocBuilder<
+                        NetworkSavedPathValidationBloc,
+                        LoadingSplashStates
+                    >(
+                      builder: (context, state) {
+                        String shopText;
+                        if (state is ConnectionValid) {
+                          shopText = AppGlobals.instance.shopfront == null
+                              ? "RM-Shopfront"
+                              : (AppGlobals.instance.shopfront!)
+                              .split(r'\')
+                              .last;
+                        } else {
+                          shopText = "Connect to a shopfront...";
+                        }
 
-                            return Text(
-                              shopText,
-                              style: const TextStyle(
-                                color: kSecondaryColor,
-                                fontSize: 18,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            );
-                          },
-                        ),
+                        return Text(
+                          shopText,
+                          style: const TextStyle(
+                            color: kSecondaryColor,
+                            fontSize: 18,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      },
+                    ),
                   ),
 
                   Expanded(child: dashBoardView(scrollController)),
+                  const SizedBox(height: 10,)
                 ],
               ),
             ),
@@ -113,70 +114,114 @@ class _GlassDrawerState extends State<GlassDrawer> {
   }
 
   Widget dashBoardView(ScrollController? scrollController) {
-    return AnimationLimiter(
-      child: GridView.builder(
-        controller: scrollController,
-        physics: const ClampingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 15,
-          mainAxisSpacing: 15,
-          childAspectRatio: 2.4 / 1,
-        ),
-        itemCount: _menuItems.length,
-        itemBuilder: (context, index) {
-          return InkWell(
-            onTap: () {
-              if (index == 0) {
-                context.read<ShopfrontBloc>().add(
-                  FetchShops(
-                    path: AppGlobals.instance.currentPath ?? '',
-                    ipAddress: AppGlobals.instance.currentHostIp ?? "",
-                  ),
-                );
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return ShopfrontsDialog(
-                      pc: NetworkComputerVO(
-                        ipAddress: AppGlobals.instance.currentHostIp ?? "",
-                        hostName: AppGlobals.instance.hostName ?? "",
-                      ),
-                      previousPath: AppGlobals.instance.currentPath ?? '',
-                    );
-                  },
-                );
-              } else if (index == 1) {
-                context.navigateToNext(const StockLookupScreen());
-              } else {
-                context.navigateToNext(const ComingSoonScreen());
-              }
-            },
-            child: _buildGridItem(
-              _menuItems[index]['title'],
-              _menuItems[index]['subTitle'],
-              _menuItems[index]['icon'],
-              context,
-              index,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width = constraints.maxWidth;
+        final double height = constraints.maxHeight;
+
+        int crossAxisCount = 2;
+        if (width > 600) crossAxisCount = 3;
+        if (width > 900) crossAxisCount = 4;
+
+        const double padding = 50.0; // Horizontal padding total
+        double spacing = width > 600 ? 20.0 : 15.0; // More gap on tablets
+
+        // Calculate how many rows we have
+        int rowCount = (_menuItems.length / crossAxisCount).ceil();
+
+        double targetHeight = 85.0;
+
+        double naturalGridHeight = (rowCount * targetHeight) + ((rowCount - 1) * spacing) + 40;
+
+        // If the screen is tall (Tablet Portrait), we have extra vertical space.
+        if (height > naturalGridHeight) {
+          double extraSpace = height - naturalGridHeight;
+          double extraPerItem = extraSpace / rowCount;
+
+          // Cap the growth so buttons don't become massive towers.
+          // Slightly increased cap to 50.0 since we removed the footer.
+          if (extraPerItem > 50.0) extraPerItem = 50.0;
+
+          targetHeight += extraPerItem;
+        }
+
+        final double totalSpacing = spacing * (crossAxisCount - 1);
+        final double availableWidth = width - padding - totalSpacing;
+        final double itemWidth = availableWidth / crossAxisCount;
+        final double childAspectRatio = itemWidth / targetHeight;
+
+        return AnimationLimiter(
+          child: GridView.builder(
+            controller: scrollController,
+            physics: const ClampingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: spacing,
+              mainAxisSpacing: spacing,
+              childAspectRatio: childAspectRatio,
             ),
-          );
-        },
-      ),
+            itemCount: _menuItems.length,
+            itemBuilder: (context, index) {
+              return InkWell(
+                onTap: () {
+                  _handleNavigation(index, context);
+                },
+                child: _buildGridItem(
+                  _menuItems[index]['title'],
+                  _menuItems[index]['subTitle'],
+                  _menuItems[index]['icon'],
+                  context,
+                  index,
+                  crossAxisCount,
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
+  void _handleNavigation(int index, BuildContext context) {
+    if (index == 0) {
+      context.read<ShopfrontBloc>().add(
+        FetchShops(
+          path: AppGlobals.instance.currentPath ?? '',
+          ipAddress: AppGlobals.instance.currentHostIp ?? "",
+        ),
+      );
+      showDialog(
+        context: context,
+        builder: (context) {
+          return ShopfrontsDialog(
+            pc: NetworkComputerVO(
+              ipAddress: AppGlobals.instance.currentHostIp ?? "",
+              hostName: AppGlobals.instance.hostName ?? "",
+            ),
+            previousPath: AppGlobals.instance.currentPath ?? '',
+          );
+        },
+      );
+    } else if (index == 1) {
+      context.navigateToNext(const StockLookupScreen());
+    } else {
+      context.navigateToNext(const ComingSoonScreen());
+    }
+  }
+
   Widget _buildGridItem(
-    String title,
-    String subTitle,
-    IconData icon,
-    BuildContext context,
-    int index,
-  ) {
+      String title,
+      String subTitle,
+      IconData icon,
+      BuildContext context,
+      int index,
+      int columnCount,
+      ) {
     return AnimationConfiguration.staggeredGrid(
       position: index,
       duration: const Duration(milliseconds: 1500),
-      columnCount: 2,
+      columnCount: columnCount,
       child: ScaleAnimation(
         child: FadeInAnimation(
           child: Container(
@@ -204,15 +249,14 @@ class _GlassDrawerState extends State<GlassDrawer> {
             ),
             child: Material(
               color: Colors.transparent,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Row(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Responsive Fix: Use Expanded instead of hardcoded width
                         Expanded(
                           child: Text(
                             title,
@@ -224,16 +268,12 @@ class _GlassDrawerState extends State<GlassDrawer> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 5), // Prevent overlap
+                        const SizedBox(width: 5),
                         Icon(icon, size: 22, color: kPrimaryColor),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 3),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Row(
+                    const SizedBox(height: 3),
+                    Row(
                       children: [
                         Expanded(
                           child: Text(
@@ -243,14 +283,14 @@ class _GlassDrawerState extends State<GlassDrawer> {
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
-                            maxLines: 2,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

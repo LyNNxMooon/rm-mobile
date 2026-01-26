@@ -61,8 +61,8 @@ class _LoadingScreenState extends State<LoadingScreen> {
                 ),
 
                 const SizedBox(height: 25),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 90),
+                SizedBox(
+                  width: 220,
                   child: ModernLoadingBar(),
                 ),
                 const SizedBox(height: 10),

@@ -74,7 +74,7 @@ class StocktakeCommitErrorDialog extends StatelessWidget {
                   );
 
                   showDialog(
-                    barrierDismissible: false,
+                    //barrierDismissible: false,
                     context: context,
                     builder: (context) {
                       return NetworkPcDialog();

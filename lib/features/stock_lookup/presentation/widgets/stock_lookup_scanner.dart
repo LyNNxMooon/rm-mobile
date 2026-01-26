@@ -39,7 +39,7 @@ class _StockLookupScannerState extends State<StockLookupScanner> {
               ),
               Center(
                 child: Container(
-                  width: 250,
+                  width: MediaQuery.of(context).size.width * 0.6,
                   height: 130,
                   decoration: BoxDecoration(
                     border: Border.all(
