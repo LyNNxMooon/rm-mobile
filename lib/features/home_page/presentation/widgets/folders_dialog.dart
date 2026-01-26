@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/widgets/shopfronts_dialog.dart';
+import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
@@ -32,18 +33,20 @@ class _FoldersDialogState extends State<FoldersDialog> {
   );
 
   Future<void> _handleFolderSelection(
-      String path, {
-        String? username,
-        String? password,
-      }) async {
+    String path, {
+    String? username,
+    String? password,
+  }) async {
+    logger.d("UI folder tracking: $path / $username / $password");
+
     await useCaseOfCheckingIfShopfrontFileExists(
       widget.pc.ipAddress,
       path,
       username,
       password,
-    ).then((value) {
+    ).then((isShopfront) {
       if (mounted) {
-        if (value) {
+        if (isShopfront) {
           context.read<ConnectingFolderBloc>().add(
             ConnectToFolderEvent(
               ipAddress: widget.pc.ipAddress,
@@ -54,6 +57,10 @@ class _FoldersDialogState extends State<FoldersDialog> {
             ),
           );
         } else {
+          setState(() {
+            _currentPath = path;
+          });
+
           context.read<GettingDirectoryBloc>().add(
             GetDirectoryEvent(
               ipAddress: widget.pc.ipAddress,
@@ -143,7 +150,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                         context.read<GettingDirectoryBloc>().add(
                           GetDirectoryEvent(
                             ipAddress: widget.pc.ipAddress,
-                            path: parentPath,
+                            path: _currentPath,
                           ),
                         );
                       }
@@ -172,10 +179,18 @@ class _FoldersDialogState extends State<FoldersDialog> {
                         child: Text("No folders shared on this computer."),
                       );
                     }
+
+                    List<String> direct = state.directList;
+
+                    if (_currentPath.isEmpty &&
+                        state.directList.contains("AAAPOS RM-Mobile")) {
+                      direct.remove("AAAPOS RM-Mobile");
+                    }
+
                     return ListView.separated(
                       shrinkWrap: true,
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      itemCount: state.directList.length,
+                      itemCount: direct.length,
                       separatorBuilder: (ctx, i) => Divider(
                         color: kGreyColor.withOpacity(0.2),
                         height: 1,
@@ -183,7 +198,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                         endIndent: 16,
                       ),
                       itemBuilder: (context, index) =>
-                          _buildFolderTile(state.directList[index], context),
+                          _buildFolderTile(direct[index], context),
                     );
                   } else if (state is ErrorGettingDirectory) {
                     return Padding(
@@ -323,8 +338,9 @@ class _FoldersDialogState extends State<FoldersDialog> {
 
                   context.read<ShopfrontBloc>().add(
                     FetchShops(
-                      path: _currentPath,
                       ipAddress: widget.pc.ipAddress,
+                      path: state.path,
+
                       userName: _userNameController.text,
                       pwd: _pwdController.text,
                     ),
@@ -335,7 +351,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                     builder: (context) {
                       return ShopfrontsDialog(
                         pc: widget.pc,
-                        previousPath: _currentPath,
+                        previousPath: state.path,
                       );
                     },
                   );
@@ -359,16 +375,14 @@ class _FoldersDialogState extends State<FoldersDialog> {
   Widget _buildFolderTile(String direct, BuildContext ctx) {
     return InkWell(
       onTap: () async {
-        String newPath = _currentPath.isEmpty
+        String targetPath = _currentPath.isEmpty
             ? direct
             : "$_currentPath/$direct";
 
-        setState(() {
-          _currentPath = newPath;
-        });
+        logger.d("UI SF Path: $targetPath");
 
         await _handleFolderSelection(
-          newPath,
+          targetPath,
           username: _userNameController.text,
           password: _pwdController.text,
         );
@@ -379,7 +393,11 @@ class _FoldersDialogState extends State<FoldersDialog> {
         color: Colors.transparent,
         child: Row(
           children: [
-            const Icon(CupertinoIcons.folder_fill, size: 22, color: Colors.yellow),
+            const Icon(
+              CupertinoIcons.folder_fill,
+              size: 22,
+              color: Colors.yellow,
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Text(

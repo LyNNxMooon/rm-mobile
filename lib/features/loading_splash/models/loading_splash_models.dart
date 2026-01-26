@@ -1,4 +1,5 @@
 import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
+import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
 import '../../../local_db/local_db_dao.dart';
 import '../../../network/LAN_sharing/lan_network_service_impl.dart';
@@ -15,8 +16,8 @@ class LoadingSplashModels implements LoadingSplashRepo {
       return await LanNetworkServiceImpl.instance.writeToSelectedFolder(
         address: ip,
         fullPath: path,
-        username: userName ?? "Guest",
-        password: pwd ?? "",
+        username: userName ?? AppGlobals.instance.defaultUserName,
+        password: pwd ?? AppGlobals.instance.defaultPwd,
       );
     } on Exception catch (error) {
       return Future.error(error);

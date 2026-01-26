@@ -33,7 +33,7 @@ class SendFinalStocktakeToRm {
               .getNetworkCredential(ip: ip);
 
           user = savedCred?['username'];
-          user = savedCred?['password'];
+          pwd = savedCred?['password'];
         }
 
         final DeviceMetadata mobileInfo = await DeviceMetaDataUtils.instance

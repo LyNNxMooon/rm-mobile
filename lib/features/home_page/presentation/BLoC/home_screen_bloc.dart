@@ -87,8 +87,14 @@ class ConnectingFolderBloc
     ConnectToFolderEvent event,
     Emitter<ConnectingFolderStates> emit,
   ) async {
-    emit(ConnectingFolder(event.path.split('/').last));
+
+    
+
+    emit(ConnectingFolder(event.path));
     try {
+
+      
+      logger.d("What is the path after shopfront confrimation: ${event.path}");
       await connectAndWriteToFolder(
         event.ipAddress,
         event.hostName,
@@ -97,7 +103,7 @@ class ConnectingFolderBloc
         event.pwd,
       );
 
-      emit(FolderConnected(message: "Connected to SharedFolder!"));
+      emit(FolderConnected(message: "Connected to SharedFolder!", path: event.path));
     } catch (e) {
       emit(ErrorConnectingFolder(message: e.toString()));
     }
@@ -117,6 +123,8 @@ class ShopfrontBloc extends Bloc<HomeScreenEvents, ShopFrontStates> {
   ) async {
     emit(ShopsLoading());
     try {
+      logger.d("Bloc SF Path : ${event.path}");
+
       final shops = await fetchShopfrontList(
         event.ipAddress,
         event.path,
@@ -176,12 +184,13 @@ class AutoConnectionBloc extends Bloc<HomeScreenEvents, AutoConnectionStates> {
     AutoConnectToDefaultFolderEvent event,
     Emitter<AutoConnectionStates> emit,
   ) async {
+     logger.d('AutoConnection in bloc Was Triggered!');
     emit(LoadingAutoConnection(event.ipAddress));
     try {
       await autoConnectToDefaultFolder(event.ipAddress, event.hostName).then((
         value,
       ) {
-        logger.d('AutoConnection in bloc Was Triggered!');
+       
         emit(AutoConnectedToPublicFolder("Connected to SharedFolder!"));
       });
     } catch (e) {

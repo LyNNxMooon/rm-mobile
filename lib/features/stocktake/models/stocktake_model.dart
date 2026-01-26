@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/entities/response/audit_report_response.dart';
 import 'package:rmstock_scanner/entities/vos/audit_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
+import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import '../../../entities/vos/stock_vo.dart';
 import '../../../local_db/local_db_dao.dart';
 import '../../../network/LAN_sharing/lan_network_service_impl.dart';
@@ -58,8 +59,8 @@ class StocktakeModel implements StocktakeRepo {
       return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(
         address: address,
         fullPath: fullPath,
-        username: username ?? "Guest",
-        password: password ?? "",
+        username: username ?? AppGlobals.instance.defaultUserName,
+        password: password ?? AppGlobals.instance.defaultPwd,
         fileName: fileName,
         fileContent: jsonContent,
         isCheck: true
@@ -134,8 +135,8 @@ class StocktakeModel implements StocktakeRepo {
       return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(
         address: address,
         fullPath: fullPath,
-        username: username ?? "Guest",
-        password: password ?? "",
+        username: username ?? AppGlobals.instance.defaultUserName,
+        password: password ?? AppGlobals.instance.defaultPwd,
         fileName: fileName,
         fileContent: jsonContent,
         isCheck: false
@@ -207,8 +208,8 @@ class StocktakeModel implements StocktakeRepo {
         .pollForStocktakeValidationFile(
           address: ipAddress,
           fullPath: fullPath,
-          username: username ?? "Guest",
-          password: password ?? "",
+          username: username ?? AppGlobals.instance.defaultUserName,
+          password: password ?? AppGlobals.instance.defaultPwd,
           fileNamePattern: "${sanitizedId}_auditReport_",
           maxRetries: 60,
         );
@@ -221,8 +222,8 @@ class StocktakeModel implements StocktakeRepo {
 
     final bytes = await LanNetworkServiceImpl.instance.downloadAndDeleteFile(
       address: ipAddress,
-      username: username ?? "Guest",
-      password: password ?? "",
+      username: username ?? AppGlobals.instance.defaultUserName,
+      password: password ?? AppGlobals.instance.defaultPwd,
       fileToDownload: file,
     );
 

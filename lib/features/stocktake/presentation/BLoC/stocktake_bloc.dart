@@ -117,7 +117,17 @@ class CommittingStocktakeBloc
 
       emit(CommittedStocktake("Stocktake data sent for validation!"));
     } catch (error) {
-      emit(ErrorCommitingStocktake("Error commiting stocktake list: $error"));
+      if (error is String) {
+        emit(ErrorCommitingStocktake("Error commiting stocktake list: $error"));
+      } else {
+        var e = error as dynamic;
+
+        emit(
+          ErrorCommitingStocktake(
+            "Error commiting stocktake list: ${e.message.toString()}",
+          ),
+        );
+      }
     }
   }
 }

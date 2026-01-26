@@ -491,7 +491,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           "Your stock(s) are not ready yet...",
           style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
         ),
-        const SizedBox(height: 100),
+        const SizedBox(height: 120),
       ],
     );
   }

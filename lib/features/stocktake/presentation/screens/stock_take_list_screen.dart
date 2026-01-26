@@ -262,7 +262,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 50),
+        padding: const EdgeInsets.only(bottom: 80),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -274,7 +274,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
             const SizedBox(height: 20),
             Text(
               "Your Stocktake list is empty!",
-              style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
+              style: getSmartTitle(color: kGreyColor, fontSize: 16),
             ),
           ],
         ),

@@ -52,8 +52,9 @@ class ConnectingFolder extends ConnectingFolderStates {
 
 class FolderConnected extends ConnectingFolderStates {
   final String message;
+  final String path;
 
-  FolderConnected({required this.message});
+  FolderConnected({required this.path,required this.message});
 }
 
 class ErrorConnectingFolder extends ConnectingFolderStates {

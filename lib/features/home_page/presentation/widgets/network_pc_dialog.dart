@@ -218,7 +218,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                     FetchShops(
                       path:
                           AppGlobals.instance.currentPath ??
-                          "//${AppGlobals.instance.currentHostIp ?? ""}/Users/Public/AAAPOS RM-Mobile",
+                          "//${AppGlobals.instance.currentHostIp ?? ""}/C/AAAPOS RM-Mobile",
                       ipAddress: AppGlobals.instance.currentHostIp ?? "",
                     ),
                   );
@@ -232,7 +232,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                       ),
                       previousPath:
                           AppGlobals.instance.currentPath ??
-                          "//${AppGlobals.instance.currentHostIp ?? ""}/Users/Public/AAAPOS RM-Mobile",
+                          "//${AppGlobals.instance.currentHostIp ?? ""}/C/AAAPOS RM-Mobile",
                     ),
                   );
                 }

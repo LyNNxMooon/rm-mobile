@@ -281,6 +281,8 @@ class LanNetworkServiceImpl implements LanNetworkService {
     SmbConnect? connect;
 
     try {
+      logger.d("Final stage of tracking cred: $username / $password");
+
       connect = await SmbConnect.connectAuth(
         host: address,
         domain: "",

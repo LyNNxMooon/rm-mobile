@@ -5,7 +5,6 @@ import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/device_meta_data_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/internet_connection_utils.dart';
-import '../../../../utils/network_credentials_check_utils.dart';
 import '../../models/home_screen_models.dart';
 
 class FetchStockData {
@@ -19,25 +18,37 @@ class FetchStockData {
         final DeviceMetadata mobileInfo = await DeviceMetaDataUtils.instance
             .getDeviceInformation();
 
-        String? finalUser = userName;
-        String? finalPwd = pwd;
+        if (userName != null && pwd != null) {
+          LocalDbDAO.instance.removeNetworkCredential(ip: ip);
 
-        if (await NetworkCredentialsCheckUtils.instance
-            .isRequiredNetworkCredentials(ipAddress: ip)) {
+          if ((userName).isNotEmpty && (pwd).isNotEmpty) {
+            LocalDbDAO.instance.saveNetworkCredential(
+              ip: ip,
+              username: userName,
+              password: pwd,
+            );
+          }
+
+          yield* repository.fetchAndSaveStocks(
+            ip,
+            AppGlobals.instance.currentPath ?? "",
+            userName,
+            pwd,
+            mobileInfo.deviceId,
+            AppGlobals.instance.shopfront ?? "",
+          );
+        } else {
           final Map<String, dynamic>? credentials = await LocalDbDAO.instance
               .getNetworkCredential(ip: ip);
-          finalUser = credentials?['username'] as String?;
-          finalPwd = credentials?['password'] as String?;
+          yield* repository.fetchAndSaveStocks(
+            ip,
+            AppGlobals.instance.currentPath ?? "",
+            credentials?['username'] as String?,
+            credentials?['password'] as String?,
+            mobileInfo.deviceId,
+            AppGlobals.instance.shopfront ?? "",
+          );
         }
-
-        yield* repository.fetchAndSaveStocks(
-          ip,
-          AppGlobals.instance.currentPath ?? "",
-          finalUser,
-          finalPwd,
-          mobileInfo.deviceId,
-          AppGlobals.instance.shopfront ?? "",
-        );
       } else {
         yield* Stream.error("Please connect to a network!");
       }

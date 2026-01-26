@@ -7,4 +7,8 @@ class AppGlobals {
   String? currentPath;
   String? shopfront;
   String? hostName;
+
+ final String defaultLanFolder = "C/AAAPOS RM-Mobile";
+ final String defaultUserName = "RM-Mobile-User";
+ final String defaultPwd = "retailmanager";
 }

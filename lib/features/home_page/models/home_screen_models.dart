@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
+import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'package:smb_connect/smb_connect.dart';
 
 import '../../../local_db/local_db_dao.dart';
@@ -35,8 +36,8 @@ class HomeScreenModels implements HomeRepo {
       return LanNetworkServiceImpl.instance.getDirectoryListing(
         address: address,
         path: path,
-        username: userName ?? "Guest",
-        password: pwd ?? "",
+        username: userName ?? AppGlobals.instance.defaultUserName,
+        password: pwd ?? AppGlobals.instance.defaultPwd,
       );
     } on Exception catch (error) {
       return Future.error(error);
@@ -54,8 +55,8 @@ class HomeScreenModels implements HomeRepo {
       return LanNetworkServiceImpl.instance.writeToSelectedFolder(
         address: address,
         fullPath: fullPath,
-        username: userName ?? "Guest",
-        password: pwd ?? "",
+        username: userName ?? AppGlobals.instance.defaultUserName,
+        password: pwd ?? AppGlobals.instance.defaultPwd,
       );
     } on Exception catch (error) {
       return Future.error(error);
@@ -70,11 +71,14 @@ class HomeScreenModels implements HomeRepo {
     String? pwd,
   ) async {
     try {
+
+logger.d("Model SF Path: $fullPath");
+
       return LanNetworkServiceImpl.instance.getShopfronts(
         address: address,
         fullPath: fullPath,
-        username: userName ?? "Guest",
-        password: pwd ?? "",
+        username: userName ?? AppGlobals.instance.defaultUserName,
+        password: pwd ?? AppGlobals.instance.defaultPwd,
       );
     } on Exception catch (error) {
       return Future.error(error);
@@ -120,8 +124,8 @@ class HomeScreenModels implements HomeRepo {
       await LanNetworkServiceImpl.instance.sendStockRequest(
         address: ipAddress,
         fullPath: fullPath,
-        username: username ?? "Guest",
-        password: password ?? "",
+        username: username ?? AppGlobals.instance.defaultUserName,
+        password: password ?? AppGlobals.instance.defaultPwd,
         fileName: fileName,
         fileContent: jsonContent,
         mobileID: mobileID,
@@ -147,8 +151,8 @@ class HomeScreenModels implements HomeRepo {
       return LanNetworkServiceImpl.instance.isShopfrontsFileExists(
         address: address,
         fullPath: path,
-        username: userName ?? "Guest",
-        password: pwd ?? "",
+        username: userName ?? AppGlobals.instance.defaultUserName,
+        password: pwd ?? AppGlobals.instance.defaultPwd,
       );
     } on Exception catch (_) {
       return false;
@@ -171,8 +175,8 @@ class HomeScreenModels implements HomeRepo {
     final firstFile = await LanNetworkServiceImpl.instance.pollForFile(
       address: ipAddress,
       fullPath: fullPath,
-      username: username ?? "Guest",
-      password: password ?? "",
+      username: username ?? AppGlobals.instance.defaultUserName,
+      password: password ?? AppGlobals.instance.defaultPwd,
       fileNamePattern: "${sanitizedName}_stocklookup_part1_of_",
       maxRetries: 60,
     );
@@ -215,8 +219,8 @@ class HomeScreenModels implements HomeRepo {
         currentFile = await LanNetworkServiceImpl.instance.pollForFile(
           address: ipAddress,
           fullPath: fullPath,
-          username: username ?? "Guest",
-          password: password ?? "",
+          username: username ?? AppGlobals.instance.defaultUserName,
+          password: password ?? AppGlobals.instance.defaultPwd,
           fileNamePattern: partPattern,
           maxRetries: 60,
         );
@@ -229,8 +233,8 @@ class HomeScreenModels implements HomeRepo {
       Uint8List bytes = await LanNetworkServiceImpl.instance
           .downloadAndDeleteFile(
             address: ipAddress,
-            username: username ?? "Guest",
-            password: "",
+            username: username ?? AppGlobals.instance.defaultUserName,
+            password: password ?? AppGlobals.instance.defaultPwd,
             fileToDownload: currentFile,
           );
 

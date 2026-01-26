@@ -32,11 +32,12 @@ class CommitStocktake {
               .getNetworkCredential(ip: ip);
 
           user = savedCred?['username'];
-          user = savedCred?['password'];
+          pwd = savedCred?['password'];
         }
 
         final DeviceMetadata mobileInfo = await DeviceMetaDataUtils.instance
             .getDeviceInformation();
+            
 
         await repository.commitToLanFolder(
           address: ip,

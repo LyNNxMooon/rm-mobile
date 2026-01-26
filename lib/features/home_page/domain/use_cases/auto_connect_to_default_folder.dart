@@ -13,25 +13,32 @@ class AutoConnectToDefaultFolder {
   Future<void> call(String ip, String? hostName) async {
     try {
       if (await InternetConnectionUtils.instance.checkInternetConnection()) {
+        String sharedFolder = AppGlobals.instance.defaultLanFolder;
+        String defaultUserName = AppGlobals.instance.defaultUserName;
+        String defaultPwd = AppGlobals.instance.defaultPwd;
 
 
+         final Map<String, dynamic>? credentials = await LocalDbDAO.instance
+            .getNetworkCredential(ip: ip);
 
-
+        logger.d(
+          "Saved Creds checking in auto connection: ${credentials?['username']}",
+        );
         await repository.connectAndWriteToFolder(
           ip,
-          "//$ip/Users/Public/AAAPOS RM-Mobile",
-          "Guest",
-          ""
+          "//$ip/$sharedFolder",
+          defaultUserName,
+          defaultPwd,
         );
 
         if (await PathCheckUtils.instance.isPathAlreadyExists(ipAddress: ip)) {
           LocalDbDAO.instance.updatePathByIp(
             ip: ip,
-            selectedPath: "//$ip/Users/Public/AAAPOS RM-Mobile",
+            selectedPath: "//$ip/$sharedFolder",
           );
         } else {
           LocalDbDAO.instance.addNetworkPath(
-            "//$ip/Users/Public/AAAPOS RM-Mobile",
+            "//$ip/$sharedFolder",
             '',
             hostName ?? "UnknownPC($ip)",
           );
@@ -39,7 +46,7 @@ class AutoConnectToDefaultFolder {
 
         AppGlobals.instance.currentHostIp = ip;
         AppGlobals.instance.hostName = hostName ?? "UnknownPC($ip)";
-        AppGlobals.instance.currentPath = "//$ip/Users/Public/AAAPOS RM-Mobile";
+        AppGlobals.instance.currentPath = "//$ip/$sharedFolder";
 
         logger.d("Use case for auto connection was triggered");
       } else {
