@@ -1,8 +1,14 @@
-import 'dart:ui'; // Required for ImageFilter
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
@@ -25,6 +31,18 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
   @override
   void initState() {
+    super.initState();
+
+    final pic = widget.stock.pictureFileName;
+    if (pic != null && pic.isNotEmpty) {
+      context.read<FullImageBloc>().add(
+        RequestFullImageEvent(
+          stockId: widget.stock.stockID,
+          pictureFileName: pic,
+        ),
+      );
+    }
+
     if ((widget.stock.goodsTax ?? "") == "GST") {
       cost = widget.stock.cost * 1.1;
     } else {
@@ -36,7 +54,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     } else {
       sell = widget.stock.sell;
     }
-    super.initState();
   }
 
   @override
@@ -63,8 +80,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                 children: [
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      // Dynamic Height: 42% of screen, but capped between 250px and 400px
-                      // This prevents it from being too small on landscape or too huge on giant tablets
                       double screenHeight = MediaQuery.of(context).size.height;
                       double imageHeight = screenHeight * 0.42;
 
@@ -81,40 +96,66 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                               bottomRight: Radius.circular(20),
                               bottomLeft: Radius.circular(20),
                             ),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
+                            child: BlocBuilder<FullImageBloc, FullImageState>(
+                              builder: (context, state) {
+                                String? localPath;
+                                bool isLoading = false;
 
-                                CachedNetworkImage(
-                                  imageUrl: widget.stock.imageUrl ?? "",
-                                  fit: BoxFit.cover,
-                                  placeholder: (_, _) => Container(color: kSecondaryColor),
-                                  errorWidget: (_, _, _) => Container(color: kSecondaryColor),
-                                ),
+                                if (state is FullImageLoaded) {
+                                  localPath =
+                                      state.imagePaths[widget.stock.stockID];
+                                  isLoading = state.loading.contains(
+                                    widget.stock.stockID,
+                                  );
+                                }
 
+                                final bool hasFile =
+                                    localPath != null &&
+                                    localPath.isNotEmpty &&
+                                    File(localPath).existsSync();
 
-                                BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
-                                  child: Container(
-                                    color: Colors.black.withOpacity(0.2),
-                                  ),
-                                ),
-
-                                Center(
-                                  child: CachedNetworkImage(
-                                    imageUrl: widget.stock.imageUrl ?? "",
-                                    fit: BoxFit.contain,
-                                    placeholder: (_, url) => Image.asset(
-                                      overviewPlaceholder,
-                                      fit: BoxFit.contain,
-                                    ),
-                                    errorWidget: (_, url, error) => Image.asset(
-                                      overviewPlaceholder,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                return Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    // BACKGROUND (blurred if file exists, else color)
+                                    if (hasFile)
+                                      Image.file(
+                                        File(localPath),
+                                        fit: BoxFit.cover,
+                                      )
+                                    else
+                                      Container(color: kSecondaryColor),
+                                    BackdropFilter(
+                                      filter: ImageFilter.blur(
+                                        sigmaX: 0.6,
+                                        sigmaY: 0.6,
+                                      ),
+                                      child: Container(
+                                        color: Colors.black.withOpacity(0.04),
+                                      ),
+                                    ), // CENTER IMAGE
+                                    Center(
+                                      child: hasFile
+                                          ? Image.file(
+                                              File(localPath),
+                                              fit: BoxFit.contain,
+                                            )
+                                          : Image.asset(
+                                              overviewPlaceholder,
+                                              fit: BoxFit.contain,
+                                            ),
+                                    ), // OPTIONAL: loading indicator overlay
+                                    if (!hasFile && isLoading)
+                                      const Center(
+                                        child: SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CupertinoActivityIndicator(),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
                             ),
                           ),
                         ),
@@ -124,29 +165,35 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
                   const SizedBox(height: 20),
 
-
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: DetailedUpperGlass(
                       barcode: widget.stock.barcode,
-                      qty: "In System: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
+                      qty:
+                          "In System: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
                       description: widget.stock.description,
-                      cats: "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
+                      cats:
+                          "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
                       cost: cost,
                       sell: sell,
                       custom1: widget.stock.custom1 ?? "-",
                       custom2: widget.stock.custom2 ?? "-",
                       layByQty: (widget.stock.laybyQuantity % 1 == 0)
                           ? widget.stock.laybyQuantity.toInt().toString()
-                          : double.parse(widget.stock.laybyQuantity.toStringAsFixed(2)).toString(),
+                          : double.parse(
+                              widget.stock.laybyQuantity.toStringAsFixed(2),
+                            ).toString(),
                       soQty: (widget.stock.salesOrderQuantity % 1 == 0)
                           ? widget.stock.salesOrderQuantity.toInt().toString()
-                          : double.parse(widget.stock.salesOrderQuantity.toStringAsFixed(2)).toString(),
+                          : double.parse(
+                              widget.stock.salesOrderQuantity.toStringAsFixed(
+                                2,
+                              ),
+                            ).toString(),
                     ),
                   ),
 
                   const SizedBox(height: 20),
-
 
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -156,7 +203,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   const SizedBox(height: 100),
                 ],
               ),
-
               topIconsRow(),
             ],
           ),

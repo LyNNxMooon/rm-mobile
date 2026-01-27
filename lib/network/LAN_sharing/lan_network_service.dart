@@ -42,7 +42,7 @@ abstract class LanNetworkService {
     required String password,
     required String fileName,
     required String fileContent,
-    required bool isCheck
+    required bool isCheck,
   });
 
   Future<void> sendStockRequest({
@@ -54,14 +54,6 @@ abstract class LanNetworkService {
     required String fileContent,
     required String mobileID,
   });
-
-  // Future<Uint8List?> fetchLatestStockFile({
-  //   required String address,
-  //   required String fullPath,
-  //   required String username,
-  //   required String password,
-  //   required String mobileName,
-  // });
 
   Future<SmbFile?> pollForFile({
     required String address,
@@ -86,5 +78,23 @@ abstract class LanNetworkService {
     required String username,
     required String password,
     required SmbFile fileToDownload,
+  });
+
+  Future<Uint8List> downloadFileBytes({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String shopfrontName,
+    required String thumbFileName,
+  });
+
+  Future<Uint8List> downloadFullImageBytes({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String shopfrontName,
+    required String pictureFileName, 
   });
 }

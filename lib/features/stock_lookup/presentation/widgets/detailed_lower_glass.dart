@@ -52,28 +52,37 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
           child: Column(
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Icon
-                  Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: Colors.greenAccent.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: const Icon(
-                      Icons.monetization_on,
-                      size: 15,
-                      color: kSecondaryColor,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Colors.greenAccent.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: const Icon(
+                          Icons.monetization_on,
+                          size: 15,
+                          color: kSecondaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
 
-                  // Label
-                  const Text(
-                    "Inc RRP",
-                    style: TextStyle(fontSize: 14, color: kSecondaryColor), // Increased font
+                      // Label
+                      const Text(
+                        "Inc RRP",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: kSecondaryColor,
+                        ), // Increased font
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
+
+                  const SizedBox(width: 30),
 
                   // Input Field (Flexible)
                   Expanded(
@@ -87,6 +96,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                           color: kSecondaryColor,
                         ),
                         decoration: InputDecoration(
+                          //enabled: false,
                           hintText: "Sell",
                           hintStyle: const TextStyle(
                             color: kGreyColor,
@@ -94,7 +104,9 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                           ),
                           filled: true,
                           fillColor: Colors.transparent,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(7),
                             borderSide: BorderSide(
@@ -114,50 +126,50 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                     ),
                   ),
 
-                  const SizedBox(width: 10),
+                  //const SizedBox(width: 10),
 
                   // Action Button (Fixed Width or Intrinsic)
-                  InkWell(
-                    onTap: () {
-                      // Update Logic
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 15,
-                        vertical: 8, // Taller touch target
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            kSecondaryColor.withOpacity(0.95),
-                            kSecondaryColor.withOpacity(0.70),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(7),
-                        border: Border.all(
-                          color: kSecondaryColor.withOpacity(0.6),
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: kThirdColor.withOpacity(0.05),
-                            blurRadius: 15,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Text(
-                        "UPDATE",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: kPrimaryColor,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // InkWell(
+                  //   onTap: () {
+                  //     // Update Logic
+                  //   },
+                  //   child: Container(
+                  //     padding: const EdgeInsets.symmetric(
+                  //       horizontal: 15,
+                  //       vertical: 8, // Taller touch target
+                  //     ),
+                  //     decoration: BoxDecoration(
+                  //       gradient: LinearGradient(
+                  //         begin: Alignment.topLeft,
+                  //         end: Alignment.bottomRight,
+                  //         colors: [
+                  //           kSecondaryColor.withOpacity(0.95),
+                  //           kSecondaryColor.withOpacity(0.70),
+                  //         ],
+                  //       ),
+                  //       borderRadius: BorderRadius.circular(7),
+                  //       border: Border.all(
+                  //         color: kSecondaryColor.withOpacity(0.6),
+                  //         width: 1.5,
+                  //       ),
+                  //       boxShadow: [
+                  //         BoxShadow(
+                  //           color: kThirdColor.withOpacity(0.05),
+                  //           blurRadius: 15,
+                  //           offset: const Offset(0, 8),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //     child: const Text(
+                  //       "UPDATE",
+                  //       style: TextStyle(
+                  //         fontSize: 14,
+                  //         fontWeight: FontWeight.bold,
+                  //         color: kPrimaryColor,
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ],

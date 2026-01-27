@@ -144,6 +144,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           color: kSecondaryColor,
                         ),
                         decoration: InputDecoration(
+                          //enabled: false,
                           hintText: "Description",
                           hintStyle: const TextStyle(color: kGreyColor, fontSize: 14),
                           filled: true,

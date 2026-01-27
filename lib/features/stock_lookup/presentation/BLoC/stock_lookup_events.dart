@@ -18,3 +18,17 @@ class FetchFirstPageEvent extends StockListEvent {
 class LoadMoreEvent extends StockListEvent {}
 
 class LoadFilterOptionsEvent extends StockListEvent {}
+
+class RequestThumbnailEvent extends StockListEvent {
+  final num stockId;
+  final String pictureFileName;
+
+  RequestThumbnailEvent({required this.stockId, required this.pictureFileName});
+}
+
+class RequestFullImageEvent extends StockListEvent {
+  final num stockId;
+  final String pictureFileName;
+
+  RequestFullImageEvent({required this.stockId, required this.pictureFileName});
+}

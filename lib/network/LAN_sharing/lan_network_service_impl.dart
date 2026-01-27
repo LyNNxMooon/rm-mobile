@@ -569,4 +569,101 @@ class LanNetworkServiceImpl implements LanNetworkService {
       await connect.close();
     }
   }
+
+  @override
+  Future<Uint8List> downloadFileBytes({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String shopfrontName,
+    required String thumbFileName,
+  }) async {
+    final connect = await SmbConnect.connectAuth(
+      host: address,
+      domain: "",
+      username: username,
+      password: password,
+    );
+
+    try {
+      String cleanedPath = fullPath
+          .replaceFirst(RegExp(r'^//'), '')
+          .replaceFirst(address, '')
+          .replaceFirst(RegExp(r'^/'), '');
+
+      if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
+      if (cleanedPath.endsWith('/')) {
+        cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
+      }
+
+      String targetPath =
+          "$cleanedPath/outgoing/$shopfrontName/Thumbnails/$thumbFileName";
+      final file = await connect.file(targetPath);
+      final stream = await connect.openRead(file);
+
+      final List<int> bytes = [];
+      await for (final data in stream) {
+        bytes.addAll(data);
+      }
+      return Uint8List.fromList(bytes);
+    } on Exception catch (e) {
+      final error = e as dynamic;
+      try {
+        if (error.message != null) return Future.error(error.message);
+      } catch (_) {}
+      return Future.error(e.toString());
+    } finally {
+      await connect.close();
+    }
+  }
+
+  @override
+  Future<Uint8List> downloadFullImageBytes({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String shopfrontName,
+    required String pictureFileName,
+  }) async {
+    final connect = await SmbConnect.connectAuth(
+      host: address,
+      domain: "",
+      username: username,
+      password: password,
+    );
+
+    try {
+      String cleanedPath = fullPath
+          .replaceFirst(RegExp(r'^//'), '')
+          .replaceFirst(address, '')
+          .replaceFirst(RegExp(r'^/'), '');
+
+      if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
+      if (cleanedPath.endsWith('/')) {
+        cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
+      }
+
+      final String targetPath =
+          "$cleanedPath/outgoing/$shopfrontName/Pictures/$pictureFileName";
+
+      final file = await connect.file(targetPath);
+      final stream = await connect.openRead(file);
+
+      final List<int> bytes = [];
+      await for (final data in stream) {
+        bytes.addAll(data);
+      }
+      return Uint8List.fromList(bytes);
+    } on Exception catch (e) {
+      final error = e as dynamic;
+      try {
+        if (error.message != null) return Future.error(error.message);
+      } catch (_) {}
+      return Future.error(e.toString());
+    } finally {
+      await connect.close();
+    }
+  }
 }

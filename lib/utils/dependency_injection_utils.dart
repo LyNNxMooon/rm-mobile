@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
+import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
+import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_thumbnail.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/repositories/stocktake_repo.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
@@ -62,9 +64,11 @@ Future<void> init() async {
   sl.registerFactory(
     () => StocktakeValidationBloc(fetchStocktakeAuditReport: sl()),
   );
-   sl.registerFactory(
+  sl.registerFactory(
     () => SendingFinalStocktakeBloc(sendFinalStocktakeToRm: sl()),
   );
+  sl.registerFactory(() => ThumbnailBloc(fetchThumbnail: sl()));
+  sl.registerFactory(() => FullImageBloc (fetchFullImage: sl()));
 
   //Repos
   sl.registerLazySingleton<HomeRepo>(() => HomeScreenModels());
@@ -91,4 +95,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => FetchCountingStock(sl()));
   sl.registerLazySingleton(() => FetchStocktakeAuditReport(sl()));
   sl.registerLazySingleton(() => SendFinalStocktakeToRm(sl()));
+  sl.registerLazySingleton(() => FetchThumbnail(sl()));
+  sl.registerLazySingleton(() => FetchFullImage(sl()));
 }

@@ -88,3 +88,42 @@ class FiltersLoaded extends FilterOptionsState {
     required this.cat3,
   });
 }
+
+//Fetching thumbnail states
+abstract class ThumbnailState {}
+
+class ThumbnailInitial extends ThumbnailState {}
+
+class ThumbnailLoaded extends ThumbnailState {
+  final Map<num, String> thumbPaths;
+  final Set<num> loading;
+
+  ThumbnailLoaded({required this.thumbPaths, required this.loading});
+
+  ThumbnailLoaded copyWith({Map<num, String>? thumbPaths, Set<num>? loading}) {
+    return ThumbnailLoaded(
+      thumbPaths: thumbPaths ?? this.thumbPaths,
+      loading: loading ?? this.loading,
+    );
+  }
+}
+
+abstract class FullImageState {}
+
+class FullImageLoaded extends FullImageState {
+  final Map<num, String> imagePaths; 
+  final Set<num> loading;
+
+  FullImageLoaded({required this.imagePaths, required this.loading});
+
+  FullImageLoaded copyWith({
+    Map<num, String>? imagePaths,
+    Set<num>? loading,
+  }) {
+    return FullImageLoaded(
+      imagePaths: imagePaths ?? this.imagePaths,
+      loading: loading ?? this.loading,
+    );
+  }
+}
+

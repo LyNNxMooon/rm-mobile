@@ -1,4 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
+import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_thumbnail.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 
@@ -117,6 +119,92 @@ class FilterOptionsBloc extends Bloc<StockListEvent, FilterOptionsState> {
       );
     } catch (error) {
       emit(FiltersError(error.toString()));
+    }
+  }
+}
+
+//For thumbnail
+class ThumbnailBloc extends Bloc<StockListEvent, ThumbnailState> {
+  final FetchThumbnail fetchThumbnail;
+
+  ThumbnailBloc({
+    required this.fetchThumbnail,
+  }) : super(ThumbnailLoaded(thumbPaths: {}, loading: {})) {
+    on<RequestThumbnailEvent>(_onRequest);
+  }
+
+  Future<void> _onRequest(
+    RequestThumbnailEvent event,
+    Emitter<ThumbnailState> emit,
+  ) async {
+    final current = state is ThumbnailLoaded
+        ? state as ThumbnailLoaded
+        : ThumbnailLoaded(thumbPaths: {}, loading: {});
+
+    if (event.pictureFileName.isEmpty) return;
+    if (current.thumbPaths.containsKey(event.stockId)) return;
+    if (current.loading.contains(event.stockId)) return;
+
+    final newLoading = {...current.loading, event.stockId};
+    emit(current.copyWith(loading: newLoading));
+
+    try {
+      final path = await fetchThumbnail(
+        pictureFileName: event.pictureFileName,
+      );
+
+      final updatedPaths = {...current.thumbPaths};
+      if (path != null && path.isNotEmpty) {
+        updatedPaths[event.stockId] = path;
+      }
+
+      final loadingDone = {...newLoading}..remove(event.stockId);
+      emit(current.copyWith(thumbPaths: updatedPaths, loading: loadingDone));
+    } catch (_) {
+      final loadingDone = {...newLoading}..remove(event.stockId);
+      emit(current.copyWith(loading: loadingDone));
+    }
+  }
+}
+
+class FullImageBloc extends Bloc<StockListEvent, FullImageState> {
+  final FetchFullImage fetchFullImage;
+
+  FullImageBloc({required this.fetchFullImage})
+      : super(FullImageLoaded(imagePaths: {}, loading: {})) {
+    on<RequestFullImageEvent>(_onRequest);
+  }
+
+  Future<void> _onRequest(
+    RequestFullImageEvent event,
+    Emitter<FullImageState> emit,
+  ) async {
+    final current = state is FullImageLoaded
+        ? state as FullImageLoaded
+        : FullImageLoaded(imagePaths: {}, loading: {});
+
+    if (event.pictureFileName.isEmpty) return;
+    if (current.imagePaths.containsKey(event.stockId)) return;
+    if (current.loading.contains(event.stockId)) return;
+
+    final newLoading = {...current.loading, event.stockId};
+    emit(current.copyWith(loading: newLoading));
+
+    try {
+      final path = await fetchFullImage(
+        pictureFileName: event.pictureFileName,
+      );
+
+      final updated = {...current.imagePaths};
+      if (path != null && path.isNotEmpty) {
+        updated[event.stockId] = path;
+      }
+
+      final loadingDone = {...newLoading}..remove(event.stockId);
+      emit(current.copyWith(imagePaths: updated, loading: loadingDone));
+    } catch (_) {
+      final loadingDone = {...newLoading}..remove(event.stockId);
+      emit(current.copyWith(loading: loadingDone));
     }
   }
 }

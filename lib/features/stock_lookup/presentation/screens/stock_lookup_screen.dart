@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,10 +12,10 @@ import 'package:lottie/lottie.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/stock_details_screen.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/stock_thumbnail_tile.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
-import '../../../../constants/images.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/filter_criteria.dart';
 import '../BLoC/stock_lookup_bloc.dart';
@@ -68,9 +67,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     // Initial Load
-    context.read<StockListBloc>().add(
-      FetchFirstPageEvent(),
-    );
+    context.read<StockListBloc>().add(FetchFirstPageEvent());
     context.read<FilterOptionsBloc>().add(LoadFilterOptionsEvent());
   }
 
@@ -177,7 +174,6 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                       filterColumn: searchCol,
                                       sortColumn: _dbFilterCol,
                                       filters: currentFilters,
-                                    
                                     ),
                                   );
                                 },
@@ -337,7 +333,6 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                         filterColumn: "Barcode",
                         sortColumn: _dbFilterCol,
                         filters: currentFilters,
-                      
                       ),
                     );
                   }
@@ -387,7 +382,6 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     filterColumn: searchCol,
                     sortColumn: _dbFilterCol,
                     filters: currentFilters,
-                    
                   ),
                 );
               });
@@ -418,7 +412,6 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     filterColumn: "Barcode",
                     sortColumn: _dbFilterCol,
                     filters: currentFilters,
-                    
                   ),
                 );
               }
@@ -565,18 +558,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                         borderRadius: BorderRadius.circular(6),
                         child: Hero(
                           tag: 'stock_image_${stock.stockID}',
-                          child: CachedNetworkImage(
-                            fit: BoxFit.fill,
-                            imageUrl: stock.imageUrl ?? "",
-                            placeholder: (_, url) => Image.asset(
-                              overviewPlaceholder,
-                              fit: BoxFit.fill,
-                            ),
-                            errorWidget: (_, url, error) => Image.asset(
-                              overviewPlaceholder,
-                              fit: BoxFit.fill,
-                            ),
-                          ),
+                          child: StockThumbnailTile(stock: stock),
                         ),
                       ),
                     ),

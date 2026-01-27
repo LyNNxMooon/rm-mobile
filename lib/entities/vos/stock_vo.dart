@@ -9,9 +9,9 @@ class StockVO {
   final String barcode;
   final String description;
   @JsonKey(name: 'dept_name')
-  final String deptName;
+  final String? deptName;
   @JsonKey(name: 'dept_id')
-  final int deptID;
+  final int? deptID;
   final String? custom1;
   final String? custom2;
   @JsonKey(name: 'longdesc')

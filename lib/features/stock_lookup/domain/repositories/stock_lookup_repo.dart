@@ -14,4 +14,21 @@ abstract class StockLookupRepo {
   });
 
   Future<Map<String, List<String>>> getFilterOptions(String shopfront);
+  Future<String?> fetchAndCacheThumbnailPath({
+    required String address,
+    required String fullPath,
+    required String? username,
+    required String? password,
+    required String shopfrontName,
+    required String pictureFileName,
+  });
+
+  Future<String?> fetchAndCacheFullImagePath({
+    required String address,
+    required String fullPath,
+    required String? username,
+    required String? password,
+    required String shopfrontName,
+    required String pictureFileName,
+  });
 }

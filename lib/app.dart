@@ -105,9 +105,11 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<StocktakeValidationBloc>(
           create: (_) => sl<StocktakeValidationBloc>(),
         ),
-         BlocProvider<SendingFinalStocktakeBloc>(
+        BlocProvider<SendingFinalStocktakeBloc>(
           create: (_) => sl<SendingFinalStocktakeBloc>(),
         ),
+        BlocProvider<ThumbnailBloc>(create: (_) => sl<ThumbnailBloc>()),
+        BlocProvider<FullImageBloc>(create: (_) => sl<FullImageBloc>()),
       ],
       child: MaterialApp(
         title: 'RM-Mobile',
