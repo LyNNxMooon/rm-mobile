@@ -6,6 +6,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/widgets/empty_stock_state_widget.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
@@ -260,26 +261,26 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 80),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 100,
-              height: 100,
-              child: Image.asset("assets/images/box.png", fit: BoxFit.fill),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              "Your Stocktake list is empty!",
-              style: getSmartTitle(color: kGreyColor, fontSize: 16),
-            ),
-          ],
-        ),
-      ),
+    return EmptyStockState(
+      message: "Your stocktake list is empty",
+      onRetry: () {},
     );
+    // return Center(
+    //   child: Padding(
+    //     padding: const EdgeInsets.only(bottom: 80),
+    //     child: Column(
+    //       mainAxisAlignment: MainAxisAlignment.center,
+    //       children: [
+           
+    //         const SizedBox(height: 20),
+    //         Text(
+    //           "Your Stocktake list is empty!",
+    //           style: getSmartTitle(color: kGreyColor, fontSize: 16),
+    //         ),
+    //       ],
+    //     ),
+    //   ),
+    // );
   }
 
   Widget _itemTile(CountedStockVO stock, int index) {

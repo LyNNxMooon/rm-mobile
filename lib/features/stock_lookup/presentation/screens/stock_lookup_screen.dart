@@ -8,10 +8,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:intl/intl.dart';
-import 'package:lottie/lottie.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/stock_details_screen.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/breathing_stock_loader.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/stock_thumbnail_tile.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../../../constants/colors.dart';
@@ -469,22 +469,17 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   Widget emptyOrErrorWidget() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(
-          width: 156,
-          height: 156,
-          child: Lottie.asset(
-            "assets/animations/loading-stock.json",
-            fit: BoxFit.fill,
+        const BreathingStockLoader(),
+        const Text(
+          "Your stock(s) are not ready yet...",
+          style: TextStyle(
+            fontSize: 14,
+            color: kPrimaryColor,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 30),
-        Text(
-          "Your stock(s) are not ready yet...",
-          style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
-        ),
-        const SizedBox(height: 120),
+        const SizedBox(height: 110),
       ],
     );
   }
