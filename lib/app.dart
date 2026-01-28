@@ -110,6 +110,9 @@ class _MyAppState extends State<MyApp> {
         ),
         BlocProvider<ThumbnailBloc>(create: (_) => sl<ThumbnailBloc>()),
         BlocProvider<FullImageBloc>(create: (_) => sl<FullImageBloc>()),
+        BlocProvider<StocktakeHistoryBloc>(
+          create: (_) => sl<StocktakeHistoryBloc>(),
+        ),
       ],
       child: MaterialApp(
         title: 'RM-Mobile',

@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/commit_stocktake.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counting_stock.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessions.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sesstion_items.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
@@ -203,6 +205,43 @@ class SendingFinalStocktakeBloc
       emit(SentStocktakeToRM("Stocktake data commited to RetailManager!"));
     } catch (error) {
       emit(ErrorSendingStocktake("Error sending stocktake list: $error"));
+    }
+  }
+}
+
+class StocktakeHistoryBloc extends Bloc<StocktakeEvent, StocktakeHistoryState> {
+  final FetchStocktakeHistorySessions fetchSessions;
+  final FetchStocktakeHistoryItems fetchItems;
+
+  StocktakeHistoryBloc({required this.fetchSessions, required this.fetchItems})
+    : super(StocktakeHistoryInitial()) {
+    on<LoadHistorySessionsEvent>(_onLoadSessions);
+    on<LoadHistoryItemsEvent>(_onLoadItems);
+  }
+
+  Future<void> _onLoadSessions(
+    LoadHistorySessionsEvent event,
+    Emitter<StocktakeHistoryState> emit,
+  ) async {
+    emit(StocktakeHistoryLoading());
+    try {
+      final sessions = await fetchSessions();
+      emit(StocktakeHistorySessionsLoaded(sessions));
+    } catch (e) {
+      emit(StocktakeHistoryError(e.toString()));
+    }
+  }
+
+  Future<void> _onLoadItems(
+    LoadHistoryItemsEvent event,
+    Emitter<StocktakeHistoryState> emit,
+  ) async {
+    emit(StocktakeHistoryLoading());
+    try {
+      final items = await fetchItems(sessionId: event.sessionId);
+      emit(StocktakeHistoryItemsLoaded(event.sessionId, items));
+    } catch (e) {
+      emit(StocktakeHistoryError(e.toString()));
     }
   }
 }

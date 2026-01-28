@@ -29,4 +29,16 @@ class CountedStockVO {
       _$CountedStockVOFromJson(json);
 
   Map<String, dynamic> toJson() => _$CountedStockVOToJson(this);
+
+  static CountedStockVO countedFromHistoryMap(Map<String, dynamic> m) {
+    return CountedStockVO(
+      stocktakeDate: DateTime.parse(m['stocktake_date'].toString()),
+      stockID: (m['stock_id'] as num).toInt(),
+      quantity: m['quantity'] as num,
+      dateModified: DateTime.parse(m['date_modified'].toString()),
+      isSynced: true, // history doesn’t care
+      description: m['description'].toString(),
+      barcode: m['barcode'].toString(),
+    );
+  }
 }

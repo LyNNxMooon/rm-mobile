@@ -149,10 +149,41 @@ class HiveDAOImpl extends LocalDbDAO {
   Future<void> saveAppConfig(String key, String value) {
     throw UnimplementedError();
   }
-  
+
   @override
-  Future<Map<num, StockVO>> getStocksByIds({required String shopfront, required List<num> stockIds}) {
-    // TODO: implement getStocksByIds
+  Future<Map<num, StockVO>> getStocksByIds({
+    required String shopfront,
+    required List<num> stockIds,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getStocktakeHistoryItems({
+    required String sessionId,
+    required String shopfront,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getStocktakeHistorySessions({
+    required String shopfront,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> saveStocktakeHistorySession({
+    required String sessionId,
+    required String shopfront,
+    required String mobileDeviceId,
+    required String mobileDeviceName,
+    required int totalStocks,
+    required DateTime dateStarted,
+    required DateTime dateEnded,
+    required List<CountedStockVO> items,
+  }) {
     throw UnimplementedError();
   }
 }

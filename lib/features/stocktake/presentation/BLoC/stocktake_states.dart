@@ -1,4 +1,5 @@
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
+import 'package:rmstock_scanner/entities/vos/stocktake_history_session_row.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 
 import '../../../../entities/vos/stock_vo.dart';
@@ -120,4 +121,26 @@ class ErrorSendingStocktake extends SendingFinalStocktakeStates {
   final String message;
 
   ErrorSendingStocktake(this.message);
+}
+
+abstract class StocktakeHistoryState {}
+
+class StocktakeHistoryInitial extends StocktakeHistoryState {}
+
+class StocktakeHistoryLoading extends StocktakeHistoryState {}
+
+class StocktakeHistorySessionsLoaded extends StocktakeHistoryState {
+  final List<StocktakeHistorySessionRow> sessions;
+  StocktakeHistorySessionsLoaded(this.sessions);
+}
+
+class StocktakeHistoryItemsLoaded extends StocktakeHistoryState {
+  final String sessionId;
+  final List<CountedStockVO> items;
+  StocktakeHistoryItemsLoaded(this.sessionId, this.items);
+}
+
+class StocktakeHistoryError extends StocktakeHistoryState {
+  final String message;
+  StocktakeHistoryError(this.message);
 }

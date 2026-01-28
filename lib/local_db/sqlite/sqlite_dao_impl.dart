@@ -26,6 +26,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
           await db.execute(networkCredentialsTableCreationQuery);
           await db.execute(savedPathsTableCreationQuery);
           await db.execute(stocksTableCreationQuery);
+          await db.execute(stocktakeHistorySessionCreationQuery);
+          await db.execute(stocktakeHistoryItemsCreationQuery);
         },
       );
       logger.d('Successfully initialized SQLite local database!');
@@ -374,7 +376,87 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<List<Map<String, dynamic>>> getStocktakeHistoryItems({
+    required String sessionId,
+    required String shopfront,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.query(
+        'StocktakeHistoryItems',
+        where: 'session_id = ? AND shopfront = ?',
+        whereArgs: [sessionId, shopfront],
+        orderBy: 'date_modified DESC',
+      );
+    } catch (e) {
+      return Future.error("Error loading history items: $e");
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getStocktakeHistorySessions({
+    required String shopfront,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.query(
+        'StocktakeHistorySession',
+        where: 'shopfront = ?',
+        whereArgs: [shopfront],
+        orderBy: 'created_at DESC',
+      );
+    } catch (e) {
+      return Future.error("Error loading history sessions: $e");
+    }
+  }
+
   //Save Data
+
+  @override
+  Future<void> saveStocktakeHistorySession({
+    required String sessionId,
+    required String shopfront,
+    required String mobileDeviceId,
+    required String mobileDeviceName,
+    required int totalStocks,
+    required DateTime dateStarted,
+    required DateTime dateEnded,
+    required List<CountedStockVO> items,
+  }) async {
+    try {
+      final db = _database!;
+      await db.transaction((txn) async {
+        await txn.insert('StocktakeHistorySession', {
+          'session_id': sessionId,
+          'shopfront': shopfront,
+          'mobile_device_id': mobileDeviceId,
+          'mobile_device_name': mobileDeviceName,
+          'total_stocks': totalStocks,
+          'date_started': dateStarted.toIso8601String(),
+          'date_ended': dateEnded.toIso8601String(),
+          'created_at': DateTime.now().toIso8601String(),
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+
+        final batch = txn.batch();
+        for (final s in items) {
+          batch.insert('StocktakeHistoryItems', {
+            'session_id': sessionId,
+            'stock_id': s.stockID,
+            'shopfront': shopfront,
+            'quantity': s.quantity,
+            'stocktake_date': s.stocktakeDate.toIso8601String(),
+            'date_modified': s.dateModified.toIso8601String(),
+            'description': s.description,
+            'barcode': s.barcode,
+          }, conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+        await batch.commit(noResult: true);
+      });
+    } catch (e) {
+      return Future.error("Error saving history session: $e");
+    }
+  }
 
   @override
   Future<void> saveAppConfig(

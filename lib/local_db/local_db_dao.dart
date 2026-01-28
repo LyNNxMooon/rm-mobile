@@ -38,15 +38,21 @@ abstract class LocalDbDAO {
     required bool ascending,
     required int limit,
     required int offset,
-    FilterCriteria? filters
+    FilterCriteria? filters,
   });
   Future<List<String>> getDistinctValues(String columnName, String shopfront);
   Future<String?> getAppConfig(String key);
   Future<Map<num, StockVO>> getStocksByIds({
-  required String shopfront,
-  required List<num> stockIds,
-});
-
+    required String shopfront,
+    required List<num> stockIds,
+  });
+  Future<List<Map<String, dynamic>>> getStocktakeHistorySessions({
+    required String shopfront,
+  });
+  Future<List<Map<String, dynamic>>> getStocktakeHistoryItems({
+    required String sessionId,
+    required String shopfront,
+  });
 
   // Setters to save data
   Future<void> saveCountedStock(Map<String, dynamic> stockData);
@@ -60,7 +66,16 @@ abstract class LocalDbDAO {
   Future<void> addNetworkPath(String path, String shopfront, String hostName);
   Future<void> insertStocks(List<StockVO> stocks, String shopfront);
   Future<void> saveAppConfig(String key, String value);
-
+  Future<void> saveStocktakeHistorySession({
+    required String sessionId,
+    required String shopfront,
+    required String mobileDeviceId,
+    required String mobileDeviceName,
+    required int totalStocks,
+    required DateTime dateStarted,
+    required DateTime dateEnded,
+    required List<CountedStockVO> items,
+  });
 
   //Update Data
   Future<void> updateShopfrontByIp({

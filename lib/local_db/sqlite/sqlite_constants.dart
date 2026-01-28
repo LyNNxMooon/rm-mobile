@@ -80,3 +80,33 @@ const savedPathsTableCreationQuery = '''
     host_name TEXT
   )
 ''';
+
+const stocktakeHistorySessionCreationQuery = '''
+CREATE TABLE StocktakeHistorySession (
+  session_id TEXT PRIMARY KEY,
+  shopfront TEXT NOT NULL,
+  mobile_device_id TEXT NOT NULL,
+  mobile_device_name TEXT NOT NULL,
+  total_stocks INTEGER NOT NULL,
+  date_started TEXT NOT NULL,
+  date_ended TEXT NOT NULL,
+  created_at TEXT NOT NULL
+)
+''';
+
+const stocktakeHistoryItemsCreationQuery = '''
+CREATE TABLE StocktakeHistoryItems (
+  session_id TEXT NOT NULL,
+  stock_id INTEGER NOT NULL,
+  shopfront TEXT NOT NULL,
+  quantity INTEGER NOT NULL,
+  stocktake_date TEXT NOT NULL,
+  date_modified TEXT NOT NULL,
+  description TEXT NOT NULL,
+  barcode TEXT NOT NULL,
+  PRIMARY KEY (session_id, stock_id, shopfront),
+  FOREIGN KEY (session_id) REFERENCES StocktakeHistorySession(session_id)
+)
+''';
+
+

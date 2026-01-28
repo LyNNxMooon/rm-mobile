@@ -33,3 +33,10 @@ class SendingFinalStocktakeEvent extends StocktakeEvent {
 
   SendingFinalStocktakeEvent(this.auditData);
 }
+
+class LoadHistorySessionsEvent extends StocktakeEvent {}
+
+class LoadHistoryItemsEvent extends StocktakeEvent {
+  final String sessionId;
+  LoadHistoryItemsEvent(this.sessionId);
+}

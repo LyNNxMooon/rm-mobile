@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/screens/stocktake_history_screen.dart';
+import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 
@@ -34,7 +36,8 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
               child: TextField(
                 onChanged: onChanged,
                 decoration: InputDecoration(
-                  hintText: "Search barcode or description...", // Shortened hint
+                  hintText:
+                      "Search barcode or description...", // Shortened hint
                   hintStyle: TextStyle(color: Colors.grey[500], fontSize: 13),
                   prefixIcon: Icon(
                     Icons.search,
@@ -89,7 +92,9 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
             color: kSecondaryColor,
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
-              onTap: () {},
+              onTap: () {
+                context.navigateToNext(const StocktakeHistoryScreen());
+              },
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 height: 42,
@@ -98,7 +103,11 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey[300]!, width: 1),
                 ),
-                child: Icon(Icons.history, color: Colors.blueGrey[800], size: 20),
+                child: Icon(
+                  Icons.history,
+                  color: Colors.blueGrey[800],
+                  size: 20,
+                ),
               ),
             ),
           ),

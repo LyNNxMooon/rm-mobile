@@ -51,7 +51,40 @@ class SendFinalStocktakeToRm {
           auditData: auditData,
         );
 
-        // We will store to back up synced stocks table later here
+        final now = DateTime.now();
+        String pad(int v) => v.toString().padLeft(2, '0');
+        final String timestamp =
+            "${now.year}"
+            "${pad(now.month)}"
+            "${pad(now.day)}"
+            "${pad(now.hour)}"
+            "${pad(now.minute)}"
+            "${pad(now.second)}";
+
+        final String sessionId = "${mobileInfo.deviceId}_stocktake_$timestamp";
+
+        DateTime dateStarted = now;
+        DateTime dateEnded = now;
+        if (unsyncedStocks.isNotEmpty) {
+          dateStarted = unsyncedStocks
+              .map((e) => e.stocktakeDate)
+              .reduce((a, b) => a.isBefore(b) ? a : b);
+
+          dateEnded = unsyncedStocks
+              .map((e) => e.dateModified)
+              .reduce((a, b) => a.isAfter(b) ? a : b);
+        }
+
+        await LocalDbDAO.instance.saveStocktakeHistorySession(
+          sessionId: sessionId,
+          shopfront: shopfront,
+          mobileDeviceId: mobileInfo.deviceId,
+          mobileDeviceName: mobileInfo.name,
+          totalStocks: unsyncedStocks.length,
+          dateStarted: dateStarted,
+          dateEnded: dateEnded,
+          items: unsyncedStocks,
+        );
 
         final List<int> stockIds = unsyncedStocks
             .map((s) => s.stockID)
