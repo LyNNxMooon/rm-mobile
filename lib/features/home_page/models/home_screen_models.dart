@@ -71,8 +71,7 @@ class HomeScreenModels implements HomeRepo {
     String? pwd,
   ) async {
     try {
-
-logger.d("Model SF Path: $fullPath");
+      logger.d("Model SF Path: $fullPath");
 
       return LanNetworkServiceImpl.instance.getShopfronts(
         address: address,
@@ -260,6 +259,21 @@ logger.d("Model SF Path: $fullPath");
     }
     final String completionTime = DateTime.now().toString();
     await LocalDbDAO.instance.saveAppConfig(shopKey, completionTime);
+  }
+
+  @override
+  Future<int> getRetentionDays() {
+    return LocalDbDAO.instance.getHistoryRetentionDays();
+  }
+
+  @override
+  Future<void> setRetentionDays(int days) {
+    return LocalDbDAO.instance.setHistoryRetentionDays(days);
+  }
+
+  @override
+  Future<int> runHistoryCleanup() {
+    return LocalDbDAO.instance.cleanupHistoryByRetention();
   }
 }
 

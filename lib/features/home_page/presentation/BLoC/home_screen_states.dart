@@ -149,3 +149,25 @@ class FetchStockError extends FetchStockStates {
   final String message;
   FetchStockError({required this.message});
 }
+
+abstract class SettingsState {}
+
+class SettingsInitial extends SettingsState {}
+
+class SettingsLoading extends SettingsState {}
+
+class SettingsLoaded extends SettingsState {
+  final int retentionDays;
+  SettingsLoaded(this.retentionDays);
+}
+
+class SettingsError extends SettingsState {
+  final String message;
+  SettingsError(this.message);
+}
+
+class SettingsCleanupDone extends SettingsState {
+  final int deletedSessions;
+  final int retentionDays;
+  SettingsCleanupDone({required this.deletedSessions, required this.retentionDays});
+}

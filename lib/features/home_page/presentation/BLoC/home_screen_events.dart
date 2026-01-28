@@ -90,4 +90,19 @@ class StartSyncEvent extends FetchStockEvents {
     this.username,
     this.password,
   });
+
+
 }
+
+
+abstract class SettingsEvent {}
+
+class LoadSettingsEvent extends SettingsEvent {}
+
+class ChangeRetentionDaysEvent extends SettingsEvent {
+  final int days;
+  ChangeRetentionDaysEvent(this.days);
+}
+
+class RunHistoryCleanupEvent extends SettingsEvent {}
+

@@ -1,5 +1,8 @@
 import 'package:bloc/bloc.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_history.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
 import '../../../../entities/vos/network_computer_vo.dart';
@@ -87,13 +90,8 @@ class ConnectingFolderBloc
     ConnectToFolderEvent event,
     Emitter<ConnectingFolderStates> emit,
   ) async {
-
-    
-
     emit(ConnectingFolder(event.path));
     try {
-
-      
       logger.d("What is the path after shopfront confrimation: ${event.path}");
       await connectAndWriteToFolder(
         event.ipAddress,
@@ -103,7 +101,12 @@ class ConnectingFolderBloc
         event.pwd,
       );
 
-      emit(FolderConnected(message: "Connected to SharedFolder!", path: event.path));
+      emit(
+        FolderConnected(
+          message: "Connected to SharedFolder!",
+          path: event.path,
+        ),
+      );
     } catch (e) {
       emit(ErrorConnectingFolder(message: e.toString()));
     }
@@ -184,13 +187,12 @@ class AutoConnectionBloc extends Bloc<HomeScreenEvents, AutoConnectionStates> {
     AutoConnectToDefaultFolderEvent event,
     Emitter<AutoConnectionStates> emit,
   ) async {
-     logger.d('AutoConnection in bloc Was Triggered!');
+    logger.d('AutoConnection in bloc Was Triggered!');
     emit(LoadingAutoConnection(event.ipAddress));
     try {
       await autoConnectToDefaultFolder(event.ipAddress, event.hostName).then((
         value,
       ) {
-       
         emit(AutoConnectedToPublicFolder("Connected to SharedFolder!"));
       });
     } catch (e) {
@@ -256,6 +258,73 @@ class FetchStockBloc extends Bloc<FetchStockEvents, FetchStockStates> {
       emit(FetchStockError(message: e.toString()));
       // await Future.delayed(const Duration(seconds: 3));
       // emit(FetchStockInitial());
+    }
+  }
+}
+
+class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
+  final LoadRetentionDays loadRetentionDays;
+  final UpdateRetentionDays updateRetentionDays;
+  final CleanupHistory cleanupHistory;
+
+  SettingsBloc({
+    required this.loadRetentionDays,
+    required this.updateRetentionDays,
+    required this.cleanupHistory,
+  }) : super(SettingsInitial()) {
+    on<LoadSettingsEvent>(_onLoad);
+    on<ChangeRetentionDaysEvent>(_onChangeRetention);
+    on<RunHistoryCleanupEvent>(_onCleanup);
+  }
+
+  Future<void> _onLoad(
+    LoadSettingsEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    emit(SettingsLoading());
+    try {
+      final days = await loadRetentionDays();
+      emit(SettingsLoaded(days));
+    } catch (e) {
+      emit(SettingsError(e.toString()));
+    }
+  }
+
+  Future<void> _onChangeRetention(
+    ChangeRetentionDaysEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      await updateRetentionDays(event.days);
+
+      // Run cleanup immediately after change (so setting takes effect now)
+      final deleted = await cleanupHistory();
+      emit(
+        SettingsCleanupDone(
+          deletedSessions: deleted,
+          retentionDays: event.days,
+        ),
+      );
+    } catch (e) {
+      emit(SettingsError(e.toString()));
+    }
+  }
+
+  Future<void> _onCleanup(
+    RunHistoryCleanupEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      final currentDays = await loadRetentionDays();
+      final deleted = await cleanupHistory();
+      emit(
+        SettingsCleanupDone(
+          deletedSessions: deleted,
+          retentionDays: currentDays,
+        ),
+      );
+    } catch (e) {
+      emit(SettingsError(e.toString()));
     }
   }
 }

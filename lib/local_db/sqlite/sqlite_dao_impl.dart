@@ -411,7 +411,28 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<int> getHistoryRetentionDays() async {
+    try {
+      final String? v = await getAppConfig(kHistoryRetentionDaysKey);
+      final int days = int.tryParse(v ?? "") ?? 10;
+      return days.clamp(1, 30);
+    } catch (e) {
+      return Future.error("Error loading retention days: $e");
+    }
+  }
+
   //Save Data
+
+  @override
+  Future<void> setHistoryRetentionDays(int days) async {
+    try {
+      final int safeDays = days.clamp(1, 30);
+      await saveAppConfig(kHistoryRetentionDaysKey, safeDays.toString());
+    } catch (e) {
+      return Future.error("Error saving retention days: $e");
+    }
+  }
 
   @override
   Future<void> saveStocktakeHistorySession({
@@ -581,6 +602,37 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<int> cleanupHistoryByRetention() async {
+    try {
+      final int days = await getHistoryRetentionDays();
+
+      // We store last cleanup to avoid doing heavy deletes too often
+      final String? last = await getAppConfig(kHistoryLastCleanupKey);
+      DateTime? lastDt;
+      if (last != null && last.isNotEmpty) {
+        try {
+          lastDt = DateTime.parse(last).toUtc();
+        } catch (_) {}
+      }
+
+      // Run cleanup at most once every 6 hours 
+      final nowUtc = DateTime.now().toUtc();
+      if (lastDt != null &&
+          nowUtc.difference(lastDt) < const Duration(hours: 6)) {
+        return 0;
+      }
+
+      final cutoffUtc = nowUtc.subtract(Duration(days: days));
+      final deleted = await deleteHistoryOlderThan(cutoffUtc);
+
+      await saveAppConfig(kHistoryLastCleanupKey, nowUtc.toIso8601String());
+      return deleted;
+    } catch (e) {
+      return Future.error("Error cleaning history: $e");
+    }
+  }
+
   //Removing Data
   @override
   Future<void> removeNetworkCredential({required String ip}) async {
@@ -720,6 +772,44 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error updating path in local db: $error');
       return Future.error("Error updating path: $error");
+    }
+  }
+
+  @override
+  Future<int> deleteHistoryOlderThan(DateTime cutoffUtc) async {
+    try {
+      final db = _database!;
+      final cutoffIso = cutoffUtc.toIso8601String();
+
+      return await db.transaction((txn) async {
+        final sessions = await txn.query(
+          'StocktakeHistorySession',
+          columns: ['session_id'],
+          where: 'created_at < ?',
+          whereArgs: [cutoffIso],
+        );
+
+        if (sessions.isEmpty) return 0;
+
+        final ids = sessions.map((e) => e['session_id'].toString()).toList();
+        final placeholders = List.filled(ids.length, '?').join(',');
+
+        await txn.delete(
+          'StocktakeHistoryItems',
+          where: 'session_id IN ($placeholders)',
+          whereArgs: ids,
+        );
+
+        final deletedSessions = await txn.delete(
+          'StocktakeHistorySession',
+          where: 'session_id IN ($placeholders)',
+          whereArgs: ids,
+        );
+
+        return deletedSessions;
+      });
+    } catch (e) {
+      return Future.error("Error deleting old history: $e");
     }
   }
 }

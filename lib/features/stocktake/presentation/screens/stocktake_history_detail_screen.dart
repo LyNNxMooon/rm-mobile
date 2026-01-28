@@ -240,9 +240,13 @@ class _StocktakeHistoryDetailsScreenState
                               : null,
                           icon: Padding(
                             padding: const EdgeInsets.only(right: 12),
-                            child: Icon(
-                              Icons.screen_share_outlined,
-                              color: canExport ? Colors.green : kGreyColor,
+                            child: SizedBox(
+                              width: 28,
+                              height: 30,
+                              child: Image.asset(
+                                "assets/images/excel.png",
+                                fit: BoxFit.fill,
+                              ),
                             ),
                           ),
                         );
@@ -312,7 +316,7 @@ class _StocktakeHistoryDetailsScreenState
       ),
       child: Row(
         children: [
-          const Icon(Icons.inventory_2_outlined, size: 18, color: kGreyColor),
+          const Icon(Icons.cloud_done_outlined, size: 18, color: Colors.green),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

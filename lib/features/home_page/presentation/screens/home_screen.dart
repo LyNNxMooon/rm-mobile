@@ -30,7 +30,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    final currentParamState = context.read<NetworkSavedPathValidationBloc>().state;
+
+    context.read<SettingsBloc>().add(RunHistoryCleanupEvent());
+
+    final currentParamState = context
+        .read<NetworkSavedPathValidationBloc>()
+        .state;
 
     if (currentParamState is ErrorFetchingSavedPaths ||
         currentParamState is ErrorCheckingConnection) {
@@ -40,7 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (currentParamState is ConnectionValid &&
-        context.read<ShopFrontConnectionBloc>().state is! ConnectedToShopfront) {
+        context.read<ShopFrontConnectionBloc>().state
+            is! ConnectedToShopfront) {
       context.read<ShopFrontConnectionBloc>().add(
         ConnectToShopfrontEvent(
           ip: AppGlobals.instance.currentHostIp ?? "",
@@ -100,11 +106,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       // (fitting perfectly above the 53.5% drawer) and centers the items.
                       ConstrainedBox(
                         constraints: BoxConstraints(
-                          minHeight: 300, // Ensure it doesn't crush on small phones
-                          maxHeight: topContentHeight < 300 ? 300 : topContentHeight,
+                          minHeight:
+                              300, // Ensure it doesn't crush on small phones
+                          maxHeight: topContentHeight < 300
+                              ? 300
+                              : topContentHeight,
                         ),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center, // Center Vertically
+                          mainAxisAlignment:
+                              MainAxisAlignment.center, // Center Vertically
                           children: [
                             logo(),
 
@@ -118,14 +128,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
                             ActionCard(
                               onTap: () {
-                                final currentState =
-                                    context.read<FetchStockBloc>().state;
+                                final currentState = context
+                                    .read<FetchStockBloc>()
+                                    .state;
 
                                 if (currentState is! FetchStockProgress) {
                                   context.read<ShopFrontConnectionBloc>().add(
                                     ConnectToShopfrontEvent(
-                                      ip: AppGlobals.instance.currentHostIp ?? "",
-                                      shopName: AppGlobals.instance.shopfront ?? "",
+                                      ip:
+                                          AppGlobals.instance.currentHostIp ??
+                                          "",
+                                      shopName:
+                                          AppGlobals.instance.shopfront ?? "",
                                     ),
                                   );
                                 }
@@ -141,7 +155,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
 
                       syncWatcher(),
-
 
                       const SizedBox(height: 120),
                     ],
@@ -197,12 +210,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget syncWatcher() {
     return BlocListener<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
       listenWhen: (previous, current) =>
-      previous is! ConnectedToShopfront && current is ConnectedToShopfront,
+          previous is! ConnectedToShopfront && current is ConnectedToShopfront,
       listener: (context, state) {
         if (state is ConnectedToShopfront) {
           context.read<FetchStockBloc>().add(
-            StartSyncEvent(
-                ipAddress: AppGlobals.instance.currentHostIp ?? ""),
+            StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
           );
 
           AlertInfo.show(

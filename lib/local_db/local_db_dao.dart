@@ -53,6 +53,9 @@ abstract class LocalDbDAO {
     required String sessionId,
     required String shopfront,
   });
+  Future<int> getHistoryRetentionDays();
+
+
 
   // Setters to save data
   Future<void> saveCountedStock(Map<String, dynamic> stockData);
@@ -76,6 +79,7 @@ abstract class LocalDbDAO {
     required DateTime dateEnded,
     required List<CountedStockVO> items,
   });
+    Future<void> setHistoryRetentionDays(int days);
 
   //Update Data
   Future<void> updateShopfrontByIp({
@@ -87,6 +91,7 @@ abstract class LocalDbDAO {
     required String selectedPath,
   });
   Future<void> markStockAsSynced(List<int> stockIds, String shopfront);
+  Future<int> cleanupHistoryByRetention();
 
   //Removing data
   Future<void> removeNetworkCredential({required String ip});
@@ -94,4 +99,5 @@ abstract class LocalDbDAO {
   Future<void> deleteStocktake(int stockID, String shopfront);
   Future<void> deleteAllStocktake();
   Future<void> clearStocksForShop(String shopfront);
+  Future<int> deleteHistoryOlderThan(DateTime cutoffUtc);
 }

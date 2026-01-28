@@ -109,4 +109,8 @@ CREATE TABLE StocktakeHistoryItems (
 )
 ''';
 
+const String kHistoryRetentionDaysKey = "history_retention_days";
+const String kHistoryLastCleanupKey = "history_last_cleanup_utc";
+
+
 

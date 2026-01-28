@@ -1,5 +1,8 @@
 import 'package:get_it/get_it.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_history.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_thumbnail.dart';
@@ -74,6 +77,13 @@ Future<void> init() async {
   sl.registerFactory(
     () => StocktakeHistoryBloc(fetchSessions: sl(), fetchItems: sl()),
   );
+  sl.registerFactory(
+    () => SettingsBloc(
+      loadRetentionDays: sl(),
+      updateRetentionDays: sl(),
+      cleanupHistory: sl(),
+    ),
+  );
 
   //Repos
   sl.registerLazySingleton<HomeRepo>(() => HomeScreenModels());
@@ -104,4 +114,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => FetchFullImage(sl()));
   sl.registerLazySingleton(() => FetchStocktakeHistorySessions());
   sl.registerLazySingleton(() => FetchStocktakeHistoryItems());
+  sl.registerLazySingleton(() => LoadRetentionDays(sl()));
+  sl.registerLazySingleton(() => UpdateRetentionDays(sl()));
+  sl.registerLazySingleton(() => CleanupHistory(sl()));
 }

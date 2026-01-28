@@ -2,6 +2,9 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
@@ -21,8 +24,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Mock Data (Replace with BLoC state later)
   String staffName = "John Doe";
   String staffID = "STF-001";
-  double retentionDays = 7;
+  double retentionDays = 10;
   bool backupToLan = true;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<SettingsBloc>().add(LoadSettingsEvent());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +92,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               "Backup Stocktake to LAN Folder",
                               "Save a copy to server before clearing out committed stocktake data",
                               backupToLan,
-                                  (val) => setState(() => backupToLan = val),
+                              (val) => setState(() => backupToLan = val),
                             ),
                           ],
                         ),
@@ -100,7 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               "Restore Data",
                               "Recover deleted stocktake from server",
                               Colors.blue,
-                                  () {},
+                              () {},
                             ),
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 15),
@@ -111,7 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               "Delete All Current Stocktake",
                               "Clear all currently counted stocktake list permanently",
                               kErrorColor,
-                                  () => _showDeleteConfirmation(context),
+                              () => _showDeleteConfirmation(context),
                             ),
                           ],
                         ),
@@ -277,77 +286,166 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // Widget _buildSliderRow() {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //           children: [
+  //             const Text(
+  //               "Keep Backup Days",
+  //               style: TextStyle(
+  //                 color: kSecondaryColor,
+  //                 fontWeight: FontWeight.w600,
+  //                 fontSize: 16,
+  //               ),
+  //             ),
+  //             Container(
+  //               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+  //               decoration: BoxDecoration(
+  //                 color: kPrimaryColor,
+  //                 borderRadius: BorderRadius.circular(10),
+  //               ),
+  //               child: Text(
+  //                 "${retentionDays.toInt()} Days",
+  //                 style: const TextStyle(
+  //                   color: kSecondaryColor,
+  //                   fontSize: 13,
+  //                   fontWeight: FontWeight.bold,
+  //                 ),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         SliderTheme(
+  //           data: SliderTheme.of(context).copyWith(
+  //             activeTrackColor: kPrimaryColor,
+  //             inactiveTrackColor: kGreyColor.withOpacity(0.7),
+  //             thumbColor: kSecondaryColor,
+  //             thumbShape: const RoundSliderThumbShape(
+  //               enabledThumbRadius: 8.0,
+  //               elevation: 4,
+  //             ),
+  //             overlayColor: kPrimaryColor.withOpacity(0.2),
+  //           ),
+  //           child: Slider(
+  //             value: retentionDays,
+  //             min: 1,
+  //             max: 30,
+  //             divisions: 29,
+  //             onChanged: (val) => setState(() => retentionDays = val),
+  //           ),
+  //         ),
+  //         Text(
+  //           "Determines how long committed stocktake data is kept locally before auto-deletion.",
+  //           style: TextStyle(
+  //             color: kSecondaryColor.withOpacity(0.8),
+  //             fontSize: 12,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
   Widget _buildSliderRow() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return BlocConsumer<SettingsBloc, SettingsState>(
+      listener: (context, state) {
+        if (state is SettingsLoaded) {
+          setState(() => retentionDays = state.retentionDays.toDouble());
+        }
+        if (state is SettingsCleanupDone) {
+          setState(() => retentionDays = state.retentionDays.toDouble());
+          // Optional: show a small snackbar/toast if wanted
+        }
+      },
+      builder: (context, state) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Keep Backup Days",
-                style: TextStyle(
-                  color: kSecondaryColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Keep Backup Days",
+                    style: TextStyle(
+                      color: kSecondaryColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: kPrimaryColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      "${retentionDays.toInt()} Days",
+                      style: const TextStyle(
+                        color: kSecondaryColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: kPrimaryColor,
+                  inactiveTrackColor: kGreyColor.withOpacity(0.7),
+                  thumbColor: kSecondaryColor,
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 8.0,
+                    elevation: 4,
+                  ),
+                  overlayColor: kPrimaryColor.withOpacity(0.2),
+                ),
+                child: Slider(
+                  value: retentionDays,
+                  min: 1,
+                  max: 30,
+                  divisions: 29,
+                  onChanged: (val) => setState(() => retentionDays = val),
+
+                  //save + cleanup only when user stops dragging
+                  onChangeEnd: (val) {
+                    context.read<SettingsBloc>().add(
+                      ChangeRetentionDaysEvent(val.toInt()),
+                    );
+                  },
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: kPrimaryColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  "${retentionDays.toInt()} Days",
-                  style: const TextStyle(
-                    color: kSecondaryColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
+
+              Text(
+                "Determines how long committed stocktake data is kept locally before auto-deletion.",
+                style: TextStyle(
+                  color: kSecondaryColor.withOpacity(0.8),
+                  fontSize: 12,
                 ),
               ),
             ],
           ),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: kPrimaryColor,
-              inactiveTrackColor: kGreyColor.withOpacity(0.7),
-              thumbColor: kSecondaryColor,
-              thumbShape: const RoundSliderThumbShape(
-                enabledThumbRadius: 8.0,
-                elevation: 4,
-              ),
-              overlayColor: kPrimaryColor.withOpacity(0.2),
-            ),
-            child: Slider(
-              value: retentionDays,
-              min: 1,
-              max: 30,
-              divisions: 29,
-              onChanged: (val) => setState(() => retentionDays = val),
-            ),
-          ),
-          Text(
-            "Determines how long committed stocktake data is kept locally before auto-deletion.",
-            style: TextStyle(
-              color: kSecondaryColor.withOpacity(0.8),
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildSwitchRow(
-      String title,
-      String subtitle,
-      bool value,
-      Function(bool) onChanged,
-      ) {
+    String title,
+    String subtitle,
+    bool value,
+    Function(bool) onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       child: Row(
@@ -362,7 +460,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: const TextStyle(
                     color: kSecondaryColor,
                     fontWeight: FontWeight.w600,
-                    fontSize: 16
+                    fontSize: 16,
                   ),
                   maxLines: 2, // Prevent overflow
                   overflow: TextOverflow.ellipsis,
@@ -393,12 +491,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildActionRow(
-      IconData icon,
-      String title,
-      String subtitle,
-      Color color,
-      VoidCallback onTap,
-      ) {
+    IconData icon,
+    String title,
+    String subtitle,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -421,9 +519,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     title,
                     style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: color
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: color,
                     ),
                     maxLines: 1, // Prevent overflow
                     overflow: TextOverflow.ellipsis,

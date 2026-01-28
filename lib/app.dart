@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+//import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/utils/dependency_injection_utils.dart';
@@ -113,6 +114,7 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<StocktakeHistoryBloc>(
           create: (_) => sl<StocktakeHistoryBloc>(),
         ),
+        BlocProvider<SettingsBloc>(create: (_) => sl<SettingsBloc>()),
       ],
       child: MaterialApp(
         title: 'RM-Mobile',

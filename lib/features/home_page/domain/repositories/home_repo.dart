@@ -50,4 +50,10 @@ abstract class HomeRepo {
     String mobileName,
     String shopfront,
   );
+
+  Future<int> getRetentionDays();
+
+  Future<void> setRetentionDays(int days);
+
+  Future<int> runHistoryCleanup();
 }
