@@ -36,8 +36,6 @@ class Stocktake extends StocktakeEvent {
   Stocktake({required this.stock, required this.qty});
 }
 
-class FetchStocktakeListEvent extends StocktakeEvent {}
-
 class CommittingStocktakeEvent extends StocktakeEvent {}
 
 class StartStocktakeValidationEvent extends StocktakeEvent {}
@@ -54,3 +52,12 @@ class LoadHistoryItemsEvent extends StocktakeEvent {
   final String sessionId;
   LoadHistoryItemsEvent(this.sessionId);
 }
+
+class FetchStocktakeListEvent extends StocktakeEvent {
+  final bool reset; // load from page 0 when true
+  FetchStocktakeListEvent({this.reset = false});
+}
+
+class NextStocktakePageEvent extends StocktakeEvent {}
+
+class PrevStocktakePageEvent extends StocktakeEvent {}

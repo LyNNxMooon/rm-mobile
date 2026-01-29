@@ -60,6 +60,14 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    context.read<FetchingStocktakeListBloc>().add(
+      FetchStocktakeListEvent(reset: true),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBgColor,
@@ -116,7 +124,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           );
         }
       },
-      child: const SizedBox()
+      child: const SizedBox(),
     );
   }
 
@@ -266,7 +274,10 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     return BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
       builder: (context, state) {
         if (state is LoadingStocktakeList) {
-          return const Center(child: CupertinoActivityIndicator());
+          return const Center(child: Padding(
+            padding: EdgeInsets.only(bottom: 85),
+            child: CupertinoActivityIndicator(),
+          ));
         }
 
         if (state is StocktakeListError) {
@@ -279,6 +290,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         }
 
         if (state is StocktakeListLoaded) {
+          
           if (state.stocktakeList.isEmpty) return _buildEmptyState();
 
           return AnimationLimiter(

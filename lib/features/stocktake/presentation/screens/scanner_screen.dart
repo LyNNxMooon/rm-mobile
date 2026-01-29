@@ -483,9 +483,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
               Expanded(
                 child: CustomStocktakeBtn(
                   function: () {
-                    context.read<FetchingStocktakeListBloc>().add(
-                      FetchStocktakeListEvent(),
-                    );
+                    // context.read<FetchingStocktakeListBloc>().add(
+                    //   FetchStocktakeListEvent(),
+                    // );
                     context.navigateToNext(const StockTakeListScreen());
                   },
                   icon: Icons.list,

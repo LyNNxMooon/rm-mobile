@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/stocktake_validation_info.dart';
 
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
@@ -66,23 +70,64 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
               ),
 
               // Right side (Controls)
-              const Row(
-                mainAxisSize: MainAxisSize.min, // Keep compact
-                children: [
-                  Text(
-                    "1-50 of 4,795", // This should likely be dynamic later
-                    style: TextStyle(color: kPrimaryColor, fontSize: 14),
-                  ),
-                  SizedBox(width: 10),
-                  Icon(
-                    Icons.arrow_back_ios_new,
-                    size: 14,
-                    color: kPrimaryColor,
-                  ),
-                  SizedBox(width: 15),
-                  Icon(Icons.arrow_forward_ios, size: 14, color: kPrimaryColor),
-                  SizedBox(width: 10),
-                ],
+              // Right side (Controls)
+              BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
+                builder: (context, state) {
+                  int start = 0, end = 0, total = 0;
+                  bool hasPrev = false, hasNext = false;
+
+                  if (state is StocktakeListLoaded) {
+                    start = state.start;
+                    end = state.end;
+                    total = state.totalCount;
+                    hasPrev = state.hasPrev;
+                    hasNext = state.hasNext;
+                  }
+
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "$start-$end of ${total.toString()}",
+                        style: const TextStyle(
+                          color: kPrimaryColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
+                      InkWell(
+                        onTap: hasPrev
+                            ? () => context
+                                  .read<FetchingStocktakeListBloc>()
+                                  .add(PrevStocktakePageEvent())
+                            : null,
+                        child: Icon(
+                          Icons.arrow_back_ios_new,
+                          size: 14,
+                          color: hasPrev ? kPrimaryColor : kGreyColor,
+                        ),
+                      ),
+
+                      const SizedBox(width: 15),
+
+                      InkWell(
+                        onTap: hasNext
+                            ? () => context
+                                  .read<FetchingStocktakeListBloc>()
+                                  .add(NextStocktakePageEvent())
+                            : null,
+                        child: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14,
+                          color: hasNext ? kPrimaryColor : kGreyColor,
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -94,7 +139,7 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
           thickness: 0.5,
           color: kGreyColor,
         ),
-        StocktakeValidationInfo()
+        StocktakeValidationInfo(),
       ],
     );
   }

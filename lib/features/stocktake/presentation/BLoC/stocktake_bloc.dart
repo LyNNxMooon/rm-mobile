@@ -1,11 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/commit_stocktake.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counted_stock_by_id.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counting_stock.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessions.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sesstion_items.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_page.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/update_stock_count.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
@@ -13,7 +13,6 @@ import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_e
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 
 import '../../domain/use_cases/count_and_save_to_localdb.dart';
-import '../../domain/use_cases/fetch_all_stocktake_list.dart';
 
 class ScannerBloc extends Bloc<StocktakeEvent, ScannerStates> {
   final FetchCountingStock fetchCountingStock;
@@ -140,27 +139,112 @@ class StocktakeBloc extends Bloc<StocktakeEvent, StocktakeStates> {
 
 class FetchingStocktakeListBloc
     extends Bloc<StocktakeEvent, StocktakeListStates> {
-  final FetchAllStocktakeList fetchAllStocktakeList;
+  final FetchStocktakePage fetchStocktakePage;
 
-  FetchingStocktakeListBloc({required this.fetchAllStocktakeList})
-    : super(StocktakeListInitial()) {
-    on<FetchStocktakeListEvent>(_onFetchStocktakeList);
+  int _pageIndex = 0;
+  final int _pageSize = 50;
+
+  FetchingStocktakeListBloc({required this.fetchStocktakePage})
+      : super(LoadingStocktakeList()) {
+    on<FetchStocktakeListEvent>(_onFetch);
+    on<NextStocktakePageEvent>(_onNext);
+    on<PrevStocktakePageEvent>(_onPrev);
   }
 
-  Future<void> _onFetchStocktakeList(
+  Future<void> _onFetch(
     FetchStocktakeListEvent event,
     Emitter<StocktakeListStates> emit,
   ) async {
-    emit(LoadingStocktakeList());
     try {
-      final List<CountedStockVO> stocktakeList = await fetchAllStocktakeList();
+      emit(LoadingStocktakeList());
 
-      emit(StocktakeListLoaded(stocktakeList));
-    } catch (error) {
-      emit(StocktakeListError("Error fetching stocktake list: $error"));
+
+      if (event.reset) _pageIndex = 0;
+
+      final result = await fetchStocktakePage(
+        pageIndex: _pageIndex,
+        pageSize: _pageSize,
+      );
+
+      // If current page becomes empty (e.g. after deletions) move back one page
+      if (result.items.isEmpty && _pageIndex > 0) {
+        _pageIndex--;
+        final retry = await fetchStocktakePage(
+          pageIndex: _pageIndex,
+          pageSize: _pageSize,
+        );
+
+        emit(
+          StocktakeListLoaded(
+            stocktakeList: retry.items,
+            totalCount: retry.totalCount,
+            pageIndex: _pageIndex,
+            pageSize: _pageSize,
+          ),
+        );
+        return;
+      }
+
+      emit(
+        StocktakeListLoaded(
+          stocktakeList: result.items,
+          totalCount: result.totalCount,
+          pageIndex: _pageIndex,
+          pageSize: _pageSize,
+        ),
+      );
+    } catch (e) {
+      emit(StocktakeListError(e.toString()));
+    }
+  }
+
+  void _onNext(
+    NextStocktakePageEvent event,
+    Emitter<StocktakeListStates> emit,
+  ) {
+    final s = state;
+    if (s is StocktakeListLoaded && s.hasNext) {
+      _pageIndex++;
+      add(FetchStocktakeListEvent());
+    }
+  }
+
+  void _onPrev(
+    PrevStocktakePageEvent event,
+    Emitter<StocktakeListStates> emit,
+  ) {
+    final s = state;
+    if (s is StocktakeListLoaded && s.hasPrev) {
+      _pageIndex--;
+      add(FetchStocktakeListEvent());
     }
   }
 }
+
+
+// class FetchingStocktakeListBloc
+//     extends Bloc<StocktakeEvent, StocktakeListStates> {
+//   final FetchAllStocktakeList fetchAllStocktakeList;
+
+//   FetchingStocktakeListBloc({required this.fetchAllStocktakeList})
+//     : super(StocktakeListInitial()) {
+//     on<FetchStocktakeListEvent>(_onFetchStocktakeList);
+//   }
+
+//   Future<void> _onFetchStocktakeList(
+//     FetchStocktakeListEvent event,
+//     Emitter<StocktakeListStates> emit,
+//   ) async {
+//     emit(LoadingStocktakeList());
+//     try {
+//       final List<CountedStockVO> stocktakeList = await fetchAllStocktakeList();
+
+//       emit(StocktakeListLoaded(stocktakeList));
+//     } catch (error) {
+//       emit(StocktakeListError("Error fetching stocktake list: $error"));
+//     }
+//   }
+// }
 
 class CommittingStocktakeBloc
     extends Bloc<StocktakeEvent, CommitingStocktakeStates> {

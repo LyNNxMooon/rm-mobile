@@ -443,6 +443,47 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<int> getUnsyncedStocksCount(String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) as cnt FROM Stocktake WHERE shopfront = ? AND is_synced = ?',
+        [shopfront, 0],
+      );
+      return (result.first['cnt'] as int?) ?? 0;
+    } catch (e) {
+      return Future.error("Error counting stocktake list: $e");
+    }
+  }
+
+  @override
+  Future<List<CountedStockVO>> getUnsyncedStocksPaged({
+    required String shopfront,
+    required int limit,
+    required int offset,
+  }) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'Stocktake',
+        where: 'shopfront = ? AND is_synced = ?',
+        whereArgs: [shopfront, 0],
+        orderBy: 'stocktake_date ASC',
+        limit: limit,
+        offset: offset,
+      );
+
+      return result.map((map) {
+        final mutable = Map<String, dynamic>.from(map);
+        mutable['is_synced'] = mutable['is_synced'] == 1;
+        return CountedStockVO.fromJson(mutable);
+      }).toList();
+    } catch (e) {
+      return Future.error("Error retrieving paged stocktake list: $e");
+    }
+  }
+
   //Save Data
 
   @override
@@ -844,9 +885,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
       final db = _database!;
 
       final Map<String, dynamic> valuesToUpdate = {
-        'quantity': newQuantity, 
+        'quantity': newQuantity,
         'date_modified': DateTime.now().toIso8601String(),
-    
+
         'is_synced': 0,
       };
 

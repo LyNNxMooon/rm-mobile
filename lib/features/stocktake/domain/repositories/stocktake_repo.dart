@@ -8,7 +8,11 @@ abstract class StocktakeRepo {
 
   Future stocktakeAndSaveToLocalDb(CountedStockVO stock, String shopfront);
 
-  Future<void> updateStocktakeCount(StockVO stock, String shopfront, String newQty);
+  Future<void> updateStocktakeCount(
+    StockVO stock,
+    String shopfront,
+    String newQty,
+  );
 
   Future commitToLanFolder({
     required String address,
@@ -42,5 +46,11 @@ abstract class StocktakeRepo {
     required String? password,
     required String mobileID,
     required String shopfront,
+  });
+
+  Future<StocktakePagedResult> fetchUnsyncedStocktakePage({
+    required String shopfront,
+    required int pageIndex,
+    required int pageSize,
   });
 }

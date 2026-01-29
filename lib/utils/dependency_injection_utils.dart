@@ -11,6 +11,7 @@ import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counte
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessions.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sesstion_items.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_page.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/update_stock_count.dart';
 import '../features/home_page/domain/use_cases/auto_connect_to_default_folder.dart';
@@ -34,7 +35,7 @@ import '../features/stock_lookup/models/stock_lookup_models.dart';
 import '../features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import '../features/stocktake/domain/use_cases/commit_stocktake.dart';
 import '../features/stocktake/domain/use_cases/count_and_save_to_localdb.dart';
-import '../features/stocktake/domain/use_cases/fetch_all_stocktake_list.dart';
+//import '../features/stocktake/domain/use_cases/fetch_all_stocktake_list.dart';
 import '../features/stocktake/domain/use_cases/fetch_counting_stock.dart';
 import '../features/stocktake/models/stocktake_model.dart';
 import '../features/stocktake/presentation/BLoC/stocktake_bloc.dart';
@@ -57,9 +58,7 @@ Future<void> init() async {
       checkPathConnection: sl(),
     ),
   );
-  sl.registerFactory(
-    () => FetchingStocktakeListBloc(fetchAllStocktakeList: sl()),
-  );
+  sl.registerFactory(() => FetchingStocktakeListBloc(fetchStocktakePage: sl()));
   sl.registerFactory(() => CommittingStocktakeBloc(commitStocktake: sl()));
   sl.registerFactory(
     () => AutoConnectionBloc(autoConnectToDefaultFolder: sl()),
@@ -104,7 +103,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ConnectToShopfront(sl()));
   sl.registerLazySingleton(() => FetchSavedPaths(sl()));
   sl.registerLazySingleton(() => CheckPathConnection(sl()));
-  sl.registerLazySingleton(() => FetchAllStocktakeList(sl()));
+  //sl.registerLazySingleton(() => FetchAllStocktakeList(sl()));
   sl.registerLazySingleton(() => CommitStocktake(sl()));
   sl.registerLazySingleton(() => AutoConnectToDefaultFolder(sl()));
   sl.registerLazySingleton(() => CheckIfShopfrontFileExists(sl()));
@@ -123,4 +122,5 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CleanupHistory(sl()));
   sl.registerLazySingleton(() => FetchCountedStockById(sl()));
   sl.registerLazySingleton(() => UpdateStockCount(sl()));
+  sl.registerLazySingleton(() => FetchStocktakePage(sl()));
 }

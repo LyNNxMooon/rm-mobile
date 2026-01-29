@@ -80,8 +80,23 @@ class LoadingStocktakeList extends StocktakeListStates {}
 
 class StocktakeListLoaded extends StocktakeListStates {
   final List<CountedStockVO> stocktakeList;
+  final int totalCount;
+  final int pageIndex;
+  final int pageSize;
 
-  StocktakeListLoaded(this.stocktakeList);
+  StocktakeListLoaded({
+    required this.stocktakeList,
+    required this.totalCount,
+    required this.pageIndex,
+    required this.pageSize,
+  });
+
+  int get start => totalCount == 0 ? 0 : (pageIndex * pageSize) + 1;
+  int get end =>
+      totalCount == 0 ? 0 : ((pageIndex * pageSize) + stocktakeList.length);
+
+  bool get hasPrev => pageIndex > 0;
+  bool get hasNext => end < totalCount;
 }
 
 class StocktakeListError extends StocktakeListStates {

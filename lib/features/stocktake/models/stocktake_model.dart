@@ -292,6 +292,31 @@ class StocktakeModel implements StocktakeRepo {
       return Future.error(error);
     }
   }
+
+  @override
+  Future<StocktakePagedResult> fetchUnsyncedStocktakePage({
+    required String shopfront,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    final offset = pageIndex * pageSize;
+
+    final total = await LocalDbDAO.instance.getUnsyncedStocksCount(shopfront);
+    final items = await LocalDbDAO.instance.getUnsyncedStocksPaged(
+      shopfront: shopfront,
+      limit: pageSize,
+      offset: offset,
+    );
+
+    return StocktakePagedResult(items: items, totalCount: total);
+  }
+}
+
+class StocktakePagedResult {
+  final List<CountedStockVO> items;
+  final int totalCount;
+
+  StocktakePagedResult({required this.items, required this.totalCount});
 }
 
 class AuditWithStockVO {
