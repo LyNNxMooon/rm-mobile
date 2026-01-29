@@ -666,4 +666,63 @@ class LanNetworkServiceImpl implements LanNetworkService {
       await connect.close();
     }
   }
+
+  @override
+  Future<void> uploadStockImageToIncoming({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String fileName,
+    required Uint8List jpgBytes,
+    bool deleteSamePrefixFirst = true,
+  }) async {
+    final connect = await SmbConnect.connectAuth(
+      host: address,
+      domain: "",
+      username: username,
+      password: password,
+    );
+
+    try {
+      String cleanedPath = fullPath
+          .replaceFirst(RegExp(r'^//'), '')
+          .replaceFirst(address, '')
+          .replaceFirst(RegExp(r'^/'), '');
+
+      if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
+      if (cleanedPath.endsWith('/')) {
+        cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
+      }
+
+      final String incomingPath = "$cleanedPath/incoming";
+      final folder = await connect.file(incomingPath);
+
+      if (deleteSamePrefixFirst) {
+        final files = await connect.listFiles(folder);
+        final int lastUnderscore = fileName.lastIndexOf('_');
+        final String prefix = lastUnderscore > 0
+            ? fileName.substring(0, lastUnderscore + 1)
+            : fileName;
+
+        for (final f in files) {
+          if (!f.isDirectory() && f.name.startsWith(prefix)) {
+            await connect.delete(f);
+          }
+        }
+      }
+
+      final String destinationPath = "$incomingPath/$fileName";
+      final file = await connect.createFile(destinationPath);
+
+      final IOSink writer = await connect.openWrite(file);
+      writer.add(jpgBytes);
+      await writer.flush();
+      await writer.close();
+    } catch (e) {
+      return Future.error(e.toString());
+    } finally {
+      await connect.close();
+    }
+  }
 }

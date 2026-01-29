@@ -32,3 +32,13 @@ class RequestFullImageEvent extends StockListEvent {
 
   RequestFullImageEvent({required this.stockId, required this.pictureFileName});
 }
+
+//Image uploading
+abstract class StockImageUploadEvent {}
+
+class UploadStockImageEvent extends StockImageUploadEvent {
+  final int stockId;
+  final String imagePath;
+
+  UploadStockImageEvent({required this.stockId, required this.imagePath});
+}

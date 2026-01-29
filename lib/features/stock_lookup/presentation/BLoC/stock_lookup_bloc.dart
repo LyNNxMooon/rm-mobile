@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_thumbnail.dart';
+import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/upload_stock_image.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 
@@ -208,3 +209,27 @@ class FullImageBloc extends Bloc<StockListEvent, FullImageState> {
     }
   }
 }
+
+class StockImageUploadBloc
+    extends Bloc<StockImageUploadEvent, StockImageUploadState> {
+  final UploadStockImageUseCase uploadUseCase;
+
+  StockImageUploadBloc({required this.uploadUseCase})
+      : super(StockImageUploadInitial()) {
+    on<UploadStockImageEvent>(_onUpload);
+  }
+
+  Future<void> _onUpload(
+    UploadStockImageEvent event,
+    Emitter<StockImageUploadState> emit,
+  ) async {
+    emit(StockImageUploading());
+    try {
+      await uploadUseCase(stockId: event.stockId, imagePath: event.imagePath);
+      emit(StockImageUploaded("Image uploaded. Agent will process it shortly."));
+    } catch (e) {
+      emit(StockImageUploadError(e.toString()));
+    }
+  }
+}
+

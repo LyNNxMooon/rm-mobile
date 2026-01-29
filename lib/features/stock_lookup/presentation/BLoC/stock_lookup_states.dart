@@ -111,15 +111,12 @@ class ThumbnailLoaded extends ThumbnailState {
 abstract class FullImageState {}
 
 class FullImageLoaded extends FullImageState {
-  final Map<num, String> imagePaths; 
+  final Map<num, String> imagePaths;
   final Set<num> loading;
 
   FullImageLoaded({required this.imagePaths, required this.loading});
 
-  FullImageLoaded copyWith({
-    Map<num, String>? imagePaths,
-    Set<num>? loading,
-  }) {
+  FullImageLoaded copyWith({Map<num, String>? imagePaths, Set<num>? loading}) {
     return FullImageLoaded(
       imagePaths: imagePaths ?? this.imagePaths,
       loading: loading ?? this.loading,
@@ -127,3 +124,18 @@ class FullImageLoaded extends FullImageState {
   }
 }
 
+abstract class StockImageUploadState {}
+
+class StockImageUploadInitial extends StockImageUploadState {}
+
+class StockImageUploading extends StockImageUploadState {}
+
+class StockImageUploaded extends StockImageUploadState {
+  final String message;
+  StockImageUploaded(this.message);
+}
+
+class StockImageUploadError extends StockImageUploadState {
+  final String message;
+  StockImageUploadError(this.message);
+}

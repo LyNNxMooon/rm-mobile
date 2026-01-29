@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_reten
 import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_thumbnail.dart';
+import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/upload_stock_image.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/repositories/stocktake_repo.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counted_stock_by_id.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessions.dart';
@@ -87,6 +88,7 @@ Future<void> init() async {
   );
   sl.registerFactory(() => StockDetailsBloc(fetchCountedStockById: sl()));
   sl.registerFactory(() => StockCountUpdateBloc(updateStockCount: sl()));
+  sl.registerFactory(() => StockImageUploadBloc(uploadUseCase: sl()));
 
   //Repos
   sl.registerLazySingleton<HomeRepo>(() => HomeScreenModels());
@@ -123,4 +125,5 @@ Future<void> init() async {
   sl.registerLazySingleton(() => FetchCountedStockById(sl()));
   sl.registerLazySingleton(() => UpdateStockCount(sl()));
   sl.registerLazySingleton(() => FetchStocktakePage(sl()));
+  sl.registerLazySingleton(() => UploadStockImageUseCase(sl()));
 }

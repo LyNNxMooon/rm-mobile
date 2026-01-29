@@ -119,6 +119,9 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<StockCountUpdateBloc>(
           create: (_) => sl<StockCountUpdateBloc>(),
         ),
+        BlocProvider<StockImageUploadBloc>(
+          create: (_) => sl<StockImageUploadBloc>(),
+        ),
       ],
       child: MaterialApp(
         title: 'RM-Mobile',

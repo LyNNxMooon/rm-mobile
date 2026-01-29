@@ -95,6 +95,16 @@ abstract class LanNetworkService {
     required String username,
     required String password,
     required String shopfrontName,
-    required String pictureFileName, 
+    required String pictureFileName,
+  });
+
+  Future<void> uploadStockImageToIncoming({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String fileName, // must end with .jpg
+    required Uint8List jpgBytes,
+    bool deleteSamePrefixFirst = true,
   });
 }

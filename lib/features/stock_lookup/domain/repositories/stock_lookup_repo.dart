@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../../../entities/response/paginated_stock_response.dart';
 import '../../../../entities/vos/filter_criteria.dart';
 
@@ -30,5 +32,14 @@ abstract class StockLookupRepo {
     required String? password,
     required String shopfrontName,
     required String pictureFileName,
+  });
+
+  Future<void> uploadStockImage({
+    required String address,
+    required String fullPath,
+    required String? username,
+    required String? password,
+    required String fileName,
+    required Uint8List jpgBytes,
   });
 }

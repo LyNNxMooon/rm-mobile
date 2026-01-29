@@ -161,4 +161,28 @@ class StockLookupModels implements StockLookupRepo {
       return Future.error(error);
     }
   }
+
+  @override
+  Future<void> uploadStockImage({
+    required String address,
+    required String fullPath,
+    required String? username,
+    required String? password,
+    required String fileName,
+    required Uint8List jpgBytes,
+  }) async {
+    try {
+      await LanNetworkServiceImpl.instance.uploadStockImageToIncoming(
+        address: address,
+        fullPath: fullPath,
+        username: username ?? AppGlobals.instance.defaultUserName,
+        password: password ?? AppGlobals.instance.defaultPwd,
+        fileName: fileName,
+        jpgBytes: jpgBytes,
+        deleteSamePrefixFirst: true,
+      );
+    } on Exception catch (e) {
+      return Future.error(e);
+    }
+  }
 }
