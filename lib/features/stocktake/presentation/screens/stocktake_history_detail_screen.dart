@@ -15,6 +15,7 @@ import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_b
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/empty_stock_state_widget.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/widgets/stock_details_readonly_dialog.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import 'package:excel/excel.dart';
@@ -199,48 +200,48 @@ class _StocktakeHistoryDetailsScreenState
                             state.sessionId == widget.session.sessionId &&
                             state.items.isNotEmpty;
 
-                        return IconButton(
-                          onPressed: canExport
-                              ? () async {
-                                  try {
-                                    final items = (state).items;
-                                    final path = await _exportSessionToExcel(
-                                      session: widget.session,
-                                      items: items,
-                                    );
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: IconButton(
+                            onPressed: canExport
+                                ? () async {
+                                    try {
+                                      final items = (state).items;
+                                      final path = await _exportSessionToExcel(
+                                        session: widget.session,
+                                        items: items,
+                                      );
 
-                                    if (!mounted) return;
+                                      if (!mounted) return;
 
-                                    if (path == null) {
+                                      if (path == null) {
+                                        showTopSnackBar(
+                                          Overlay.of(context),
+                                          const CustomSnackBar.info(
+                                            message: "Export cancelled.",
+                                          ),
+                                        );
+                                        return;
+                                      }
+
                                       showTopSnackBar(
                                         Overlay.of(context),
-                                        const CustomSnackBar.info(
-                                          message: "Export cancelled.",
+                                        CustomSnackBar.success(
+                                          message: "Exported to: $path",
                                         ),
                                       );
-                                      return;
+                                    } catch (e) {
+                                      if (!mounted) return;
+                                      showTopSnackBar(
+                                        Overlay.of(context),
+                                        CustomSnackBar.error(
+                                          message: "Export failed: $e",
+                                        ),
+                                      );
                                     }
-
-                                    showTopSnackBar(
-                                      Overlay.of(context),
-                                      CustomSnackBar.success(
-                                        message: "Exported to: $path",
-                                      ),
-                                    );
-                                  } catch (e) {
-                                    if (!mounted) return;
-                                    showTopSnackBar(
-                                      Overlay.of(context),
-                                      CustomSnackBar.error(
-                                        message: "Export failed: $e",
-                                      ),
-                                    );
                                   }
-                                }
-                              : null,
-                          icon: Padding(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: SizedBox(
+                                : null,
+                            icon: SizedBox(
                               width: 28,
                               height: 30,
                               child: Image.asset(
@@ -301,62 +302,79 @@ class _StocktakeHistoryDetailsScreenState
   }
 
   Widget _itemTile(CountedStockVO stock) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: kSecondaryColor,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: kThirdColor.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.cloud_done_outlined, size: 18, color: Colors.green),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  stock.description,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: getSmartTitle(color: kThirdColor, fontSize: 14),
-                ),
-                Text(
-                  stock.barcode,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: kPrimaryColor,
+    return InkWell(
+      onTap: () {
+        context.read<StockDetailsBloc>().add(
+          FetchStockDetailsByID(stockId: stock.stockID, qty: stock.quantity),
+        );
+
+        showDialog(
+          context: context,
+
+          builder: (context) => const StockDetailsReadOnlyDialog(),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: kSecondaryColor,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: kThirdColor.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.cloud_done_outlined,
+              size: 18,
+              color: Colors.green,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    stock.description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: getSmartTitle(color: kThirdColor, fontSize: 14),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: kPrimaryColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              stock.quantity.toString(),
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
+                  Text(
+                    stock.barcode,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: kPrimaryColor,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: kPrimaryColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                stock.quantity.toString(),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: kPrimaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -95,6 +95,8 @@ class ComingSoonScreen extends StatelessWidget {
                     backgroundColor: kSecondaryColor,
                     iconColor: kPrimaryColor,
                     textColor: kThirdColor,
+                    padding: 70,
+                    position: MessagePosition.top,
                   );
                 },
                 style: ElevatedButton.styleFrom(

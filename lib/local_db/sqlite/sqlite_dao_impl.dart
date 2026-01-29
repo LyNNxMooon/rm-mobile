@@ -187,8 +187,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
       final db = _database!;
       final result = await db.query(
         'Stocks',
-        where: '(Barcode = ? OR stock_id = ?) AND shopfront = ?',
-        whereArgs: [query, query, shopfront],
+        where: 'Barcode = ? AND shopfront = ?',
+        whereArgs: [query, shopfront],
         limit: 1,
       );
 
@@ -422,6 +422,27 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<StockVO?> getStockByIDSearch(String query, String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'Stocks',
+        where: 'stock_id = ? AND shopfront = ?',
+        whereArgs: [query, shopfront],
+        limit: 1,
+      );
+
+      if (result.isNotEmpty) {
+        return StockVO.fromJson(result.first);
+      }
+      return null;
+    } catch (error) {
+      logger.e('Error searching stock in $shopfront: $error');
+      return Future.error("Error searching stock: $error");
+    }
+  }
+
   //Save Data
 
   @override
@@ -616,7 +637,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         } catch (_) {}
       }
 
-      // Run cleanup at most once every 6 hours 
+      // Run cleanup at most once every 6 hours
       final nowUtc = DateTime.now().toUtc();
       if (lastDt != null &&
           nowUtc.difference(lastDt) < const Duration(hours: 6)) {

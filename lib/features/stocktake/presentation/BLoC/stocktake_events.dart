@@ -10,6 +10,13 @@ class FetchStockDetails extends StocktakeEvent {
   FetchStockDetails({required this.barcode});
 }
 
+class FetchStockDetailsByID extends StocktakeEvent {
+  final int stockId;
+  final num qty;
+
+  FetchStockDetailsByID({required this.stockId, required this.qty});
+}
+
 class ResetStocktakeEvent extends StocktakeEvent {
   final ScannerStates targetState;
   ResetStocktakeEvent(this.targetState);

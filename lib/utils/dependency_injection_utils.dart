@@ -7,6 +7,7 @@ import 'package:rmstock_scanner/features/loading_splash/domain/repositories/load
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_thumbnail.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/repositories/stocktake_repo.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counted_stock_by_id.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessions.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sesstion_items.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
@@ -84,6 +85,7 @@ Future<void> init() async {
       cleanupHistory: sl(),
     ),
   );
+  sl.registerFactory(() => StockDetailsBloc(fetchCountedStockById: sl()));
 
   //Repos
   sl.registerLazySingleton<HomeRepo>(() => HomeScreenModels());
@@ -117,4 +119,5 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LoadRetentionDays(sl()));
   sl.registerLazySingleton(() => UpdateRetentionDays(sl()));
   sl.registerLazySingleton(() => CleanupHistory(sl()));
+  sl.registerLazySingleton(() => FetchCountedStockById(sl()));
 }

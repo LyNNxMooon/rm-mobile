@@ -21,6 +21,24 @@ class StockLoaded extends ScannerStates {
   StockLoaded(this.stock);
 }
 
+abstract class StockFetchingStates {}
+
+class StockDetailsInitial extends StockFetchingStates {}
+
+class StockDetailsLoading extends StockFetchingStates {}
+
+class StockDetailsError extends StockFetchingStates {
+  final String message;
+  StockDetailsError(this.message);
+}
+
+class StockDetailsLoaded extends StockFetchingStates {
+  final StockVO stock;
+  final num qty;
+
+  StockDetailsLoaded(this.stock, this.qty);
+}
+
 //Stocktaking
 abstract class StocktakeStates {}
 

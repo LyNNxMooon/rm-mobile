@@ -6,6 +6,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/widgets/edit_qty_dialog.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/empty_stock_state_widget.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -265,22 +266,6 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
       message: "Your stocktake list is empty",
       onRetry: () {},
     );
-    // return Center(
-    //   child: Padding(
-    //     padding: const EdgeInsets.only(bottom: 80),
-    //     child: Column(
-    //       mainAxisAlignment: MainAxisAlignment.center,
-    //       children: [
-           
-    //         const SizedBox(height: 20),
-    //         Text(
-    //           "Your Stocktake list is empty!",
-    //           style: getSmartTitle(color: kGreyColor, fontSize: 16),
-    //         ),
-    //       ],
-    //     ),
-    //   ),
-    // );
   }
 
   Widget _itemTile(CountedStockVO stock, int index) {
@@ -314,51 +299,74 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                 ),
               ],
             ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: kSecondaryColor,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: kThirdColor.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+            child: InkWell(
+              onTap: () {
+                context.read<StockDetailsBloc>().add(
+                  FetchStockDetailsByID(
+                    stockId: stock.stockID,
+                    qty: stock.quantity,
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.cloud_done_outlined, size: 18, color: kGreyColor),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          stock.description,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: getSmartTitle(
-                            color: kThirdColor,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          stock.barcode,
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: kPrimaryColor,
-                          ),
-                        ),
-                      ],
+                );
+
+                showDialog(
+                  context: context,
+
+                  builder: (context) => const StockDetailsDialog(),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: kSecondaryColor,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: kThirdColor.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  _buildQtyBadge(stock.quantity.toString()),
-                ],
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.cloud_done_outlined,
+                      size: 18,
+                      color: kGreyColor,
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            stock.description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: getSmartTitle(
+                              color: kThirdColor,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            stock.barcode,
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: kPrimaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    _buildQtyBadge(stock.quantity.toString()),
+                  ],
+                ),
               ),
             ),
           ),

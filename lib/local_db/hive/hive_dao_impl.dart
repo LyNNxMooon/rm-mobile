@@ -186,28 +186,29 @@ class HiveDAOImpl extends LocalDbDAO {
   }) {
     throw UnimplementedError();
   }
-  
+
   @override
   Future<int> cleanupHistoryByRetention() {
-
     throw UnimplementedError();
   }
-  
+
   @override
   Future<int> deleteHistoryOlderThan(DateTime cutoffUtc) {
-
     throw UnimplementedError();
   }
-  
+
   @override
   Future<int> getHistoryRetentionDays() {
-
     throw UnimplementedError();
   }
-  
+
   @override
   Future<void> setHistoryRetentionDays(int days) {
+    throw UnimplementedError();
+  }
 
+  @override
+  Future<StockVO?> getStockByIDSearch(String query, String shopfront) {
     throw UnimplementedError();
   }
 }

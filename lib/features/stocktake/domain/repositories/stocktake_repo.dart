@@ -4,6 +4,7 @@ import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 
 abstract class StocktakeRepo {
   Future<StockVO?> fetchStockDetails(String barcode, String shopfront);
+  Future<StockVO?> fetchStockDetailsByID(int id, String shopfront);
 
   Future stocktakeAndSaveToLocalDb(CountedStockVO stock, String shopfront);
 
@@ -27,7 +28,7 @@ abstract class StocktakeRepo {
     required String mobileID,
     required String shopfrontName,
     required List<CountedStockVO> dataToSync,
-    required List<AuditWithStockVO> auditData
+    required List<AuditWithStockVO> auditData,
   });
 
   Future<List<CountedStockVO>> getAllStocktakeList(String shopfront);

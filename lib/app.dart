@@ -115,6 +115,7 @@ class _MyAppState extends State<MyApp> {
           create: (_) => sl<StocktakeHistoryBloc>(),
         ),
         BlocProvider<SettingsBloc>(create: (_) => sl<SettingsBloc>()),
+        BlocProvider<StockDetailsBloc>(create: (_) => sl<StockDetailsBloc>()),
       ],
       child: MaterialApp(
         title: 'RM-Mobile',

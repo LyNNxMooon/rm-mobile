@@ -24,6 +24,17 @@ class StocktakeModel implements StocktakeRepo {
   }
 
   @override
+  Future<StockVO?> fetchStockDetailsByID(int id, String shopfront) async {
+    try {
+      String stockId = id.toString();
+
+      return LocalDbDAO.instance.getStockByIDSearch(stockId, shopfront);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
   Future commitToLanFolder({
     required String address,
     required String fullPath,
@@ -63,7 +74,7 @@ class StocktakeModel implements StocktakeRepo {
         password: password ?? AppGlobals.instance.defaultPwd,
         fileName: fileName,
         fileContent: jsonContent,
-        isCheck: true
+        isCheck: true,
       );
     } on Exception catch (error) {
       return Future.error(error);
@@ -139,7 +150,7 @@ class StocktakeModel implements StocktakeRepo {
         password: password ?? AppGlobals.instance.defaultPwd,
         fileName: fileName,
         fileContent: jsonContent,
-        isCheck: false
+        isCheck: false,
       );
     } on Exception catch (error) {
       return Future.error(error);

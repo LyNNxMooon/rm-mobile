@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/commit_stocktake.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counted_stock_by_id.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counting_stock.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessions.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sesstion_items.dart';
@@ -43,6 +44,37 @@ class ScannerBloc extends Bloc<StocktakeEvent, ScannerStates> {
       }
     } catch (error) {
       emit(StockError("Error fetching stock: $error"));
+    }
+  }
+}
+
+class StockDetailsBloc extends Bloc<StocktakeEvent, StockFetchingStates> {
+  final FetchCountedStockById fetchCountedStockById;
+
+  StockDetailsBloc({required this.fetchCountedStockById})
+    : super(StockDetailsInitial()) {
+    on<FetchStockDetailsByID>(_onFetchStockDetailsByID);
+  }
+
+  Future<void> _onFetchStockDetailsByID(
+    FetchStockDetailsByID event,
+    Emitter<StockFetchingStates> emit,
+  ) async {
+    emit(StockDetailsLoading());
+    try {
+      final stockResponse = await fetchCountedStockById(event.stockId);
+
+      if (stockResponse == null) {
+        emit(
+          StockDetailsError(
+            "Stock not found! Please check in Stock Lookup screen to see whether you have loaded your stock!",
+          ),
+        );
+      } else {
+        emit(StockDetailsLoaded(stockResponse, event.qty));
+      }
+    } catch (error) {
+      emit(StockDetailsError("Error fetching stock: $error"));
     }
   }
 }

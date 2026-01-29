@@ -54,8 +54,7 @@ abstract class LocalDbDAO {
     required String shopfront,
   });
   Future<int> getHistoryRetentionDays();
-
-
+  Future<StockVO?> getStockByIDSearch(String query, String shopfront);
 
   // Setters to save data
   Future<void> saveCountedStock(Map<String, dynamic> stockData);
@@ -79,7 +78,7 @@ abstract class LocalDbDAO {
     required DateTime dateEnded,
     required List<CountedStockVO> items,
   });
-    Future<void> setHistoryRetentionDays(int days);
+  Future<void> setHistoryRetentionDays(int days);
 
   //Update Data
   Future<void> updateShopfrontByIp({
