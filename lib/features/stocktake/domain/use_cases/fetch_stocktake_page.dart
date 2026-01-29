@@ -10,6 +10,7 @@ class FetchStocktakePage {
   Future<StocktakePagedResult> call({
     required int pageIndex,
     required int pageSize,
+    String? query,
   }) async {
     try {
       String shopfront = AppGlobals.instance.shopfront ?? "";
@@ -18,6 +19,7 @@ class FetchStocktakePage {
         shopfront: shopfront,
         pageIndex: pageIndex,
         pageSize: pageSize,
+        query: query,
       );
     } catch (e) {
       return Future.error(e);

@@ -52,5 +52,6 @@ abstract class StocktakeRepo {
     required String shopfront,
     required int pageIndex,
     required int pageSize,
+    String? query,
   });
 }

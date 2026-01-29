@@ -78,7 +78,7 @@ class EmptyStockState extends StatelessWidget {
           ],
 
 
-          const SizedBox(height: 95,)
+          const SizedBox(height: 86,)
         ],
       ),
     );

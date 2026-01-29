@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:alert_info/alert_info.dart';
 import 'package:flutter/cupertino.dart' show CupertinoActivityIndicator;
 import 'package:flutter/material.dart';
@@ -25,6 +27,19 @@ import '../widgets/stocktake_commit_error_dialog.dart';
 import '../widgets/stocktake_list_app_bar.dart';
 import '../widgets/stocktake_search_and_filter_bar.dart';
 
+class Debouncer {
+  final int milliseconds;
+  Timer? _timer;
+  Debouncer({required this.milliseconds});
+
+  void run(VoidCallback action) {
+    _timer?.cancel();
+    _timer = Timer(Duration(milliseconds: milliseconds), action);
+  }
+
+  void dispose() => _timer?.cancel();
+}
+
 class StockTakeListScreen extends StatefulWidget {
   const StockTakeListScreen({super.key});
 
@@ -33,6 +48,9 @@ class StockTakeListScreen extends StatefulWidget {
 }
 
 class _StockTakeListScreenState extends State<StockTakeListScreen> {
+  final Debouncer _debouncer = Debouncer(milliseconds: 500);
+  String _searchQuery = "";
+
   Future<void> _handleSendToRM() async {
     final unSyncedList = await LocalDbDAO.instance.getUnsyncedStocks(
       AppGlobals.instance.shopfront ?? "",
@@ -68,6 +86,12 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   }
 
   @override
+  void dispose() {
+    _debouncer.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBgColor,
@@ -79,7 +103,18 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
             finalStocktakeLoading(),
             const SizedBox(height: 5),
             StocktakeSearchAndFilterBar(
-              onChanged: (value) {},
+              onChanged: (value) {
+                _searchQuery = value;
+
+                _debouncer.run(() {
+                  context.read<FetchingStocktakeListBloc>().add(
+                    FetchStocktakeListEvent(
+                      reset: true, // reset paging for new search
+                      query: _searchQuery,
+                    ),
+                  );
+                });
+              },
               onFilterTap: () => showDialog(
                 context: context,
                 builder: (_) => const FilterDialog(),
@@ -274,10 +309,12 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     return BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
       builder: (context, state) {
         if (state is LoadingStocktakeList) {
-          return const Center(child: Padding(
-            padding: EdgeInsets.only(bottom: 85),
-            child: CupertinoActivityIndicator(),
-          ));
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 85),
+              child: CupertinoActivityIndicator(),
+            ),
+          );
         }
 
         if (state is StocktakeListError) {
@@ -290,7 +327,6 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         }
 
         if (state is StocktakeListLoaded) {
-          
           if (state.stocktakeList.isEmpty) return _buildEmptyState();
 
           return AnimationLimiter(
@@ -310,9 +346,18 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   }
 
   Widget _buildEmptyState() {
-    return EmptyStockState(
-      message: "Your stocktake list is empty",
-      onRetry: () {},
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            EmptyStockState(
+              message: "Your stocktake list is empty",
+              onRetry: () {},
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -444,13 +444,34 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
-  Future<int> getUnsyncedStocksCount(String shopfront) async {
+  Future<int> getUnsyncedStocksCount({
+    required String shopfront,
+    String? query,
+  }) async {
     try {
       final db = _database!;
+      final q = (query ?? "").trim();
+
+      if (q.isEmpty) {
+        final result = await db.rawQuery(
+          'SELECT COUNT(*) as cnt FROM Stocktake WHERE shopfront = ? AND is_synced = ?',
+          [shopfront, 0],
+        );
+        return (result.first['cnt'] as int?) ?? 0;
+      }
+
+      final like = '%$q%';
       final result = await db.rawQuery(
-        'SELECT COUNT(*) as cnt FROM Stocktake WHERE shopfront = ? AND is_synced = ?',
-        [shopfront, 0],
+        '''
+      SELECT COUNT(*) as cnt
+      FROM Stocktake
+      WHERE shopfront = ?
+        AND is_synced = ?
+        AND (barcode LIKE ? OR description LIKE ?)
+      ''',
+        [shopfront, 0, like, like],
       );
+
       return (result.first['cnt'] as int?) ?? 0;
     } catch (e) {
       return Future.error("Error counting stocktake list: $e");
@@ -462,22 +483,40 @@ class SQLiteDAOImpl extends LocalDbDAO {
     required String shopfront,
     required int limit,
     required int offset,
+    String? query,
   }) async {
     try {
       final db = _database!;
-      final result = await db.query(
-        'Stocktake',
-        where: 'shopfront = ? AND is_synced = ?',
-        whereArgs: [shopfront, 0],
-        orderBy: 'stocktake_date ASC',
-        limit: limit,
-        offset: offset,
-      );
+      final q = (query ?? "").trim();
+
+      List<Map<String, dynamic>> result;
+
+      if (q.isEmpty) {
+        result = await db.query(
+          'Stocktake',
+          where: 'shopfront = ? AND is_synced = ?',
+          whereArgs: [shopfront, 0],
+          orderBy: 'stocktake_date ASC',
+          limit: limit,
+          offset: offset,
+        );
+      } else {
+        final like = '%$q%';
+        result = await db.query(
+          'Stocktake',
+          where:
+              'shopfront = ? AND is_synced = ? AND (barcode LIKE ? OR description LIKE ?)',
+          whereArgs: [shopfront, 0, like, like],
+          orderBy: 'stocktake_date ASC',
+          limit: limit,
+          offset: offset,
+        );
+      }
 
       return result.map((map) {
-        final mutable = Map<String, dynamic>.from(map);
-        mutable['is_synced'] = mutable['is_synced'] == 1;
-        return CountedStockVO.fromJson(mutable);
+        final mutableMap = Map<String, dynamic>.from(map);
+        mutableMap['is_synced'] = mutableMap['is_synced'] == 1;
+        return CountedStockVO.fromJson(mutableMap);
       }).toList();
     } catch (e) {
       return Future.error("Error retrieving paged stocktake list: $e");

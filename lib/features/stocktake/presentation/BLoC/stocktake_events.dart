@@ -55,7 +55,8 @@ class LoadHistoryItemsEvent extends StocktakeEvent {
 
 class FetchStocktakeListEvent extends StocktakeEvent {
   final bool reset; // load from page 0 when true
-  FetchStocktakeListEvent({this.reset = false});
+  final String? query;
+  FetchStocktakeListEvent({this.reset = false, this.query});
 }
 
 class NextStocktakePageEvent extends StocktakeEvent {}

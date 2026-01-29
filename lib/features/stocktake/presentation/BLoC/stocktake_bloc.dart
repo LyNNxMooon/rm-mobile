@@ -143,9 +143,10 @@ class FetchingStocktakeListBloc
 
   int _pageIndex = 0;
   final int _pageSize = 50;
+  String _query = "";
 
   FetchingStocktakeListBloc({required this.fetchStocktakePage})
-      : super(LoadingStocktakeList()) {
+    : super(LoadingStocktakeList()) {
     on<FetchStocktakeListEvent>(_onFetch);
     on<NextStocktakePageEvent>(_onNext);
     on<PrevStocktakePageEvent>(_onPrev);
@@ -158,12 +159,22 @@ class FetchingStocktakeListBloc
     try {
       emit(LoadingStocktakeList());
 
+      // If caller provided a query, update it
+      if (event.query != null) {
+        final incoming = event.query!.trim();
+        final changed = incoming != _query;
+        _query = incoming;
+
+        // If query changed, always reset to page 0
+        if (changed) _pageIndex = 0;
+      }
 
       if (event.reset) _pageIndex = 0;
 
       final result = await fetchStocktakePage(
         pageIndex: _pageIndex,
         pageSize: _pageSize,
+        query: _query,
       );
 
       // If current page becomes empty (e.g. after deletions) move back one page
@@ -172,6 +183,7 @@ class FetchingStocktakeListBloc
         final retry = await fetchStocktakePage(
           pageIndex: _pageIndex,
           pageSize: _pageSize,
+          query: _query,
         );
 
         emit(
@@ -180,6 +192,7 @@ class FetchingStocktakeListBloc
             totalCount: retry.totalCount,
             pageIndex: _pageIndex,
             pageSize: _pageSize,
+            query: _query,
           ),
         );
         return;
@@ -191,6 +204,7 @@ class FetchingStocktakeListBloc
           totalCount: result.totalCount,
           pageIndex: _pageIndex,
           pageSize: _pageSize,
+          query: _query,
         ),
       );
     } catch (e) {
@@ -205,7 +219,7 @@ class FetchingStocktakeListBloc
     final s = state;
     if (s is StocktakeListLoaded && s.hasNext) {
       _pageIndex++;
-      add(FetchStocktakeListEvent());
+      add(FetchStocktakeListEvent()); // keeps current _query
     }
   }
 
@@ -216,11 +230,10 @@ class FetchingStocktakeListBloc
     final s = state;
     if (s is StocktakeListLoaded && s.hasPrev) {
       _pageIndex--;
-      add(FetchStocktakeListEvent());
+      add(FetchStocktakeListEvent()); // keeps current _query
     }
   }
 }
-
 
 // class FetchingStocktakeListBloc
 //     extends Bloc<StocktakeEvent, StocktakeListStates> {

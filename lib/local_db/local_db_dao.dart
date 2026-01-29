@@ -55,11 +55,15 @@ abstract class LocalDbDAO {
   });
   Future<int> getHistoryRetentionDays();
   Future<StockVO?> getStockByIDSearch(String query, String shopfront);
-  Future<int> getUnsyncedStocksCount(String shopfront);
+  Future<int> getUnsyncedStocksCount({
+    required String shopfront,
+    String? query,
+  });
   Future<List<CountedStockVO>> getUnsyncedStocksPaged({
     required String shopfront,
     required int limit,
     required int offset,
+    String? query,
   });
 
   // Setters to save data

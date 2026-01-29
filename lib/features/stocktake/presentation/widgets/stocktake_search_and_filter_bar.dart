@@ -65,29 +65,6 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
           ),
 
           const SizedBox(width: 8),
-
-          // // Filter Button
-          // Material(
-          //   color: kSecondaryColor,
-          //   borderRadius: BorderRadius.circular(12),
-          //   child: InkWell(
-          //     onTap: onFilterTap,
-          //     borderRadius: BorderRadius.circular(12),
-          //     child: Container(
-          //       height: 42, // Matched height
-          //       width: 42,
-          //       decoration: BoxDecoration(
-          //         borderRadius: BorderRadius.circular(12),
-          //         border: Border.all(color: Colors.grey[300]!, width: 1),
-          //       ),
-          //       child: Icon(Icons.tune, color: Colors.blueGrey[800], size: 20),
-          //     ),
-          //   ),
-          // ),
-
-          // const SizedBox(width: 8),
-
-          // History Button
           Material(
             color: kSecondaryColor,
             borderRadius: BorderRadius.circular(12),

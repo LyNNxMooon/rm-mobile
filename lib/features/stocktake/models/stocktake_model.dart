@@ -298,14 +298,20 @@ class StocktakeModel implements StocktakeRepo {
     required String shopfront,
     required int pageIndex,
     required int pageSize,
+    String? query,
   }) async {
     final offset = pageIndex * pageSize;
 
-    final total = await LocalDbDAO.instance.getUnsyncedStocksCount(shopfront);
+    final total = await LocalDbDAO.instance.getUnsyncedStocksCount(
+      shopfront: shopfront,
+      query: query,
+    );
+
     final items = await LocalDbDAO.instance.getUnsyncedStocksPaged(
       shopfront: shopfront,
       limit: pageSize,
       offset: offset,
+      query: query,
     );
 
     return StocktakePagedResult(items: items, totalCount: total);
