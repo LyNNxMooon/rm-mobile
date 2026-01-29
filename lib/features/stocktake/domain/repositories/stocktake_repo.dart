@@ -8,6 +8,8 @@ abstract class StocktakeRepo {
 
   Future stocktakeAndSaveToLocalDb(CountedStockVO stock, String shopfront);
 
+  Future<void> updateStocktakeCount(StockVO stock, String shopfront, String newQty);
+
   Future commitToLanFolder({
     required String address,
     required String fullPath,

@@ -833,4 +833,41 @@ class SQLiteDAOImpl extends LocalDbDAO {
       return Future.error("Error deleting old history: $e");
     }
   }
+
+  @override
+  Future<void> updateStockQuantity({
+    required int stockId,
+    required String shopfront,
+    required num newQuantity,
+  }) async {
+    try {
+      final db = _database!;
+
+      final Map<String, dynamic> valuesToUpdate = {
+        'quantity': newQuantity, 
+        'date_modified': DateTime.now().toIso8601String(),
+    
+        'is_synced': 0,
+      };
+
+      final rowsAffected = await db.update(
+        'Stocktake',
+        valuesToUpdate,
+        where: 'stock_id = ? AND shopfront = ?',
+        whereArgs: [stockId, shopfront],
+      );
+
+      if (rowsAffected == 0) {
+        // Optional: Handle the case where the item wasn't found
+        logger.w('Warning: No record found to update for Stock ID: $stockId');
+      } else {
+        logger.d(
+          'Successfully updated quantity to $newQuantity for Stock ID: $stockId',
+        );
+      }
+    } catch (error) {
+      logger.e('Error updating stock quantity in local db: $error');
+      return Future.error("Error updating stock quantity: $error");
+    }
+  }
 }

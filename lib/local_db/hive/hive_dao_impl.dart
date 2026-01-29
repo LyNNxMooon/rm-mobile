@@ -211,4 +211,9 @@ class HiveDAOImpl extends LocalDbDAO {
   Future<StockVO?> getStockByIDSearch(String query, String shopfront) {
     throw UnimplementedError();
   }
+  
+  @override
+  Future<void> updateStockQuantity({required int stockId, required String shopfront, required num newQuantity}) {
+    throw UnimplementedError();
+  }
 }

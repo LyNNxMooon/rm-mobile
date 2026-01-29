@@ -264,6 +264,34 @@ class StocktakeModel implements StocktakeRepo {
 
     yield AuditSyncStatus(1, 1, "Transactions found.", rows: rows);
   }
+
+  @override
+  Future<void> updateStocktakeCount(
+    StockVO stock,
+    String shopfront,
+    String newQty,
+  ) async {
+    try {
+      num parsedQty;
+      if (stock.allowFractions == true) {
+        // If fractional is allowed, parse directly to double
+        parsedQty = double.tryParse(newQty) ?? 0.0;
+      } else {
+        // If not allowed, parse input and round to nearest integer
+        // We parse as double first in case the user typed a dot by accident
+        double inputAsDouble = double.tryParse(newQty) ?? 0.0;
+        parsedQty = inputAsDouble.round();
+      }
+
+      await LocalDbDAO.instance.updateStockQuantity(
+        stockId: stock.stockID.toInt(),
+        shopfront: shopfront,
+        newQuantity: parsedQty,
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
 }
 
 class AuditWithStockVO {

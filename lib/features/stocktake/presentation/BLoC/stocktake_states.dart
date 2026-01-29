@@ -39,6 +39,24 @@ class StockDetailsLoaded extends StockFetchingStates {
   StockDetailsLoaded(this.stock, this.qty);
 }
 
+//Update stock count
+abstract class StockCountUpdateStates {}
+
+class StockCountUpdateInitial extends StockCountUpdateStates {}
+
+class StockCountUpdating extends StockCountUpdateStates {}
+
+class StockCountUpdateError extends StockCountUpdateStates {
+  final String message;
+  StockCountUpdateError(this.message);
+}
+
+class StockCountUpdated extends StockCountUpdateStates {
+  final String message;
+
+  StockCountUpdated(this.message);
+}
+
 //Stocktaking
 abstract class StocktakeStates {}
 

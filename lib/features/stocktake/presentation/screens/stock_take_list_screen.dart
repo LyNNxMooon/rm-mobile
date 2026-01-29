@@ -1,3 +1,4 @@
+import 'package:alert_info/alert_info.dart';
 import 'package:flutter/cupertino.dart' show CupertinoActivityIndicator;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -78,9 +79,44 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
             ),
             const SizedBox(height: 15),
             Expanded(child: _buildItemsList()),
+            stockCountUpdateListener(),
           ],
         ),
       ),
+    );
+  }
+
+  //Stock count update listener
+  Widget stockCountUpdateListener() {
+    return BlocListener<StockCountUpdateBloc, StockCountUpdateStates>(
+      listener: (context, state) {
+        if (state is StockCountUpdated) {
+          AlertInfo.show(
+            context: context,
+
+            text: state.message,
+
+            typeInfo: TypeInfo.success,
+
+            backgroundColor: kSecondaryColor,
+
+            iconColor: kPrimaryColor,
+
+            textColor: kThirdColor,
+            padding: 70,
+            position: MessagePosition.top,
+          );
+        }
+
+        if (state is StockCountUpdateError) {
+          showTopSnackBar(
+            Overlay.of(context),
+
+            CustomSnackBar.error(message: state.message),
+          );
+        }
+      },
+      child: const SizedBox()
     );
   }
 

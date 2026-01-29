@@ -7,6 +7,7 @@ import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessio
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sesstion_items.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/update_stock_count.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
@@ -75,6 +76,35 @@ class StockDetailsBloc extends Bloc<StocktakeEvent, StockFetchingStates> {
       }
     } catch (error) {
       emit(StockDetailsError("Error fetching stock: $error"));
+    }
+  }
+}
+
+//Stock count upate bloc
+class StockCountUpdateBloc
+    extends Bloc<StocktakeEvent, StockCountUpdateStates> {
+  final UpdateStockCount updateStockCount;
+
+  StockCountUpdateBloc({required this.updateStockCount})
+    : super(StockCountUpdateInitial()) {
+    on<UpdateStockCountEvent>(_onUpdateStockCountEvent);
+  }
+
+  Future<void> _onUpdateStockCountEvent(
+    UpdateStockCountEvent event,
+    Emitter<StockCountUpdateStates> emit,
+  ) async {
+    emit(StockCountUpdateInitial());
+    try {
+      if (event.qty.isEmpty) {
+        emit(StockCountUpdateError("Counting quantity cannot be empty!"));
+      }
+
+      await updateStockCount(event.stock, event.qty);
+
+      emit(StockCountUpdated("Stock count updated successfully!"));
+    } catch (error) {
+      emit(StockCountUpdateError("Error updating count: $error"));
     }
   }
 }

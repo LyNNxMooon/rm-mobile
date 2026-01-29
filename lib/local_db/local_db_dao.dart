@@ -91,6 +91,11 @@ abstract class LocalDbDAO {
   });
   Future<void> markStockAsSynced(List<int> stockIds, String shopfront);
   Future<int> cleanupHistoryByRetention();
+  Future<void> updateStockQuantity({
+    required int stockId,
+    required String shopfront,
+    required num newQuantity,
+  });
 
   //Removing data
   Future<void> removeNetworkCredential({required String ip});

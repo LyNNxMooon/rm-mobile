@@ -17,6 +17,13 @@ class FetchStockDetailsByID extends StocktakeEvent {
   FetchStockDetailsByID({required this.stockId, required this.qty});
 }
 
+class UpdateStockCountEvent extends StocktakeEvent {
+  final StockVO stock;
+  final String qty;
+
+  UpdateStockCountEvent({required this.stock, required this.qty});
+}
+
 class ResetStocktakeEvent extends StocktakeEvent {
   final ScannerStates targetState;
   ResetStocktakeEvent(this.targetState);

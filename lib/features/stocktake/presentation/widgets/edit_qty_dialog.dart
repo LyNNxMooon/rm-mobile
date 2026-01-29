@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
+import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 class StockDetailsDialog extends StatelessWidget {
   const StockDetailsDialog({super.key});
@@ -49,7 +50,11 @@ class StockDetailsDialog extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline, color: kErrorColor, size: 40),
+                    const Icon(
+                      Icons.error_outline,
+                      color: kErrorColor,
+                      size: 40,
+                    ),
                     const SizedBox(height: 10),
                     Text(
                       state.message,
@@ -65,7 +70,10 @@ class StockDetailsDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text("Close", style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        "Close",
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
@@ -80,11 +88,8 @@ class StockDetailsDialog extends StatelessWidget {
                 onUpdate: (newQty) {
                   Navigator.of(context).pop();
                   context.read<StocktakeBloc>().add(
-                        Stocktake(
-                          stock: state.stock,
-                          qty: newQty.toString(),
-                        ),
-                      );
+                    Stocktake(stock: state.stock, qty: newQty.toString()),
+                  );
                 },
               );
             }
@@ -145,12 +150,13 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
   }
 
   void _handleUpdate() {
-    final String input = _qtyController.text;
-    if (input.isEmpty) return;
-    num? newQty = num.tryParse(input);
-    if (newQty != null) {
-      widget.onUpdate(newQty);
-    }
+    context.read<StockCountUpdateBloc>().add(
+      UpdateStockCountEvent(stock: widget.stock, qty: _qtyController.text),
+    );
+
+    context.read<FetchingStocktakeListBloc>().add(FetchStocktakeListEvent());
+
+    context.navigateBack();
   }
 
   @override
@@ -176,7 +182,10 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                 widget.stock.description,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    color: kThirdColor, fontWeight: FontWeight.w600, fontSize: 14),
+                  color: kThirdColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -192,25 +201,38 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
               children: [
+                _buildDetailRow(Icons.qr_code, "Barcode", widget.stock.barcode),
                 _buildDetailRow(
-                    Icons.qr_code, "Barcode", widget.stock.barcode),
+                  Icons.category_outlined,
+                  "Categories",
+                  "${widget.stock.category1 ?? '-'} / ${widget.stock.category2 ?? '-'} / ${widget.stock.category3 ?? '-'}",
+                ),
                 _buildDetailRow(
-                    Icons.category_outlined,
-                    "Categories",
-                    "${widget.stock.category1 ?? '-'} / ${widget.stock.category2 ?? '-'} / ${widget.stock.category3 ?? '-'}"),
+                  Icons.text_fields,
+                  "Custom 1",
+                  widget.stock.custom1 ?? "-",
+                ),
                 _buildDetailRow(
-                    Icons.text_fields, "Custom 1", widget.stock.custom1 ?? "-"),
+                  Icons.text_fields,
+                  "Custom 2",
+                  widget.stock.custom2 ?? "-",
+                ),
                 _buildDetailRow(
-                    Icons.text_fields, "Custom 2", widget.stock.custom2 ?? "-"),
-                _buildDetailRow(Icons.shopping_bag_outlined, "Supplier",
-                    widget.stock.supplier),
-                _buildDetailRow(Icons.layers_outlined, "Stock ID",
-                    widget.stock.stockID.toString()),
+                  Icons.shopping_bag_outlined,
+                  "Supplier",
+                  widget.stock.supplier,
+                ),
                 _buildDetailRow(
-                    Icons.attach_money,
-                    "Sell Price",
-                    "\$${widget.stock.sell.toStringAsFixed(2)}"),
-                
+                  Icons.layers_outlined,
+                  "Stock ID",
+                  widget.stock.stockID.toString(),
+                ),
+                _buildDetailRow(
+                  Icons.attach_money,
+                  "Sell Price",
+                  "\$${widget.stock.sell.toStringAsFixed(2)}",
+                ),
+
                 // Add more fields here if needed from StockVO
               ],
             ),
@@ -229,7 +251,10 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                 child: Text(
                   "Update Count:",
                   style: TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.bold, color: kGreyColor),
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: kGreyColor,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -243,8 +268,9 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                 child: TextField(
                   controller: _qtyController,
                   focusNode: _focusNode,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 18,
@@ -274,7 +300,9 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                       child: Text(
                         "Cancel",
                         style: TextStyle(
-                            color: kPrimaryColor, fontWeight: FontWeight.bold),
+                          color: kPrimaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -293,12 +321,14 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                       child: const Text(
                         "Update",
                         style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),

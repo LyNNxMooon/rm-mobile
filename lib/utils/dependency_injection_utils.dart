@@ -12,6 +12,7 @@ import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessio
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sesstion_items.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/update_stock_count.dart';
 import '../features/home_page/domain/use_cases/auto_connect_to_default_folder.dart';
 import '../features/home_page/domain/use_cases/check_if_shopfront_file_exists.dart';
 import '../features/home_page/domain/use_cases/connect_and_write_to_folder.dart';
@@ -86,6 +87,7 @@ Future<void> init() async {
     ),
   );
   sl.registerFactory(() => StockDetailsBloc(fetchCountedStockById: sl()));
+  sl.registerFactory(() => StockCountUpdateBloc(updateStockCount: sl()));
 
   //Repos
   sl.registerLazySingleton<HomeRepo>(() => HomeScreenModels());
@@ -120,4 +122,5 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateRetentionDays(sl()));
   sl.registerLazySingleton(() => CleanupHistory(sl()));
   sl.registerLazySingleton(() => FetchCountedStockById(sl()));
+  sl.registerLazySingleton(() => UpdateStockCount(sl()));
 }
