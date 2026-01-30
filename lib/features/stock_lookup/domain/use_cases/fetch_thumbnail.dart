@@ -8,7 +8,10 @@ class FetchThumbnail {
 
   FetchThumbnail(this.repository);
 
-  Future<String?> call({required String pictureFileName}) async {
+  Future<String?> call({
+    required String pictureFileName,
+    required bool forceRefresh,
+  }) async {
     try {
       String? finalUser;
       String? finalPwd;
@@ -37,6 +40,7 @@ class FetchThumbnail {
         password: finalPwd,
         shopfrontName: shopfrontName,
         pictureFileName: pictureFileName,
+        forceRefresh: forceRefresh
       );
     } catch (error) {
       return Future.error(error);

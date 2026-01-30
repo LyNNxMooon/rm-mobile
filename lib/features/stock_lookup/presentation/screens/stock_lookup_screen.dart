@@ -520,6 +520,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           child: FadeInAnimation(
             child: GestureDetector(
               onTap: () {
+               
                 context.navigateToNext(StockDetailsScreen(stock: stock));
               },
               child: Container(

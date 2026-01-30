@@ -95,15 +95,25 @@ abstract class ThumbnailState {}
 class ThumbnailInitial extends ThumbnailState {}
 
 class ThumbnailLoaded extends ThumbnailState {
-  final Map<num, String> thumbPaths;
-  final Set<num> loading;
+  final Map<dynamic, String> thumbPaths;
+  final Set<dynamic> loading;
+  final Map<dynamic, int> rev;
 
-  ThumbnailLoaded({required this.thumbPaths, required this.loading});
+  ThumbnailLoaded({
+    required this.thumbPaths,
+    required this.loading,
+    required this.rev,
+  });
 
-  ThumbnailLoaded copyWith({Map<num, String>? thumbPaths, Set<num>? loading}) {
+  ThumbnailLoaded copyWith({
+    Map<dynamic, String>? thumbPaths,
+    Set<dynamic>? loading,
+    Map<dynamic, int>? rev,
+  }) {
     return ThumbnailLoaded(
       thumbPaths: thumbPaths ?? this.thumbPaths,
       loading: loading ?? this.loading,
+      rev: rev ?? this.rev,
     );
   }
 }
@@ -113,13 +123,23 @@ abstract class FullImageState {}
 class FullImageLoaded extends FullImageState {
   final Map<num, String> imagePaths;
   final Set<num> loading;
+  final Map<dynamic, int> rev;
 
-  FullImageLoaded({required this.imagePaths, required this.loading});
+  FullImageLoaded({
+    required this.imagePaths,
+    required this.loading,
+    required this.rev,
+  });
 
-  FullImageLoaded copyWith({Map<num, String>? imagePaths, Set<num>? loading}) {
+  FullImageLoaded copyWith({
+    Map<num, String>? imagePaths,
+    Set<num>? loading,
+    Map<dynamic, int>? rev,
+  }) {
     return FullImageLoaded(
       imagePaths: imagePaths ?? this.imagePaths,
       loading: loading ?? this.loading,
+      rev: rev ?? this.rev,
     );
   }
 }

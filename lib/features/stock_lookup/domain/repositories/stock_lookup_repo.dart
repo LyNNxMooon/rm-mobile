@@ -23,6 +23,7 @@ abstract class StockLookupRepo {
     required String? password,
     required String shopfrontName,
     required String pictureFileName,
+    bool forceRefresh = false,
   });
 
   Future<String?> fetchAndCacheFullImagePath({
@@ -32,6 +33,7 @@ abstract class StockLookupRepo {
     required String? password,
     required String shopfrontName,
     required String pictureFileName,
+    bool forceRefresh = false,
   });
 
   Future<void> uploadStockImage({

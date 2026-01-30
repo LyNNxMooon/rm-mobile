@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/painting.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_thumbnail.dart';
@@ -128,9 +131,10 @@ class FilterOptionsBloc extends Bloc<StockListEvent, FilterOptionsState> {
 class ThumbnailBloc extends Bloc<StockListEvent, ThumbnailState> {
   final FetchThumbnail fetchThumbnail;
 
-  ThumbnailBloc({
-    required this.fetchThumbnail,
-  }) : super(ThumbnailLoaded(thumbPaths: {}, loading: {})) {
+  final Map<dynamic, int> _reqVer = {};
+
+  ThumbnailBloc({required this.fetchThumbnail})
+    : super(ThumbnailLoaded(thumbPaths: {}, loading: {}, rev: {})) {
     on<RequestThumbnailEvent>(_onRequest);
   }
 
@@ -140,30 +144,62 @@ class ThumbnailBloc extends Bloc<StockListEvent, ThumbnailState> {
   ) async {
     final current = state is ThumbnailLoaded
         ? state as ThumbnailLoaded
-        : ThumbnailLoaded(thumbPaths: {}, loading: {});
+        : ThumbnailLoaded(thumbPaths: {}, loading: {}, rev: {});
 
     if (event.pictureFileName.isEmpty) return;
-    if (current.thumbPaths.containsKey(event.stockId)) return;
-    if (current.loading.contains(event.stockId)) return;
+
+    // bump request version for this stockId
+    final ver = (_reqVer[event.stockId] ?? 0) + 1;
+    _reqVer[event.stockId] = ver;
 
     final newLoading = {...current.loading, event.stockId};
-    emit(current.copyWith(loading: newLoading));
+    final clearedPaths = {...current.thumbPaths};
+
+    if (event.forceRefresh) {
+      clearedPaths.remove(event.stockId);
+    } else {
+      if (clearedPaths.containsKey(event.stockId)) {
+        return;
+      }
+    }
+
+    emit(current.copyWith(thumbPaths: clearedPaths, loading: newLoading));
 
     try {
       final path = await fetchThumbnail(
         pictureFileName: event.pictureFileName,
+        forceRefresh: event.forceRefresh,
       );
 
-      final updatedPaths = {...current.thumbPaths};
+      // if a newer request started, ignore this stale result
+      if (_reqVer[event.stockId] != ver) return;
+
+      final updatedPaths = {...clearedPaths};
       if (path != null && path.isNotEmpty) {
+        if (event.forceRefresh) {
+          await FileImage(File(path)).evict();
+          PaintingBinding.instance.imageCache.clearLiveImages();
+        }
         updatedPaths[event.stockId] = path;
       }
 
       final loadingDone = {...newLoading}..remove(event.stockId);
-      emit(current.copyWith(thumbPaths: updatedPaths, loading: loadingDone));
+
+      // bump a UI revision counter so Image widget can be forced to rebuild
+      final newRev = {...current.rev};
+      newRev[event.stockId] = (newRev[event.stockId] ?? 0) + 1;
+
+      emit(
+        current.copyWith(
+          thumbPaths: updatedPaths,
+          loading: loadingDone,
+          rev: newRev,
+        ),
+      );
     } catch (_) {
+      if (_reqVer[event.stockId] != ver) return;
       final loadingDone = {...newLoading}..remove(event.stockId);
-      emit(current.copyWith(loading: loadingDone));
+      emit(current.copyWith(thumbPaths: clearedPaths, loading: loadingDone));
     }
   }
 }
@@ -171,8 +207,11 @@ class ThumbnailBloc extends Bloc<StockListEvent, ThumbnailState> {
 class FullImageBloc extends Bloc<StockListEvent, FullImageState> {
   final FetchFullImage fetchFullImage;
 
+  // per-stock request version
+  final Map<dynamic, int> _reqVer = {};
+
   FullImageBloc({required this.fetchFullImage})
-      : super(FullImageLoaded(imagePaths: {}, loading: {})) {
+    : super(FullImageLoaded(imagePaths: {}, loading: {}, rev: {})) {
     on<RequestFullImageEvent>(_onRequest);
   }
 
@@ -182,30 +221,55 @@ class FullImageBloc extends Bloc<StockListEvent, FullImageState> {
   ) async {
     final current = state is FullImageLoaded
         ? state as FullImageLoaded
-        : FullImageLoaded(imagePaths: {}, loading: {});
+        : FullImageLoaded(imagePaths: {}, loading: {}, rev: {});
 
     if (event.pictureFileName.isEmpty) return;
-    if (current.imagePaths.containsKey(event.stockId)) return;
-    if (current.loading.contains(event.stockId)) return;
+
+    final ver = (_reqVer[event.stockId] ?? 0) + 1;
+    _reqVer[event.stockId] = ver;
 
     final newLoading = {...current.loading, event.stockId};
-    emit(current.copyWith(loading: newLoading));
+    final cleared = {...current.imagePaths};
+
+    if (event.forceRefresh) {
+      cleared.remove(event.stockId);
+    } else {
+      if (cleared.containsKey(event.stockId)) {
+        // already have it and no refresh requested
+        return;
+      }
+    }
+
+    emit(current.copyWith(imagePaths: cleared, loading: newLoading));
 
     try {
       final path = await fetchFullImage(
         pictureFileName: event.pictureFileName,
+        forceRefresh: event.forceRefresh,
       );
 
-      final updated = {...current.imagePaths};
+      // if a newer request started, ignore this stale result
+      if (_reqVer[event.stockId] != ver) return;
+
+      final updated = {...cleared};
       if (path != null && path.isNotEmpty) {
+        if (event.forceRefresh) {
+          await FileImage(File(path)).evict();
+          PaintingBinding.instance.imageCache.clearLiveImages();
+        }
+
         updated[event.stockId] = path;
       }
 
       final loadingDone = {...newLoading}..remove(event.stockId);
-      emit(current.copyWith(imagePaths: updated, loading: loadingDone));
+
+      final newRev = {...current.rev};
+      newRev[event.stockId] = (newRev[event.stockId] ?? 0) + 1;
+      emit(current.copyWith(imagePaths: updated, loading: loadingDone, rev: newRev));
     } catch (_) {
+       if (_reqVer[event.stockId] != ver) return;
       final loadingDone = {...newLoading}..remove(event.stockId);
-      emit(current.copyWith(loading: loadingDone));
+      emit(current.copyWith(imagePaths: cleared, loading: loadingDone));
     }
   }
 }
@@ -215,7 +279,7 @@ class StockImageUploadBloc
   final UploadStockImageUseCase uploadUseCase;
 
   StockImageUploadBloc({required this.uploadUseCase})
-      : super(StockImageUploadInitial()) {
+    : super(StockImageUploadInitial()) {
     on<UploadStockImageEvent>(_onUpload);
   }
 
@@ -226,10 +290,11 @@ class StockImageUploadBloc
     emit(StockImageUploading());
     try {
       await uploadUseCase(stockId: event.stockId, imagePath: event.imagePath);
-      emit(StockImageUploaded("Image uploaded. Agent will process it shortly."));
+      emit(
+        StockImageUploaded("Image uploaded. Agent will process it shortly."),
+      );
     } catch (e) {
       emit(StockImageUploadError(e.toString()));
     }
   }
 }
-

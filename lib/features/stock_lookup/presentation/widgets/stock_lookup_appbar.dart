@@ -18,6 +18,20 @@ class StockLookupAppbar extends StatefulWidget {
 }
 
 class _StockLookupAppbarState extends State<StockLookupAppbar> {
+  // Future<void> clearAllImageCache() async {
+  //   final dir = await getTemporaryDirectory();
+
+  //   final thumbRoot = Directory(p.join(dir.path, "thumb_cache"));
+  //   final fullRoot = Directory(p.join(dir.path, "fullimg_cache"));
+
+  //   if (await thumbRoot.exists()) {
+  //     await thumbRoot.delete(recursive: true);
+  //   }
+  //   if (await fullRoot.exists()) {
+  //     await fullRoot.delete(recursive: true);
+  //   }
+  // }
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -59,7 +73,8 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                           .last,
                       style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
                       maxLines: 1, // Prevent vertical overflow
-                      overflow: TextOverflow.ellipsis, // Handle long names gracefully
+                      overflow:
+                          TextOverflow.ellipsis, // Handle long names gracefully
                     ),
                   ],
                 ),
@@ -84,7 +99,10 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                   width: 40,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: kPrimaryColor.withOpacity(0.5), width: 1),
+                    border: Border.all(
+                      color: kPrimaryColor.withOpacity(0.5),
+                      width: 1,
+                    ),
                   ),
                   child: const Icon(
                     Icons.home_filled,
@@ -108,7 +126,11 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[300]!, width: 1),
                       ),
-                      child: const Icon(Icons.sync, color: Colors.grey, size: 24),
+                      child: const Icon(
+                        Icons.sync,
+                        color: Colors.grey,
+                        size: 24,
+                      ),
                     ),
                   );
                 } else {

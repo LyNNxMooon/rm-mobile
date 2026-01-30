@@ -43,7 +43,7 @@ class UploadStockImageUseCase {
       final fileName =
           "${mobileInfo.deviceId}_stockimg_${shopfront.split(r'\').last}_${stockId}_$ts.jpg";
 
-      final jpgBytes = await toJpegBytes(imagePath);
+      final jpgBytes = await toJpegBytesStrict(imagePath);
 
       await repository.uploadStockImage(
         address: ip,
@@ -58,34 +58,30 @@ class UploadStockImageUseCase {
     }
   }
 
-  Future<Uint8List> toJpegBytes(
-    String path, {
-    int quality = 85,
-    int maxDim = 1600,
-  }) async {
-    final bytes = await File(path).readAsBytes();
-    final decoded = img.decodeImage(bytes);
+Future<Uint8List> toJpegBytesStrict(
+  String path, {
+  int quality = 85,
+  int maxDim = 1600,
+}) async {
+  final bytes = await File(path).readAsBytes();
+  final decoded = img.decodeImage(bytes);
 
-    // If decode fails, fallback to raw bytes
-    if (decoded == null) return Uint8List.fromList(bytes);
-
-    img.Image out = decoded;
-
-    // Downscale large images to reduce upload size
-    final int w = out.width;
-    final int h = out.height;
-    final int longest = w > h ? w : h;
-
-    if (longest > maxDim) {
-      final scale = maxDim / longest;
-      out = img.copyResize(
-        out,
-        width: (w * scale).round(),
-        height: (h * scale).round(),
-      );
-    }
-
-    final jpg = img.encodeJpg(out, quality: quality);
-    return Uint8List.fromList(jpg);
+  if (decoded == null) {
+    throw Exception("Selected image format not supported. Please choose a JPEG/PNG.");
   }
+
+  img.Image out = decoded;
+
+  final w = out.width;
+  final h = out.height;
+  final longest = w > h ? w : h;
+
+  if (longest > maxDim) {
+    final scale = maxDim / longest;
+    out = img.copyResize(out, width: (w * scale).round(), height: (h * scale).round());
+  }
+
+  final jpg = img.encodeJpg(out, quality: quality);
+  return Uint8List.fromList(jpg);
+}
 }

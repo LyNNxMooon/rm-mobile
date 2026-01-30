@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
@@ -45,6 +46,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         RequestFullImageEvent(
           stockId: widget.stock.stockID,
           pictureFileName: pic,
+          //forceRefresh: true
         ),
       );
     }
@@ -127,7 +129,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
               const Text(
                 "Confirm Upload",
                 style: TextStyle(
@@ -138,11 +139,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
               ),
               const SizedBox(height: 15),
 
-              // Image Container with Styling
               Container(
-                constraints: const BoxConstraints(
-                  maxHeight: 300,
-                ), // Prevent overflow
+                height: 300,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
@@ -156,10 +154,33 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(
-                    14,
-                  ), // Slightly less to fit border
-                  child: Image.file(File(path), fit: BoxFit.cover),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.file(
+                    File(path),
+                    fit: BoxFit.cover,
+                    frameBuilder:
+                        (context, child, frame, wasSynchronouslyLoaded) {
+                          if (wasSynchronouslyLoaded || frame != null) {
+                            return child;
+                          }
+                          return const Center(
+                            child: CupertinoActivityIndicator(
+                              radius: 14,
+                              color: kPrimaryColor,
+                            ),
+                          );
+                        },
+
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                        child: Icon(
+                          Icons.broken_image,
+                          color: kGreyColor,
+                          size: 40,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
 
@@ -228,6 +249,41 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     }
   }
 
+  Future<void> _refreshImagesWithRetry() async {
+    final id = widget.stock.stockID;
+    final fileName = "${id.toInt()}.jpg";
+
+    // try a few times while the agent generates/updates thumbnails
+    const delays = <Duration>[
+      Duration(milliseconds: 500),
+      Duration(seconds: 1),
+      Duration(seconds: 2),
+      Duration(seconds: 3),
+      Duration(seconds: 5),
+    ];
+
+    for (final d in delays) {
+      await Future.delayed(d);
+      if (!mounted) return;
+
+      context.read<FullImageBloc>().add(
+        RequestFullImageEvent(
+          stockId: id,
+          pictureFileName: fileName,
+          forceRefresh: true,
+        ),
+      );
+
+      context.read<ThumbnailBloc>().add(
+        RequestThumbnailEvent(
+          stockId: id,
+          pictureFileName: fileName,
+          forceRefresh: true,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
@@ -252,6 +308,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
             padding: 70,
             position: MessagePosition.top,
           );
+
+          _refreshImagesWithRetry();
         }
         if (state is StockImageUploadError) {
           showTopSnackBar(
@@ -300,6 +358,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                 builder: (context, state) {
                                   String? localPath;
                                   bool isLoading = false;
+                                  int rev = 0;
 
                                   if (state is FullImageLoaded) {
                                     localPath =
@@ -307,6 +366,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                     isLoading = state.loading.contains(
                                       widget.stock.stockID,
                                     );
+                                    rev = state.rev[widget.stock.stockID] ?? 0;
                                   }
 
                                   final bool hasFile =
@@ -321,6 +381,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                       if (hasFile)
                                         Image.file(
                                           File(localPath),
+                                          key: ValueKey(
+                                            'full_${widget.stock.stockID}_$rev',
+                                          ),
                                           fit: BoxFit.cover,
                                         )
                                       else
@@ -338,6 +401,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                         child: hasFile
                                             ? Image.file(
                                                 File(localPath),
+                                                key: ValueKey(
+                                                  'full_center_${widget.stock.stockID}_$rev',
+                                                ),
                                                 fit: BoxFit.contain,
                                               )
                                             : Image.asset(

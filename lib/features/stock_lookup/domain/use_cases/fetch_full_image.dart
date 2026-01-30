@@ -8,7 +8,7 @@ class FetchFullImage {
 
   FetchFullImage(this.repository);
 
-  Future<String?> call({required String pictureFileName}) async {
+  Future<String?> call({required String pictureFileName, required bool forceRefresh}) async {
     try {
       String? finalUser;
       String? finalPwd;
@@ -28,6 +28,7 @@ class FetchFullImage {
           .split(r'\')
           .last;
 
+
       return repository.fetchAndCacheFullImagePath(
         address: AppGlobals.instance.currentHostIp ?? "",
         fullPath: AppGlobals.instance.currentPath ?? "",
@@ -35,7 +36,10 @@ class FetchFullImage {
         password: finalPwd,
         shopfrontName: shopfrontName,
         pictureFileName: pictureFileName,
+        forceRefresh: forceRefresh
       );
+
+      
     } catch (error) {
       return Future.error(error);
     }

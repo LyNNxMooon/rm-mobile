@@ -22,15 +22,25 @@ class LoadFilterOptionsEvent extends StockListEvent {}
 class RequestThumbnailEvent extends StockListEvent {
   final num stockId;
   final String pictureFileName;
+  final bool forceRefresh;
 
-  RequestThumbnailEvent({required this.stockId, required this.pictureFileName});
+  RequestThumbnailEvent({
+    required this.stockId,
+    required this.pictureFileName,
+    this.forceRefresh = false,
+  });
 }
 
 class RequestFullImageEvent extends StockListEvent {
   final num stockId;
   final String pictureFileName;
+  final bool forceRefresh;
 
-  RequestFullImageEvent({required this.stockId, required this.pictureFileName});
+  RequestFullImageEvent({
+    required this.stockId,
+    required this.pictureFileName,
+    this.forceRefresh = false,
+  });
 }
 
 //Image uploading

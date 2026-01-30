@@ -5,6 +5,7 @@ import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart'
 import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
 import 'package:rmstock_scanner/network/LAN_sharing/lan_network_service_impl.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmstock_scanner/utils/log_utils.dart';
 
 import '../../../entities/vos/filter_criteria.dart';
 import '../../../local_db/local_db_dao.dart';
@@ -70,6 +71,7 @@ class StockLookupModels implements StockLookupRepo {
     required String? password,
     required String shopfrontName,
     required String pictureFileName,
+    bool forceRefresh = false, 
   }) async {
     try {
       if (pictureFileName.isEmpty) return null;
@@ -84,13 +86,17 @@ class StockLookupModels implements StockLookupRepo {
       );
       final String localPath = p.join(cacheDirPath, thumbFileName);
 
+      await Directory(cacheDirPath).create(recursive: true);
+
       final localFile = File(localPath);
-      if (await localFile.exists()) {
-        // already cached
-        return localPath;
+
+      if (forceRefresh && await localFile.exists()) {
+        await localFile.delete();
       }
 
-      await Directory(cacheDirPath).create(recursive: true);
+      if (await localFile.exists()) {
+        return localPath;
+      }
 
       final Uint8List bytes = await LanNetworkServiceImpl.instance
           .downloadFileBytes(
@@ -104,7 +110,7 @@ class StockLookupModels implements StockLookupRepo {
 
       await localFile.writeAsBytes(bytes, flush: true);
       return localPath;
-    } on Exception catch (error) {
+    } catch (error) {
       return Future.error(error);
     }
   }
@@ -124,26 +130,31 @@ class StockLookupModels implements StockLookupRepo {
     required String? password,
     required String shopfrontName,
     required String pictureFileName,
+    bool forceRefresh = false, 
   }) async {
     try {
       if (pictureFileName.isEmpty) return null;
 
-      // Cache to file system
       final dir = await getTemporaryDirectory();
       final String cacheDirPath = p.join(
         dir.path,
         "fullimg_cache",
         shopfrontName,
       );
-
       final String localPath = p.join(cacheDirPath, pictureFileName);
 
+      await Directory(cacheDirPath).create(recursive: true);
+
       final localFile = File(localPath);
-      if (await localFile.exists()) {
-        return localPath;
+
+      if (forceRefresh && await localFile.exists()) {
+        await localFile.delete();
       }
 
-      await Directory(cacheDirPath).create(recursive: true);
+      if (await localFile.exists()) {
+        logger.d("Sp pl");
+        return localPath;
+      }
 
       final Uint8List bytes = await LanNetworkServiceImpl.instance
           .downloadFullImageBytes(
@@ -156,8 +167,11 @@ class StockLookupModels implements StockLookupRepo {
           );
 
       await localFile.writeAsBytes(bytes, flush: true);
+
+
+      logger.d("Lee pl kwar");
       return localPath;
-    } on Exception catch (error) {
+    } catch (error) {
       return Future.error(error);
     }
   }

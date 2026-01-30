@@ -27,32 +27,55 @@ class _StockThumbnailTileState extends State<StockThumbnailTile> {
         RequestThumbnailEvent(
           stockId: widget.stock.stockID,
           pictureFileName: pic,
+          //forceRefresh: true
         ),
       );
     }
   }
 
   @override
+  void didUpdateWidget(covariant StockThumbnailTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final oldPic = oldWidget.stock.pictureFileName ?? '';
+    final newPic = widget.stock.pictureFileName ?? '';
+
+    if (oldWidget.stock.stockID != widget.stock.stockID || oldPic != newPic) {
+      if (newPic.isNotEmpty) {
+        context.read<ThumbnailBloc>().add(
+          RequestThumbnailEvent(
+            stockId: widget.stock.stockID,
+            pictureFileName: newPic,
+            forceRefresh: true,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<ThumbnailBloc, ThumbnailState>(
-      buildWhen: (prev, next) => true,
       builder: (context, state) {
         String? localPath;
+        int rev = 0;
+
         if (state is ThumbnailLoaded) {
           localPath = state.thumbPaths[widget.stock.stockID];
+          rev = state.rev[widget.stock.stockID] ?? 0;
         }
 
-        if (localPath != null && localPath.isNotEmpty && File(localPath).existsSync()) {
+        if (localPath != null &&
+            localPath.isNotEmpty &&
+            File(localPath).existsSync()) {
           return Image.file(
             File(localPath),
+            key: ValueKey('thumb_${widget.stock.stockID}_$rev'),
             fit: BoxFit.fill,
           );
         }
 
-        return Image.asset(
-          overviewPlaceholder,
-          fit: BoxFit.fill,
-        );
+        return Image.asset(overviewPlaceholder, fit: BoxFit.fill);
       },
     );
   }
