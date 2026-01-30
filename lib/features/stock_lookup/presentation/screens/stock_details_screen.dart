@@ -38,15 +38,14 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
   @override
   void initState() {
-    super.initState();
-
     final pic = widget.stock.pictureFileName;
+
     if (pic != null && pic.isNotEmpty) {
       context.read<FullImageBloc>().add(
         RequestFullImageEvent(
           stockId: widget.stock.stockID,
           pictureFileName: pic,
-          //forceRefresh: true
+          // forceRefresh: true
         ),
       );
     }
@@ -62,6 +61,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     } else {
       sell = widget.stock.sell;
     }
+
+    super.initState();
   }
 
   final ImagePicker _picker = ImagePicker();
@@ -254,34 +255,32 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     final fileName = "${id.toInt()}.jpg";
 
     // try a few times while the agent generates/updates thumbnails
-    const delays = <Duration>[
-      Duration(milliseconds: 500),
-      Duration(seconds: 1),
-      Duration(seconds: 2),
-      Duration(seconds: 3),
-      Duration(seconds: 5),
-    ];
+    // const delays = <Duration>[
+    //   Duration(milliseconds: 500),
+    //   Duration(seconds: 1),
+    //   Duration(seconds: 2),
+    //   Duration(seconds: 3),
+    //   Duration(seconds: 5),
+    // ];
 
-    for (final d in delays) {
-      await Future.delayed(d);
-      if (!mounted) return;
+    await Future.delayed(Duration(seconds: 3));
+    if (!mounted) return;
 
-      context.read<FullImageBloc>().add(
-        RequestFullImageEvent(
-          stockId: id,
-          pictureFileName: fileName,
-          forceRefresh: true,
-        ),
-      );
+    context.read<FullImageBloc>().add(
+      RequestFullImageEvent(
+        stockId: id,
+        pictureFileName: fileName,
+        forceRefresh: true,
+      ),
+    );
 
-      context.read<ThumbnailBloc>().add(
-        RequestThumbnailEvent(
-          stockId: id,
-          pictureFileName: fileName,
-          forceRefresh: true,
-        ),
-      );
-    }
+    context.read<ThumbnailBloc>().add(
+      RequestThumbnailEvent(
+        stockId: id,
+        pictureFileName: fileName,
+        forceRefresh: true,
+      ),
+    );
   }
 
   @override

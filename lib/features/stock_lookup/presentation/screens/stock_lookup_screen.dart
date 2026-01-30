@@ -520,7 +520,14 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           child: FadeInAnimation(
             child: GestureDetector(
               onTap: () {
-               
+                // context.read<FullImageBloc>().add(
+                //   RequestFullImageEvent(
+                //     stockId: stock.stockID,
+                //     pictureFileName: stock.pictureFileName ?? "",
+                //     forceRefresh: true
+                //   ),
+                // );
+
                 context.navigateToNext(StockDetailsScreen(stock: stock));
               },
               child: Container(
