@@ -88,15 +88,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
     }
   }
 
-
   void _submitAutoCount() {
-  if (countingStock == null) return;
+    if (countingStock == null) return;
 
-  context.read<StocktakeBloc>().add(
-    Stocktake(qty: "1", stock: countingStock!), 
-  );
-}
-
+    context.read<StocktakeBloc>().add(
+      Stocktake(qty: "1", stock: countingStock!),
+    );
+  }
 
   @override
   void initState() {
@@ -233,7 +231,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                       // Same item → increment
                                       if (_lastAutoBarcode == barcode) {
                                         ++_autoQty;
-                                        //qtyController.text = _autoQty.toString(); 
+                                        //qtyController.text = _autoQty.toString();
                                       } else {
                                         // New item → reset
                                         _lastAutoBarcode = barcode;
@@ -245,7 +243,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                       // _submitCount();
 
                                       _submitAutoCount();
-
                                     }
                                   }
                                 },
@@ -300,7 +297,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         : double.parse(total.toStringAsFixed(2)).toString();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16, left: 15, right: 15, top: 15),
+      padding: const EdgeInsets.only(bottom: 10, left: 15, right: 15, top: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -324,6 +321,22 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // Container(
+                    //   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                    //   decoration: BoxDecoration(
+                    //     color: kPrimaryColor.withOpacity(0.2),
+                    //     borderRadius: BorderRadius.circular(8),
+                    //   ),
+                    //   child:   SizedBox(
+                    //     width: 20,
+                    //     height: 20,
+                    //     child: Image.asset(
+                    //       "assets/images/bc_blue.png",
+                    //       fit: BoxFit.fill,
+                    //     ),
+                    //   ),
+                    // ),
+                    // const SizedBox(width: 5,),
                     Expanded(
                       child: Text(
                         stock == null ? "Stock Barcode" : stock.barcode,
@@ -345,13 +358,26 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         color: kPrimaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(
-                        "In System: $qty",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: kPrimaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 25,
+                            height: 25,
+                            child: Image.asset(
+                              "assets/images/qty_blue.png",
+                              fit: BoxFit.fill,
+                            ),
+                          ),
+                          const SizedBox(width: 5,),
+                          Text(
+                            "In System: $qty",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: kPrimaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -359,7 +385,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 const SizedBox(height: 15),
 
                 _stockDetailsListTile(
-                  color: Colors.green,
+                  image: "assets/images/desc_blue.png",
+                  color: kPrimaryColor,
                   title: "Description",
                   icon: Icons.description,
                   value: stock == null
@@ -368,6 +395,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 ),
                 const SizedBox(height: 8),
                 _stockDetailsListTile(
+                  image: "assets/images/dept_blue.png",
+                  color: kPrimaryColor,
+                  title: "Department",
+                  icon: Icons.description,
+                  value: stock == null
+                      ? "-"
+                      : stock.deptName ?? "-",
+                ),
+                const SizedBox(height: 8),
+                _stockDetailsListTile(
+                  image: "assets/images/cat_blue.png",
                   color: Colors.orangeAccent,
                   title: "Categories",
                   icon: Icons.category_outlined,
@@ -378,6 +416,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
                 const SizedBox(height: 8),
                 _stockDetailsListTile(
+                  image: "assets/images/cus1_blue.png",
                   color: Colors.blue,
                   title: "Custom 1",
                   icon: Icons.format_paint,
@@ -385,6 +424,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 ),
                 const SizedBox(height: 8),
                 _stockDetailsListTile(
+                  image: "assets/images/cus2_blue.png",
                   color: Colors.deepOrange,
                   title: "Custom 2",
                   icon: Icons.settings,
@@ -392,6 +432,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 ),
                 const SizedBox(height: 8),
                 _stockDetailsListTile(
+                  image: "assets/images/layby_blue.png",
                   color: Colors.purple,
                   title: "Lay-By",
                   icon: Icons.numbers,
@@ -399,6 +440,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 ),
                 const SizedBox(height: 8),
                 _stockDetailsListTile(
+                  image: "assets/images/so_blue.png",
                   color: Colors.yellow,
                   title: "Sales Order",
                   icon: Icons.history,
@@ -407,6 +449,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
                 const SizedBox(height: 8),
                 _stockDetailsListTile(
+                  image: "assets/images/total_blue.png",
                   color: Colors.lightBlue,
                   title: "Total",
                   icon: Icons.check,
@@ -418,7 +461,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
 
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 15),
+            margin: const EdgeInsets.symmetric(vertical: 10),
             height: 40, // Taller Input
             child: CustomTextField(
               hintText: 'Manual Barcode Entry',
@@ -475,7 +518,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 5),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -598,6 +641,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   Widget _stockDetailsListTile({
+    required String image,
     required IconData icon,
     required Color color,
     required String title,
@@ -612,10 +656,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(15),
+                color: kPrimaryColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 16, color: color),
+              child:   SizedBox(
+                width: 20,
+                height: 20,
+                child: Image.asset(
+                  image,
+                  fit: BoxFit.fill,
+                ),
+              ),
             ),
 
             const SizedBox(width: 8),

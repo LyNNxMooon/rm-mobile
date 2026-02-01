@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/entities/response/audit_report_response.dart';
 import 'package:rmstock_scanner/entities/vos/audit_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
+
 import '../../../entities/vos/stock_vo.dart';
 import '../../../local_db/local_db_dao.dart';
 import '../../../network/LAN_sharing/lan_network_service_impl.dart';
@@ -118,6 +119,12 @@ class StocktakeModel implements StocktakeRepo {
               barcode: currentStock.barcode,
               description: currentStock.description,
             );
+
+            // await LocalDbDAO.instance.updateStockQuantity(
+            //   stockId: (currentStock.stockID).toInt(),
+            //   shopfront: shopfrontName,
+            //   newQuantity: newQuantity,
+            // );
           }
         }
       }

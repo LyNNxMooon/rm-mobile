@@ -75,18 +75,46 @@ class SendFinalStocktakeToRm {
               .reduce((a, b) => a.isAfter(b) ? a : b);
         }
 
+        List<CountedStockVO> adjustedData = List.from(unsyncedStocks);
+
+        if (auditData.isNotEmpty) {
+          for (var auditRecord in auditData) {
+            final audit = auditRecord.audit;
+
+            int index = adjustedData.indexWhere(
+              (s) => s.stockID == audit.stockId,
+            );
+
+            if (index != -1) {
+              final currentStock = adjustedData[index];
+
+              final newQuantity = currentStock.quantity + audit.movement;
+
+              adjustedData[index] = CountedStockVO(
+                stockID: currentStock.stockID,
+                stocktakeDate: currentStock.stocktakeDate,
+                quantity: newQuantity,
+                dateModified: DateTime.now(),
+                isSynced: currentStock.isSynced,
+                barcode: currentStock.barcode,
+                description: currentStock.description,
+              );
+            }
+          }
+        }
+
         await LocalDbDAO.instance.saveStocktakeHistorySession(
           sessionId: sessionId,
           shopfront: shopfront,
           mobileDeviceId: mobileInfo.deviceId,
           mobileDeviceName: mobileInfo.name,
-          totalStocks: unsyncedStocks.length,
+          totalStocks: adjustedData.length,
           dateStarted: dateStarted,
           dateEnded: dateEnded,
-          items: unsyncedStocks,
+          items: adjustedData,
         );
 
-        final List<int> stockIds = unsyncedStocks
+        final List<int> stockIds = adjustedData
             .map((s) => s.stockID)
             .toList();
 
