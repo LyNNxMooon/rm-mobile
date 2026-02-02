@@ -60,12 +60,23 @@ class _BreathingStockLoaderState extends State<BreathingStockLoader>
         ),
     
         // Your Lottie Animation
+        // Padding(
+        //   padding: const EdgeInsets.only(bottom: 20),
+        //   child: SizedBox(
+        //     width: 200, // Slightly smaller to fit inside rings
+        //     height: 200,
+        //     child: Lottie.asset(
+        //       "assets/animations/empty.json",
+        //       fit: BoxFit.fill,
+        //     ),
+        //   ),
+        // ),
         SizedBox(
-          width: 170, // Slightly smaller to fit inside rings
-          height: 170,
-          child: Lottie.asset(
-            "assets/animations/loading-stock.json",
-            fit: BoxFit.cover,
+          width: 80, // Slightly smaller to fit inside rings
+          height: 80,
+          child: Image.asset(
+            "assets/images/empty.png",
+            fit: BoxFit.fill,
           ),
         ),
       ],
