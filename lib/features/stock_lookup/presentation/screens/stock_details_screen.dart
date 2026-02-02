@@ -433,6 +433,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: DetailedUpperGlass(
+                        dept: widget.stock.deptName ?? "-",
                         barcode: widget.stock.barcode,
                         qty:
                             "Qty On-Hand: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",

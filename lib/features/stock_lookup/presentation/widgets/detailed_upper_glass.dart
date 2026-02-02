@@ -20,6 +20,7 @@ class DetailedUpperGlass extends StatefulWidget {
     required this.cost,
     required this.sell,
     required this.exCost,
+    required this.dept
   });
 
   final String barcode;
@@ -33,6 +34,7 @@ class DetailedUpperGlass extends StatefulWidget {
   final double cost;
   final double sell;
   final double exCost;
+  final String dept;
 
   @override
   State<DetailedUpperGlass> createState() => _DetailedUpperGlassState();
@@ -212,7 +214,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                 icon: Icons.category_outlined,
                 label: 'Department',
                 iconBgColor: Colors.grey,
-                value: widget.cats,
+                value: widget.dept,
               ),
               const SizedBox(height: 8),
               StockInfoRow(
