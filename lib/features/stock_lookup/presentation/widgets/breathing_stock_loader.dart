@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
+//import 'package:lottie/lottie.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
 
 class BreathingStockLoader extends StatefulWidget {
