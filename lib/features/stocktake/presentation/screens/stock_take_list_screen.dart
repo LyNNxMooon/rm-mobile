@@ -26,6 +26,7 @@ import '../widgets/loading_stocktake_dialog.dart';
 import '../widgets/stocktake_commit_error_dialog.dart';
 import '../widgets/stocktake_list_app_bar.dart';
 import '../widgets/stocktake_search_and_filter_bar.dart';
+import '../widgets/stocktake_success_dialog.dart';
 
 class Debouncer {
   final int milliseconds;
@@ -171,14 +172,25 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         }
 
         if (state is SentStocktakeToRM) {
-          showTopSnackBar(
-            Overlay.of(context),
-            CustomSnackBar.success(message: state.message),
+
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => StocktakeSuccessDialog(
+              message: state.message,
+              onOkayPressed: () {
+
+                Navigator.of(context).pop();
+
+                context.read<FetchingStocktakeListBloc>().add(
+                  FetchStocktakeListEvent(),
+                ); context.read<FetchingStocktakeListBloc>().add(
+                  FetchStocktakeListEvent(),
+                );
+              },
+            ),
           );
 
-          context.read<FetchingStocktakeListBloc>().add(
-            FetchStocktakeListEvent(),
-          );
         }
       },
       builder: (context, state) {
@@ -403,7 +415,6 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
 
                 showDialog(
                   context: context,
-
                   builder: (context) => const StockDetailsDialog(),
                 );
               },
@@ -431,6 +442,8 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                       color: kGreyColor,
                     ),
                     const SizedBox(width: 15),
+
+                    // --- RESPONSIVE CONTENT ---
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -444,20 +457,41 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                               fontSize: 14,
                             ),
                           ),
-                          Text(
-                            stock.barcode,
-                            style: TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: kPrimaryColor,
-                            ),
+                          const SizedBox(height: 2), // Spacing
+                          Wrap( // Wrap handles overflow better than Row here
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              Text(
+                                stock.barcode,
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: kPrimaryColor,
+                                ),
+                              ),
+                              // Vertical Divider Visual
+                              Text(
+                                "|",
+                                style: TextStyle(color: kGreyColor, fontSize: 12),
+                              ),
+                              Text(
+                                "In-Stock: ${stock.inStock}",
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: kPrimaryColor,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 10),
-                    _buildQtyBadge(stock.quantity.toString()),
+                    _buildQtyBadge(stock.quantity),
                   ],
                 ),
               ),
@@ -468,7 +502,22 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     );
   }
 
-  Widget _buildQtyBadge(String qty) {
+  // --- UPDATED QUANTITY BADGE ---
+  Widget _buildQtyBadge(num qty) {
+    String formattedQty;
+
+    if (qty % 1 == 0) {
+      // It's an integer (e.g. 5.0 -> "5")
+      formattedQty = qty.toInt().toString();
+    } else {
+      // It's a decimal. Limit to 4 decimal places and remove trailing zeros.
+      // e.g. 5.123456 -> "5.1235"
+      // e.g. 5.5000 -> "5.5"
+      formattedQty = qty.toStringAsFixed(4);
+      // Remove trailing zeros and unnecessary decimal point
+      formattedQty = formattedQty.replaceAll(RegExp(r"([.]*0+)(?!.*\d)"), "");
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -476,7 +525,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        qty,
+        "Counted: $formattedQty",
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w900,
@@ -485,7 +534,6 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
       ),
     );
   }
-
   Widget _buildValidationDialog(StocktakeValidationHasAudits state) {
     final double safeMaxHeight = MediaQuery.of(context).size.height * 0.7;
 

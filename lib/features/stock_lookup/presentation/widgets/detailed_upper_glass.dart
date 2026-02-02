@@ -19,6 +19,7 @@ class DetailedUpperGlass extends StatefulWidget {
     required this.soQty,
     required this.cost,
     required this.sell,
+    required this.exCost,
   });
 
   final String barcode;
@@ -31,6 +32,7 @@ class DetailedUpperGlass extends StatefulWidget {
   final String soQty;
   final double cost;
   final double sell;
+  final double exCost;
 
   @override
   State<DetailedUpperGlass> createState() => _DetailedUpperGlassState();
@@ -76,10 +78,14 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded( // Responsive Text
+                  Expanded(
+                    // Responsive Text
                     child: Text(
                       widget.barcode,
-                      style: getSmartTitle(color: kSecondaryColor, fontSize: 18), // Increased readability
+                      style: getSmartTitle(
+                        color: kSecondaryColor,
+                        fontSize: 18,
+                      ), // Increased readability
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -94,9 +100,25 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       color: kSecondaryColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Text(
-                      widget.qty,
-                      style: const TextStyle(fontSize: 14, color: kSecondaryColor),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 25,
+                          height: 25,
+                          child: Image.asset(
+                            "assets/images/qty.png",
+                            fit: BoxFit.fill,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          widget.qty,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: kSecondaryColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -105,7 +127,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
 
               // Description Field
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center, // Align center vertically
+                crossAxisAlignment:
+                    CrossAxisAlignment.center, // Align center vertically
                 children: [
                   // Label & Icon Group
                   Row(
@@ -115,18 +138,24 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                         padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
                           color: Colors.green.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(15),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
-                          Icons.description,
-                          size: 15,
-                          color: kSecondaryColor,
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: Image.asset(
+                            "assets/images/desc.png",
+                            fit: BoxFit.fill,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       const Text(
                         "Description",
-                        style: TextStyle(fontSize: 14, color: kSecondaryColor), // Readability
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: kSecondaryColor,
+                        ), // Readability
                       ),
                     ],
                   ),
@@ -146,10 +175,15 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                         decoration: InputDecoration(
                           //enabled: false,
                           hintText: "Description",
-                          hintStyle: const TextStyle(color: kGreyColor, fontSize: 14),
+                          hintStyle: const TextStyle(
+                            color: kGreyColor,
+                            fontSize: 14,
+                          ),
                           filled: true,
                           fillColor: Colors.transparent,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(7),
                             borderSide: BorderSide(
@@ -174,6 +208,15 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
 
               const SizedBox(height: 8),
               StockInfoRow(
+                image: "assets/images/dept.png",
+                icon: Icons.category_outlined,
+                label: 'Department',
+                iconBgColor: Colors.grey,
+                value: widget.cats,
+              ),
+              const SizedBox(height: 8),
+              StockInfoRow(
+                image: "assets/images/cat.png",
                 icon: Icons.category_outlined,
                 label: 'Categories',
                 iconBgColor: Colors.orangeAccent,
@@ -181,6 +224,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               ),
               const SizedBox(height: 8),
               StockInfoRow(
+                image: "assets/images/cus1.png",
                 icon: Icons.format_paint,
                 iconBgColor: Colors.blue,
                 label: "Custom1",
@@ -188,6 +232,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               ),
               const SizedBox(height: 8),
               StockInfoRow(
+                image: "assets/images/cus2.png",
                 icon: Icons.settings,
                 iconBgColor: Colors.deepOrange,
                 label: "Custom2",
@@ -195,6 +240,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               ),
               const SizedBox(height: 8),
               StockInfoRow(
+                image: "assets/images/layby.png",
                 icon: Icons.numbers,
                 iconBgColor: Colors.purple,
                 label: "Lay-By Qty",
@@ -202,6 +248,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               ),
               const SizedBox(height: 8),
               StockInfoRow(
+                image: "assets/images/so.png",
                 icon: Icons.history,
                 iconBgColor: Colors.yellow,
                 label: "SO Qty",
@@ -209,10 +256,19 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               ),
               const SizedBox(height: 8),
               StockInfoRow(
+                image: "assets/images/cost_white.png",
                 icon: Icons.monetization_on_outlined,
                 iconBgColor: Colors.lightBlue,
                 label: "Inc Cost",
                 value: widget.cost.toStringAsFixed(4),
+              ),
+              const SizedBox(height: 8),
+              StockInfoRow(
+                image: "assets/images/cost_white.png",
+                icon: Icons.monetization_on_outlined,
+                iconBgColor: Colors.pinkAccent,
+                label: "Ex Cost",
+                value: widget.exCost.toStringAsFixed(4),
               ),
             ],
           ),
@@ -227,6 +283,7 @@ class StockInfoRow extends StatelessWidget {
   final Color iconBgColor;
   final String label;
   final String value;
+  final String image;
 
   const StockInfoRow({
     super.key,
@@ -234,12 +291,15 @@ class StockInfoRow extends StatelessWidget {
     required this.iconBgColor,
     required this.label,
     required this.value,
+    required this.image,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0), // Increased padding for touchability
+      padding: const EdgeInsets.symmetric(
+        vertical: 6.0,
+      ), // Increased padding for touchability
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -251,20 +311,26 @@ class StockInfoRow extends StatelessWidget {
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: iconBgColor.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 15, color: kSecondaryColor),
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: Image.asset(image, fit: BoxFit.fill),
+                ),
               ),
               const SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(fontSize: 14, color: kSecondaryColor), // Increased font size
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: kSecondaryColor,
+                ), // Increased font size
               ),
             ],
           ),
 
           const SizedBox(width: 15), // Gap
-
           // Flexible Value Text (Right Aligned)
           Expanded(
             child: Text(

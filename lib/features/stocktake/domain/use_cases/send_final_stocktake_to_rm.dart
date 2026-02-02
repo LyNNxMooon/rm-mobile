@@ -98,6 +98,7 @@ class SendFinalStocktakeToRm {
                 isSynced: currentStock.isSynced,
                 barcode: currentStock.barcode,
                 description: currentStock.description,
+                inStock: currentStock.inStock
               );
             }
           }

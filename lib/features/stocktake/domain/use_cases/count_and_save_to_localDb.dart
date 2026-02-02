@@ -35,9 +35,22 @@ class CountAndSaveToLocaldb {
         parsedQty = inputAsDouble.round();
       }
 
+
+      num inStock;
+      if (stock.allowFractions == true) {
+        // If fractional is allowed, parse directly to double
+        inStock = double.tryParse(stock.quantity.toString()) ?? 0.0;
+      } else {
+        // If not allowed, parse input and round to nearest integer
+        // We parse as double first in case the user typed a dot by accident
+        double inputAsDouble = double.tryParse(stock.quantity.toString()) ?? 0.0;
+        inStock = inputAsDouble.round();
+      }
+
       final processedStock = CountedStockVO(
         stockID: stock.stockID.toInt(),
         quantity: parsedQty.toDouble(),
+        inStock: inStock,
         stocktakeDate: DateTime.now(),
         dateModified: DateTime.now(),
         isSynced: false,

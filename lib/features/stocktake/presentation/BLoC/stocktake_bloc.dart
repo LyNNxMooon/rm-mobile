@@ -361,7 +361,11 @@ class SendingFinalStocktakeBloc
     try {
       await sendFinalStocktakeToRm(event.auditData);
 
-      emit(SentStocktakeToRM("Stocktake data commited to RetailManager!"));
+      emit(
+        SentStocktakeToRM(
+          "Stocktake data sent to RetailManager! Please navigate to Stock Management -> Stocktake -> Run Discrepancy Report and Commit the Stocktake.",
+        ),
+      );
     } catch (error) {
       emit(ErrorSendingStocktake("Error sending stocktake list: $error"));
     }

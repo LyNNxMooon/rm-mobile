@@ -82,7 +82,25 @@ class StockDetailsDialog extends StatelessWidget {
 
             // 3. Loaded State - Show Details & Edit Form
             if (state is StockDetailsLoaded) {
+              double sell = 0.00;
+              double cost = 0.00;
+
+              if ((state.stock.goodsTax ?? "") == "GST") {
+                cost = state.stock.cost * 1.1;
+              } else {
+                cost = state.stock.cost;
+              }
+
+              if ((state.stock.salesTax ?? "") == "GST") {
+                sell = state.stock.sell * 1.1;
+              } else {
+                sell = state.stock.sell;
+              }
+
               return _EditQuantityForm(
+                inStock: state.stock.quantity,
+                sell: sell,
+                cost: cost,
                 stock: state.stock,
                 currentQty: state.qty,
                 onUpdate: (newQty) {
@@ -105,12 +123,18 @@ class StockDetailsDialog extends StatelessWidget {
 class _EditQuantityForm extends StatefulWidget {
   final StockVO stock;
   final num currentQty;
+  final double cost;
+  final double sell;
+  final num inStock;
   final Function(num newQty) onUpdate;
 
   const _EditQuantityForm({
     required this.stock,
     required this.currentQty,
     required this.onUpdate,
+    required this.cost,
+    required this.sell,
+    required this.inStock
   });
 
   @override
@@ -121,6 +145,8 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
   late TextEditingController _qtyController;
   final FocusNode _focusNode = FocusNode();
 
+  String qty = "";
+
   @override
   void initState() {
     super.initState();
@@ -129,6 +155,11 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
         : widget.currentQty.toString();
 
     _qtyController = TextEditingController(text: initialValue);
+
+    qty = (widget.inStock % 1 == 0)
+        ? widget.inStock.toInt().toString()
+        : widget.inStock.toString();
+
 
     // Auto-focus logic
     // WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -203,6 +234,11 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
               children: [
                 _buildDetailRow(Icons.qr_code, "Barcode", widget.stock.barcode),
                 _buildDetailRow(
+                  Icons.layers_outlined,
+                  "Department",
+                  widget.stock.deptName ?? "-",
+                ),
+                _buildDetailRow(
                   Icons.category_outlined,
                   "Categories",
                   "${widget.stock.category1 ?? '-'} / ${widget.stock.category2 ?? '-'} / ${widget.stock.category3 ?? '-'}",
@@ -223,14 +259,19 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                   widget.stock.supplier,
                 ),
                 _buildDetailRow(
-                  Icons.layers_outlined,
-                  "Stock ID",
-                  widget.stock.stockID.toString(),
+                  Icons.attach_money,
+                  "Cost Price",
+                  "\$${widget.cost.toStringAsFixed(2)}",
                 ),
                 _buildDetailRow(
                   Icons.attach_money,
                   "Sell Price",
-                  "\$${widget.stock.sell.toStringAsFixed(2)}",
+                  "\$${widget.sell.toStringAsFixed(2)}",
+                ),
+                _buildDetailRow(
+                  CupertinoIcons.cube_box_fill,
+                  "In-Stock",
+                  qty,
                 ),
 
                 // Add more fields here if needed from StockVO

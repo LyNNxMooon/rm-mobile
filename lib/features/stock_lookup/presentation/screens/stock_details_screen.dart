@@ -435,7 +435,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                       child: DetailedUpperGlass(
                         barcode: widget.stock.barcode,
                         qty:
-                            "In System: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
+                            "Qty On-Hand: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
                         description: widget.stock.description,
                         cats:
                             "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
@@ -455,6 +455,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                   2,
                                 ),
                               ).toString(),
+                        exCost: widget.stock.cost,
                       ),
                     ),
 
@@ -462,7 +463,14 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: DetailedLowerGlass(sell: sell),
+                      child: DetailedLowerGlass(
+                        sell: sell,
+                        exSell: widget.stock.sell,
+                        incCost: cost,
+                        exCost: widget.stock.cost,
+                        isGst: (widget.stock.salesTax ?? "") == "GST",
+
+                      ),
                     ),
 
                     const SizedBox(height: 100),

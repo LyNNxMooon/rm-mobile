@@ -567,6 +567,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
             'stock_id': s.stockID,
             'shopfront': shopfront,
             'quantity': s.quantity,
+            'inStock' : s.inStock,
             'stocktake_date': s.stocktakeDate.toIso8601String(),
             'date_modified': s.dateModified.toIso8601String(),
             'description': s.description,

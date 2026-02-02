@@ -118,6 +118,7 @@ class StocktakeModel implements StocktakeRepo {
               isSynced: currentStock.isSynced,
               barcode: currentStock.barcode,
               description: currentStock.description,
+              inStock: currentStock.inStock
             );
 
             // await LocalDbDAO.instance.updateStockQuantity(
@@ -174,6 +175,7 @@ class StocktakeModel implements StocktakeRepo {
         'stock_id': stock.stockID,
         'shopfront': shopfront,
         'quantity': stock.quantity,
+        'inStock' : stock.inStock,
         'stocktake_date': stock.stocktakeDate.toIso8601String(),
         'date_modified': stock.dateModified.toIso8601String(),
         'is_synced': stock.isSynced ? 1 : 0,
@@ -201,6 +203,7 @@ class StocktakeModel implements StocktakeRepo {
           isSynced: map['is_synced'] == 1,
           description: map['description'],
           barcode: map['barcode'],
+          inStock: map['inStock']
         );
       }).toList();
     } on Exception catch (error) {

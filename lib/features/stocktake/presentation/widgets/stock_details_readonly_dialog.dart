@@ -69,7 +69,27 @@ class StockDetailsReadOnlyDialog extends StatelessWidget {
 
             // 3. Loaded State - Show Read-Only View
             if (state is StockDetailsLoaded) {
+
+              double sell = 0.00;
+              double cost = 0.00;
+
+              if ((state.stock.goodsTax ?? "") == "GST") {
+                cost = state.stock.cost * 1.1;
+              } else {
+                cost = state.stock.cost;
+              }
+
+              if ((state.stock.salesTax ?? "") == "GST") {
+                sell = state.stock.sell * 1.1;
+              } else {
+                sell = state.stock.sell;
+              }
+
+
               return _ReadOnlyDetailsView(
+                inStock: state.stock.quantity,
+                sell: sell,
+                cost: cost,
                 stock: state.stock,
                 currentQty: state.qty,
               );
@@ -83,21 +103,42 @@ class StockDetailsReadOnlyDialog extends StatelessWidget {
   }
 }
 
-class _ReadOnlyDetailsView extends StatelessWidget {
+class _ReadOnlyDetailsView extends StatefulWidget {
   final StockVO stock;
   final num currentQty;
+  final double cost;
+  final double sell;
+  final num inStock;
 
   const _ReadOnlyDetailsView({
     required this.stock,
     required this.currentQty,
+    required this.cost,
+    required this.sell,
+    required this.inStock
   });
 
   @override
+  State<_ReadOnlyDetailsView> createState() => _ReadOnlyDetailsViewState();
+}
+
+class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
+
+  String qty = "";
+
+  @override
+  void initState() {
+    qty = (widget.inStock % 1 == 0)
+        ? widget.inStock.toInt().toString()
+        : widget.inStock.toString();
+    super.initState();
+  }
+  @override
   Widget build(BuildContext context) {
     // Format quantity cleanly (e.g. 5 instead of 5.0)
-    final String formattedQty = (currentQty % 1 == 0)
-        ? currentQty.toInt().toString()
-        : currentQty.toString();
+    final String formattedQty = (widget.currentQty % 1 == 0)
+        ? widget.currentQty.toInt().toString()
+        : widget.currentQty.toString();
 
     return Column(
       mainAxisSize: MainAxisSize.min, // Wrap content height
@@ -117,7 +158,7 @@ class _ReadOnlyDetailsView extends StatelessWidget {
               ),
               const SizedBox(height: 5),
               Text(
-                stock.description,
+                widget.stock.description,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                     color: kThirdColor, fontWeight: FontWeight.w600, fontSize: 14),
@@ -169,24 +210,38 @@ class _ReadOnlyDetailsView extends StatelessWidget {
                   ),
                 ),
 
-                _buildDetailRow(Icons.qr_code, "Barcode", stock.barcode),
+                _buildDetailRow(Icons.qr_code, "Barcode", widget.stock.barcode),
+                _buildDetailRow(
+                  Icons.layers_outlined,
+                  "Department",
+                  widget.stock.deptName ?? "-",
+                ),
                 _buildDetailRow(
                     Icons.category_outlined,
                     "Categories",
-                    "${stock.category1 ?? '-'} / ${stock.category2 ?? '-'} / ${stock.category3 ?? '-'}"),
+                    "${widget.stock.category1 ?? '-'} / ${widget.stock.category2 ?? '-'} / ${widget.stock.category3 ?? '-'}"),
                 _buildDetailRow(
-                    Icons.text_fields, "Custom 1", stock.custom1 ?? "-"),
+                    Icons.text_fields, "Custom 1", widget.stock.custom1 ?? "-"),
                 _buildDetailRow(
-                    Icons.text_fields, "Custom 2", stock.custom2 ?? "-"),
+                    Icons.text_fields, "Custom 2", widget.stock.custom2 ?? "-"),
                 _buildDetailRow(Icons.shopping_bag_outlined, "Supplier",
-                    stock.supplier),
-                _buildDetailRow(Icons.layers_outlined, "Stock ID",
-                    stock.stockID.toString()),
+                    widget.stock.supplier),
                 _buildDetailRow(
-                    Icons.attach_money,
-                    "Sell Price",
-                    "\$${stock.sell.toStringAsFixed(2)}"),
-                
+                  Icons.attach_money,
+                  "Cost Price",
+                  "\$${widget.cost.toStringAsFixed(2)}",
+                ),
+                _buildDetailRow(
+                  Icons.attach_money,
+                  "Sell Price",
+                  "\$${widget.sell.toStringAsFixed(2)}",
+                ),
+                _buildDetailRow(
+                  CupertinoIcons.cube_box_fill,
+                  "In-Stock",
+                  qty,
+                ),
+
                 // Add more fields if needed
               ],
             ),

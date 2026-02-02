@@ -370,7 +370,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                           ),
                           const SizedBox(width: 5,),
                           Text(
-                            "In System: $qty",
+                            "Qty On-Hand: $qty",
                             style: const TextStyle(
                               fontSize: 14,
                               color: kPrimaryColor,

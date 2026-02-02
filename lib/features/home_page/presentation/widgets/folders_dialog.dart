@@ -332,6 +332,8 @@ class _FoldersDialogState extends State<FoldersDialog> {
                     backgroundColor: kSecondaryColor,
                     iconColor: kPrimaryColor,
                     textColor: kThirdColor,
+                    position: MessagePosition.top,
+                    padding: 70,
                   );
 
                   context.navigateUntilFirst();
