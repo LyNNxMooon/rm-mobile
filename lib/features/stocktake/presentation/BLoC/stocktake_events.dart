@@ -1,3 +1,4 @@
+import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
@@ -62,3 +63,16 @@ class FetchStocktakeListEvent extends StocktakeEvent {
 class NextStocktakePageEvent extends StocktakeEvent {}
 
 class PrevStocktakePageEvent extends StocktakeEvent {}
+
+class BackUpStocktakeEvent extends StocktakeEvent {}
+
+
+//backup
+abstract class BackupRestoreEvent {}
+
+class LoadBackupSessionsEvent extends BackupRestoreEvent {}
+
+class RestoreBackupSessionEvent extends BackupRestoreEvent {
+  final BackupSessionVO session;
+  RestoreBackupSessionEvent(this.session);
+}

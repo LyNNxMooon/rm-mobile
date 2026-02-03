@@ -43,6 +43,7 @@ abstract class LanNetworkService {
     required String fileName,
     required String fileContent,
     required bool isCheck,
+    required bool isBackup,
   });
 
   Future<void> sendStockRequest({
@@ -106,5 +107,21 @@ abstract class LanNetworkService {
     required String fileName, // must end with .jpg
     required Uint8List jpgBytes,
     bool deleteSamePrefixFirst = true,
+  });
+
+  Future<List<String>> listBackupFiles({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String mobileId,
+  });
+
+  Future<Uint8List> downloadBackupFileBytes({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String fileName,
   });
 }

@@ -1,3 +1,5 @@
+import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
+import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
@@ -15,6 +17,17 @@ abstract class StocktakeRepo {
   );
 
   Future commitToLanFolder({
+    required String address,
+    required String fullPath,
+    required String? username,
+    required String? password,
+    required String mobileName,
+    required String mobileID,
+    required String shopfrontName,
+    required List<CountedStockVO> dataToSync,
+  });
+
+  Future backupToLanFodler({
     required String address,
     required String fullPath,
     required String? username,
@@ -53,5 +66,21 @@ abstract class StocktakeRepo {
     required int pageIndex,
     required int pageSize,
     String? query,
+  });
+
+  Future<List<BackupSessionVO>> fetchBackupSessions({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String mobileId,
+  });
+
+  Future<List<BackupStocktakeItemVO>> fetchBackupItems({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String fileName,
   });
 }

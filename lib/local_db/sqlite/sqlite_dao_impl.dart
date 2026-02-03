@@ -1,5 +1,6 @@
 import 'package:path/path.dart';
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
+import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
@@ -215,78 +216,135 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }) async {
     try {
       final db = _database!;
-      String orderBy = "$sortColumn ${ascending ? 'ASC' : 'DESC'}";
+      final String q = query.trim();
 
-      // Base where clause
-      String whereClause = 'shopfront = ?';
-      List<dynamic> args = [shopfront];
+      const allowedColumns = <String>{
+        'stock_id',
+        'shopfront',
+        'Barcode',
+        'description',
+        'dept_name',
+        'dept_id',
+        'custom1',
+        'custom2',
+        'cat1',
+        'cat2',
+        'cat3',
+        'supplier',
+        'quantity',
+        'picture_file_name',
+        'date_modified',
+        'cost',
+        'sell',
+      };
 
-      // Add Search logic if query exists
-      if (query.isNotEmpty) {
-        // Use LIKE for partial matches
-        whereClause += ' AND $filterColumn LIKE ?';
-        args.add('%$query%');
-      }
+      final String safeSortColumn = allowedColumns.contains(sortColumn)
+          ? sortColumn
+          : 'description';
 
-      //ADD FILTER LOGIC (New)
+      final String orderBy = "$safeSortColumn ${ascending ? 'ASC' : 'DESC'}";
+
+      String baseWhere = 'shopfront = ?';
+      final List<dynamic> baseArgs = [shopfront];
+
       if (filters != null) {
         if (filters.dept != null) {
-          whereClause += ' AND dept_name = ?';
-          args.add(filters.dept);
+          baseWhere += ' AND dept_name = ?';
+          baseArgs.add(filters.dept);
         }
         if (filters.cat1 != null) {
-          whereClause += ' AND cat1 = ?';
-          args.add(filters.cat1);
+          baseWhere += ' AND cat1 = ?';
+          baseArgs.add(filters.cat1);
         }
         if (filters.cat2 != null) {
-          whereClause += ' AND cat2 = ?';
-          args.add(filters.cat2);
+          baseWhere += ' AND cat2 = ?';
+          baseArgs.add(filters.cat2);
         }
         if (filters.cat3 != null) {
-          whereClause += ' AND cat3 = ?';
-          args.add(filters.cat3);
+          baseWhere += ' AND cat3 = ?';
+          baseArgs.add(filters.cat3);
         }
-        // Text fields use LIKE for partial matching
         if (filters.supplier != null && filters.supplier!.isNotEmpty) {
-          whereClause += ' AND supplier LIKE ?';
-          args.add('%${filters.supplier}%');
+          baseWhere += ' AND supplier LIKE ?';
+          baseArgs.add('%${filters.supplier!}%');
         }
         if (filters.custom1 != null && filters.custom1!.isNotEmpty) {
-          whereClause += ' AND custom1 LIKE ?';
-          args.add('%${filters.custom1}%');
+          baseWhere += ' AND custom1 LIKE ?';
+          baseArgs.add('%${filters.custom1!}%');
         }
         if (filters.custom2 != null && filters.custom2!.isNotEmpty) {
-          whereClause += ' AND custom2 LIKE ?';
-          args.add('%${filters.custom2}%');
+          baseWhere += ' AND custom2 LIKE ?';
+          baseArgs.add('%${filters.custom2!}%');
         }
       }
 
-      //Get filtered count (Parallel query for performance)
-      final countFuture = db.rawQuery(
-        'SELECT COUNT(*) as count FROM Stocks WHERE $whereClause',
-        args,
-      );
+      Future<PaginatedStockResult> runQuery({
+        required String whereClause,
+        required List<dynamic> args,
+      }) async {
+        final countFuture = db.rawQuery(
+          'SELECT COUNT(*) as count FROM Stocks WHERE $whereClause',
+          args,
+        );
 
-      //Get paginated data
-      final dataFuture = db.query(
-        'Stocks',
-        where: whereClause,
-        whereArgs: args,
-        orderBy: orderBy,
-        limit: limit,
-        offset: offset,
-      );
+        final dataFuture = db.query(
+          'Stocks',
+          where: whereClause,
+          whereArgs: args,
+          orderBy: orderBy,
+          limit: limit,
+          offset: offset,
+        );
 
-      final results = await Future.wait([dataFuture, countFuture]);
+        final results = await Future.wait([dataFuture, countFuture]);
 
-      final List<StockVO> items = (results[0] as List<Map<String, dynamic>>)
-          .map((e) => StockVO.fromJson(e))
-          .toList();
+        final List<StockVO> items = (results[0] as List<Map<String, dynamic>>)
+            .map((e) => StockVO.fromJson(e))
+            .toList();
 
-      final int count =
-          Sqflite.firstIntValue(results[1] as List<Map<String, dynamic>>) ?? 0;
+        final int count =
+            Sqflite.firstIntValue(results[1] as List<Map<String, dynamic>>) ??
+            0;
 
-      return PaginatedStockResult(items, count);
+        return PaginatedStockResult(items, count);
+      }
+
+      if (q.isEmpty) {
+        return runQuery(whereClause: baseWhere, args: baseArgs);
+      }
+
+      final bool isBarcodeOrDescription =
+          filterColumn == 'Barcode' || filterColumn == 'description';
+
+      if (isBarcodeOrDescription) {
+        final barcodeWhere = '$baseWhere AND Barcode LIKE ?';
+        final barcodeArgs = [...baseArgs, '%$q%'];
+
+        final barcodeCountRes = await db.rawQuery(
+          'SELECT COUNT(*) as count FROM Stocks WHERE $barcodeWhere',
+          barcodeArgs,
+        );
+        final int barcodeCount = Sqflite.firstIntValue(barcodeCountRes) ?? 0;
+
+        if (barcodeCount > 0) {
+          return runQuery(whereClause: barcodeWhere, args: barcodeArgs);
+        }
+
+        final descWhere = '$baseWhere AND description LIKE ?';
+        final descArgs = [...baseArgs, '%$q%'];
+        return runQuery(whereClause: descWhere, args: descArgs);
+      }
+
+      if (!allowedColumns.contains(filterColumn)) {
+        // Safety fallback
+        final safeWhere = '$baseWhere AND description LIKE ?';
+        final safeArgs = [...baseArgs, '%$q%'];
+        return runQuery(whereClause: safeWhere, args: safeArgs);
+      }
+
+      final whereClause = '$baseWhere AND $filterColumn LIKE ?';
+      final args = [...baseArgs, '%$q%'];
+      return runQuery(whereClause: whereClause, args: args);
     } catch (error) {
       logger.e('Error searching stocks: $error');
       return Future.error(error);
@@ -525,6 +583,78 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
   //Save Data
 
+  Future<Map<int, Map<String, dynamic>>> _getStockBasicsByIds({
+    required Database db,
+    required String shopfront,
+    required List<int> ids,
+  }) async {
+    final Map<int, Map<String, dynamic>> out = {};
+
+    const int batchSize = 200;
+    for (int i = 0; i < ids.length; i += batchSize) {
+      final batch = ids.skip(i).take(batchSize).toList();
+      final placeholders = List.filled(batch.length, '?').join(',');
+
+      final rows = await db.rawQuery(
+        '''
+      SELECT stock_id, Barcode, description, quantity
+      FROM Stocks
+      WHERE shopfront = ?
+        AND stock_id IN ($placeholders)
+    ''',
+        [shopfront, ...batch],
+      );
+
+      for (final r in rows) {
+        final id = (r['stock_id'] as num).toInt();
+        out[id] = r;
+      }
+    }
+    return out;
+  }
+
+  @override
+  Future<void> restoreStocktakeFromBackup({
+    required String shopfront,
+    required List<BackupStocktakeItemVO> items,
+  }) async {
+    final db = _database!;
+    if (items.isEmpty) return;
+
+    final ids = items.map((e) => e.stockId).toSet().toList();
+
+    final basics = await _getStockBasicsByIds(
+      db: db,
+      shopfront: shopfront,
+      ids: ids,
+    );
+
+    await db.transaction((txn) async {
+      for (final it in items) {
+        final b = basics[it.stockId];
+
+        final barcode = (b?['Barcode']?.toString() ?? "");
+        final desc = (b?['description']?.toString() ?? "Stock #${it.stockId}");
+
+        // inStock comes from Stocks.quantity (safe fallback 0)
+        final inStockNum = b?['quantity'];
+        final int inStock = (inStockNum is num) ? inStockNum.toInt() : 0;
+
+        await txn.insert('Stocktake', {
+          'stock_id': it.stockId,
+          'shopfront': shopfront,
+          'quantity': (it.quantity).toInt(),
+          'inStock': inStock,
+          'stocktake_date': it.stocktakeDate.toIso8601String(),
+          'date_modified': it.dateModified.toIso8601String(),
+          'is_synced': 0,
+          'description': desc,
+          'barcode': barcode,
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
+  }
+
   @override
   Future<void> setHistoryRetentionDays(int days) async {
     try {
@@ -567,7 +697,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
             'stock_id': s.stockID,
             'shopfront': shopfront,
             'quantity': s.quantity,
-            'inStock' : s.inStock,
+            'inStock': s.inStock,
             'stocktake_date': s.stocktakeDate.toIso8601String(),
             'date_modified': s.dateModified.toIso8601String(),
             'description': s.description,

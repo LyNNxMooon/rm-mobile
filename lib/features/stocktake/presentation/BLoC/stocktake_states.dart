@@ -1,3 +1,4 @@
+import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stocktake_history_session_row.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
@@ -126,6 +127,25 @@ class ErrorCommitingStocktake extends CommitingStocktakeStates {
   ErrorCommitingStocktake(this.message);
 }
 
+//Backing up stocktake
+abstract class BackUpStocktakeStates {}
+
+class BackupStocktakeInitial extends BackUpStocktakeStates {}
+
+class LoadingToBackupStocktake extends BackUpStocktakeStates {}
+
+class BackedUpStocktake extends BackUpStocktakeStates {
+  final String message;
+
+  BackedUpStocktake(this.message);
+}
+
+class ErrorBackupStocktake extends BackUpStocktakeStates {
+  final String message;
+
+  ErrorBackupStocktake(this.message);
+}
+
 //Stocktake Validation
 abstract class StocktakeValidationState {}
 
@@ -196,4 +216,29 @@ class StocktakeHistoryItemsLoaded extends StocktakeHistoryState {
 class StocktakeHistoryError extends StocktakeHistoryState {
   final String message;
   StocktakeHistoryError(this.message);
+}
+
+
+//Backup
+abstract class BackupRestoreState {}
+
+class BackupRestoreInitial extends BackupRestoreState {}
+
+class BackupRestoreLoading extends BackupRestoreState {}
+
+class BackupRestoreSessionsLoaded extends BackupRestoreState {
+  final List<BackupSessionVO> sessions;
+  BackupRestoreSessionsLoaded(this.sessions);
+}
+
+class BackupRestoreRestoring extends BackupRestoreState {}
+
+class BackupRestoreDone extends BackupRestoreState {
+  final String message;
+  BackupRestoreDone(this.message);
+}
+
+class BackupRestoreError extends BackupRestoreState {
+  final String message;
+  BackupRestoreError(this.message);
 }

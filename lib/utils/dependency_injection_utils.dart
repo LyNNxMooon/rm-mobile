@@ -8,11 +8,14 @@ import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_ful
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_thumbnail.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/upload_stock_image.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/repositories/stocktake_repo.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/backup_stocktake.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counted_stock_by_id.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessions.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sesstion_items.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_page.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/load_backup_sessions.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/restore_backup_session.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/update_stock_count.dart';
 import '../features/home_page/domain/use_cases/auto_connect_to_default_folder.dart';
@@ -89,6 +92,10 @@ Future<void> init() async {
   sl.registerFactory(() => StockDetailsBloc(fetchCountedStockById: sl()));
   sl.registerFactory(() => StockCountUpdateBloc(updateStockCount: sl()));
   sl.registerFactory(() => StockImageUploadBloc(uploadUseCase: sl()));
+  sl.registerFactory(() => BackupStocktakeBloc(backupStocktake: sl()));
+  sl.registerFactory(
+    () => BackupRestoreBloc(loadSessions: sl(), restoreSession: sl()),
+  );
 
   //Repos
   sl.registerLazySingleton<HomeRepo>(() => HomeScreenModels());
@@ -126,4 +133,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateStockCount(sl()));
   sl.registerLazySingleton(() => FetchStocktakePage(sl()));
   sl.registerLazySingleton(() => UploadStockImageUseCase(sl()));
+  sl.registerLazySingleton(() => BackupStocktake(sl()));
+  sl.registerLazySingleton(() => LoadBackupSessions(sl()));
+  sl.registerLazySingleton(() => RestoreBackupSession(sl()));
 }

@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/entities/response/audit_report_response.dart';
 import 'package:rmstock_scanner/entities/vos/audit_item_vo.dart';
+import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
+import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
@@ -76,6 +79,7 @@ class StocktakeModel implements StocktakeRepo {
         fileName: fileName,
         fileContent: jsonContent,
         isCheck: true,
+        isBackup: false,
       );
     } on Exception catch (error) {
       return Future.error(error);
@@ -118,7 +122,7 @@ class StocktakeModel implements StocktakeRepo {
               isSynced: currentStock.isSynced,
               barcode: currentStock.barcode,
               description: currentStock.description,
-              inStock: currentStock.inStock
+              inStock: currentStock.inStock,
             );
 
             // await LocalDbDAO.instance.updateStockQuantity(
@@ -159,6 +163,7 @@ class StocktakeModel implements StocktakeRepo {
         fileName: fileName,
         fileContent: jsonContent,
         isCheck: false,
+        isBackup: false,
       );
     } on Exception catch (error) {
       return Future.error(error);
@@ -175,7 +180,7 @@ class StocktakeModel implements StocktakeRepo {
         'stock_id': stock.stockID,
         'shopfront': shopfront,
         'quantity': stock.quantity,
-        'inStock' : stock.inStock,
+        'inStock': stock.inStock,
         'stocktake_date': stock.stocktakeDate.toIso8601String(),
         'date_modified': stock.dateModified.toIso8601String(),
         'is_synced': stock.isSynced ? 1 : 0,
@@ -203,7 +208,7 @@ class StocktakeModel implements StocktakeRepo {
           isSynced: map['is_synced'] == 1,
           description: map['description'],
           barcode: map['barcode'],
-          inStock: map['inStock']
+          inStock: map['inStock'],
         );
       }).toList();
     } on Exception catch (error) {
@@ -284,11 +289,8 @@ class StocktakeModel implements StocktakeRepo {
     try {
       num parsedQty;
       if (stock.allowFractions == true) {
-        // If fractional is allowed, parse directly to double
         parsedQty = double.tryParse(newQty) ?? 0.0;
       } else {
-        // If not allowed, parse input and round to nearest integer
-        // We parse as double first in case the user typed a dot by accident
         double inputAsDouble = double.tryParse(newQty) ?? 0.0;
         parsedQty = inputAsDouble.round();
       }
@@ -325,6 +327,132 @@ class StocktakeModel implements StocktakeRepo {
     );
 
     return StocktakePagedResult(items: items, totalCount: total);
+  }
+
+  @override
+  Future backupToLanFodler({
+    required String address,
+    required String fullPath,
+    required String? username,
+    required String? password,
+    required String mobileName,
+    required String mobileID,
+    required String shopfrontName,
+    required List<CountedStockVO> dataToSync,
+  }) async {
+    try {
+      final String jsonContent = _StocktakeJsonBuilder.buildJson(
+        dataToSync,
+        mobileID,
+        mobileName,
+        shopfrontName,
+      );
+
+      final now = DateTime.now();
+
+      String pad(int value) => value.toString().padLeft(2, '0');
+
+      final String timestamp =
+          "${now.year}"
+          "${pad(now.month)}"
+          "${pad(now.day)}"
+          "${pad(now.hour)}"
+          "${pad(now.minute)}"
+          "${pad(now.second)}";
+
+      String shopfrontInFileName = shopfrontName.split(r'\').last;
+
+      final String fileName =
+          "${mobileID}_backup_${shopfrontInFileName}_$timestamp.json.gz";
+
+      return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(
+        address: address,
+        fullPath: fullPath,
+        username: username ?? AppGlobals.instance.defaultUserName,
+        password: password ?? AppGlobals.instance.defaultPwd,
+        fileName: fileName,
+        fileContent: jsonContent,
+        isCheck: false,
+        isBackup: true,
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<List<BackupStocktakeItemVO>> fetchBackupItems({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String fileName,
+  }) async {
+    final Uint8List gzBytes = await LanNetworkServiceImpl.instance
+        .downloadBackupFileBytes(
+          address: address,
+          fullPath: fullPath,
+          username: username,
+          password: password,
+          fileName: fileName,
+        );
+
+    final jsonString = utf8.decode(GZipCodec().decode(gzBytes));
+    final Map<String, dynamic> decoded = jsonDecode(jsonString);
+
+    final List items = (decoded['data'] as List?) ?? [];
+
+    return items.map((e) {
+      final m = e as Map<String, dynamic>;
+      return BackupStocktakeItemVO(
+        stockId: (m['stock_id'] as num).toInt(),
+        quantity: (m['quantity'] as num),
+        stocktakeDate: DateTime.parse(m['stocktake_date'].toString()),
+        dateModified: DateTime.parse(m['date_modified'].toString()),
+      );
+    }).toList();
+  }
+
+  @override
+  Future<List<BackupSessionVO>> fetchBackupSessions({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String mobileId,
+  }) async {
+    final names = await LanNetworkServiceImpl.instance.listBackupFiles(
+      address: address,
+      fullPath: fullPath,
+      username: username,
+      password: password,
+      mobileId: mobileId,
+    );
+
+    return names.map((file) {
+      final dt = _parseTimestampFromFileName(file) ?? DateTime.now();
+      return BackupSessionVO(fileName: file, createdAt: dt);
+    }).toList();
+  }
+
+  DateTime? _parseTimestampFromFileName(String fileName) {
+    final end = fileName.indexOf(".json");
+
+    if (end < 14) return null;
+
+    final ts = fileName.substring(end - 14, end);
+
+    try {
+      final y = int.parse(ts.substring(0, 4));
+      final mo = int.parse(ts.substring(4, 6));
+      final d = int.parse(ts.substring(6, 8));
+      final h = int.parse(ts.substring(8, 10));
+      final mi = int.parse(ts.substring(10, 12));
+      final s = int.parse(ts.substring(12, 14));
+      return DateTime(y, mo, d, h, mi, s);
+    } catch (_) {
+      return null;
+    }
   }
 }
 

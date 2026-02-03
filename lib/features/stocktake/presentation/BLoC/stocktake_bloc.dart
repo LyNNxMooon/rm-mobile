@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/backup_stocktake.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/commit_stocktake.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counted_stock_by_id.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counting_stock.dart';
@@ -6,6 +7,8 @@ import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessio
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sesstion_items.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_page.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/load_backup_sessions.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/restore_backup_session.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/update_stock_count.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
@@ -293,6 +296,40 @@ class CommittingStocktakeBloc
   }
 }
 
+//backup
+class BackupStocktakeBloc extends Bloc<StocktakeEvent, BackUpStocktakeStates> {
+  final BackupStocktake backupStocktake;
+
+  BackupStocktakeBloc({required this.backupStocktake})
+    : super(BackupStocktakeInitial()) {
+    on<BackUpStocktakeEvent>(_onBackupStocktake);
+  }
+
+  Future<void> _onBackupStocktake(
+    BackUpStocktakeEvent event,
+    Emitter<BackUpStocktakeStates> emit,
+  ) async {
+    emit(LoadingToBackupStocktake());
+    try {
+      await backupStocktake();
+
+      emit(BackedUpStocktake("Stocktake Backed Up to Shared Folder!"));
+    } catch (error) {
+      if (error is String) {
+        emit(ErrorBackupStocktake("Error backing up stocktake list: $error"));
+      } else {
+        var e = error as dynamic;
+
+        emit(
+          ErrorBackupStocktake(
+            "Error backing up stocktake list: ${e.message.toString()}",
+          ),
+        );
+      }
+    }
+  }
+}
+
 class StocktakeValidationBloc
     extends Bloc<StocktakeEvent, StocktakeValidationState> {
   final FetchStocktakeAuditReport fetchStocktakeAuditReport;
@@ -405,6 +442,47 @@ class StocktakeHistoryBloc extends Bloc<StocktakeEvent, StocktakeHistoryState> {
       emit(StocktakeHistoryItemsLoaded(event.sessionId, items));
     } catch (e) {
       emit(StocktakeHistoryError(e.toString()));
+    }
+  }
+}
+
+
+//Backup
+class BackupRestoreBloc extends Bloc<BackupRestoreEvent, BackupRestoreState> {
+  final LoadBackupSessions loadSessions;
+  final RestoreBackupSession restoreSession;
+
+  BackupRestoreBloc({
+    required this.loadSessions,
+    required this.restoreSession,
+  }) : super(BackupRestoreInitial()) {
+    on<LoadBackupSessionsEvent>(_onLoad);
+    on<RestoreBackupSessionEvent>(_onRestore);
+  }
+
+  Future<void> _onLoad(
+    LoadBackupSessionsEvent event,
+    Emitter<BackupRestoreState> emit,
+  ) async {
+    emit(BackupRestoreLoading());
+    try {
+      final sessions = await loadSessions();
+      emit(BackupRestoreSessionsLoaded(sessions));
+    } catch (e) {
+      emit(BackupRestoreError(e.toString()));
+    }
+  }
+
+  Future<void> _onRestore(
+    RestoreBackupSessionEvent event,
+    Emitter<BackupRestoreState> emit,
+  ) async {
+    emit(BackupRestoreRestoring());
+    try {
+      await restoreSession(event.session);
+      emit(BackupRestoreDone("Backup restored into Stocktake list."));
+    } catch (e) {
+      emit(BackupRestoreError(e.toString()));
     }
   }
 }

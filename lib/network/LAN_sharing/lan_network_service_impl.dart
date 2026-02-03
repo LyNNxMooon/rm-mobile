@@ -219,6 +219,7 @@ class LanNetworkServiceImpl implements LanNetworkService {
     required String fileName,
     required String fileContent,
     required bool isCheck,
+    required bool isBackup,
   }) async {
     final connect = await SmbConnect.connectAuth(
       host: address,
@@ -238,7 +239,9 @@ class LanNetworkServiceImpl implements LanNetworkService {
         cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
       }
 
-      final String incomingPath = "$cleanedPath/incoming";
+      final String incomingPath = isBackup
+          ? "$cleanedPath/incoming/backup"
+          : "$cleanedPath/incoming";
       final folder = await connect.file(incomingPath);
       final files = await connect.listFiles(folder);
 
@@ -653,6 +656,99 @@ class LanNetworkServiceImpl implements LanNetworkService {
       await writer.close();
     } catch (e) {
       return Future.error(e.toString());
+    } finally {
+      await connect.close();
+    }
+  }
+
+  @override
+  Future<Uint8List> downloadBackupFileBytes({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String fileName,
+  }) async {
+    final connect = await SmbConnect.connectAuth(
+      host: address,
+      domain: "",
+      username: username,
+      password: password,
+    );
+
+    try {
+      String cleanedPath = fullPath
+          .replaceFirst(RegExp(r'^//'), '')
+          .replaceFirst(address, '')
+          .replaceFirst(RegExp(r'^/'), '');
+
+      if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
+      if (cleanedPath.endsWith('/')) {
+        cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
+      }
+
+      final String filePath = "$cleanedPath/incoming/backup/$fileName";
+
+      final smbFile = await connect.file(filePath);
+      final stream = await connect.openRead(smbFile);
+
+      final List<int> bytes = [];
+      await for (final chunk in stream) {
+        bytes.addAll(chunk);
+      }
+
+      return Uint8List.fromList(bytes);
+    } finally {
+      await connect.close();
+    }
+  }
+
+  @override
+  Future<List<String>> listBackupFiles({
+    required String address,
+    required String fullPath,
+    required String username,
+    required String password,
+    required String mobileId,
+  }) async {
+    final connect = await SmbConnect.connectAuth(
+      host: address,
+      domain: "",
+      username: username,
+      password: password,
+    );
+
+    try {
+      String cleanedPath = fullPath
+          .replaceFirst(RegExp(r'^//'), '')
+          .replaceFirst(address, '')
+          .replaceFirst(RegExp(r'^/'), '');
+
+      if (cleanedPath.startsWith('/')) cleanedPath = cleanedPath.substring(1);
+      if (cleanedPath.endsWith('/')) {
+        cleanedPath = cleanedPath.substring(0, cleanedPath.length - 1);
+      }
+
+      final String backupDir = "$cleanedPath/incoming/backup";
+      final folder = await connect.file(backupDir);
+
+      // folder might not exist yet
+      if (!folder.isExists) return [];
+
+      final files = await connect.listFiles(folder);
+
+      final matches = files
+          .where(
+            (f) =>
+                !f.isDirectory() &&
+                f.name.startsWith("${mobileId}_backup_") &&
+                f.name.endsWith(".json.gz"),
+          )
+          .toList();
+
+      matches.sort((a, b) => b.createTime.compareTo(a.createTime));
+
+      return matches.map((f) => f.name).toList();
     } finally {
       await connect.close();
     }

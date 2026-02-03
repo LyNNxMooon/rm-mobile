@@ -8,6 +8,7 @@ import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/screens/stock_take_list_screen.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/widgets/stocktake_question_dialog.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
@@ -60,7 +61,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
   void _submitCount() {
     if (countingStock == null) {
       if (isManualCount) {
-        // Only show error toast in manual mode to avoid spam in auto
         showTopSnackBar(
           Overlay.of(context),
           const CustomSnackBar.error(message: "No valid stock selected!"),
@@ -69,21 +69,44 @@ class _ScannerScreenState extends State<ScannerScreen> {
       return;
     }
 
-    if (qtyController.text.isEmpty) return;
+    final qtyText = qtyController.text.trim();
+    if (qtyText.isEmpty) return;
 
+    if (countingStock!.barcode == qtyText) {
+      showDialog(
+        context: context,
+        builder: (context) => StocktakeQuestionDialog(
+          title: "RetailManager Question",
+          message:
+              "The same number has been entered for Stock Code and Count. Is this correct?",
+          onYesPressed: () {
+            _dispatchStocktake(qtyText);
+            context.navigateBack();
+          },
+          onNoPressed: () {
+            context.navigateBack();
+          },
+        ),
+      );
+      return;
+    }
+
+    // Normal submission
+    _dispatchStocktake(qtyText);
+  }
+
+  void _dispatchStocktake(String qty) {
     context.read<StocktakeBloc>().add(
-      Stocktake(qty: qtyController.text, stock: countingStock!),
+      Stocktake(qty: qty, stock: countingStock!),
     );
 
-    // If manual, clear after submit to be ready for next
-    // If auto, we leave it as is or handle in the listener
     if (isManualCount) {
       qtyController.clear();
       setState(() {
         _bcController.clear();
         countingStock = null;
       });
-      // Reset scanner state to ready for next item
+
       context.read<ScannerBloc>().add(ResetStocktakeEvent(ScannerInitial()));
     }
   }
@@ -368,7 +391,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                               fit: BoxFit.fill,
                             ),
                           ),
-                          const SizedBox(width: 5,),
+                          const SizedBox(width: 5),
                           Text(
                             "Qty On-Hand: $qty",
                             style: const TextStyle(
@@ -399,9 +422,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   color: kPrimaryColor,
                   title: "Department",
                   icon: Icons.description,
-                  value: stock == null
-                      ? "-"
-                      : stock.deptName ?? "-",
+                  value: stock == null ? "-" : stock.deptName ?? "-",
                 ),
                 const SizedBox(height: 8),
                 _stockDetailsListTile(
@@ -659,13 +680,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 color: kPrimaryColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child:   SizedBox(
+              child: SizedBox(
                 width: 20,
                 height: 20,
-                child: Image.asset(
-                  image,
-                  fit: BoxFit.fill,
-                ),
+                child: Image.asset(image, fit: BoxFit.fill),
               ),
             ),
 

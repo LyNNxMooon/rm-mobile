@@ -1,3 +1,4 @@
+import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
@@ -89,6 +90,10 @@ abstract class LocalDbDAO {
     required List<CountedStockVO> items,
   });
   Future<void> setHistoryRetentionDays(int days);
+  Future<void> restoreStocktakeFromBackup({
+    required String shopfront,
+    required List<BackupStocktakeItemVO> items,
+  });
 
   //Update Data
   Future<void> updateShopfrontByIp({
