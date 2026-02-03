@@ -126,6 +126,7 @@ class _MyAppState extends State<MyApp> {
           create: (_) => sl<BackupStocktakeBloc>(),
         ),
         BlocProvider<BackupRestoreBloc>(create: (_) => sl<BackupRestoreBloc>()),
+        BlocProvider<StockUpdateBloc>(create: (_) => sl<StockUpdateBloc>()),
       ],
       child: MaterialApp(
         title: 'RM-Mobile',

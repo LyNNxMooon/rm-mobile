@@ -35,6 +35,7 @@ import '../features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import '../features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
 import '../features/stock_lookup/domain/use_cases/get_filter_options.dart';
 import '../features/stock_lookup/domain/use_cases/get_paginated_stock.dart';
+import '../features/stock_lookup/domain/use_cases/update_single_stock.dart';
 import '../features/stock_lookup/models/stock_lookup_models.dart';
 import '../features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import '../features/stocktake/domain/use_cases/commit_stocktake.dart';
@@ -96,6 +97,7 @@ Future<void> init() async {
   sl.registerFactory(
     () => BackupRestoreBloc(loadSessions: sl(), restoreSession: sl()),
   );
+  sl.registerFactory(() => StockUpdateBloc(updateSingleStock: sl()));
 
   //Repos
   sl.registerLazySingleton<HomeRepo>(() => HomeScreenModels());
@@ -136,4 +138,5 @@ Future<void> init() async {
   sl.registerLazySingleton(() => BackupStocktake(sl()));
   sl.registerLazySingleton(() => LoadBackupSessions(sl()));
   sl.registerLazySingleton(() => RestoreBackupSession(sl()));
+  sl.registerLazySingleton(() => UpdateSingleStock(sl()));
 }

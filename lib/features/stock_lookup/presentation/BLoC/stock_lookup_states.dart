@@ -159,3 +159,20 @@ class StockImageUploadError extends StockImageUploadState {
   final String message;
   StockImageUploadError(this.message);
 }
+
+//Stock update
+abstract class StockUpdateState {}
+
+class StockUpdateInitial extends StockUpdateState {}
+
+class StockUpdateLoading extends StockUpdateState {}
+
+class StockUpdateSuccess extends StockUpdateState {
+  final String message;
+  StockUpdateSuccess(this.message);
+}
+
+class StockUpdateError extends StockUpdateState {
+  final String message;
+  StockUpdateError(this.message);
+}

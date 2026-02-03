@@ -289,34 +289,58 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
     );
 
-    return BlocListener<StockImageUploadBloc, StockImageUploadState>(
-      listener: (context, state) {
-        if (state is StockImageUploaded) {
-          AlertInfo.show(
-            context: context,
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<StockImageUploadBloc, StockImageUploadState>(
+          listener: (context, state) {
+            if (state is StockImageUploaded) {
+              AlertInfo.show(
+                context: context,
+                text: state.message,
+                typeInfo: TypeInfo.success,
+                backgroundColor: kSecondaryColor,
+                iconColor: kPrimaryColor,
+                textColor: kThirdColor,
+                padding: 70,
+                position: MessagePosition.top,
+              );
 
-            text: state.message,
+              _refreshImagesWithRetry();
+            }
 
-            typeInfo: TypeInfo.success,
+            if (state is StockImageUploadError) {
+              showTopSnackBar(
+                Overlay.of(context),
+                CustomSnackBar.error(message: state.message),
+              );
+            }
+          },
+        ),
 
-            backgroundColor: kSecondaryColor,
+        BlocListener<StockUpdateBloc, StockUpdateState>(
+          listener: (context, state) {
+            if (state is StockUpdateSuccess) {
+              AlertInfo.show(
+                context: context,
+                text: state.message,
+                typeInfo: TypeInfo.success,
+                backgroundColor: kSecondaryColor,
+                iconColor: kPrimaryColor,
+                textColor: kThirdColor,
+                padding: 70,
+                position: MessagePosition.top,
+              );
+            }
 
-            iconColor: kPrimaryColor,
-
-            textColor: kThirdColor,
-            padding: 70,
-            position: MessagePosition.top,
-          );
-
-          _refreshImagesWithRetry();
-        }
-        if (state is StockImageUploadError) {
-          showTopSnackBar(
-            Overlay.of(context),
-            CustomSnackBar.error(message: state.message),
-          );
-        }
-      },
+            if (state is StockUpdateError) {
+              showTopSnackBar(
+                Overlay.of(context),
+                CustomSnackBar.error(message: state.message),
+              );
+            }
+          },
+        ),
+      ],
       child: Scaffold(
         extendBodyBehindAppBar: true,
         extendBody: true,
@@ -335,9 +359,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   children: [
                     LayoutBuilder(
                       builder: (context, constraints) {
-                        double screenHeight = MediaQuery.of(
-                          context,
-                        ).size.height;
+                        double screenHeight = MediaQuery.of(context).size.height;
                         double imageHeight = screenHeight * 0.42;
 
                         if (imageHeight > 400) imageHeight = 400;
@@ -361,22 +383,19 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
                                   if (state is FullImageLoaded) {
                                     localPath =
-                                        state.imagePaths[widget.stock.stockID];
-                                    isLoading = state.loading.contains(
-                                      widget.stock.stockID,
-                                    );
+                                    state.imagePaths[widget.stock.stockID];
+                                    isLoading =
+                                        state.loading.contains(widget.stock.stockID);
                                     rev = state.rev[widget.stock.stockID] ?? 0;
                                   }
 
-                                  final bool hasFile =
-                                      localPath != null &&
+                                  final bool hasFile = localPath != null &&
                                       localPath.isNotEmpty &&
                                       File(localPath).existsSync();
 
                                   return Stack(
                                     fit: StackFit.expand,
                                     children: [
-                                      // BACKGROUND (blurred if file exists, else color)
                                       if (hasFile)
                                         Image.file(
                                           File(localPath),
@@ -387,6 +406,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                         )
                                       else
                                         Container(color: kSecondaryColor),
+
                                       BackdropFilter(
                                         filter: ImageFilter.blur(
                                           sigmaX: 0.6,
@@ -395,21 +415,23 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                         child: Container(
                                           color: Colors.black.withOpacity(0.04),
                                         ),
-                                      ), // CENTER IMAGE
+                                      ),
+
                                       Center(
                                         child: hasFile
                                             ? Image.file(
-                                                File(localPath),
-                                                key: ValueKey(
-                                                  'full_center_${widget.stock.stockID}_$rev',
-                                                ),
-                                                fit: BoxFit.contain,
-                                              )
+                                          File(localPath),
+                                          key: ValueKey(
+                                            'full_center_${widget.stock.stockID}_$rev',
+                                          ),
+                                          fit: BoxFit.contain,
+                                        )
                                             : Image.asset(
-                                                overviewPlaceholder,
-                                                fit: BoxFit.contain,
-                                              ),
-                                      ), // OPTIONAL: loading indicator overlay
+                                          overviewPlaceholder,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+
                                       if (!hasFile && isLoading)
                                         const Center(
                                           child: SizedBox(
@@ -436,10 +458,10 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         dept: widget.stock.deptName ?? "-",
                         barcode: widget.stock.barcode,
                         qty:
-                            "Qty On-Hand: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
+                        "Qty On-Hand: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
                         description: widget.stock.description,
                         cats:
-                            "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
+                        "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
                         cost: cost,
                         sell: sell,
                         custom1: widget.stock.custom1 ?? "-",
@@ -447,15 +469,13 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         layByQty: (widget.stock.laybyQuantity % 1 == 0)
                             ? widget.stock.laybyQuantity.toInt().toString()
                             : double.parse(
-                                widget.stock.laybyQuantity.toStringAsFixed(2),
-                              ).toString(),
+                          widget.stock.laybyQuantity.toStringAsFixed(2),
+                        ).toString(),
                         soQty: (widget.stock.salesOrderQuantity % 1 == 0)
                             ? widget.stock.salesOrderQuantity.toInt().toString()
                             : double.parse(
-                                widget.stock.salesOrderQuantity.toStringAsFixed(
-                                  2,
-                                ),
-                              ).toString(),
+                          widget.stock.salesOrderQuantity.toStringAsFixed(2),
+                        ).toString(),
                         exCost: widget.stock.cost,
                       ),
                     ),
@@ -465,12 +485,13 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: DetailedLowerGlass(
+                        description: widget.stock.description,
+                        stockId: widget.stock.stockID,
                         sell: sell,
                         exSell: widget.stock.sell,
                         incCost: cost,
                         exCost: widget.stock.cost,
                         isGst: (widget.stock.salesTax ?? "") == "GST",
-
                       ),
                     ),
 

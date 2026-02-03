@@ -11,6 +11,7 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lo
 import '../../../../utils/global_var_utils.dart';
 import '../../domain/use_cases/get_filter_options.dart';
 import '../../domain/use_cases/get_paginated_stock.dart';
+import '../../domain/use_cases/update_single_stock.dart';
 
 class StockListBloc extends Bloc<StockListEvent, StockListState> {
   final GetPaginatedStock getPaginatedStock;
@@ -295,6 +296,34 @@ class StockImageUploadBloc
       );
     } catch (e) {
       emit(StockImageUploadError(e.toString()));
+    }
+  }
+}
+
+//Stock update
+class StockUpdateBloc extends Bloc<StockUpdateEvent, StockUpdateState> {
+  final UpdateSingleStock updateSingleStock;
+
+  StockUpdateBloc({required this.updateSingleStock})
+      : super(StockUpdateInitial()) {
+    on<SubmitStockUpdateEvent>(_onSubmit);
+  }
+
+  Future<void> _onSubmit(
+      SubmitStockUpdateEvent event,
+      Emitter<StockUpdateState> emit,
+      ) async {
+    emit(StockUpdateLoading());
+    try {
+      await updateSingleStock(
+        stockId: event.stockId,
+        description: event.description,
+        sell: event.sell,
+      );
+
+      emit(StockUpdateSuccess("Update request sent to RM Agent."));
+    } catch (error) {
+      emit(StockUpdateError("Failed to send update: $error"));
     }
   }
 }

@@ -44,4 +44,17 @@ abstract class StockLookupRepo {
     required String fileName,
     required Uint8List jpgBytes,
   });
+
+  Future sendSingleStockUpdate({
+    required String address,
+    required String fullPath,
+    required String? username,
+    required String? password,
+    required String mobileName,
+    required String mobileID,
+    required String shopfrontName,
+    required int stockId,
+    required String description,
+    required double sell,
+  });
 }

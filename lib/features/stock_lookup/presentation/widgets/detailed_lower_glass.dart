@@ -1,7 +1,12 @@
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/price_calculator_dialog.dart';
 import '../../../../constants/colors.dart';
+import '../BLoC/stock_lookup_bloc.dart';
+import '../BLoC/stock_lookup_events.dart';
 
 class DetailedLowerGlass extends StatefulWidget {
   const DetailedLowerGlass({
@@ -11,6 +16,8 @@ class DetailedLowerGlass extends StatefulWidget {
     required this.incCost,
     required this.exCost,
     required this.isGst,
+    required this.description,
+    required this.stockId,
   });
 
   final double sell;
@@ -18,6 +25,8 @@ class DetailedLowerGlass extends StatefulWidget {
   final double incCost;
   final double exCost;
   final bool isGst;
+  final num stockId;
+  final String description;
 
   @override
   State<DetailedLowerGlass> createState() => _DetailedLowerGlassState();
@@ -90,24 +99,6 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
 
     _rrpController.text = incVal.toStringAsFixed(4);
   }
-
-  // void _openCalculator() async {
-  //   final double? result = await showDialog<double>(
-  //     context: context,
-  //     builder: (context) => PriceCalculatorDialog(
-  //       incCost: widget.incCost,
-  //       exCost: widget.exCost,
-  //       currentSell: double.tryParse(_rrpController.text) ?? 0.0,
-  //     ),
-  //   );
-  //
-  //   if (result != null && mounted) {
-  //     setState(() {
-  //       _rrpController.text = result.toStringAsFixed(4);
-  //       _exRrpController.text = (result / 1.1).toStringAsFixed(4);
-  //     });
-  //   }
-  // }
 
   void _openCalculator() async {
     final double? result = await showDialog<double>(
@@ -184,9 +175,12 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                     child: SizedBox(
                       height: 35,
                       child: TextField(
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         controller: _rrpController,
                         focusNode: _rrpFocus,
-                        keyboardType: TextInputType.number,
+                        //keyboardType: TextInputType.number,
                         style: const TextStyle(
                           fontSize: 14,
                           color: kSecondaryColor,
@@ -237,7 +231,9 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                       child: TextField(
                         controller: _exRrpController,
                         focusNode: _exRrpFocus,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         style: const TextStyle(
                           fontSize: 14,
                           color: kSecondaryColor,
@@ -286,7 +282,22 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
 
                   Expanded(
                     child: InkWell(
-                      onTap: () {},
+                      onTap: () {
+                        final sellText = _exRrpController.text.trim();
+                        final sellVal = double.tryParse(sellText);
+
+                        if (sellVal == null) {
+                          return;
+                        }
+
+                        context.read<StockUpdateBloc>().add(
+                          SubmitStockUpdateEvent(
+                            stockId: widget.stockId.toInt(),
+                            description: widget.description,
+                            sell: sellVal,
+                          ),
+                        );
+                      },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         decoration: _buttonDecoration(),
@@ -294,10 +305,18 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                           mainAxisAlignment:
                               MainAxisAlignment.center, // Centered
                           children: [
-                            Icon(
-                              Icons.arrow_circle_up,
-                              color: kPrimaryColor,
-                              size: 20,
+                            BlocBuilder<StockUpdateBloc, StockUpdateState>(
+                              builder: (context, state) {
+                                if (state is StockUpdateLoading) {
+                                  return CupertinoActivityIndicator(radius: 10,);
+                                } else {
+                                  return Icon(
+                                    Icons.arrow_circle_up,
+                                    color: kPrimaryColor,
+                                    size: 20,
+                                  );
+                                }
+                              },
                             ),
                             const SizedBox(width: 8),
                             const Text(

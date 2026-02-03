@@ -259,6 +259,8 @@ class LanNetworkServiceImpl implements LanNetworkService {
       }
 
       final String destinationPath = "$incomingPath/$fileName";
+
+      logger.d(destinationPath);
       final file = await connect.createFile(destinationPath);
       IOSink writer = await connect.openWrite(file);
 

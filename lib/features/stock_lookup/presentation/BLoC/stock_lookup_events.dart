@@ -52,3 +52,19 @@ class UploadStockImageEvent extends StockImageUploadEvent {
 
   UploadStockImageEvent({required this.stockId, required this.imagePath});
 }
+
+
+//Stock update
+abstract class StockUpdateEvent {}
+
+class SubmitStockUpdateEvent extends StockUpdateEvent {
+  final int stockId;
+  final String description;
+  final double sell;
+
+  SubmitStockUpdateEvent({
+    required this.stockId,
+    required this.description,
+    required this.sell,
+  });
+}

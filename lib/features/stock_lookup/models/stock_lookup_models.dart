@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -71,7 +72,7 @@ class StockLookupModels implements StockLookupRepo {
     required String? password,
     required String shopfrontName,
     required String pictureFileName,
-    bool forceRefresh = false, 
+    bool forceRefresh = false,
   }) async {
     try {
       if (pictureFileName.isEmpty) return null;
@@ -130,7 +131,7 @@ class StockLookupModels implements StockLookupRepo {
     required String? password,
     required String shopfrontName,
     required String pictureFileName,
-    bool forceRefresh = false, 
+    bool forceRefresh = false,
   }) async {
     try {
       if (pictureFileName.isEmpty) return null;
@@ -168,7 +169,6 @@ class StockLookupModels implements StockLookupRepo {
 
       await localFile.writeAsBytes(bytes, flush: true);
 
-
       logger.d("Lee pl kwar");
       return localPath;
     } catch (error) {
@@ -198,5 +198,91 @@ class StockLookupModels implements StockLookupRepo {
     } on Exception catch (e) {
       return Future.error(e);
     }
+  }
+
+  @override
+  Future sendSingleStockUpdate({
+    required String address,
+    required String fullPath,
+    required String? username,
+    required String? password,
+    required String mobileName,
+    required String mobileID,
+    required String shopfrontName,
+    required int stockId,
+    required String description,
+    required double sell,
+  }) async {
+    try {
+      final String jsonContent = _StockUpdateJsonBuilder.buildJson(
+        mobileId: mobileID,
+        mobileName: mobileName,
+        shopfrontName: shopfrontName,
+        stockId: stockId,
+        description: description,
+        sell: sell,
+      );
+
+      final now = DateTime.now();
+      String pad(int v) => v.toString().padLeft(2, '0');
+
+      final String timestamp =
+          "${now.year}"
+          "${pad(now.month)}"
+          "${pad(now.day)}"
+          "${pad(now.hour)}"
+          "${pad(now.minute)}"
+          "${pad(now.second)}";
+
+      final String fileName =
+          "${mobileID}_stockUpdate_$timestamp.json.gz";
+
+      logger.d(address);
+
+      return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(
+        address: address,
+        fullPath: fullPath,
+        username: username ?? AppGlobals.instance.defaultUserName,
+        password: password ?? AppGlobals.instance.defaultPwd,
+        fileName: fileName,
+        fileContent: jsonContent,
+        isCheck: true,
+        isBackup: false,
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+}
+
+class _StockUpdateJsonBuilder {
+  static String buildJson({
+    required String mobileId,
+    required String mobileName,
+    required String shopfrontName,
+    required int stockId,
+    required String description,
+    required double sell,
+  }) {
+    final now = DateTime.now().toIso8601String();
+
+    final Map<String, dynamic> finalMap = {
+      "mobile_device_id": mobileId,
+      "mobile_device_name": mobileName,
+      "shopfront": shopfrontName,
+      "total_stocks": 1,
+      "date_started": now,
+      "date_ended": now,
+      "data": [
+        {
+          "stock_id": stockId,
+          "description": description,
+          "sell": sell,
+          "date_modified": now,
+        }
+      ],
+    };
+
+    return const JsonEncoder.withIndent('  ').convert(finalMap);
   }
 }
