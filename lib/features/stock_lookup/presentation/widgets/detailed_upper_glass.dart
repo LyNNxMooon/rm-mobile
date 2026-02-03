@@ -11,7 +11,6 @@ class DetailedUpperGlass extends StatefulWidget {
     super.key,
     required this.barcode,
     required this.qty,
-    required this.description,
     required this.cats,
     required this.custom1,
     required this.custom2,
@@ -20,12 +19,13 @@ class DetailedUpperGlass extends StatefulWidget {
     required this.cost,
     required this.sell,
     required this.exCost,
-    required this.dept
+    required this.dept,
+    required this.descController,
   });
 
+  final LanguageToolController descController;
   final String barcode;
   final String qty;
-  final String description;
   final String cats;
   final String custom1;
   final String custom2;
@@ -41,22 +41,7 @@ class DetailedUpperGlass extends StatefulWidget {
 }
 
 class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
-  late final LanguageToolController _languageToolController;
-
-  @override
-  void initState() {
-    _languageToolController = LanguageToolController();
-    _languageToolController.text = widget.description;
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    if (!mounted) {
-      _languageToolController.dispose();
-    }
-    super.dispose();
-  }
+ 
 
   @override
   Widget build(BuildContext context) {
@@ -169,12 +154,15 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                     child: SizedBox(
                       height: 35, // Slightly taller for better touch target
                       child: LanguageToolTextField(
-                        controller: _languageToolController,
+
+                        controller: widget.descController,
                         style: const TextStyle(
                           fontSize: 14, // Increased font size
                           color: kSecondaryColor,
                         ),
+                        
                         decoration: InputDecoration(
+                          
                           //enabled: false,
                           hintText: "Description",
                           hintStyle: const TextStyle(

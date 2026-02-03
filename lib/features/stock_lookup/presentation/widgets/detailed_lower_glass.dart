@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:languagetool_textfield/languagetool_textfield.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/price_calculator_dialog.dart';
 import '../../../../constants/colors.dart';
@@ -16,8 +17,8 @@ class DetailedLowerGlass extends StatefulWidget {
     required this.incCost,
     required this.exCost,
     required this.isGst,
-    required this.description,
     required this.stockId,
+    required this.descController,
   });
 
   final double sell;
@@ -26,7 +27,7 @@ class DetailedLowerGlass extends StatefulWidget {
   final double exCost;
   final bool isGst;
   final num stockId;
-  final String description;
+  final LanguageToolController descController;
 
   @override
   State<DetailedLowerGlass> createState() => _DetailedLowerGlassState();
@@ -290,10 +291,12 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                           return;
                         }
 
+                        final updatedDescription = widget.descController.text;
+
                         context.read<StockUpdateBloc>().add(
                           SubmitStockUpdateEvent(
                             stockId: widget.stockId.toInt(),
-                            description: widget.description,
+                            description: updatedDescription,
                             sell: sellVal,
                           ),
                         );
@@ -308,7 +311,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                             BlocBuilder<StockUpdateBloc, StockUpdateState>(
                               builder: (context, state) {
                                 if (state is StockUpdateLoading) {
-                                  return CupertinoActivityIndicator(radius: 10,);
+                                  return CupertinoActivityIndicator(radius: 10);
                                 } else {
                                   return Icon(
                                     Icons.arrow_circle_up,

@@ -9,11 +9,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:languagetool_textfield/languagetool_textfield.dart';
 
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
@@ -36,8 +40,21 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   double sell = 0.00;
   double cost = 0.00;
 
+  late final LanguageToolController _descriptionController;
+
   @override
   void initState() {
+    _descriptionController = LanguageToolController();
+    _descriptionController.text = widget.stock.description;
+    _descriptionController.addListener(() {
+      if (_descriptionController.text.length > 40) {
+        final truncated = _descriptionController.text.substring(0, 40);
+        _descriptionController.value = TextEditingValue(
+          text: truncated,
+          selection: TextSelection.collapsed(offset: truncated.length),
+        );
+      }
+    });
     final pic = widget.stock.pictureFileName;
 
     if (pic != null && pic.isNotEmpty) {
@@ -284,6 +301,12 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   }
 
   @override
+  void dispose() {
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
@@ -320,15 +343,16 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         BlocListener<StockUpdateBloc, StockUpdateState>(
           listener: (context, state) {
             if (state is StockUpdateSuccess) {
-              AlertInfo.show(
-                context: context,
-                text: state.message,
-                typeInfo: TypeInfo.success,
-                backgroundColor: kSecondaryColor,
-                iconColor: kPrimaryColor,
-                textColor: kThirdColor,
-                padding: 70,
-                position: MessagePosition.top,
+              showTopSnackBar(
+                Overlay.of(context),
+                CustomSnackBar.success(message: state.message),
+              );
+
+              context.read<ShopFrontConnectionBloc>().add(
+                ConnectToShopfrontEvent(
+                  ip: AppGlobals.instance.currentHostIp ?? "",
+                  shopName: AppGlobals.instance.shopfront ?? "",
+                ),
               );
             }
 
@@ -359,7 +383,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   children: [
                     LayoutBuilder(
                       builder: (context, constraints) {
-                        double screenHeight = MediaQuery.of(context).size.height;
+                        double screenHeight = MediaQuery.of(
+                          context,
+                        ).size.height;
                         double imageHeight = screenHeight * 0.42;
 
                         if (imageHeight > 400) imageHeight = 400;
@@ -383,13 +409,15 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
                                   if (state is FullImageLoaded) {
                                     localPath =
-                                    state.imagePaths[widget.stock.stockID];
-                                    isLoading =
-                                        state.loading.contains(widget.stock.stockID);
+                                        state.imagePaths[widget.stock.stockID];
+                                    isLoading = state.loading.contains(
+                                      widget.stock.stockID,
+                                    );
                                     rev = state.rev[widget.stock.stockID] ?? 0;
                                   }
 
-                                  final bool hasFile = localPath != null &&
+                                  final bool hasFile =
+                                      localPath != null &&
                                       localPath.isNotEmpty &&
                                       File(localPath).existsSync();
 
@@ -420,16 +448,16 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                       Center(
                                         child: hasFile
                                             ? Image.file(
-                                          File(localPath),
-                                          key: ValueKey(
-                                            'full_center_${widget.stock.stockID}_$rev',
-                                          ),
-                                          fit: BoxFit.contain,
-                                        )
+                                                File(localPath),
+                                                key: ValueKey(
+                                                  'full_center_${widget.stock.stockID}_$rev',
+                                                ),
+                                                fit: BoxFit.contain,
+                                              )
                                             : Image.asset(
-                                          overviewPlaceholder,
-                                          fit: BoxFit.contain,
-                                        ),
+                                                overviewPlaceholder,
+                                                fit: BoxFit.contain,
+                                              ),
                                       ),
 
                                       if (!hasFile && isLoading)
@@ -455,13 +483,14 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: DetailedUpperGlass(
+                        descController: _descriptionController,
                         dept: widget.stock.deptName ?? "-",
                         barcode: widget.stock.barcode,
                         qty:
-                        "Qty On-Hand: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
-                        description: widget.stock.description,
+                            "Qty On-Hand: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
+
                         cats:
-                        "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
+                            "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
                         cost: cost,
                         sell: sell,
                         custom1: widget.stock.custom1 ?? "-",
@@ -469,13 +498,15 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         layByQty: (widget.stock.laybyQuantity % 1 == 0)
                             ? widget.stock.laybyQuantity.toInt().toString()
                             : double.parse(
-                          widget.stock.laybyQuantity.toStringAsFixed(2),
-                        ).toString(),
+                                widget.stock.laybyQuantity.toStringAsFixed(2),
+                              ).toString(),
                         soQty: (widget.stock.salesOrderQuantity % 1 == 0)
                             ? widget.stock.salesOrderQuantity.toInt().toString()
                             : double.parse(
-                          widget.stock.salesOrderQuantity.toStringAsFixed(2),
-                        ).toString(),
+                                widget.stock.salesOrderQuantity.toStringAsFixed(
+                                  2,
+                                ),
+                              ).toString(),
                         exCost: widget.stock.cost,
                       ),
                     ),
@@ -485,7 +516,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: DetailedLowerGlass(
-                        description: widget.stock.description,
+                        descController: _descriptionController,
                         stockId: widget.stock.stockID,
                         sell: sell,
                         exSell: widget.stock.sell,
