@@ -11,6 +11,12 @@ class FetchStockDetails extends StocktakeEvent {
   FetchStockDetails({required this.barcode});
 }
 
+class SelectDuplicateStock extends StocktakeEvent {
+  final StockVO selected;
+  SelectDuplicateStock({required this.selected});
+}
+
+
 class FetchStockDetailsByID extends StocktakeEvent {
   final int stockId;
   final num qty;

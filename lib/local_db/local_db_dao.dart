@@ -1,3 +1,4 @@
+import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
@@ -30,7 +31,7 @@ abstract class LocalDbDAO {
   Future<Map<String, dynamic>?> getSinglePathByIp(String ipAddress);
   Future<List<CountedStockVO>> getUnsyncedStocks(String shopfront);
   Future<List<Map<String, dynamic>>> getSyncedStocks(String shopfront);
-  Future<StockVO?> getStockBySearch(String query, String shopfront);
+  Future<StockSearchResult> getStockBySearch(String query, String shopfront);
   Future<PaginatedStockResult> searchAndSortStocks({
     required String shopfront,
     required String query,
@@ -66,6 +67,8 @@ abstract class LocalDbDAO {
     required int offset,
     String? query,
   });
+
+  Future<List<StockVO>> getStocksByBarcode(String barcode, String shopfront);
 
   // Setters to save data
   Future<void> saveCountedStock(Map<String, dynamic> stockData);

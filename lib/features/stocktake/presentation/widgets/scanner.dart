@@ -79,10 +79,10 @@ class _ScannerState extends State<Scanner> {
                           // The logic for "Increment & Save" is now in the Parent's BlocListener
                           // We reset _lastScannedBarcode only if needed, but for "rapid fire"
                           // distinct scans, we rely on the debounce above.
+                          _lastScannedBarcode = currentBarcode;
+                          // setState(() {
 
-                          setState(() {
-                            _lastScannedBarcode = currentBarcode;
-                          });
+                          // });
                           widget.onScan(currentBarcode);
                         });
                       }

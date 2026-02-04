@@ -1,3 +1,4 @@
+import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
@@ -5,7 +6,7 @@ import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 
 abstract class StocktakeRepo {
-  Future<StockVO?> fetchStockDetails(String barcode, String shopfront);
+  Future<StockSearchResult> fetchStockDetails(String barcode, String shopfront);
   Future<StockVO?> fetchStockDetailsByID(int id, String shopfront);
 
   Future stocktakeAndSaveToLocalDb(CountedStockVO stock, String shopfront);

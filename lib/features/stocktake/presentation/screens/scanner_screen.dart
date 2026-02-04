@@ -8,6 +8,7 @@ import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/screens/stock_take_list_screen.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/widgets/duplicate_stock_dialog.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/stocktake_question_dialog.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
@@ -53,6 +54,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
   late MobileScannerController scannerController;
   final TextEditingController qtyController = TextEditingController();
   final FocusNode qtyFocusNode = FocusNode();
+  final FocusNode txtFieldFocusNode = FocusNode();
 
   String? _lastAutoBarcode;
   int _autoQty = 0;
@@ -134,6 +136,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     scannerController.dispose();
     qtyController.dispose();
     qtyFocusNode.dispose();
+    txtFieldFocusNode.dispose();
     _bcController.dispose();
     super.dispose();
   }
@@ -225,7 +228,36 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                     return _buildProductDetailsPanel(null);
                                   }
                                 },
-                                listener: (context, state) {
+                                listener: (context, state) async {
+                                  if (state is StockDuplicatesFound) {
+                                    countingStock = null;
+
+                                    final selected = await showDialog<StockVO>(
+                                      context: context,
+                                      builder: (_) => DuplicateStockDialog(
+                                        matches: state.matches,
+                                      ),
+                                    );
+
+                                    if (selected != null && mounted) {
+                                      context.read<ScannerBloc>().add(
+                                        SelectDuplicateStock(
+                                          selected: selected,
+                                        ),
+                                      );
+
+                                      qtyFocusNode.requestFocus();
+                                      qtyController.selection = TextSelection(
+                                        baseOffset: 0,
+                                        extentOffset: qtyController.text.length,
+                                      );
+                                    } else {
+                                      // user cancelled - reset state (optional)
+                                      context.read<ScannerBloc>().add(
+                                        ResetStocktakeEvent(ScannerInitial()),
+                                      );
+                                    }
+                                  }
                                   if (state is StockError) {
                                     countingStock = null;
 
@@ -485,9 +517,20 @@ class _ScannerScreenState extends State<ScannerScreen> {
             margin: const EdgeInsets.symmetric(vertical: 10),
             height: 40, // Taller Input
             child: CustomTextField(
-              hintText: 'Manual Barcode Entry',
+              focusNode: txtFieldFocusNode,
+              submitFunction: (_) {
+                qtyFocusNode.requestFocus();
+                qtyController.selection = TextSelection(
+                  baseOffset: 0,
+                  extentOffset: qtyController.text.length,
+                );
+              },
+              hintText: 'Manual Barcode/Desc Entry',
               controller: _bcController,
               function: (value) {
+                if (value.trim().isEmpty) {
+                  return; // Do nothing
+                }
                 _debouncer.run(() {
                   context.read<ScannerBloc>().add(
                     FetchStockDetails(barcode: value),
@@ -524,7 +567,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     height: 35,
                     width: 100,
                     child: CustomTextField(
-                      submitFunction: (value) => _submitCount(),
+                      submitFunction: (value) {
+                        _submitCount();
+
+                        if (!isScan) {
+                          txtFieldFocusNode.requestFocus();
+                          _bcController.selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: _bcController.text.length,
+                          );
+                        }
+                      },
                       controller: qtyController,
                       focusNode: qtyFocusNode,
                       hintText: "Qty",
@@ -574,6 +627,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
                       _lastAutoBarcode = null;
                       _autoQty = 0;
+
+                      txtFieldFocusNode.unfocus();
+                      qtyFocusNode.unfocus();
                     });
                   },
                   icon: Icons.qr_code_scanner,

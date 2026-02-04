@@ -23,8 +23,12 @@ class ScannerBloc extends Bloc<StocktakeEvent, ScannerStates> {
   ScannerBloc({required this.fetchCountingStock}) : super(ScannerInitial()) {
     on<FetchStockDetails>(_onFetchStockDetails);
 
+    on<SelectDuplicateStock>((event, emit) {
+      emit(StockLoaded(event.selected));
+    });
+
     on<ResetStocktakeEvent>((event, emit) {
-      emit(event.targetState); // Instantly switches to the provided state
+      emit(event.targetState);
     });
   }
 
@@ -33,23 +37,36 @@ class ScannerBloc extends Bloc<StocktakeEvent, ScannerStates> {
     Emitter<ScannerStates> emit,
   ) async {
     emit(StockLoading());
-    try {
-      final stockResponse = await fetchCountingStock(event.barcode);
 
-      if (stockResponse == null) {
+    try {
+      final result = await fetchCountingStock(event.barcode);
+
+      if (result.notFound) {
         emit(
           StockError(
             "Stock not found! Please check in Stock Lookup screen to see whether you have loaded your stock!",
           ),
         );
-      } else {
-        emit(StockLoaded(stockResponse));
+        return;
       }
+
+      if (result.duplicates.isNotEmpty) {
+        emit(StockDuplicatesFound(result.duplicates));
+        return;
+      }
+
+      if (result.stock != null) {
+        emit(StockLoaded(result.stock!));
+        return;
+      }
+
+      emit(StockError("Stock not found!"));
     } catch (error) {
       emit(StockError("Error fetching stock: $error"));
     }
   }
 }
+
 
 class StockDetailsBloc extends Bloc<StocktakeEvent, StockFetchingStates> {
   final FetchCountedStockById fetchCountedStockById;

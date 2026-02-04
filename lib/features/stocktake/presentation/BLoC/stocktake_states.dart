@@ -22,6 +22,12 @@ class StockLoaded extends ScannerStates {
   StockLoaded(this.stock);
 }
 
+class StockDuplicatesFound extends ScannerStates {
+  final List<StockVO> matches;
+  StockDuplicatesFound(this.matches);
+}
+
+
 abstract class StockFetchingStates {}
 
 class StockDetailsInitial extends StockFetchingStates {}

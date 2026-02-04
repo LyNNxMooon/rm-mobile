@@ -443,7 +443,6 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                     ),
                     const SizedBox(width: 15),
 
-                    // --- RESPONSIVE CONTENT ---
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,7 +501,6 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     );
   }
 
-  // --- UPDATED QUANTITY BADGE ---
   Widget _buildQtyBadge(num qty) {
     String formattedQty;
 
@@ -527,7 +525,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
       child: Text(
         "Counted: $formattedQty",
         style: const TextStyle(
-          fontSize: 14,
+          fontSize: 12.5,
           fontWeight: FontWeight.w900,
           color: kPrimaryColor,
         ),

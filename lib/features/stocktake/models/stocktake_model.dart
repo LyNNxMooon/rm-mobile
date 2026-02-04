@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/entities/response/audit_report_response.dart';
+import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/vos/audit_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
@@ -19,13 +20,14 @@ class StocktakeModel implements StocktakeRepo {
   //Data manipulation can be done here (E.g. substituting data for null values returned from API)
 
   @override
-  Future<StockVO?> fetchStockDetails(String barcode, String shopfront) async {
-    try {
-      return LocalDbDAO.instance.getStockBySearch(barcode, shopfront);
-    } on Exception catch (error) {
-      return Future.error(error);
-    }
+Future<StockSearchResult> fetchStockDetails(String query, String shopfront) async {
+  try {
+    return LocalDbDAO.instance.getStockBySearch(query, shopfront);
+  } catch (error) {
+    return Future.error(error);
   }
+}
+
 
   @override
   Future<StockVO?> fetchStockDetailsByID(int id, String shopfront) async {

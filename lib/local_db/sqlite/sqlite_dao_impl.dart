@@ -1,5 +1,6 @@
 import 'package:path/path.dart';
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
+import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
@@ -183,25 +184,82 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
-  Future<StockVO?> getStockBySearch(String query, String shopfront) async {
+  Future<StockSearchResult> getStockBySearch(
+    String query,
+    String shopfront,
+  ) async {
     try {
       final db = _database!;
-      final result = await db.query(
+
+      // 1) Barcode exact match (ALL matches)
+      final barcodeRows = await db.query(
         'Stocks',
         where: 'Barcode = ? AND shopfront = ?',
         whereArgs: [query, shopfront],
+      );
+
+      if (barcodeRows.isNotEmpty) {
+        final matches = barcodeRows.map((e) => StockVO.fromJson(e)).toList();
+
+        if (matches.length == 1) {
+          return StockSearchResult.found(matches.first);
+        }
+
+        // Duplicate barcode case
+        return StockSearchResult.duplicates(matches);
+      }
+
+      // 2) Fallback to description LIKE
+      final descriptionRows = await db.query(
+        'Stocks',
+        where: 'description LIKE ? AND shopfront = ?',
+        whereArgs: ['%$query%', shopfront],
         limit: 1,
       );
 
-      if (result.isNotEmpty) {
-        return StockVO.fromJson(result.first);
+      if (descriptionRows.isNotEmpty) {
+        return StockSearchResult.found(StockVO.fromJson(descriptionRows.first));
       }
-      return null;
+
+      return StockSearchResult.none();
     } catch (error) {
       logger.e('Error searching stock in $shopfront: $error');
       return Future.error("Error searching stock: $error");
     }
   }
+
+  // Future<StockVO?> getStockBySearch(String query, String shopfront) async {
+  //   try {
+  //     final db = _database!;
+  //     final barcodeResult = await db.query(
+  //       'Stocks',
+  //       where: 'Barcode = ? AND shopfront = ?',
+  //       whereArgs: [query, shopfront],
+  //       limit: 1,
+  //     );
+
+  //     if (barcodeResult.isNotEmpty) {
+  //       return StockVO.fromJson(barcodeResult.first);
+  //     }
+
+  //     final descriptionResult = await db.query(
+  //       'Stocks',
+  //       where: 'description LIKE ? AND shopfront = ?',
+  //       whereArgs: ['%$query%', shopfront],
+  //       limit: 1,
+  //     );
+
+  //     if (descriptionResult.isNotEmpty) {
+  //       return StockVO.fromJson(descriptionResult.first);
+  //     }
+
+  //     // Return null if found in neither
+  //     return null;
+  //   } catch (error) {
+  //     logger.e('Error searching stock in $shopfront: $error');
+  //     return Future.error("Error searching stock: $error");
+  //   }
+  // }
 
   @override
   Future<PaginatedStockResult> searchAndSortStocks({
@@ -579,6 +637,21 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (e) {
       return Future.error("Error retrieving paged stocktake list: $e");
     }
+  }
+
+  @override
+  Future<List<StockVO>> getStocksByBarcode(
+    String barcode,
+    String shopfront,
+  ) async {
+    final db = _database!;
+    final rows = await db.query(
+      'Stocks',
+      where: 'Barcode = ? AND shopfront = ?',
+      whereArgs: [barcode, shopfront],
+    );
+
+    return rows.map((e) => StockVO.fromJson(e)).toList();
   }
 
   //Save Data
