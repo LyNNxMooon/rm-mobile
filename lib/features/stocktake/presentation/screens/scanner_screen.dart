@@ -667,6 +667,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 onPressed: () {
                   qtyFocusNode.unfocus(); // hide keyboard
                   _submitCount(); // save qty
+                  if (!isScan) {
+                    txtFieldFocusNode.requestFocus();
+                    _bcController.selection = TextSelection(
+                      baseOffset: 0,
+                      extentOffset: _bcController.text.length,
+                    );
+                  }
                 },
                 child: const Text(
                   "Done",
