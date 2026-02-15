@@ -129,7 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             _buildActionRow(
                               Icons.delete_forever_outlined,
                               "Delete All Current Stocktake",
-                              "Clear all currently counted stocktake list permanently",
+                              "Clear all currently counted stocktake list permanently on this device.",
                               kErrorColor,
                               () => _showDeleteConfirmation(context),
                             ),
