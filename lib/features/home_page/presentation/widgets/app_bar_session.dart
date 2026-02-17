@@ -4,10 +4,9 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
-import '../../../loading_splash/presentation/BLoC/loading_splash_bloc.dart';
-import '../../../loading_splash/presentation/BLoC/loading_splash_states.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
+import '../BLoC/home_screen_states.dart';
 import '../screens/settings_screen.dart';
 import 'network_pc_dialog.dart';
 
@@ -23,21 +22,21 @@ class AppBarSession extends StatelessWidget {
         children: [
           // Responsive Text Area
           Flexible(
-            child: BlocBuilder<NetworkSavedPathValidationBloc, LoadingSplashStates>(
+            child: BlocBuilder<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
               builder: (context, state) {
-                String displayText;
+                final host = AppGlobals.instance.hostName;
+                //final shop = AppGlobals.instance.shopfront;
 
-                if (state is ConnectionValid) {
-                  displayText = "PC: ${AppGlobals.instance.hostName ?? "UnknownPC"}";
-                } else {
-                  displayText = 'Connect To Network...';
-                }
+                final String displayText =
+                    (host == null || host.isEmpty)
+                    ? 'Connect To Network...'
+                    : "PC: $host";
 
                 return Text(
                   displayText,
                   style: getSmartTitle(fontSize: 18, color: kSecondaryColor),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis, 
+                  overflow: TextOverflow.ellipsis,
                 );
               },
             ),

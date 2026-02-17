@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
+import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
@@ -320,6 +321,7 @@ class HomeScreenModels implements HomeRepo {
       if (response.success) {
         await LocalDbDAO.instance.saveHostIpAddress(ip);
         await LocalDbDAO.instance.saveHostName(hostName);
+        await LocalDbDAO.instance.saveHostPort(port.toString());
         await LocalDbDAO.instance.saveApiKey(response.apiKey);
         await LocalDbDAO.instance.saveDeviceId(response.deviceId);
 
@@ -350,6 +352,10 @@ class HomeScreenModels implements HomeRepo {
           .where((e) => e.isEnabled)
           .map((e) => e.name)
           .toList();
+      final Map<String, String> idMap = {
+        for (final s in response.shopfronts.where((e) => e.isEnabled)) s.name: s.id,
+      };
+      AppGlobals.instance.pairedShopfrontIdsByName = idMap;
 
       final assigned = response.shopfronts.where((e) => e.isAssigned).toList();
       if (assigned.isNotEmpty) {
@@ -364,6 +370,34 @@ class HomeScreenModels implements HomeRepo {
         total: enabledShopfronts.length,
         shopfronts: enabledShopfronts,
       );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<ConnectShopfrontResponse> connectShopfrontFromApi({
+    required String ip,
+    required int port,
+    required String apiKey,
+    required String shopfrontId,
+    required String shopfrontName,
+  }) async {
+    try {
+      final response = await DataAgentImpl.instance.connectShopfront(
+        ip,
+        port,
+        shopfrontId,
+        apiKey,
+      );
+
+      if (response.success) {
+        await LocalDbDAO.instance.saveShopfrontId(response.shopfrontId);
+        await LocalDbDAO.instance.saveShopfrontName(response.shopfrontName);
+        AppGlobals.instance.shopfront = response.shopfrontName;
+      }
+
+      return response;
     } on Exception catch (error) {
       return Future.error(error);
     }

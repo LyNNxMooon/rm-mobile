@@ -1,6 +1,7 @@
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
+import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 
 import '../../../../entities/vos/network_computer_vo.dart';
@@ -76,4 +77,12 @@ abstract class HomeRepo {
     int port,
     String apiKey,
   );
+
+  Future<ConnectShopfrontResponse> connectShopfrontFromApi({
+    required String ip,
+    required int port,
+    required String apiKey,
+    required String shopfrontId,
+    required String shopfrontName,
+  });
 }

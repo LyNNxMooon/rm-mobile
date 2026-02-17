@@ -9,9 +9,12 @@ const kEndPointForDiscover = "/discover";
 const kEndPointForPairCode = "/paircode";
 const kEndPointForParing = "/pair";
 const kEndPointForShopfronts = "/shopfronts";
+const kEndPointForConnectShopfront = "/shopfronts/{$kPathParamForShopfrontId}/connect";
+const kEndPointForValidate = "/validate";
 
 //keys
 const kPathParamForHostIP = "HostIP";
 const kPathParamForBarcode = "Barcode";
+const kPathParamForShopfrontId = "ShopfrontId";
 const kQueryParamKeyForLastStockID = "lastStockId";
 const kQueryParamKeyForPageSize = "pageSize";

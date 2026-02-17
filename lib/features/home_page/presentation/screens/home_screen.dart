@@ -44,16 +44,17 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
 
-    if (currentParamState is ConnectionValid &&
-        context.read<ShopFrontConnectionBloc>().state
-            is! ConnectedToShopfront) {
-      context.read<ShopFrontConnectionBloc>().add(
-        ConnectToShopfrontEvent(
-          ip: AppGlobals.instance.currentHostIp ?? "",
-          shopName: AppGlobals.instance.shopfront ?? "",
-        ),
-      );
-    }
+    // Old setup disabled:
+    // if (currentParamState is ConnectionValid &&
+    //     context.read<ShopFrontConnectionBloc>().state
+    //         is! ConnectedToShopfront) {
+    //   context.read<ShopFrontConnectionBloc>().add(
+    //     ConnectToShopfrontEvent(
+    //       ip: AppGlobals.instance.currentHostIp ?? "",
+    //       shopName: AppGlobals.instance.shopfront ?? "",
+    //     ),
+    //   );
+    // }
   }
 
   void _showNetworkDialog() {

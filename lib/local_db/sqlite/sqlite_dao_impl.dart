@@ -450,6 +450,16 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
+  Future<String?> getHostPort() async {
+    try {
+      return await getAppConfig(kHostPortKey);
+    } catch (error) {
+      logger.e('Error getting host port from local db: $error');
+      return Future.error("Error getting host port from local db: $error");
+    }
+  }
+
+  @override
   Future<String?> getApiKey() async {
     try {
       return await getAppConfig(kApiKey);
@@ -855,6 +865,16 @@ class SQLiteDAOImpl extends LocalDbDAO {
       return Future.error(
         "Error saving host IP address to local db: $error",
       );
+    }
+  }
+
+  @override
+  Future<void> saveHostPort(String hostPort) async {
+    try {
+      await saveAppConfig(kHostPortKey, hostPort);
+    } catch (error) {
+      logger.e('Error saving host port to local db: $error');
+      return Future.error("Error saving host port to local db: $error");
     }
   }
 

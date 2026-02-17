@@ -7,6 +7,7 @@ class AppGlobals {
   String? currentPath;
   String? shopfront;
   String? hostName;
+  Map<String, String> pairedShopfrontIdsByName = {};
 
  final String defaultLanFolder = "C/AAAPOS RM-Mobile";
  final String defaultUserName = "RM-Mobile-User";

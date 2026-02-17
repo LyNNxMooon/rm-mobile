@@ -3,6 +3,7 @@ import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
 import '../../../local_db/local_db_dao.dart';
 import '../../../network/LAN_sharing/lan_network_service_impl.dart';
+import '../../../network/data_agent/data_agent_impl.dart';
 
 class LoadingSplashModels implements LoadingSplashRepo {
   @override
@@ -27,7 +28,40 @@ class LoadingSplashModels implements LoadingSplashRepo {
   @override
   Future<List<Map<String, dynamic>>> getSavedPaths() async {
     try {
-      return LocalDbDAO.instance.getAllNetworkPaths();
+      final savedIp = await LocalDbDAO.instance.getHostIpAddress();
+      final savedPort = await LocalDbDAO.instance.getHostPort();
+      final savedApiKey = await LocalDbDAO.instance.getApiKey();
+
+      if ((savedIp ?? "").isEmpty ||
+          (savedPort ?? "").isEmpty ||
+          (savedApiKey ?? "").isEmpty) {
+        return [];
+      }
+
+      return [
+        {
+          'path': savedIp,
+          'host_ip': savedIp,
+          'port': savedPort,
+        },
+      ];
+
+      // Old setup disabled:
+      // return LocalDbDAO.instance.getAllNetworkPaths();
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<bool> validateConnection({
+    required String ip,
+    required int port,
+    required String apiKey,
+  }) async {
+    try {
+      final response = await DataAgentImpl.instance.validate(ip, port, apiKey);
+      return response.success;
     } on Exception catch (error) {
       return Future.error(error);
     }

@@ -4,7 +4,6 @@ import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/internet_connection_utils.dart';
 import '../../../../utils/log_utils.dart';
-import '../../../../utils/network_credentials_check_utils.dart';
 
 class CheckPathConnection {
   final LoadingSplashRepo repository;
@@ -13,69 +12,48 @@ class CheckPathConnection {
 
   Future<bool> call(String path) async {
     try {
-      Map<String, dynamic>? result = await LocalDbDAO.instance
-          .getSingleNetworkPath(path);
+      final savedIp = await LocalDbDAO.instance.getHostIpAddress();
+      final savedPort = await LocalDbDAO.instance.getHostPort();
+      final savedApiKey = await LocalDbDAO.instance.getApiKey();
+      final savedHostName = await LocalDbDAO.instance.getHostName();
+      final savedShopfrontName = await LocalDbDAO.instance.getShopfrontName();
 
-      if (result == null) {
+      if ((savedIp ?? "").isEmpty ||
+          (savedPort ?? "").isEmpty ||
+          (savedApiKey ?? "").isEmpty) {
         return false;
-      } else {
-        String shopfront = result['shopfront'];
+      }
 
-        if (shopfront.isEmpty) {
-          return false;
+      final int? port = int.tryParse(savedPort!);
+      if (port == null || port <= 0 || port > 65535) {
+        return false;
+      }
+
+      try {
+        if (await InternetConnectionUtils.instance.checkInternetConnection()) {
+          final isValid = await repository.validateConnection(
+            ip: savedIp!,
+            port: port,
+            apiKey: savedApiKey!,
+          );
+
+          if (!isValid) return false;
+
+          AppGlobals.instance.currentHostIp = savedIp;
+          AppGlobals.instance.hostName = savedHostName ?? savedIp;
+          AppGlobals.instance.shopfront = savedShopfrontName;
+
+          logger.d('Init validating connection was completed');
+          return true;
+
+          // Old setup disabled:
+          // AppGlobals.instance.currentPath = result['path'];
+          // ... SMB credential/path checks via repository.checksConnection(...)
         } else {
-          final regex = RegExp(r'//(\d{1,3}(?:\.\d{1,3}){3})');
-          final match = regex.firstMatch(result['path']);
-
-          final ipAddress = match?.group(1);
-
-          try {
-            if (await InternetConnectionUtils.instance
-                .checkInternetConnection()) {
-              AppGlobals.instance.currentHostIp = ipAddress ?? "";
-              AppGlobals.instance.currentPath = result['path'];
-              AppGlobals.instance.shopfront = shopfront;
-              AppGlobals.instance.hostName = result['host_name'];
-
-              if (await NetworkCredentialsCheckUtils.instance
-                  .isRequiredNetworkCredentials(ipAddress: ipAddress ?? "")) {
-                final Map<String, dynamic>? credentials = await LocalDbDAO
-                    .instance
-                    .getNetworkCredential(ip: ipAddress ?? "");
-
-                await repository
-                    .checksConnection(
-                      ipAddress ?? "",
-                      result['path'],
-                      credentials?['username'] as String?,
-                      credentials?['password'] as String?,
-                    )
-                    .then((_) {
-                      logger.d('Init Checking connection was completed');
-                    });
-
-                return true;
-              } else {
-                await repository
-                    .checksConnection(
-                      ipAddress ?? "",
-                      result['path'],
-                      null,
-                      null,
-                    )
-                    .then((_) {
-                      logger.d('Init Checking connection was completed');
-                    });
-
-                return true;
-              }
-            } else {
-              return Future.error("Please connect to a network!");
-            }
-          } on Exception catch (_) {
-            return false;
-          }
+          return Future.error("Please connect to a network!");
         }
+      } on Exception catch (_) {
+        return false;
       }
     } catch (error) {
       return Future.error(error);

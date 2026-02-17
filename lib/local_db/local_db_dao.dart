@@ -45,6 +45,7 @@ abstract class LocalDbDAO {
   Future<List<String>> getDistinctValues(String columnName, String shopfront);
   Future<String?> getAppConfig(String key);
   Future<String?> getHostIpAddress();
+  Future<String?> getHostPort();
   Future<String?> getApiKey();
   Future<String?> getHostName();
   Future<String?> getShopfrontId();
@@ -89,6 +90,7 @@ abstract class LocalDbDAO {
   Future<void> insertStocks(List<StockVO> stocks, String shopfront);
   Future<void> saveAppConfig(String key, String value);
   Future<void> saveHostIpAddress(String hostIpAddress);
+  Future<void> saveHostPort(String hostPort);
   Future<void> saveApiKey(String apiKey);
   Future<void> saveHostName(String hostName);
   Future<void> saveShopfrontId(String shopfrontId);

@@ -114,6 +114,7 @@ CREATE TABLE StocktakeHistoryItems (
 const String kHistoryRetentionDaysKey = "history_retention_days";
 const String kHistoryLastCleanupKey = "history_last_cleanup_utc";
 const String kHostIpAddressKey = "host_ip_address";
+const String kHostPortKey = "host_port";
 const String kApiKey = "api_key";
 const String kHostNameKey = "host_name";
 const String kShopfrontIdKey = "shopfront_id";

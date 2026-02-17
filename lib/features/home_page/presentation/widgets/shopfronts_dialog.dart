@@ -305,18 +305,26 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
             ),
             BlocListener<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
               listenWhen: (previous, current) =>
-                  !widget.isPairedFlow &&
                   previous is! ConnectedToShopfront &&
                   current is ConnectedToShopfront,
               listener: (context, state) {
                 if (state is ConnectedToShopfront) {
-                  context.read<NetworkSavedPathValidationBloc>().add(
-                    ConnectionCheckingEvent(
-                      AppGlobals.instance.currentPath ?? "",
-                    ),
-                  );
+                  if (!widget.isPairedFlow) {
+                    context.read<NetworkSavedPathValidationBloc>().add(
+                      ConnectionCheckingEvent(
+                        AppGlobals.instance.currentPath ?? "",
+                      ),
+                    );
 
-                  context.navigateBack();
+                    context.navigateBack();
+                  } else {
+                    // Old setup flow intentionally disabled for paired-api flow.
+                    // context.read<NetworkSavedPathValidationBloc>().add(
+                    //   ConnectionCheckingEvent(AppGlobals.instance.currentPath ?? ""),
+                    // );
+
+                    context.navigateBack();
+                  }
                 }
 
                 if (state is ShopfrontConnectionError) {
@@ -338,7 +346,35 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
     return InkWell(
       onTap: () {
         if (widget.isPairedFlow) {
+          final apiKey = widget.apiKey;
+          final port = widget.port;
+          final shopfrontId =
+              AppGlobals.instance.pairedShopfrontIdsByName[shopName];
+
+          if (apiKey == null || port == null || shopfrontId == null) {
+            showTopSnackBar(
+              Overlay.of(ctx),
+              const CustomSnackBar.error(
+                message: "Unable to connect shopfront. Missing required data.",
+              ),
+            );
+            return;
+          }
+
+          ctx.read<ShopFrontConnectionBloc>().add(
+            ConnectToShopfrontApiEvent(
+              ip: widget.pc.ipAddress,
+              port: port,
+              apiKey: apiKey,
+              shopfrontId: shopfrontId,
+              shopfrontName: shopName,
+            ),
+          );
+
           // Old setup flow intentionally disabled for paired-api flow.
+          // ctx.read<ShopFrontConnectionBloc>().add(
+          //   ConnectToShopfrontEvent(ip: widget.pc.ipAddress, shopName: shopName),
+          // );
           return;
         }
 

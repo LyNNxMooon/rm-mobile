@@ -6,8 +6,8 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/images.dart';
 import '../../../../constants/txt_styles.dart';
+import '../BLoC/loading_splash_events.dart';
 import '../BLoC/loading_splash_states.dart';
-import '../widgets/network_path_dialog.dart';
 
 
 class LoadingScreen extends StatefulWidget {
@@ -23,14 +23,16 @@ class _LoadingScreenState extends State<LoadingScreen> {
     return BlocListener<NetworkSavedPathValidationBloc, LoadingSplashStates>(
       listener: (context, state) {
         if (state is SavedPathFetchingCompleted) {
-          showDialog(
-
-            barrierDismissible: false,
-            context: context,
-            builder: (context) {
-              return NetworkPathDialog(paths: state.paths,);
-            },
+          context.read<NetworkSavedPathValidationBloc>().add(
+            ConnectionCheckingEvent(state.paths.first['path']?.toString() ?? ""),
           );
+
+          // Old setup disabled:
+          // showDialog(
+          //   barrierDismissible: false,
+          //   context: context,
+          //   builder: (context) => NetworkPathDialog(paths: state.paths),
+          // );
         }
       },
       child: Scaffold(

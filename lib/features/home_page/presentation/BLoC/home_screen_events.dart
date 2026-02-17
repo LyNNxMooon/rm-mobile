@@ -140,6 +140,22 @@ class PairDeviceEvent extends PairDeviceEvents {
   });
 }
 
+class ConnectToShopfrontApiEvent extends HomeScreenEvents {
+  final String ip;
+  final int port;
+  final String apiKey;
+  final String shopfrontId;
+  final String shopfrontName;
+
+  ConnectToShopfrontApiEvent({
+    required this.ip,
+    required this.port,
+    required this.apiKey,
+    required this.shopfrontId,
+    required this.shopfrontName,
+  });
+}
+
 class FetchShopsFromApi extends HomeScreenEvents {
   final String ipAddress;
   final int port;

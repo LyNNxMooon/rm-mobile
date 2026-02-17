@@ -4,16 +4,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/widgets/shopfronts_dialog.dart'
     show ShopfrontsDialog;
-import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
-import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_states.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/network_computer_vo.dart';
+import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
+import '../BLoC/home_screen_states.dart';
 import '../screens/coming_soon_screen.dart';
 
 class GlassDrawer extends StatefulWidget {
@@ -73,21 +73,13 @@ class _GlassDrawerState extends State<GlassDrawer> {
                       right: 28,
                     ),
                     child:
-                    BlocBuilder<
-                        NetworkSavedPathValidationBloc,
-                        LoadingSplashStates
-                    >(
+                    BlocBuilder<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
                       builder: (context, state) {
-                        String shopText;
-                        if (state is ConnectionValid) {
-                          shopText = AppGlobals.instance.shopfront == null
-                              ? "RM-Shopfront"
-                              : (AppGlobals.instance.shopfront!)
-                              .split(r'\')
-                              .last;
-                        } else {
-                          shopText = "Connect to a shopfront...";
-                        }
+                        final shop = AppGlobals.instance.shopfront;
+                        //final host = AppGlobals.instance.hostName;
+                        final shopText = (shop == null || shop.isEmpty)
+                            ? "Connect to a shopfront..."
+                            : shop.split(r'\\').last;
 
                         return Text(
                           shopText,
@@ -183,14 +175,33 @@ class _GlassDrawerState extends State<GlassDrawer> {
     );
   }
 
-  void _handleNavigation(int index, BuildContext context) {
+  Future<void> _handleNavigation(int index, BuildContext context) async {
     if (index == 0) {
+      final String? savedApiKey = await LocalDbDAO.instance.getApiKey();
+      final String? savedPortText = await LocalDbDAO.instance.getHostPort();
+      final int? savedPort = int.tryParse(savedPortText ?? "");
+      final String hostIp = AppGlobals.instance.currentHostIp ?? "";
+
+      if (hostIp.isEmpty || (savedApiKey ?? "").isEmpty || savedPort == null) {
+        return;
+      }
+
       context.read<ShopfrontBloc>().add(
-        FetchShops(
-          path: AppGlobals.instance.currentPath ?? '',
-          ipAddress: AppGlobals.instance.currentHostIp ?? "",
+        FetchShopsFromApi(
+          ipAddress: hostIp,
+          port: savedPort,
+          apiKey: savedApiKey!,
         ),
       );
+
+      // Old setup disabled:
+      // context.read<ShopfrontBloc>().add(
+      //   FetchShops(
+      //     path: AppGlobals.instance.currentPath ?? '',
+      //     ipAddress: AppGlobals.instance.currentHostIp ?? "",
+      //   ),
+      // );
+
       showDialog(
         context: context,
         builder: (context) {
@@ -199,7 +210,10 @@ class _GlassDrawerState extends State<GlassDrawer> {
               ipAddress: AppGlobals.instance.currentHostIp ?? "",
               hostName: AppGlobals.instance.hostName ?? "",
             ),
-            previousPath: AppGlobals.instance.currentPath ?? '',
+            previousPath: "",
+            isPairedFlow: true,
+            port: savedPort,
+            apiKey: savedApiKey,
           );
         },
       );

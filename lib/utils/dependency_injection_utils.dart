@@ -24,6 +24,7 @@ import '../features/home_page/domain/use_cases/auto_connect_to_default_folder.da
 import '../features/home_page/domain/use_cases/check_if_shopfront_file_exists.dart';
 import '../features/home_page/domain/use_cases/connect_and_write_to_folder.dart';
 import '../features/home_page/domain/use_cases/connect_to_shopfront.dart';
+import '../features/home_page/domain/use_cases/connect_to_shopfront_api.dart';
 import '../features/home_page/domain/use_cases/fetch_network_pcs.dart';
 import '../features/home_page/domain/use_cases/fetch_shopfront_list.dart';
 import '../features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
@@ -62,7 +63,12 @@ Future<void> init() async {
   sl.registerFactory(
     () => ShopfrontBloc(fetchShopfrontList: sl(), fetchShopfrontsFromApi: sl()),
   );
-  sl.registerFactory(() => ShopFrontConnectionBloc(connectToShopfront: sl()));
+  sl.registerFactory(
+    () => ShopFrontConnectionBloc(
+      connectToShopfront: sl(),
+      connectToShopfrontApi: sl(),
+    ),
+  );
   sl.registerFactory(
     () => NetworkSavedPathValidationBloc(
       fetchSavedPaths: sl(),
@@ -122,6 +128,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => FetchShopfrontList(sl()));
   sl.registerLazySingleton(() => FetchShopfrontsFromApi(sl()));
   sl.registerLazySingleton(() => ConnectToShopfront(sl()));
+  sl.registerLazySingleton(() => ConnectToShopfrontApi(sl()));
   sl.registerLazySingleton(() => FetchSavedPaths(sl()));
   sl.registerLazySingleton(() => CheckPathConnection(sl()));
   //sl.registerLazySingleton(() => FetchAllStocktakeList(sl()));

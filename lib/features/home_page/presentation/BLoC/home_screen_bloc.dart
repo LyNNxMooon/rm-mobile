@@ -3,6 +3,7 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_hist
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_host.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/connect_to_shopfront_api.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/get_pair_codes.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/pair_device.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
@@ -172,10 +173,15 @@ class ShopfrontBloc extends Bloc<HomeScreenEvents, ShopFrontStates> {
 class ShopFrontConnectionBloc
     extends Bloc<HomeScreenEvents, ShopfrontConnectionStates> {
   final ConnectToShopfront connectToShopfront;
+  final ConnectToShopfrontApi connectToShopfrontApi;
 
-  ShopFrontConnectionBloc({required this.connectToShopfront})
+  ShopFrontConnectionBloc({
+    required this.connectToShopfront,
+    required this.connectToShopfrontApi,
+  })
     : super(ConnectionInitial()) {
     on<ConnectToShopfrontEvent>(_onConnectToShopfront);
+    on<ConnectToShopfrontApiEvent>(_onConnectToShopfrontApi);
   }
 
   Future<void> _onConnectToShopfront(
@@ -191,6 +197,35 @@ class ShopFrontConnectionBloc
         event.pwd,
       );
       emit(ConnectedToShopfront("Shopfront Connected!"));
+    } catch (error) {
+      if (error is String) {
+        emit(ShopfrontConnectionError(error));
+      } else {
+        var e = error as dynamic;
+        emit(ShopfrontConnectionError(e.message.toString()));
+      }
+    }
+  }
+
+  Future<void> _onConnectToShopfrontApi(
+    ConnectToShopfrontApiEvent event,
+    Emitter<ShopfrontConnectionStates> emit,
+  ) async {
+    emit(ConnectingToShopfront());
+    try {
+      final response = await connectToShopfrontApi(
+        ip: event.ip,
+        port: event.port,
+        apiKey: event.apiKey,
+        shopfrontId: event.shopfrontId,
+        shopfrontName: event.shopfrontName,
+      );
+
+      if (response.success) {
+        emit(ConnectedToShopfront(response.message));
+      } else {
+        emit(ShopfrontConnectionError(response.message));
+      }
     } catch (error) {
       if (error is String) {
         emit(ShopfrontConnectionError(error));

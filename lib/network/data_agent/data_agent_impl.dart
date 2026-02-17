@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
+import 'package:rmstock_scanner/entities/response/validate_response.dart';
 import 'package:rmstock_scanner/network/api/api_service.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent.dart';
 import '../../entities/response/error_response.dart';
@@ -87,6 +89,36 @@ class DataAgentImpl implements DataAgent {
       return await apiService.getShopfronts(apiKey).asStream().map((event) => event).first;
     } on Exception catch (error) {
       logger.e('Error getting shopfronts from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<ConnectShopfrontResponse> connectShopfront(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.connectShopfront(
+        shopfrontId,
+        apiKey,
+      ).asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error connecting shopfront from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<ValidateResponse> validate(String ip, int port, String apiKey) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.validate(apiKey).asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error validating connection from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }
