@@ -17,6 +17,7 @@ import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -36,9 +37,17 @@ class StockDetailsScreen extends StatefulWidget {
   State<StockDetailsScreen> createState() => _StockDetailsScreenState();
 }
 
+class _ImageRequestConfig {
+  final int port;
+  final String apiKey;
+
+  const _ImageRequestConfig({required this.port, required this.apiKey});
+}
+
 class _StockDetailsScreenState extends State<StockDetailsScreen> {
   double sell = 0.00;
   double cost = 0.00;
+  static Future<_ImageRequestConfig>? _imageConfigFuture;
 
   late final LanguageToolController _descriptionController;
 
@@ -55,17 +64,16 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         );
       }
     });
-    final pic = widget.stock.pictureFileName;
-
-    if (pic != null && pic.isNotEmpty) {
-      context.read<FullImageBloc>().add(
-        RequestFullImageEvent(
-          stockId: widget.stock.stockID,
-          pictureFileName: pic,
-          // forceRefresh: true
-        ),
-      );
-    }
+    // Old setup disabled:
+    // final pic = widget.stock.pictureFileName;
+    // if (pic != null && pic.isNotEmpty) {
+    //   context.read<FullImageBloc>().add(
+    //     RequestFullImageEvent(
+    //       stockId: widget.stock.stockID,
+    //       pictureFileName: pic,
+    //     ),
+    //   );
+    // }
 
     if ((widget.stock.goodsTax ?? "") == "GST") {
       cost = widget.stock.cost * 1.1;
@@ -83,6 +91,36 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   }
 
   final ImagePicker _picker = ImagePicker();
+
+  Future<_ImageRequestConfig> _loadImageConfig() async {
+    final int port =
+        int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+        5000;
+    final String apiKey = (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+    return _ImageRequestConfig(port: port, apiKey: apiKey);
+  }
+
+  String? _buildFullImageUrl(int port) {
+    final String? rawPath = widget.stock.imageUrl;
+    if (rawPath == null || rawPath.trim().isEmpty) {
+      return null;
+    }
+
+    if (rawPath.startsWith("http://") || rawPath.startsWith("https://")) {
+      return rawPath;
+    }
+
+    final host = (AppGlobals.instance.currentHostIp ?? "")
+        .trim()
+        .replaceFirst(RegExp(r'^https?://'), '')
+        .replaceAll(RegExp(r'/$'), '');
+    if (host.isEmpty) {
+      return null;
+    }
+
+    final normalizedPath = rawPath.startsWith("/") ? rawPath : "/$rawPath";
+    return "http://$host:$port$normalizedPath";
+  }
 
   Future<void> _onCameraTap() async {
     showModalBottomSheet(
@@ -268,36 +306,14 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   }
 
   Future<void> _refreshImagesWithRetry() async {
-    final id = widget.stock.stockID;
-    final fileName = "${id.toInt()}.jpg";
-
-    // try a few times while the agent generates/updates thumbnails
-    // const delays = <Duration>[
-    //   Duration(milliseconds: 500),
-    //   Duration(seconds: 1),
-    //   Duration(seconds: 2),
-    //   Duration(seconds: 3),
-    //   Duration(seconds: 5),
-    // ];
-
     await Future.delayed(Duration(seconds: 3));
     if (!mounted) return;
-
-    context.read<FullImageBloc>().add(
-      RequestFullImageEvent(
-        stockId: id,
-        pictureFileName: fileName,
-        forceRefresh: true,
-      ),
-    );
-
-    context.read<ThumbnailBloc>().add(
-      RequestThumbnailEvent(
-        stockId: id,
-        pictureFileName: fileName,
-        forceRefresh: true,
-      ),
-    );
+    // Old setup disabled:
+    // context.read<FullImageBloc>().add(...);
+    // context.read<ThumbnailBloc>().add(...);
+    setState(() {
+      _imageConfigFuture = _loadImageConfig();
+    });
   }
 
   @override
@@ -403,72 +419,73 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                               ),
                               child: BlocBuilder<FullImageBloc, FullImageState>(
                                 builder: (context, state) {
-                                  String? localPath;
-                                  bool isLoading = false;
-                                  int rev = 0;
+                                  _imageConfigFuture ??= _loadImageConfig();
 
-                                  if (state is FullImageLoaded) {
-                                    localPath =
-                                        state.imagePaths[widget.stock.stockID];
-                                    isLoading = state.loading.contains(
-                                      widget.stock.stockID,
-                                    );
-                                    rev = state.rev[widget.stock.stockID] ?? 0;
-                                  }
+                                  return FutureBuilder<_ImageRequestConfig>(
+                                    future: _imageConfigFuture,
+                                    builder: (context, snapshot) {
+                                      final cfg = snapshot.data;
+                                      final imageUrl = _buildFullImageUrl(
+                                        cfg?.port ?? 5000,
+                                      );
+                                      final headers = <String, String>{};
+                                      final apiKey = cfg?.apiKey ?? "";
+                                      if (apiKey.isNotEmpty) {
+                                        headers["x-api-key"] = apiKey;
+                                      }
 
-                                  final bool hasFile =
-                                      localPath != null &&
-                                      localPath.isNotEmpty &&
-                                      File(localPath).existsSync();
+                                      return Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          if (imageUrl != null)
+                                            Image.network(
+                                              imageUrl,
+                                              fit: BoxFit.cover,
+                                              headers: headers.isEmpty
+                                                  ? null
+                                                  : headers,
+                                              errorBuilder: (_, _, _) =>
+                                                  Container(
+                                                    color: kSecondaryColor,
+                                                  ),
+                                            )
+                                          else
+                                            Container(color: kSecondaryColor),
 
-                                  return Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      if (hasFile)
-                                        Image.file(
-                                          File(localPath),
-                                          key: ValueKey(
-                                            'full_${widget.stock.stockID}_$rev',
-                                          ),
-                                          fit: BoxFit.cover,
-                                        )
-                                      else
-                                        Container(color: kSecondaryColor),
-
-                                      BackdropFilter(
-                                        filter: ImageFilter.blur(
-                                          sigmaX: 0.6,
-                                          sigmaY: 0.6,
-                                        ),
-                                        child: Container(
-                                          color: Colors.black.withOpacity(0.04),
-                                        ),
-                                      ),
-
-                                      Center(
-                                        child: hasFile
-                                            ? Image.file(
-                                                File(localPath),
-                                                key: ValueKey(
-                                                  'full_center_${widget.stock.stockID}_$rev',
-                                                ),
-                                                fit: BoxFit.contain,
-                                              )
-                                            : Image.asset(
-                                                overviewPlaceholder,
-                                                fit: BoxFit.contain,
+                                          BackdropFilter(
+                                            filter: ImageFilter.blur(
+                                              sigmaX: 0.6,
+                                              sigmaY: 0.6,
+                                            ),
+                                            child: Container(
+                                              color: Colors.black.withOpacity(
+                                                0.04,
                                               ),
-                                      ),
-
-                                      if (!hasFile && isLoading)
-                                        const Center(
-                                          child: SizedBox(
-                                            width: 22,
-                                            height: 22,
-                                            child: CupertinoActivityIndicator(),
+                                            ),
                                           ),
-                                        ),
-                                    ],
+
+                                          Center(
+                                            child: imageUrl != null
+                                                ? Image.network(
+                                                    imageUrl,
+                                                    fit: BoxFit.contain,
+                                                    headers: headers.isEmpty
+                                                        ? null
+                                                        : headers,
+                                                    errorBuilder: (_, _, _) =>
+                                                        Image.asset(
+                                                          overviewPlaceholder,
+                                                          fit: BoxFit.contain,
+                                                        ),
+                                                  )
+                                                : Image.asset(
+                                                    overviewPlaceholder,
+                                                    fit: BoxFit.contain,
+                                                  ),
+                                          ),
+                                        ],
+                                      );
+                                    },
                                   );
                                 },
                               ),

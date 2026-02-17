@@ -37,8 +37,14 @@ class _StockThumbnailTileState extends State<StockThumbnailTile> {
       return null;
     }
 
-    if (rawPath.startsWith("http://") || rawPath.startsWith("https://")) {
-      return rawPath;
+    String normalizedPath = rawPath;
+    if (!normalizedPath.endsWith("/thumbnail")) {
+      normalizedPath = "$normalizedPath/thumbnail";
+    }
+
+    if (normalizedPath.startsWith("http://") ||
+        normalizedPath.startsWith("https://")) {
+      return normalizedPath;
     }
 
     final host = (AppGlobals.instance.currentHostIp ?? "")
@@ -49,8 +55,10 @@ class _StockThumbnailTileState extends State<StockThumbnailTile> {
       return null;
     }
 
-    final normalizedPath = rawPath.startsWith("/") ? rawPath : "/$rawPath";
-    return "http://$host:$port$normalizedPath";
+    final absolutePath = normalizedPath.startsWith("/")
+        ? normalizedPath
+        : "/$normalizedPath";
+    return "http://$host:$port$absolutePath";
   }
 
   @override

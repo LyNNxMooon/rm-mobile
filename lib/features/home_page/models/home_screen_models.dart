@@ -327,7 +327,7 @@ class HomeScreenModels implements HomeRepo {
       "static_quantity": _asBool(item["static_quantity"]),
       "picture_file_name": _asNullableString(item["picture_file_name"]),
       "imageUrl": _asNullableString(
-        item["thumbnail_url"] ?? item["picture_url"] ?? item["imageUrl"],
+        item["picture_url"] ?? item["thumbnail_url"] ?? item["imageUrl"],
       ),
       "goods_tax": _asNullableString(item["goods_tax"]),
       "sales_tax": _asNullableString(item["sales_tax"]),

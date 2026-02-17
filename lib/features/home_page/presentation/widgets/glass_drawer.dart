@@ -218,9 +218,6 @@ class _GlassDrawerState extends State<GlassDrawer> {
         },
       );
     } else if (index == 1) {
-      context.read<FetchStockBloc>().add(
-        StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
-      );
       context.navigateToNext(const StockLookupScreen());
     } else {
       context.navigateToNext(const ComingSoonScreen());

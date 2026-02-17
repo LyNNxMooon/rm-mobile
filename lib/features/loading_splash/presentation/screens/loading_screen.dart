@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
+import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
@@ -33,6 +36,12 @@ class _LoadingScreenState extends State<LoadingScreen> {
           //   context: context,
           //   builder: (context) => NetworkPathDialog(paths: state.paths),
           // );
+        }
+
+        if (state is ConnectionValid) {
+          context.read<FetchStockBloc>().add(
+            StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
+          );
         }
       },
       child: Scaffold(
