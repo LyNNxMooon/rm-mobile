@@ -1,5 +1,7 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
+// ignore_for_file: unused_element
+
 part of 'audit_report_response.dart';
 
 // **************************************************************************
@@ -16,11 +18,11 @@ AuditReport _$AuditReportFromJson(Map<String, dynamic> json) => AuditReport(
           .toList(),
     );
 
-// Map<String, dynamic> _$AuditReportToJson(AuditReport instance) =>
-//     <String, dynamic>{
-//       'mobile_device_id': instance.mobileDeviceId,
-//       'mobile_device_name': instance.mobileDeviceName,
-//       'shopfront': instance.shopfront,
-//       'total_stocks': instance.totalStocks,
-//       'data': instance.data,
-//     };
+Map<String, dynamic> _$AuditReportToJson(AuditReport instance) =>
+    <String, dynamic>{
+      'mobile_device_id': instance.mobileDeviceId,
+      'mobile_device_name': instance.mobileDeviceName,
+      'shopfront': instance.shopfront,
+      'total_stocks': instance.totalStocks,
+      'data': instance.data,
+    };

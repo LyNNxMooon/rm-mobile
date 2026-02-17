@@ -2,15 +2,20 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:rmstock_scanner/entities/response/discover_response.dart';
+import 'package:rmstock_scanner/entities/response/paircode_response.dart';
+import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
+import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'package:smb_connect/smb_connect.dart';
 
 import '../../../local_db/local_db_dao.dart';
 import '../../../network/LAN_sharing/lan_network_service_impl.dart';
+import '../../../utils/device_meta_data_utils.dart';
 import '../../../utils/global_var_utils.dart';
 
 class HomeScreenModels implements HomeRepo {
@@ -274,6 +279,94 @@ class HomeScreenModels implements HomeRepo {
   @override
   Future<int> runHistoryCleanup() {
     return LocalDbDAO.instance.cleanupHistoryByRetention();
+  }
+
+  @override
+  Future<DiscoverResponse> discoverHost(String ip, int port) async {
+    try {
+      final response = await DataAgentImpl.instance.discoverHost(ip, port);
+      return response;
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<PaircodeResponse> getPairCodes(String ip, int port) async {
+    try {
+      final response = await DataAgentImpl.instance.getPairCodes(ip, port);
+      return response;
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<PairResponse> pairDevice({
+    required String ip,
+    required String hostName,
+    required int port,
+    required String pairingCode,
+  }) async {
+    try {
+      final mobileInfo = await DeviceMetaDataUtils.instance.getDeviceInformation();
+
+      final response = await DataAgentImpl.instance.pairDevice(ip, port, {
+        "PairingCode": pairingCode,
+        "DeviceName": mobileInfo.name,
+        "DeviceType": "Mobile",
+      });
+
+      if (response.success) {
+        await LocalDbDAO.instance.saveHostIpAddress(ip);
+        await LocalDbDAO.instance.saveHostName(hostName);
+        await LocalDbDAO.instance.saveApiKey(response.apiKey);
+        await LocalDbDAO.instance.saveDeviceId(response.deviceId);
+
+        AppGlobals.instance.currentHostIp = ip;
+        AppGlobals.instance.hostName = hostName;
+      }
+
+      return response;
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<ShopfrontResponse> fetchShopfrontsFromApi(
+    String ip,
+    int port,
+    String apiKey,
+  ) async {
+    try {
+      final response = await DataAgentImpl.instance.getShopfronts(
+        ip,
+        port,
+        apiKey,
+      );
+
+      final enabledShopfronts = response.shopfronts
+          .where((e) => e.isEnabled)
+          .map((e) => e.name)
+          .toList();
+
+      final assigned = response.shopfronts.where((e) => e.isAssigned).toList();
+      if (assigned.isNotEmpty) {
+        await LocalDbDAO.instance.saveShopfrontId(assigned.first.id);
+        await LocalDbDAO.instance.saveShopfrontName(assigned.first.name);
+      } else if (response.assignedShopfrontId != null &&
+          response.assignedShopfrontId!.isNotEmpty) {
+        await LocalDbDAO.instance.saveShopfrontId(response.assignedShopfrontId!);
+      }
+
+      return ShopfrontResponse(
+        total: enabledShopfronts.length,
+        shopfronts: enabledShopfronts,
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
   }
 }
 

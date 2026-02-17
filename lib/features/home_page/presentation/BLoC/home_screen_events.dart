@@ -106,3 +106,49 @@ class ChangeRetentionDaysEvent extends SettingsEvent {
 
 class RunHistoryCleanupEvent extends SettingsEvent {}
 
+abstract class DiscoverHostEvents {}
+
+class DiscoverHostEvent extends DiscoverHostEvents {
+  final String ip;
+  final int port;
+
+  DiscoverHostEvent({required this.ip, required this.port});
+}
+
+abstract class PairCodeEvents {}
+
+class GetPairCodesEvent extends PairCodeEvents {
+  final String ip;
+  final int port;
+
+  GetPairCodesEvent({required this.ip, required this.port});
+}
+
+abstract class PairDeviceEvents {}
+
+class PairDeviceEvent extends PairDeviceEvents {
+  final String ip;
+  final String hostName;
+  final int port;
+  final String pairingCode;
+
+  PairDeviceEvent({
+    required this.ip,
+    required this.hostName,
+    required this.port,
+    required this.pairingCode,
+  });
+}
+
+class FetchShopsFromApi extends HomeScreenEvents {
+  final String ipAddress;
+  final int port;
+  final String apiKey;
+
+  FetchShopsFromApi({
+    required this.ipAddress,
+    required this.port,
+    required this.apiKey,
+  });
+}
+

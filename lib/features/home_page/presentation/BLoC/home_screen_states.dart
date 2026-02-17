@@ -1,3 +1,6 @@
+import 'package:rmstock_scanner/entities/response/discover_response.dart';
+import 'package:rmstock_scanner/entities/response/paircode_response.dart';
+import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
 
@@ -170,4 +173,58 @@ class SettingsCleanupDone extends SettingsState {
   final int deletedSessions;
   final int retentionDays;
   SettingsCleanupDone({required this.deletedSessions, required this.retentionDays});
+}
+
+abstract class DiscoverHostStates {}
+
+class DiscoverHostInitial extends DiscoverHostStates {}
+
+class DiscoveringHost extends DiscoverHostStates {}
+
+class DiscoverHostLoaded extends DiscoverHostStates {
+  final DiscoverResponse response;
+
+  DiscoverHostLoaded(this.response);
+}
+
+class DiscoverHostError extends DiscoverHostStates {
+  final String message;
+
+  DiscoverHostError(this.message);
+}
+
+abstract class PairCodeStates {}
+
+class PairCodeInitial extends PairCodeStates {}
+
+class GettingPairCodes extends PairCodeStates {}
+
+class PairCodesLoaded extends PairCodeStates {
+  final PaircodeResponse response;
+
+  PairCodesLoaded(this.response);
+}
+
+class PairCodeError extends PairCodeStates {
+  final String message;
+
+  PairCodeError(this.message);
+}
+
+abstract class PairDeviceStates {}
+
+class PairDeviceInitial extends PairDeviceStates {}
+
+class PairingDevice extends PairDeviceStates {}
+
+class PairDeviceSuccess extends PairDeviceStates {
+  final PairResponse response;
+
+  PairDeviceSuccess(this.response);
+}
+
+class PairDeviceError extends PairDeviceStates {
+  final String message;
+
+  PairDeviceError(this.message);
 }

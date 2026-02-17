@@ -438,6 +438,70 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
+  Future<String?> getHostIpAddress() async {
+    try {
+      return await getAppConfig(kHostIpAddressKey);
+    } catch (error) {
+      logger.e('Error getting host IP address from local db: $error');
+      return Future.error(
+        "Error getting host IP address from local db: $error",
+      );
+    }
+  }
+
+  @override
+  Future<String?> getApiKey() async {
+    try {
+      return await getAppConfig(kApiKey);
+    } catch (error) {
+      logger.e('Error getting API key from local db: $error');
+      return Future.error("Error getting API key from local db: $error");
+    }
+  }
+
+  @override
+  Future<String?> getHostName() async {
+    try {
+      return await getAppConfig(kHostNameKey);
+    } catch (error) {
+      logger.e('Error getting host name from local db: $error');
+      return Future.error("Error getting host name from local db: $error");
+    }
+  }
+
+  @override
+  Future<String?> getShopfrontId() async {
+    try {
+      return await getAppConfig(kShopfrontIdKey);
+    } catch (error) {
+      logger.e('Error getting shopfront id from local db: $error');
+      return Future.error("Error getting shopfront id from local db: $error");
+    }
+  }
+
+  @override
+  Future<String?> getShopfrontName() async {
+    try {
+      return await getAppConfig(kShopfrontNameKey);
+    } catch (error) {
+      logger.e('Error getting shopfront name from local db: $error');
+      return Future.error(
+        "Error getting shopfront name from local db: $error",
+      );
+    }
+  }
+
+  @override
+  Future<String?> getDeviceId() async {
+    try {
+      return await getAppConfig(kDeviceIdKey);
+    } catch (error) {
+      logger.e('Error getting device id from local db: $error');
+      return Future.error("Error getting device id from local db: $error");
+    }
+  }
+
+  @override
   Future<Map<num, StockVO>> getStocksByIds({
     required String shopfront,
     required List<num> stockIds,
@@ -780,6 +844,70 @@ class SQLiteDAOImpl extends LocalDbDAO {
       'key': effectiveKey,
       'value': value,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  @override
+  Future<void> saveHostIpAddress(String hostIpAddress) async {
+    try {
+      await saveAppConfig(kHostIpAddressKey, hostIpAddress);
+    } catch (error) {
+      logger.e('Error saving host IP address to local db: $error');
+      return Future.error(
+        "Error saving host IP address to local db: $error",
+      );
+    }
+  }
+
+  @override
+  Future<void> saveApiKey(String apiKey) async {
+    try {
+      await saveAppConfig(kApiKey, apiKey);
+    } catch (error) {
+      logger.e('Error saving API key to local db: $error');
+      return Future.error("Error saving API key to local db: $error");
+    }
+  }
+
+  @override
+  Future<void> saveHostName(String hostName) async {
+    try {
+      await saveAppConfig(kHostNameKey, hostName);
+    } catch (error) {
+      logger.e('Error saving host name to local db: $error');
+      return Future.error("Error saving host name to local db: $error");
+    }
+  }
+
+  @override
+  Future<void> saveShopfrontId(String shopfrontId) async {
+    try {
+      await saveAppConfig(kShopfrontIdKey, shopfrontId);
+    } catch (error) {
+      logger.e('Error saving shopfront id to local db: $error');
+      return Future.error("Error saving shopfront id to local db: $error");
+    }
+  }
+
+  @override
+  Future<void> saveShopfrontName(String shopfrontName) async {
+    try {
+      await saveAppConfig(kShopfrontNameKey, shopfrontName);
+    } catch (error) {
+      logger.e('Error saving shopfront name to local db: $error');
+      return Future.error(
+        "Error saving shopfront name to local db: $error",
+      );
+    }
+  }
+
+  @override
+  Future<void> saveDeviceId(String deviceId) async {
+    try {
+      await saveAppConfig(kDeviceIdKey, deviceId);
+    } catch (error) {
+      logger.e('Error saving device id to local db: $error');
+      return Future.error("Error saving device id to local db: $error");
+    }
   }
 
   @override

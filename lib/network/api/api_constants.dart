@@ -5,6 +5,10 @@ const kEndPointForShopList = "/shop/list";
 const kEndPointForConnect = "/shop/connect";
 const kEndPointForBulkStocktake = "/stock/update-bulk";
 const kEndPointForStockList = "/stock/list";
+const kEndPointForDiscover = "/discover";
+const kEndPointForPairCode = "/paircode";
+const kEndPointForParing = "/pair";
+const kEndPointForShopfronts = "/shopfronts";
 
 //keys
 const kPathParamForHostIP = "HostIP";

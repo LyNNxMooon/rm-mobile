@@ -1,15 +1,16 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:rmstock_scanner/entities/response/discover_response.dart';
+import 'package:rmstock_scanner/entities/response/paircode_response.dart';
+import 'package:rmstock_scanner/entities/response/pair_response.dart';
+import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
 import 'package:rmstock_scanner/network/api/api_service.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent.dart';
 import '../../entities/response/error_response.dart';
+import '../../utils/log_utils.dart';
 
 class DataAgentImpl implements DataAgent {
-  late ApiService _apiService;
-
-  DataAgentImpl._() {
-    _apiService = ApiService(Dio());
-  }
+  DataAgentImpl._();
 
   static final DataAgentImpl _instance = DataAgentImpl._();
   static DataAgentImpl get instance => _instance;
@@ -36,5 +37,69 @@ class DataAgentImpl implements DataAgent {
       return error.response.toString();
     }
     return error.toString();
+  }
+
+  @override
+  Future<DiscoverResponse> discoverHost(String ip, int port) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.discoverHost().asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error discovering host from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<PaircodeResponse> getPairCodes(String ip, int port) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.getPairCodes().asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error getting pair code from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<PairResponse> pairDevice(
+    String ip,
+    int port,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.pairDevice(body).asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error pairing device from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<ShopfrontsApiResponse> getShopfronts(
+    String ip,
+    int port,
+    String apiKey,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.getShopfronts(apiKey).asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error getting shopfronts from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  ApiService _createApiService(String ip, int port) {
+    final cleanedIp = ip
+        .trim()
+        .replaceFirst(RegExp(r'^https?://'), '')
+        .replaceAll(RegExp(r'/$'), '');
+
+    String baseUrl = "http://$cleanedIp:$port/api";
+
+    logger.d(baseUrl);
+    return ApiService(Dio(BaseOptions(baseUrl: baseUrl)));
   }
 }

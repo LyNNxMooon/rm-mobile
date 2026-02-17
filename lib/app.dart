@@ -127,6 +127,11 @@ class _MyAppState extends State<MyApp> {
         ),
         BlocProvider<BackupRestoreBloc>(create: (_) => sl<BackupRestoreBloc>()),
         BlocProvider<StockUpdateBloc>(create: (_) => sl<StockUpdateBloc>()),
+
+        //Local web server changes
+        BlocProvider<DiscoverHostBloc>(create: (_) => sl<DiscoverHostBloc>()),
+        BlocProvider<PairCodeBloc>(create: (_) => sl<PairCodeBloc>()),
+        BlocProvider<PairDeviceBloc>(create: (_) => sl<PairDeviceBloc>()),
       ],
       child: MaterialApp(
         title: 'RM-Mobile',

@@ -1,7 +1,9 @@
 import 'package:get_it/get_it.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_history.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_host.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/pair_device.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
@@ -24,8 +26,10 @@ import '../features/home_page/domain/use_cases/connect_and_write_to_folder.dart'
 import '../features/home_page/domain/use_cases/connect_to_shopfront.dart';
 import '../features/home_page/domain/use_cases/fetch_network_pcs.dart';
 import '../features/home_page/domain/use_cases/fetch_shopfront_list.dart';
+import '../features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
 import '../features/home_page/domain/use_cases/fetch_stock_data.dart';
 import '../features/home_page/domain/use_cases/get_to_shared_folder.dart';
+import '../features/home_page/domain/use_cases/get_pair_codes.dart';
 import '../features/home_page/models/home_screen_models.dart';
 import '../features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import '../features/loading_splash/domain/use_cases/check_path_connection.dart';
@@ -55,7 +59,9 @@ Future<void> init() async {
   sl.registerFactory(() => FetchingNetworkPCBloc(fetchNetworkPcs: sl()));
   sl.registerFactory(() => GettingDirectoryBloc(getToSharedFolder: sl()));
   sl.registerFactory(() => ConnectingFolderBloc(connectAndWriteToFolder: sl()));
-  sl.registerFactory(() => ShopfrontBloc(fetchShopfrontList: sl()));
+  sl.registerFactory(
+    () => ShopfrontBloc(fetchShopfrontList: sl(), fetchShopfrontsFromApi: sl()),
+  );
   sl.registerFactory(() => ShopFrontConnectionBloc(connectToShopfront: sl()));
   sl.registerFactory(
     () => NetworkSavedPathValidationBloc(
@@ -90,6 +96,9 @@ Future<void> init() async {
       cleanupHistory: sl(),
     ),
   );
+  sl.registerFactory(() => DiscoverHostBloc(discoverHost: sl()));
+  sl.registerFactory(() => PairCodeBloc(getPairCodes: sl()));
+  sl.registerFactory(() => PairDeviceBloc(pairDevice: sl()));
   sl.registerFactory(() => StockDetailsBloc(fetchCountedStockById: sl()));
   sl.registerFactory(() => StockCountUpdateBloc(updateStockCount: sl()));
   sl.registerFactory(() => StockImageUploadBloc(uploadUseCase: sl()));
@@ -111,6 +120,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetToSharedFolder(sl()));
   sl.registerLazySingleton(() => ConnectAndWriteToFolder(sl()));
   sl.registerLazySingleton(() => FetchShopfrontList(sl()));
+  sl.registerLazySingleton(() => FetchShopfrontsFromApi(sl()));
   sl.registerLazySingleton(() => ConnectToShopfront(sl()));
   sl.registerLazySingleton(() => FetchSavedPaths(sl()));
   sl.registerLazySingleton(() => CheckPathConnection(sl()));
@@ -131,6 +141,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LoadRetentionDays(sl()));
   sl.registerLazySingleton(() => UpdateRetentionDays(sl()));
   sl.registerLazySingleton(() => CleanupHistory(sl()));
+  sl.registerLazySingleton(() => DiscoverHost(sl()));
+  sl.registerLazySingleton(() => GetPairCodes(sl()));
+  sl.registerLazySingleton(() => PairDevice(sl()));
   sl.registerLazySingleton(() => FetchCountedStockById(sl()));
   sl.registerLazySingleton(() => UpdateStockCount(sl()));
   sl.registerLazySingleton(() => FetchStocktakePage(sl()));

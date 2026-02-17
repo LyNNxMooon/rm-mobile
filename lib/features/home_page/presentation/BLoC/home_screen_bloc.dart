@@ -1,6 +1,10 @@
 import 'package:bloc/bloc.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_history.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_host.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/get_pair_codes.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/pair_device.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
@@ -115,9 +119,14 @@ class ConnectingFolderBloc
 
 class ShopfrontBloc extends Bloc<HomeScreenEvents, ShopFrontStates> {
   final FetchShopfrontList fetchShopfrontList;
+  final FetchShopfrontsFromApi fetchShopfrontsFromApi;
 
-  ShopfrontBloc({required this.fetchShopfrontList}) : super(ShopInitial()) {
+  ShopfrontBloc({
+    required this.fetchShopfrontList,
+    required this.fetchShopfrontsFromApi,
+  }) : super(ShopInitial()) {
     on<FetchShops>(_onFetchShops);
+    on<FetchShopsFromApi>(_onFetchShopsFromApi);
   }
 
   Future<void> _onFetchShops(
@@ -133,6 +142,24 @@ class ShopfrontBloc extends Bloc<HomeScreenEvents, ShopFrontStates> {
         event.path,
         event.userName,
         event.pwd,
+      );
+
+      emit(ShopsLoaded(shops));
+    } catch (error) {
+      emit(ShopsError("Error fetching shops: $error"));
+    }
+  }
+
+  Future<void> _onFetchShopsFromApi(
+    FetchShopsFromApi event,
+    Emitter<ShopFrontStates> emit,
+  ) async {
+    emit(ShopsLoading());
+    try {
+      final shops = await fetchShopfrontsFromApi(
+        event.ipAddress,
+        event.port,
+        event.apiKey,
       );
 
       emit(ShopsLoaded(shops));
@@ -325,6 +352,79 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       );
     } catch (e) {
       emit(SettingsError(e.toString()));
+    }
+  }
+}
+
+class DiscoverHostBloc extends Bloc<DiscoverHostEvents, DiscoverHostStates> {
+  final DiscoverHost discoverHost;
+
+  DiscoverHostBloc({required this.discoverHost}) : super(DiscoverHostInitial()) {
+    on<DiscoverHostEvent>(_onDiscoverHost);
+  }
+
+  Future<void> _onDiscoverHost(
+    DiscoverHostEvent event,
+    Emitter<DiscoverHostStates> emit,
+  ) async {
+    emit(DiscoveringHost());
+    try {
+      final response = await discoverHost(event.ip, event.port);
+      emit(DiscoverHostLoaded(response));
+    } catch (e) {
+      emit(DiscoverHostError(e.toString()));
+    }
+  }
+}
+
+class PairCodeBloc extends Bloc<PairCodeEvents, PairCodeStates> {
+  final GetPairCodes getPairCodes;
+
+  PairCodeBloc({required this.getPairCodes}) : super(PairCodeInitial()) {
+    on<GetPairCodesEvent>(_onGetPairCodes);
+  }
+
+  Future<void> _onGetPairCodes(
+    GetPairCodesEvent event,
+    Emitter<PairCodeStates> emit,
+  ) async {
+    emit(GettingPairCodes());
+    try {
+      final response = await getPairCodes(event.ip, event.port);
+      emit(PairCodesLoaded(response));
+    } catch (e) {
+      emit(PairCodeError(e.toString()));
+    }
+  }
+}
+
+class PairDeviceBloc extends Bloc<PairDeviceEvents, PairDeviceStates> {
+  final PairDevice pairDevice;
+
+  PairDeviceBloc({required this.pairDevice}) : super(PairDeviceInitial()) {
+    on<PairDeviceEvent>(_onPairDevice);
+  }
+
+  Future<void> _onPairDevice(
+    PairDeviceEvent event,
+    Emitter<PairDeviceStates> emit,
+  ) async {
+    emit(PairingDevice());
+    try {
+      final response = await pairDevice(
+        ip: event.ip,
+        hostName: event.hostName,
+        port: event.port,
+        pairingCode: event.pairingCode,
+      );
+
+      if (response.success) {
+        emit(PairDeviceSuccess(response));
+      } else {
+        emit(PairDeviceError(response.message));
+      }
+    } catch (e) {
+      emit(PairDeviceError(e.toString()));
     }
   }
 }

@@ -22,10 +22,16 @@ class ShopfrontsDialog extends StatefulWidget {
     super.key,
     required this.pc,
     required this.previousPath,
+    this.isPairedFlow = false,
+    this.port,
+    this.apiKey,
   });
 
   final NetworkComputerVO pc;
   final String previousPath;
+  final bool isPairedFlow;
+  final int? port;
+  final String? apiKey;
 
   @override
   State<ShopfrontsDialog> createState() => _ShopfrontsDialogState();
@@ -89,6 +95,49 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                     );
                   } else if (state is ShopsError) {
                     logger.e(widget.previousPath);
+                    if (widget.isPairedFlow) {
+                      return Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: kErrorColor,
+                                size: 40,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                state.message,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: kGreyColor),
+                              ),
+                              const SizedBox(height: 12),
+                              TextButton(
+                                onPressed: () {
+                                  if (widget.port != null &&
+                                      widget.apiKey != null) {
+                                    context.read<ShopfrontBloc>().add(
+                                      FetchShopsFromApi(
+                                        ipAddress: widget.pc.ipAddress,
+                                        port: widget.port!,
+                                        apiKey: widget.apiKey!,
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: const Text(
+                                  "Retry",
+                                  style: TextStyle(color: kPrimaryColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
                     return Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: SingleChildScrollView(
@@ -224,12 +273,14 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                     }
 
                     if (state.shops.shopfronts.length == 1) {
-                      context.read<ShopFrontConnectionBloc>().add(
-                        ConnectToShopfrontEvent(
-                          ip: widget.pc.ipAddress,
-                          shopName: state.shops.shopfronts[0],
-                        ),
-                      );
+                      if (!widget.isPairedFlow) {
+                        context.read<ShopFrontConnectionBloc>().add(
+                          ConnectToShopfrontEvent(
+                            ip: widget.pc.ipAddress,
+                            shopName: state.shops.shopfronts[0],
+                          ),
+                        );
+                      }
                     }
 
                     return ListView.separated(
@@ -254,6 +305,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
             ),
             BlocListener<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
               listenWhen: (previous, current) =>
+                  !widget.isPairedFlow &&
                   previous is! ConnectedToShopfront &&
                   current is ConnectedToShopfront,
               listener: (context, state) {
@@ -285,6 +337,11 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
   Widget _buildShopTile(String shopName, BuildContext ctx) {
     return InkWell(
       onTap: () {
+        if (widget.isPairedFlow) {
+          // Old setup flow intentionally disabled for paired-api flow.
+          return;
+        }
+
         ctx.read<ShopFrontConnectionBloc>().add(
           ConnectToShopfrontEvent(ip: widget.pc.ipAddress, shopName: shopName),
         );

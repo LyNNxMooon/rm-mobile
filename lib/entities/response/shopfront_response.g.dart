@@ -1,5 +1,7 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
+// ignore_for_file: unused_element
+
 part of 'shopfront_response.dart';
 
 // **************************************************************************
@@ -14,8 +16,8 @@ ShopfrontResponse _$ShopfrontResponseFromJson(Map<String, dynamic> json) =>
           .toList(),
     );
 
-// Map<String, dynamic> _$ShopfrontResponseToJson(ShopfrontResponse instance) =>
-//     <String, dynamic>{
-//       'total': instance.total,
-//       'shopfronts': instance.shopfronts,
-//     };
+Map<String, dynamic> _$ShopfrontResponseToJson(ShopfrontResponse instance) =>
+    <String, dynamic>{
+      'total': instance.total,
+      'shopfronts': instance.shopfronts,
+    };

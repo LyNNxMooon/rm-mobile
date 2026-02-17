@@ -44,6 +44,12 @@ abstract class LocalDbDAO {
   });
   Future<List<String>> getDistinctValues(String columnName, String shopfront);
   Future<String?> getAppConfig(String key);
+  Future<String?> getHostIpAddress();
+  Future<String?> getApiKey();
+  Future<String?> getHostName();
+  Future<String?> getShopfrontId();
+  Future<String?> getShopfrontName();
+  Future<String?> getDeviceId();
   Future<Map<num, StockVO>> getStocksByIds({
     required String shopfront,
     required List<num> stockIds,
@@ -82,6 +88,12 @@ abstract class LocalDbDAO {
   Future<void> addNetworkPath(String path, String shopfront, String hostName);
   Future<void> insertStocks(List<StockVO> stocks, String shopfront);
   Future<void> saveAppConfig(String key, String value);
+  Future<void> saveHostIpAddress(String hostIpAddress);
+  Future<void> saveApiKey(String apiKey);
+  Future<void> saveHostName(String hostName);
+  Future<void> saveShopfrontId(String shopfrontId);
+  Future<void> saveShopfrontName(String shopfrontName);
+  Future<void> saveDeviceId(String deviceId);
   Future<void> saveStocktakeHistorySession({
     required String sessionId,
     required String shopfront,

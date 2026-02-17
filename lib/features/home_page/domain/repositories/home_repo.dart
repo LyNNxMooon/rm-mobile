@@ -1,3 +1,6 @@
+import 'package:rmstock_scanner/entities/response/discover_response.dart';
+import 'package:rmstock_scanner/entities/response/paircode_response.dart';
+import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 
 import '../../../../entities/vos/network_computer_vo.dart';
@@ -56,4 +59,21 @@ abstract class HomeRepo {
   Future<void> setRetentionDays(int days);
 
   Future<int> runHistoryCleanup();
+
+  Future<DiscoverResponse> discoverHost(String ip, int port);
+
+  Future<PaircodeResponse> getPairCodes(String ip, int port);
+
+  Future<PairResponse> pairDevice({
+    required String ip,
+    required String hostName,
+    required int port,
+    required String pairingCode,
+  });
+
+  Future<ShopfrontResponse> fetchShopfrontsFromApi(
+    String ip,
+    int port,
+    String apiKey,
+  );
 }

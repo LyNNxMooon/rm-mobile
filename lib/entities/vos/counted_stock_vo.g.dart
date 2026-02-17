@@ -8,10 +8,10 @@ part of 'counted_stock_vo.dart';
 
 CountedStockVO _$CountedStockVOFromJson(Map<String, dynamic> json) =>
     CountedStockVO(
+      inStock: json['inStock'] as num,
       stocktakeDate: DateTime.parse(json['stocktake_date'] as String),
       stockID: (json['stock_id'] as num).toInt(),
       quantity: json['quantity'] as num,
-      inStock: json['inStock'] as num,
       dateModified: DateTime.parse(json['date_modified'] as String),
       isSynced: json['is_synced'] as bool,
       description: json['description'] as String,
