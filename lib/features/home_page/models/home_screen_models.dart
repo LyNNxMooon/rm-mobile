@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
 import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
@@ -12,7 +10,6 @@ import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
-import 'package:smb_connect/smb_connect.dart';
 
 import '../../../local_db/local_db_dao.dart';
 import '../../../network/LAN_sharing/lan_network_service_impl.dart';
@@ -173,98 +170,210 @@ class HomeScreenModels implements HomeRepo {
     String mobileID,
     String shopfront,
   ) async* {
-    final sanitizedName = mobileID.replaceAll(" ", "_");
-
-    yield SyncStatus(0, 0, "Waiting for agent...");
-
-    final firstFile = await LanNetworkServiceImpl.instance.pollForFile(
-      address: ipAddress,
-      fullPath: fullPath,
-      username: username ?? AppGlobals.instance.defaultUserName,
-      password: password ?? AppGlobals.instance.defaultPwd,
-      fileNamePattern: "${sanitizedName}_stocklookup_part1_of_",
-      maxRetries: 60,
-    );
-
-    if (firstFile == null) {
-      throw Exception("RM-Mobile Manager did not respond in time.");
-    }
-
-    final nameParts = firstFile.name.split('_');
-    int totalParts = 1;
-    String timestamp = "";
-
     try {
-      int ofIndex = nameParts.indexOf("of");
-      totalParts = int.parse(nameParts[ofIndex + 1]);
-      timestamp = nameParts[ofIndex + 2].split('.')[0];
-    } catch (e) {
-      totalParts = 1;
-    }
+      // Old setup disabled: shared-folder request/response with .json.gz parts.
+      // New setup: direct API POST /api/shopfronts/{shopfrontId}/stock.
+      yield SyncStatus(0, 1, "Preparing stock sync...");
 
-    yield SyncStatus(0, totalParts * 10000, "Starting Sync...");
+      final String savedIp = (await LocalDbDAO.instance.getHostIpAddress() ?? "")
+          .trim();
+      final String resolvedIp = savedIp.isNotEmpty ? savedIp : ipAddress.trim();
 
-    final String shopKey = shopfront;
-    // IMPORTANT: Only clear the whole database if it is a FULL SYNC
-    // If it's a Delta Sync, do NOT call clearStocksForShop.
-    final String? lastSync = await LocalDbDAO.instance.getAppConfig(shopKey);
-    if (lastSync == null || lastSync.isEmpty) {
-      await LocalDbDAO.instance.clearStocksForShop(
-        AppGlobals.instance.shopfront ?? "",
-      );
-    }
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+      final String resolvedShopfrontName =
+          (await LocalDbDAO.instance.getShopfrontName() ?? "").trim();
 
-    for (int i = 1; i <= totalParts; i++) {
-      String partPattern = "part${i}_of_${totalParts}_$timestamp";
-
-      SmbFile? currentFile;
-      if (i == 1) {
-        currentFile = firstFile;
-      } else {
-        currentFile = await LanNetworkServiceImpl.instance.pollForFile(
-          address: ipAddress,
-          fullPath: fullPath,
-          username: username ?? AppGlobals.instance.defaultUserName,
-          password: password ?? AppGlobals.instance.defaultPwd,
-          fileNamePattern: partPattern,
-          maxRetries: 60,
+      if (resolvedIp.isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty ||
+          resolvedShopfrontName.isEmpty) {
+        throw Exception(
+          "Missing host/shopfront setup. Please reconnect to a host and shopfront.",
         );
       }
 
-      if (currentFile == null) {
-        throw Exception("Timeout waiting for $partPattern");
-      }
+      AppGlobals.instance.currentHostIp = resolvedIp;
+      AppGlobals.instance.shopfront = resolvedShopfrontName;
 
-      Uint8List bytes = await LanNetworkServiceImpl.instance
-          .downloadAndDeleteFile(
-            address: ipAddress,
-            username: username ?? AppGlobals.instance.defaultUserName,
-            password: password ?? AppGlobals.instance.defaultPwd,
-            fileToDownload: currentFile,
+      final String syncKey = "stock_sync_timestamp_$resolvedShopfrontId";
+      final String? lastSyncTimestamp = await LocalDbDAO.instance.getAppConfig(
+        syncKey,
+      );
+      final bool isFullSync =
+          lastSyncTimestamp == null || lastSyncTimestamp.isEmpty;
+
+      String latestSyncTimestamp = DateTime.now().toIso8601String();
+
+      if (isFullSync) {
+        yield SyncStatus(0, 1, "Starting full sync...");
+
+        await LocalDbDAO.instance.clearStocksForShop(resolvedShopfrontName);
+
+        int processed = 0;
+        int total = 1;
+        int? afterStockId;
+        bool hasMore = true;
+
+        while (hasMore) {
+          final Map<String, dynamic> body = {"pageSize": 5000};
+          if (afterStockId != null && afterStockId > 0) {
+            body["afterStockId"] = afterStockId;
+          }
+
+          final response = await DataAgentImpl.instance.fetchShopfrontStocks(
+            resolvedIp,
+            resolvedPort,
+            resolvedShopfrontId,
+            resolvedApiKey,
+            body,
           );
 
-      String jsonString = utf8.decode(GZipCodec().decode(bytes));
-      List<StockVO> chunk = (jsonDecode(jsonString) as List)
-          .map((e) => StockVO.fromJsonNetwork(e))
-          .toList();
+          if (!response.success) {
+            throw Exception(response.message);
+          }
 
-      await LocalDbDAO.instance.insertStocks(
-        chunk,
-        AppGlobals.instance.shopfront ?? "",
-      );
+          latestSyncTimestamp = response.syncTimestamp;
+          total = response.totalItems > 0 ? response.totalItems : total;
 
-      int approximateTotal = totalParts * 10000;
-      int currentCount = i * 10000;
-      if (i == totalParts) currentCount = approximateTotal;
+          if (response.items.isNotEmpty) {
+            final stocks = response.items.map(_toStockFromApiItem).toList();
+            await LocalDbDAO.instance.insertStocks(stocks, resolvedShopfrontName);
+            processed += stocks.length;
+          }
 
-      yield SyncStatus(
-        currentCount,
-        approximateTotal,
-        "Syncing part $i of $totalParts...",
-      );
+          yield SyncStatus(
+            processed,
+            total,
+            "Syncing stocks... ($processed/$total)",
+          );
+
+          hasMore = response.hasMore;
+          afterStockId = response.lastStockId;
+
+          if (hasMore && (afterStockId == null || afterStockId <= 0)) {
+            hasMore = false;
+          }
+        }
+      } else {
+        yield SyncStatus(0, 1, "Checking for stock updates...");
+
+        final response = await DataAgentImpl.instance.fetchShopfrontStocks(
+          resolvedIp,
+          resolvedPort,
+          resolvedShopfrontId,
+          resolvedApiKey,
+          {"lastSyncTimestamp": lastSyncTimestamp},
+        );
+
+        if (!response.success) {
+          throw Exception(response.message);
+        }
+
+        latestSyncTimestamp = response.syncTimestamp;
+
+        if (response.items.isNotEmpty) {
+          final stocks = response.items.map(_toStockFromApiItem).toList();
+          await LocalDbDAO.instance.insertStocks(stocks, resolvedShopfrontName);
+        }
+
+        final int deltaCount = response.itemCount;
+        yield SyncStatus(
+          deltaCount,
+          deltaCount == 0 ? 1 : deltaCount,
+          deltaCount == 0
+              ? "No stock changes found."
+              : "Applied $deltaCount stock updates.",
+        );
+      }
+
+      await LocalDbDAO.instance.saveAppConfig(syncKey, latestSyncTimestamp);
+      yield SyncStatus(1, 1, "Stock sync completed.");
+    } on Exception catch (error) {
+      yield* Stream.error(error);
     }
-    final String completionTime = DateTime.now().toString();
-    await LocalDbDAO.instance.saveAppConfig(shopKey, completionTime);
+  }
+
+  StockVO _toStockFromApiItem(Map<String, dynamic> item) {
+    final mapped = <String, dynamic>{
+      "stock_id": _asNum(item["stock_id"]),
+      "Barcode": _asString(item["barcode"] ?? item["Barcode"]),
+      "description": _asString(item["description"]),
+      "dept_name": _asNullableString(item["dept_name"]),
+      "dept_id": _asInt(item["dept_id"]),
+      "custom1": _asNullableString(item["custom1"]),
+      "custom2": _asNullableString(item["custom2"]),
+      "longdesc": _asNullableString(item["longdesc"]),
+      "supplier": _asString(item["supplier"]),
+      "cat1": _asNullableString(item["cat1"]),
+      "cat2": _asNullableString(item["cat2"]),
+      "cat3": _asNullableString(item["cat3"]),
+      "cost": _asNum(item["cost"]),
+      "sell": _asNum(item["sell"]),
+      "inactive": _asBool(item["inactive"]),
+      "quantity": _asNum(item["quantity"]),
+      "layby_qty": _asNum(item["layby_qty"]),
+      "salesorder_qty": _asNum(item["salesorder_qty"]),
+      "date_created": _asString(item["date_created"]),
+      "order_threshold": _asNum(item["order_threshold"]),
+      "order_quantity": _asNum(item["order_quantity"]),
+      "allow_fractions": _asBool(item["allow_fractions"]),
+      "package": _asBool(item["package"]),
+      "static_quantity": _asBool(item["static_quantity"]),
+      "picture_file_name": _asNullableString(item["picture_file_name"]),
+      "imageUrl": _asNullableString(
+        item["thumbnail_url"] ?? item["picture_url"] ?? item["imageUrl"],
+      ),
+      "goods_tax": _asNullableString(item["goods_tax"]),
+      "sales_tax": _asNullableString(item["sales_tax"]),
+      "date_modified": _asString(item["date_modified"]),
+      "freight": _asBool(item["freight"]),
+      "tare_weight": _asNum(item["tare_weight"]),
+      "unitof_measure": _asNum(item["unit_of_measure"] ?? item["unitof_measure"]),
+      "weighted": _asBool(item["weighted"]),
+      "track_serial": _asBool(item["track_serial"]),
+    };
+
+    return StockVO.fromJsonNetwork(mapped);
+  }
+
+  String _asString(dynamic value) {
+    return value == null ? "" : value.toString();
+  }
+
+  String? _asNullableString(dynamic value) {
+    if (value == null) return null;
+    final parsed = value.toString();
+    return parsed.isEmpty ? null : parsed;
+  }
+
+  int? _asInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString());
+  }
+
+  num _asNum(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value;
+    final parsed = num.tryParse(value.toString());
+    return parsed ?? 0;
+  }
+
+  bool _asBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final lower = value.toLowerCase();
+      return lower == "true" || lower == "1";
+    }
+    return false;
   }
 
   @override

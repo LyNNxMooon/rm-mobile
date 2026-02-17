@@ -3,12 +3,10 @@ import 'package:rmstock_scanner/entities/response/discover_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
+import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
 
 abstract class DataAgent {
-
-
-   
   Future<DiscoverResponse> discoverHost(String ip, int port);
 
   Future<PaircodeResponse> getPairCodes(String ip, int port);
@@ -32,10 +30,17 @@ abstract class DataAgent {
     String apiKey,
   );
 
+  Future<StockLookupApiResponse> fetchShopfrontStocks(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  );
+
   Future<ValidateResponse> validate(
     String ip,
     int port,
     String apiKey,
   );
-
 }

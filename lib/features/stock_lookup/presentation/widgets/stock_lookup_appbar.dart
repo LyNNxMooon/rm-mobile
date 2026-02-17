@@ -139,10 +139,9 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                     borderRadius: BorderRadius.circular(12),
                     child: InkWell(
                       onTap: () {
-                        context.read<ShopFrontConnectionBloc>().add(
-                          ConnectToShopfrontEvent(
-                            ip: AppGlobals.instance.currentHostIp ?? "",
-                            shopName: AppGlobals.instance.shopfront ?? "",
+                        context.read<FetchStockBloc>().add(
+                          StartSyncEvent(
+                            ipAddress: AppGlobals.instance.currentHostIp ?? "",
                           ),
                         );
                       },

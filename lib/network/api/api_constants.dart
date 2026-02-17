@@ -10,6 +10,7 @@ const kEndPointForPairCode = "/paircode";
 const kEndPointForParing = "/pair";
 const kEndPointForShopfronts = "/shopfronts";
 const kEndPointForConnectShopfront = "/shopfronts/{$kPathParamForShopfrontId}/connect";
+const kEndPointForStockLookup = "/shopfronts/{$kPathParamForShopfrontId}/stock";
 const kEndPointForValidate = "/validate";
 
 //keys

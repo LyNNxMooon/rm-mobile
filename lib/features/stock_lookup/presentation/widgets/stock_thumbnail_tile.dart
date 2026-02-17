@@ -1,11 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/constants/images.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmstock_scanner/local_db/local_db_dao.dart';
+import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
 class StockThumbnailTile extends StatefulWidget {
   final StockVO stock;
@@ -16,66 +13,77 @@ class StockThumbnailTile extends StatefulWidget {
   State<StockThumbnailTile> createState() => _StockThumbnailTileState();
 }
 
-class _StockThumbnailTileState extends State<StockThumbnailTile> {
-  @override
-  void initState() {
-    super.initState();
+class _ThumbnailRequestConfig {
+  final int port;
+  final String apiKey;
 
-    final pic = widget.stock.pictureFileName;
-    if (pic != null && pic.isNotEmpty) {
-      context.read<ThumbnailBloc>().add(
-        RequestThumbnailEvent(
-          stockId: widget.stock.stockID,
-          pictureFileName: pic,
-          //forceRefresh: true
-        ),
-      );
-    }
+  const _ThumbnailRequestConfig({required this.port, required this.apiKey});
+}
+
+class _StockThumbnailTileState extends State<StockThumbnailTile> {
+  static Future<_ThumbnailRequestConfig>? _configFuture;
+
+  Future<_ThumbnailRequestConfig> _loadConfig() async {
+    final int port =
+        int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+        5000;
+    final String apiKey = (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+    return _ThumbnailRequestConfig(port: port, apiKey: apiKey);
   }
 
-  @override
-  void didUpdateWidget(covariant StockThumbnailTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    final oldPic = oldWidget.stock.pictureFileName ?? '';
-    final newPic = widget.stock.pictureFileName ?? '';
-
-    if (oldWidget.stock.stockID != widget.stock.stockID || oldPic != newPic) {
-      if (newPic.isNotEmpty) {
-        context.read<ThumbnailBloc>().add(
-          RequestThumbnailEvent(
-            stockId: widget.stock.stockID,
-            pictureFileName: newPic,
-            forceRefresh: true,
-          ),
-        );
-      }
+  String? _buildThumbnailUrl(int port) {
+    final String? rawPath = widget.stock.imageUrl;
+    if (rawPath == null || rawPath.trim().isEmpty) {
+      return null;
     }
+
+    if (rawPath.startsWith("http://") || rawPath.startsWith("https://")) {
+      return rawPath;
+    }
+
+    final host = (AppGlobals.instance.currentHostIp ?? "")
+        .trim()
+        .replaceFirst(RegExp(r'^https?://'), '')
+        .replaceAll(RegExp(r'/$'), '');
+    if (host.isEmpty) {
+      return null;
+    }
+
+    final normalizedPath = rawPath.startsWith("/") ? rawPath : "/$rawPath";
+    return "http://$host:$port$normalizedPath";
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThumbnailBloc, ThumbnailState>(
-      builder: (context, state) {
-        String? localPath;
-        int rev = 0;
+    _configFuture ??= _loadConfig();
 
-        if (state is ThumbnailLoaded) {
-          localPath = state.thumbPaths[widget.stock.stockID];
-          rev = state.rev[widget.stock.stockID] ?? 0;
+    return FutureBuilder<_ThumbnailRequestConfig>(
+      future: _configFuture,
+      builder: (context, snapshot) {
+        final config = snapshot.data;
+        final String? imageUrl = _buildThumbnailUrl(config?.port ?? 5000);
+
+        if (imageUrl == null || imageUrl.isEmpty) {
+          return Image.asset(overviewPlaceholder, fit: BoxFit.fill);
         }
 
-        if (localPath != null &&
-            localPath.isNotEmpty &&
-            File(localPath).existsSync()) {
-          return Image.file(
-            File(localPath),
-            key: ValueKey('thumb_${widget.stock.stockID}_$rev'),
-            fit: BoxFit.fill,
-          );
+        final headers = <String, String>{};
+        final apiKey = config?.apiKey ?? "";
+        if (apiKey.isNotEmpty) {
+          headers["x-api-key"] = apiKey;
         }
 
-        return Image.asset(overviewPlaceholder, fit: BoxFit.fill);
+        return Image.network(
+          imageUrl,
+          fit: BoxFit.fill,
+          headers: headers.isEmpty ? null : headers,
+          errorBuilder: (_, _, _) =>
+              Image.asset(overviewPlaceholder, fit: BoxFit.fill),
+          loadingBuilder: (_, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Image.asset(overviewPlaceholder, fit: BoxFit.fill);
+          },
+        );
       },
     );
   }
