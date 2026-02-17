@@ -4,11 +4,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/widgets/restore_backup_dialog.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/widgets/shopfronts_dialog.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../local_db/local_db_dao.dart';
@@ -24,11 +28,24 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  static const int _defaultAgentPort = 5000;
+
   // Mock Data (Replace with BLoC state later)
   String staffName = "John Doe";
   String staffID = "STF-001";
   double retentionDays = 10;
   bool backupToLan = true;
+
+  final TextEditingController _manualIpController = TextEditingController();
+  final TextEditingController _manualCodeController = TextEditingController();
+  final TextEditingController _manualPortController = TextEditingController(
+    text: _defaultAgentPort.toString(),
+  );
+
+  bool _isManualConnectionFlow = false;
+  int _selectedPort = _defaultAgentPort;
+  String _selectedIp = "";
+  String _selectedHostName = "";
 
   @override
   void initState() {
@@ -37,8 +54,345 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   @override
+  void dispose() {
+    _manualIpController.dispose();
+    _manualCodeController.dispose();
+    _manualPortController.dispose();
+    super.dispose();
+  }
+
+  void _showError(BuildContext context, String message) {
+    showTopSnackBar(Overlay.of(context), CustomSnackBar.error(message: message));
+  }
+
+  void _startManualConnection(BuildContext context) {
+    final ip = _manualIpController.text.trim();
+    final code = _manualCodeController.text.trim();
+
+    if (ip.isEmpty) {
+      _showError(context, "Please enter host IP.");
+      return;
+    }
+    if (code.isEmpty) {
+      _showError(context, "Please enter pairing code.");
+      return;
+    }
+
+    _selectedIp = ip;
+    _selectedHostName = ip;
+    _selectedPort = _defaultAgentPort;
+    _isManualConnectionFlow = true;
+
+    context.read<DiscoverHostBloc>().add(
+      DiscoverHostEvent(ip: _selectedIp, port: _selectedPort),
+    );
+  }
+
+  void _retryDiscoverWithPort(BuildContext context, int port) {
+    _selectedPort = port;
+    context.read<DiscoverHostBloc>().add(
+      DiscoverHostEvent(ip: _selectedIp, port: _selectedPort),
+    );
+  }
+
+  void _showManualPortDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: 10,
+        backgroundColor: kBgColor,
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 260),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                decoration: const BoxDecoration(
+                  gradient: kGColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.settings_ethernet, color: kSecondaryColor),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        "Enter Port",
+                        style: getSmartTitle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 45,
+                      child: TextField(
+                        controller: _manualPortController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        decoration: InputDecoration(
+                          hintText: "Port (e.g. 5000)",
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final int? manualPort = int.tryParse(
+                            _manualPortController.text.trim(),
+                          );
+
+                          if (manualPort == null ||
+                              manualPort <= 0 ||
+                              manualPort > 65535) {
+                            _showError(context, "Please enter a valid port.");
+                            return;
+                          }
+
+                          Navigator.of(context).pop();
+                          _retryDiscoverWithPort(context, manualPort);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryColor,
+                          foregroundColor: kSecondaryColor,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text(
+                          "Try Port",
+                          style: TextStyle(
+                            color: kSecondaryColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showManualConnectionDialog(BuildContext context) {
+    _manualIpController.text = "";
+    _manualCodeController.text = "";
+
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: 10,
+        backgroundColor: kBgColor,
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 320),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                decoration: const BoxDecoration(
+                  gradient: kGColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.link_rounded, color: kSecondaryColor),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        "Manual Connection",
+                        style: getSmartTitle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 45,
+                      child: TextField(
+                        controller: _manualIpController,
+                        decoration: InputDecoration(
+                          hintText: "Host IP",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 45,
+                      child: TextField(
+                        controller: _manualCodeController,
+                        decoration: InputDecoration(
+                          hintText: "Pairing Code",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => _startManualConnection(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryColor,
+                          foregroundColor: kSecondaryColor,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text(
+                          "Connect",
+                          style: TextStyle(
+                            color: kSecondaryColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<DiscoverHostBloc, DiscoverHostStates>(
+          listener: (context, state) {
+            if (!_isManualConnectionFlow) return;
+
+            if (state is DiscoverHostLoaded) {
+              if (!state.response.isAgent) {
+                _showError(context, "Selected host is not a valid RM agent.");
+                return;
+              }
+
+              _selectedPort = state.response.port;
+              _selectedHostName = state.response.serverName;
+
+              context.read<PairDeviceBloc>().add(
+                PairDeviceEvent(
+                  ip: _selectedIp,
+                  hostName: _selectedHostName,
+                  port: _selectedPort,
+                  pairingCode: _manualCodeController.text.trim(),
+                ),
+              );
+            }
+
+            if (state is DiscoverHostError) {
+              _showError(context, state.message);
+              _showManualPortDialog(context);
+            }
+          },
+        ),
+        BlocListener<PairDeviceBloc, PairDeviceStates>(
+          listener: (context, state) {
+            if (!_isManualConnectionFlow) return;
+
+            if (state is PairDeviceSuccess) {
+              final navigator = Navigator.of(context, rootNavigator: true);
+              navigator.popUntil((route) => route is! PopupRoute);
+
+              context.read<ShopfrontBloc>().add(
+                FetchShopsFromApi(
+                  ipAddress: _selectedIp,
+                  port: _selectedPort,
+                  apiKey: state.response.apiKey,
+                ),
+              );
+
+              showDialog(
+                barrierDismissible: false,
+                context: context,
+                builder: (_) => ShopfrontsDialog(
+                  pc: NetworkComputerVO(
+                    ipAddress: _selectedIp,
+                    hostName: _selectedHostName,
+                  ),
+                  previousPath: "",
+                  isPairedFlow: true,
+                  port: _selectedPort,
+                  apiKey: state.response.apiKey,
+                ),
+              );
+
+              AlertInfo.show(
+                context: context,
+                text: state.response.message,
+                typeInfo: TypeInfo.success,
+                backgroundColor: kSecondaryColor,
+                iconColor: kPrimaryColor,
+                textColor: kThirdColor,
+                padding: 70,
+                position: MessagePosition.top,
+              );
+
+              _isManualConnectionFlow = false;
+            }
+
+            if (state is PairDeviceError) {
+              _showError(context, state.message);
+            }
+          },
+        ),
+      ],
+      child: Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: kGColor),
         child: SafeArea(
@@ -108,6 +462,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           children: [
                             _buildActionRow(
+                              Icons.settings_ethernet_outlined,
+                              "Manual Connection",
+                              "Connect with host IP and pairing code",
+                              kPrimaryColor,
+                              () => _showManualConnectionDialog(context),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 15),
+                              child: Divider(height: 1, thickness: 0.5),
+                            ),
+                            _buildActionRow(
                               Icons.restore_page_outlined,
                               "Restore Data",
                               "Recover deleted stocktake from server",
@@ -154,7 +519,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildAppBar(BuildContext context) {
