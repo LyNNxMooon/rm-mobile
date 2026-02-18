@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
+import 'package:rmstock_scanner/entities/response/picture_upload_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
@@ -306,23 +307,33 @@ class StockLookupModels implements StockLookupRepo {
   }
 
   @override
-  Future<void> uploadStockImage({
-    required String address,
-    required String fullPath,
-    required String? username,
-    required String? password,
-    required String fileName,
+  Future<PictureUploadResponse> uploadStockImage({
+    required String ip,
+    required int port,
+    required String shopfrontId,
+    required int stockId,
+    required String apiKey,
     required Uint8List jpgBytes,
   }) async {
     try {
-      await LanNetworkServiceImpl.instance.uploadStockImageToIncoming(
-        address: address,
-        fullPath: fullPath,
-        username: username ?? AppGlobals.instance.defaultUserName,
-        password: password ?? AppGlobals.instance.defaultPwd,
-        fileName: fileName,
-        jpgBytes: jpgBytes,
-        deleteSamePrefixFirst: true,
+      // Old setup disabled:
+      // await LanNetworkServiceImpl.instance.uploadStockImageToIncoming(
+      //   address: address,
+      //   fullPath: fullPath,
+      //   username: username ?? AppGlobals.instance.defaultUserName,
+      //   password: password ?? AppGlobals.instance.defaultPwd,
+      //   fileName: fileName,
+      //   jpgBytes: jpgBytes,
+      //   deleteSamePrefixFirst: true,
+      // );
+
+      return await DataAgentImpl.instance.uploadShopfrontPicture(
+        ip,
+        port,
+        shopfrontId,
+        stockId,
+        apiKey,
+        jpgBytes,
       );
     } on Exception catch (e) {
       return Future.error(e);

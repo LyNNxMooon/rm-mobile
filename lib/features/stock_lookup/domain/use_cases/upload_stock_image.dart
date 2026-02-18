@@ -2,55 +2,41 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
-import 'package:rmstock_scanner/entities/vos/device_metedata_vo.dart';
+import 'package:rmstock_scanner/entities/response/picture_upload_response.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
-import 'package:rmstock_scanner/utils/device_meta_data_utils.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
-import 'package:rmstock_scanner/utils/network_credentials_check_utils.dart';
 
 class UploadStockImageUseCase {
   final StockLookupRepo repository;
 
   UploadStockImageUseCase(this.repository);
 
-  Future<void> call({required int stockId, required String imagePath}) async {
+  Future<PictureUploadResponse> call({
+    required int stockId,
+    required String imagePath,
+  }) async {
     try {
-      final ip = AppGlobals.instance.currentHostIp ?? "";
-      final fullPath = AppGlobals.instance.currentPath ?? "";
-      final shopfront = AppGlobals.instance.shopfront ?? "";
+      final String ip = (await LocalDbDAO.instance.getHostIpAddress() ?? "")
+          .trim();
+      final int port =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          5000;
+      final String apiKey = (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final String shopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
 
-      String? user;
-      String? pwd;
-
-      if (await NetworkCredentialsCheckUtils.instance
-          .isRequiredNetworkCredentials(ipAddress: ip)) {
-        final savedCred = await LocalDbDAO.instance.getNetworkCredential(
-          ip: ip,
-        );
-        user = savedCred?['username'] as String?;
-        pwd = savedCred?['password'] as String?;
+      if (ip.isEmpty || apiKey.isEmpty || shopfrontId.isEmpty) {
+        throw Exception("Missing host or shopfront setup for image upload.");
       }
-
-      final DeviceMetadata mobileInfo = await DeviceMetaDataUtils.instance
-          .getDeviceInformation();
-
-      String pad(int v) => v.toString().padLeft(2, '0');
-      final now = DateTime.now();
-      final ts =
-          "${now.year}${pad(now.month)}${pad(now.day)}${pad(now.hour)}${pad(now.minute)}${pad(now.second)}";
-
-      final fileName =
-          "${mobileInfo.deviceId}_stockimg_${shopfront.split(r'\').last}_${stockId}_$ts.jpg";
 
       final jpgBytes = await toJpegBytesStrict(imagePath);
 
-      await repository.uploadStockImage(
-        address: ip,
-        fullPath: fullPath,
-        username: user,
-        password: pwd,
-        fileName: fileName,
+      return await repository.uploadStockImage(
+        ip: ip,
+        port: port,
+        shopfrontId: shopfrontId,
+        stockId: stockId,
+        apiKey: apiKey,
         jpgBytes: jpgBytes,
       );
     } catch (e) {

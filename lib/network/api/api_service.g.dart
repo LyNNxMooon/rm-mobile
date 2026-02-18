@@ -427,6 +427,50 @@ class _ApiService implements ApiService {
   }
 
   @override
+  Future<PictureUploadResponse> uploadShopfrontPicture(
+    String shopfrontId,
+    int stockId,
+    String apiKey,
+    List<int> jpgBytes,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{
+      r'Accept': 'application/json',
+      r'Content-Type': 'image/jpeg',
+      r'x-api-key': apiKey,
+    };
+    _headers.removeWhere((k, v) => v == null);
+    final _data = jpgBytes;
+    final _options = _setStreamType<PictureUploadResponse>(Options(
+      method: 'POST',
+      headers: _headers,
+      extra: _extra,
+      contentType: 'image/jpeg',
+    )
+        .compose(
+          _dio.options,
+          '/shopfronts/${shopfrontId}/pictures/${stockId}',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late PictureUploadResponse _value;
+    try {
+      _value = PictureUploadResponse.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, _result);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<ValidateResponse> validate(String apiKey) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};

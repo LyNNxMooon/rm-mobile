@@ -4,6 +4,7 @@ import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dar
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
+import 'package:rmstock_scanner/entities/response/picture_upload_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
@@ -152,6 +153,29 @@ class DataAgentImpl implements DataAgent {
       ).asStream().map((event) => event).first;
     } on Exception catch (error) {
       logger.e('Error updating shopfront stock from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<PictureUploadResponse> uploadShopfrontPicture(
+    String ip,
+    int port,
+    String shopfrontId,
+    int stockId,
+    String apiKey,
+    List<int> jpgBytes,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.uploadShopfrontPicture(
+        shopfrontId,
+        stockId,
+        apiKey,
+        jpgBytes,
+      ).asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error uploading shopfront picture from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }

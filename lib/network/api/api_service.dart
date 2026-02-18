@@ -4,6 +4,7 @@ import 'package:retrofit/retrofit.dart';
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
+import 'package:rmstock_scanner/entities/response/picture_upload_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_list_response.dart';
@@ -99,6 +100,18 @@ abstract class ApiService {
     @Path(kPathParamForShopfrontId) String shopfrontId,
     @Header("x-api-key") String apiKey,
     @Body() Map<String, dynamic> body,
+  );
+
+  @POST(kEndPointForPictureUpload)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'image/jpeg',
+  })
+  Future<PictureUploadResponse> uploadShopfrontPicture(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Path(kPathParamForStockId) int stockId,
+    @Header("x-api-key") String apiKey,
+    @Body() List<int> jpgBytes,
   );
 
   @POST(kEndPointForValidate)

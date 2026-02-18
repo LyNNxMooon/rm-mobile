@@ -13,11 +13,14 @@ const kEndPointForConnectShopfront = "/shopfronts/{$kPathParamForShopfrontId}/co
 const kEndPointForStockLookup = "/shopfronts/{$kPathParamForShopfrontId}/stock";
 const kEndPointForShopfrontStockUpdate =
     "/shopfronts/{$kPathParamForShopfrontId}/stock/update";
+const kEndPointForPictureUpload =
+    "/shopfronts/{$kPathParamForShopfrontId}/pictures/{$kPathParamForStockId}";
 const kEndPointForValidate = "/validate";
 
 //keys
 const kPathParamForHostIP = "HostIP";
 const kPathParamForBarcode = "Barcode";
 const kPathParamForShopfrontId = "ShopfrontId";
+const kPathParamForStockId = "StockId";
 const kQueryParamKeyForLastStockID = "lastStockId";
 const kQueryParamKeyForPageSize = "pageSize";

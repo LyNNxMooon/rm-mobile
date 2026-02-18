@@ -290,10 +290,15 @@ class StockImageUploadBloc
   ) async {
     emit(StockImageUploading());
     try {
-      await uploadUseCase(stockId: event.stockId, imagePath: event.imagePath);
-      emit(
-        StockImageUploaded("Image uploaded. Agent will process it shortly."),
+      final response = await uploadUseCase(
+        stockId: event.stockId,
+        imagePath: event.imagePath,
       );
+      if (response.success) {
+        emit(StockImageUploaded(response.message));
+      } else {
+        emit(StockImageUploadError("Failed to upload image: ${response.message}"));
+      }
     } catch (e) {
       emit(StockImageUploadError(e.toString()));
     }

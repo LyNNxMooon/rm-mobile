@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../../../../entities/response/paginated_stock_response.dart';
+import '../../../../entities/response/picture_upload_response.dart';
 import '../../../../entities/response/stock_update_response.dart';
 import '../../../../entities/vos/filter_criteria.dart';
 import '../entities/sync_status.dart';
@@ -40,12 +41,12 @@ abstract class StockLookupRepo {
     bool forceRefresh = false,
   });
 
-  Future<void> uploadStockImage({
-    required String address,
-    required String fullPath,
-    required String? username,
-    required String? password,
-    required String fileName,
+  Future<PictureUploadResponse> uploadStockImage({
+    required String ip,
+    required int port,
+    required String shopfrontId,
+    required int stockId,
+    required String apiKey,
     required Uint8List jpgBytes,
   });
 

@@ -40,6 +40,8 @@ class StockDetailsScreen extends StatefulWidget {
 class _StockDetailsScreenState extends State<StockDetailsScreen> {
   double sell = 0.00;
   double cost = 0.00;
+  String? _localSelectedImagePath;
+  bool _shouldSyncOnExit = false;
 
   late final LanguageToolController _descriptionController;
 
@@ -257,6 +259,10 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
     if (confirmed != true) return;
 
+    setState(() {
+      _localSelectedImagePath = path;
+    });
+
     if (mounted) {
       context.read<StockImageUploadBloc>().add(
         UploadStockImageEvent(
@@ -278,6 +284,14 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     setState(() {});
   }
 
+  void _triggerSyncIfNeeded() {
+    if (!_shouldSyncOnExit) return;
+    context.read<FetchStockBloc>().add(
+      StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
+    );
+    _shouldSyncOnExit = false;
+  }
+
   @override
   void dispose() {
     _descriptionController.dispose();
@@ -295,6 +309,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         BlocListener<StockImageUploadBloc, StockImageUploadState>(
           listener: (context, state) {
             if (state is StockImageUploaded) {
+              //context.navigateBack();
+              _shouldSyncOnExit = true;
               AlertInfo.show(
                 context: context,
                 text: state.message,
@@ -321,15 +337,10 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         BlocListener<StockUpdateBloc, StockUpdateState>(
           listener: (context, state) {
             if (state is StockUpdateSuccess) {
+              _shouldSyncOnExit = true;
               showTopSnackBar(
                 Overlay.of(context),
                 CustomSnackBar.success(message: state.message),
-              );
-
-              context.read<FetchStockBloc>().add(
-                StartSyncEvent(
-                  ipAddress: AppGlobals.instance.currentHostIp ?? "",
-                ),
               );
             }
 
@@ -342,11 +353,16 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
           },
         ),
       ],
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        extendBody: true,
-        backgroundColor: kPrimaryColor,
-        body: SafeArea(
+      child: WillPopScope(
+        onWillPop: () async {
+          _triggerSyncIfNeeded();
+          return true;
+        },
+        child: Scaffold(
+          extendBodyBehindAppBar: true,
+          extendBody: true,
+          backgroundColor: kPrimaryColor,
+          body: SafeArea(
           bottom: false,
           top: false,
           child: Container(
@@ -372,13 +388,13 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           tag: 'stock_image_${widget.stock.stockID}',
                           child: Container(
                             decoration: BoxDecoration(
-                               color: kSecondaryColor,
+                              color: kSecondaryColor,
                               borderRadius: const BorderRadius.only(
                                 bottomRight: Radius.circular(20),
                                 bottomLeft: Radius.circular(20),
                               ),
                             ),
-                           
+
                             width: double.infinity,
                             height: imageHeight,
                             child: ClipRRect(
@@ -388,13 +404,23 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                               ),
                               child: Builder(
                                 builder: (context) {
+                                  final String? localImagePath =
+                                      _localSelectedImagePath;
                                   final String imageUrl =
                                       (widget.stock.imageUrl ?? "").trim();
 
                                   return Stack(
                                     fit: StackFit.expand,
                                     children: [
-                                      if (imageUrl.isNotEmpty)
+                                      if (localImagePath != null &&
+                                          localImagePath.isNotEmpty)
+                                        Image.file(
+                                          File(localImagePath),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) =>
+                                              Container(color: kSecondaryColor),
+                                        )
+                                      else if (imageUrl.isNotEmpty)
                                         CachedNetworkImage(
                                           imageUrl: imageUrl,
                                           fit: BoxFit.cover,
@@ -415,7 +441,18 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                       ),
 
                                       Center(
-                                        child: imageUrl.isNotEmpty
+                                        child: (localImagePath != null &&
+                                                localImagePath.isNotEmpty)
+                                            ? Image.file(
+                                                File(localImagePath),
+                                                fit: BoxFit.contain,
+                                                errorBuilder: (_, _, _) =>
+                                                    Image.asset(
+                                                      overviewPlaceholder,
+                                                      fit: BoxFit.contain,
+                                                    ),
+                                              )
+                                            : imageUrl.isNotEmpty
                                             ? CachedNetworkImage(
                                                 imageUrl: imageUrl,
                                                 fit: BoxFit.contain,
@@ -502,6 +539,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -518,7 +556,10 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
             children: [
               _buildCircularIcon(
                 icon: Icons.arrow_back_ios_new_rounded,
-                onTap: () => context.navigateBack(),
+                onTap: () {
+                  _triggerSyncIfNeeded();
+                  context.navigateBack();
+                },
               ),
               _buildCircularIcon(
                 icon: Icons.camera_alt_rounded,
