@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:alert_info/alert_info.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,7 +18,6 @@ import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -37,17 +37,9 @@ class StockDetailsScreen extends StatefulWidget {
   State<StockDetailsScreen> createState() => _StockDetailsScreenState();
 }
 
-class _ImageRequestConfig {
-  final int port;
-  final String apiKey;
-
-  const _ImageRequestConfig({required this.port, required this.apiKey});
-}
-
 class _StockDetailsScreenState extends State<StockDetailsScreen> {
   double sell = 0.00;
   double cost = 0.00;
-  static Future<_ImageRequestConfig>? _imageConfigFuture;
 
   late final LanguageToolController _descriptionController;
 
@@ -91,36 +83,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   }
 
   final ImagePicker _picker = ImagePicker();
-
-  Future<_ImageRequestConfig> _loadImageConfig() async {
-    final int port =
-        int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
-        5000;
-    final String apiKey = (await LocalDbDAO.instance.getApiKey() ?? "").trim();
-    return _ImageRequestConfig(port: port, apiKey: apiKey);
-  }
-
-  String? _buildFullImageUrl(int port) {
-    final String? rawPath = widget.stock.imageUrl;
-    if (rawPath == null || rawPath.trim().isEmpty) {
-      return null;
-    }
-
-    if (rawPath.startsWith("http://") || rawPath.startsWith("https://")) {
-      return rawPath;
-    }
-
-    final host = (AppGlobals.instance.currentHostIp ?? "")
-        .trim()
-        .replaceFirst(RegExp(r'^https?://'), '')
-        .replaceAll(RegExp(r'/$'), '');
-    if (host.isEmpty) {
-      return null;
-    }
-
-    final normalizedPath = rawPath.startsWith("/") ? rawPath : "/$rawPath";
-    return "http://$host:$port$normalizedPath";
-  }
 
   Future<void> _onCameraTap() async {
     showModalBottomSheet(
@@ -308,12 +270,12 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   Future<void> _refreshImagesWithRetry() async {
     await Future.delayed(Duration(seconds: 3));
     if (!mounted) return;
-    // Old setup disabled:
-    // context.read<FullImageBloc>().add(...);
-    // context.read<ThumbnailBloc>().add(...);
-    setState(() {
-      _imageConfigFuture = _loadImageConfig();
-    });
+
+    final String imageUrl = (widget.stock.imageUrl ?? "").trim();
+    if (imageUrl.isNotEmpty) {
+      await CachedNetworkImage.evictFromCache(imageUrl);
+    }
+    setState(() {});
   }
 
   @override
@@ -417,75 +379,56 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                 bottomRight: Radius.circular(20),
                                 bottomLeft: Radius.circular(20),
                               ),
-                              child: BlocBuilder<FullImageBloc, FullImageState>(
-                                builder: (context, state) {
-                                  _imageConfigFuture ??= _loadImageConfig();
+                              child: Builder(
+                                builder: (context) {
+                                  final String imageUrl =
+                                      (widget.stock.imageUrl ?? "").trim();
 
-                                  return FutureBuilder<_ImageRequestConfig>(
-                                    future: _imageConfigFuture,
-                                    builder: (context, snapshot) {
-                                      final cfg = snapshot.data;
-                                      final imageUrl = _buildFullImageUrl(
-                                        cfg?.port ?? 5000,
-                                      );
-                                      final headers = <String, String>{};
-                                      final apiKey = cfg?.apiKey ?? "";
-                                      if (apiKey.isNotEmpty) {
-                                        headers["x-api-key"] = apiKey;
-                                      }
+                                  return Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      if (imageUrl.isNotEmpty)
+                                        CachedNetworkImage(
+                                          imageUrl: imageUrl,
+                                          fit: BoxFit.cover,
+                                          errorWidget: (_, _, _) =>
+                                              Container(color: kSecondaryColor),
+                                        )
+                                      else
+                                        Container(color: kSecondaryColor),
 
-                                      return Stack(
-                                        fit: StackFit.expand,
-                                        children: [
-                                          if (imageUrl != null)
-                                            Image.network(
-                                              imageUrl,
-                                              fit: BoxFit.cover,
-                                              headers: headers.isEmpty
-                                                  ? null
-                                                  : headers,
-                                              errorBuilder: (_, _, _) =>
-                                                  Container(
-                                                    color: kSecondaryColor,
-                                                  ),
-                                            )
-                                          else
-                                            Container(color: kSecondaryColor),
+                                      BackdropFilter(
+                                        filter: ImageFilter.blur(
+                                          sigmaX: 0.6,
+                                          sigmaY: 0.6,
+                                        ),
+                                        child: Container(
+                                          color: Colors.black.withOpacity(0.04),
+                                        ),
+                                      ),
 
-                                          BackdropFilter(
-                                            filter: ImageFilter.blur(
-                                              sigmaX: 0.6,
-                                              sigmaY: 0.6,
-                                            ),
-                                            child: Container(
-                                              color: Colors.black.withOpacity(
-                                                0.04,
+                                      Center(
+                                        child: imageUrl.isNotEmpty
+                                            ? CachedNetworkImage(
+                                                imageUrl: imageUrl,
+                                                fit: BoxFit.contain,
+                                                placeholder: (_, _) =>
+                                                    Image.asset(
+                                                      overviewPlaceholder,
+                                                      fit: BoxFit.contain,
+                                                    ),
+                                                errorWidget: (_, _, _) =>
+                                                    Image.asset(
+                                                      overviewPlaceholder,
+                                                      fit: BoxFit.contain,
+                                                    ),
+                                              )
+                                            : Image.asset(
+                                                overviewPlaceholder,
+                                                fit: BoxFit.contain,
                                               ),
-                                            ),
-                                          ),
-
-                                          Center(
-                                            child: imageUrl != null
-                                                ? Image.network(
-                                                    imageUrl,
-                                                    fit: BoxFit.contain,
-                                                    headers: headers.isEmpty
-                                                        ? null
-                                                        : headers,
-                                                    errorBuilder: (_, _, _) =>
-                                                        Image.asset(
-                                                          overviewPlaceholder,
-                                                          fit: BoxFit.contain,
-                                                        ),
-                                                  )
-                                                : Image.asset(
-                                                    overviewPlaceholder,
-                                                    fit: BoxFit.contain,
-                                                  ),
-                                          ),
-                                        ],
-                                      );
-                                    },
+                                      ),
+                                    ],
                                   );
                                 },
                               ),

@@ -5,7 +5,6 @@ import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dar
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 
 import '../../../../entities/vos/network_computer_vo.dart';
-import '../../models/home_screen_models.dart';
 
 abstract class HomeRepo {
   Future<List<NetworkComputerVO>> fetchNetworkPCs();
@@ -44,15 +43,6 @@ abstract class HomeRepo {
     String selectedShopfront,
     String mobileID,
     String mobileName,
-  );
-
-  Stream<SyncStatus> fetchAndSaveStocks(
-    String ipAddress,
-    String fullPath,
-    String? username,
-    String? password,
-    String mobileName,
-    String shopfront,
   );
 
   Future<int> getRetentionDays();

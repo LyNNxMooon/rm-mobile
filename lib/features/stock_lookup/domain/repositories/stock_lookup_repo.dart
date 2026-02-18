@@ -2,8 +2,11 @@ import 'dart:typed_data';
 
 import '../../../../entities/response/paginated_stock_response.dart';
 import '../../../../entities/vos/filter_criteria.dart';
+import '../entities/sync_status.dart';
 
 abstract class StockLookupRepo {
+  Stream<SyncStatus> fetchAndSaveStocks(String ipAddress);
+
   Future<PaginatedStockResult> fetchStocksDynamic({
     required String shopfront,
     required String query,

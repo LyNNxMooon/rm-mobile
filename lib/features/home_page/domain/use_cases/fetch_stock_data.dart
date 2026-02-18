@@ -1,11 +1,10 @@
-import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
+import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
+import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
 
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/internet_connection_utils.dart';
-import '../../models/home_screen_models.dart';
-
 class FetchStockData {
-  final HomeRepo repository;
+  final StockLookupRepo repository;
 
   FetchStockData(this.repository);
 
@@ -19,14 +18,7 @@ class FetchStockData {
         // Old setup disabled:
         // - path-based shared-folder polling
         // - SMB credential persistence for stock lookup sync
-        yield* repository.fetchAndSaveStocks(
-          targetIp,
-          "",
-          null,
-          null,
-          "",
-          "",
-        );
+        yield* repository.fetchAndSaveStocks(targetIp);
       } else {
         yield* Stream.error("Please connect to a network!");
       }

@@ -10,6 +10,7 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retenti
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
+import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
 import '../../../../entities/vos/network_computer_vo.dart';
 import '../../../../utils/log_utils.dart';
 import '../../domain/use_cases/auto_connect_to_default_folder.dart';
@@ -18,7 +19,6 @@ import '../../domain/use_cases/connect_to_shopfront.dart';
 import '../../domain/use_cases/fetch_network_pcs.dart';
 import '../../domain/use_cases/fetch_stock_data.dart';
 import '../../domain/use_cases/get_to_shared_folder.dart';
-import '../../models/home_screen_models.dart';
 
 class FetchingNetworkPCBloc
     extends Bloc<HomeScreenEvents, FetchingNetworkPCStates> {

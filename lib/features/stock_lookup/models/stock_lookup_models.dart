@@ -3,8 +3,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
+import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
 import 'package:rmstock_scanner/network/LAN_sharing/lan_network_service_impl.dart';
+import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
 
@@ -15,6 +18,135 @@ import 'package:path_provider/path_provider.dart';
 
 class StockLookupModels implements StockLookupRepo {
   //Data manipulation can be done here (E.g. substituting data for null values returned from API)
+  @override
+  Stream<SyncStatus> fetchAndSaveStocks(String ipAddress) async* {
+    try {
+      yield SyncStatus(0, 1, "Preparing stock sync...");
+
+      final String savedIp = (await LocalDbDAO.instance.getHostIpAddress() ?? "")
+          .trim();
+      final String resolvedIp = savedIp.isNotEmpty ? savedIp : ipAddress.trim();
+
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+      final String resolvedShopfrontName =
+          (await LocalDbDAO.instance.getShopfrontName() ?? "").trim();
+
+      if (resolvedIp.isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty ||
+          resolvedShopfrontName.isEmpty) {
+        throw Exception(
+          "Missing host/shopfront setup. Please reconnect to a host and shopfront.",
+        );
+      }
+
+      AppGlobals.instance.currentHostIp = resolvedIp;
+      AppGlobals.instance.shopfront = resolvedShopfrontName;
+
+      final String syncKey = "stock_sync_timestamp_$resolvedShopfrontId";
+      final String? lastSyncTimestamp = await LocalDbDAO.instance.getAppConfig(
+        syncKey,
+      );
+      final bool isFullSync =
+          lastSyncTimestamp == null || lastSyncTimestamp.isEmpty;
+
+      String latestSyncTimestamp = DateTime.now().toIso8601String();
+
+      if (isFullSync) {
+        yield SyncStatus(0, 1, "Starting full sync...");
+
+        await LocalDbDAO.instance.clearStocksForShop(resolvedShopfrontName);
+
+        int processed = 0;
+        int total = 1;
+        int? afterStockId;
+        bool hasMore = true;
+
+        while (hasMore) {
+          final Map<String, dynamic> body = {"pageSize": 10000};
+          if (afterStockId != null && afterStockId > 0) {
+            body["afterStockId"] = afterStockId;
+          }
+
+          final response = await DataAgentImpl.instance.fetchShopfrontStocks(
+            resolvedIp,
+            resolvedPort,
+            resolvedShopfrontId,
+            resolvedApiKey,
+            body,
+          );
+
+          if (!response.success) {
+            throw Exception(response.message);
+          }
+
+          latestSyncTimestamp = response.syncTimestamp;
+          total = response.totalItems > 0 ? response.totalItems : total;
+
+          if (response.items.isNotEmpty) {
+            final stocks = response.items.map(StockVO.fromApiItem).toList();
+            await LocalDbDAO.instance.insertStocks(stocks, resolvedShopfrontName);
+            processed += stocks.length;
+          }
+
+          yield SyncStatus(
+            processed,
+            total,
+            "Syncing stocks... ($processed/$total)",
+          );
+
+          hasMore = response.hasMore;
+          afterStockId = response.lastStockId;
+
+          if (hasMore && (afterStockId == null || afterStockId <= 0)) {
+            hasMore = false;
+          }
+        }
+      } else {
+        yield SyncStatus(0, 1, "Checking for stock updates...");
+
+        final response = await DataAgentImpl.instance.fetchShopfrontStocks(
+          resolvedIp,
+          resolvedPort,
+          resolvedShopfrontId,
+          resolvedApiKey,
+          {"lastSyncTimestamp": lastSyncTimestamp},
+        );
+
+        if (!response.success) {
+          throw Exception(response.message);
+        }
+
+        latestSyncTimestamp = response.syncTimestamp;
+
+        if (response.items.isNotEmpty) {
+          final stocks = response.items.map(StockVO.fromApiItem).toList();
+          await LocalDbDAO.instance.insertStocks(stocks, resolvedShopfrontName);
+        }
+
+        final int deltaCount = response.itemCount;
+        yield SyncStatus(
+          deltaCount,
+          deltaCount == 0 ? 1 : deltaCount,
+          deltaCount == 0
+              ? "No stock changes found."
+              : "Applied $deltaCount stock updates.",
+        );
+      }
+
+      await LocalDbDAO.instance.saveAppConfig(syncKey, latestSyncTimestamp);
+      yield SyncStatus(1, 1, "Stock sync completed.");
+    } on Exception catch (error) {
+      yield* Stream.error(error);
+    }
+  }
+
   @override
   Future<PaginatedStockResult> fetchStocksDynamic({
     required String shopfront,
@@ -153,7 +285,6 @@ class StockLookupModels implements StockLookupRepo {
       }
 
       if (await localFile.exists()) {
-        logger.d("Sp pl");
         return localPath;
       }
 
@@ -169,7 +300,6 @@ class StockLookupModels implements StockLookupRepo {
 
       await localFile.writeAsBytes(bytes, flush: true);
 
-      logger.d("Lee pl kwar");
       return localPath;
     } catch (error) {
       return Future.error(error);
