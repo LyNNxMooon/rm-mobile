@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../../../../entities/response/paginated_stock_response.dart';
+import '../../../../entities/response/stock_update_response.dart';
 import '../../../../entities/vos/filter_criteria.dart';
 import '../entities/sync_status.dart';
 
@@ -56,6 +57,16 @@ abstract class StockLookupRepo {
     required String mobileName,
     required String mobileID,
     required String shopfrontName,
+    required int stockId,
+    required String description,
+    required double sell,
+  });
+
+  Future<StockUpdateResponse> updateStockDetailsFromApi({
+    required String ip,
+    required int port,
+    required String apiKey,
+    required String shopfrontId,
     required int stockId,
     required String description,
     required double sell,

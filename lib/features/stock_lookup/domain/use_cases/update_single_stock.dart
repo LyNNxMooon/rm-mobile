@@ -1,51 +1,42 @@
 import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
+import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 
-import '../../../../entities/vos/device_metedata_vo.dart';
 import '../../../../local_db/local_db_dao.dart';
-import '../../../../utils/device_meta_data_utils.dart';
-import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/internet_connection_utils.dart';
-import '../../../../utils/network_credentials_check_utils.dart';
 
 class UpdateSingleStock {
   final StockLookupRepo repository;
 
   UpdateSingleStock(this.repository);
 
-  Future<void> call({
+  Future<StockUpdateResponse> call({
     required int stockId,
     required String description,
     required double sell,
   }) async {
     try {
-      final ip = AppGlobals.instance.currentHostIp ?? "";
-      final fullPath = AppGlobals.instance.currentPath ?? "";
-      final shopfront = AppGlobals.instance.shopfront ?? "";
+      final ip = (await LocalDbDAO.instance.getHostIpAddress() ?? "").trim();
+      final port = int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim());
+      final apiKey = (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final shopfrontId = (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
 
       if (await InternetConnectionUtils.instance.checkInternetConnection()) {
-        String? user;
-        String? pwd;
-
-        if (await NetworkCredentialsCheckUtils.instance
-            .isRequiredNetworkCredentials(ipAddress: ip)) {
-          final Map<String, dynamic>? savedCred =
-          await LocalDbDAO.instance.getNetworkCredential(ip: ip);
-
-          user = savedCred?['username'];
-          pwd = savedCred?['password'];
+        if (ip.isEmpty || port == null || apiKey.isEmpty || shopfrontId.isEmpty) {
+          return Future.error(
+            "Missing host/shopfront/api setup. Please reconnect first.",
+          );
         }
 
-        final DeviceMetadata mobileInfo =
-        await DeviceMetaDataUtils.instance.getDeviceInformation();
+        // Old setup disabled:
+        // - SMB credential checks
+        // - local file write to outgoing stock update folder
+        // await repository.sendSingleStockUpdate(...);
 
-        await repository.sendSingleStockUpdate(
-          address: ip,
-          fullPath: fullPath,
-          username: user,
-          password: pwd,
-          mobileID: mobileInfo.deviceId,
-          mobileName: mobileInfo.name,
-          shopfrontName: shopfront,
+        return await repository.updateStockDetailsFromApi(
+          ip: ip,
+          port: port,
+          apiKey: apiKey,
+          shopfrontId: shopfrontId,
           stockId: stockId,
           description: description,
           sell: sell,

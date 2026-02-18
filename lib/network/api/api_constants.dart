@@ -11,6 +11,8 @@ const kEndPointForParing = "/pair";
 const kEndPointForShopfronts = "/shopfronts";
 const kEndPointForConnectShopfront = "/shopfronts/{$kPathParamForShopfrontId}/connect";
 const kEndPointForStockLookup = "/shopfronts/{$kPathParamForShopfrontId}/stock";
+const kEndPointForShopfrontStockUpdate =
+    "/shopfronts/{$kPathParamForShopfrontId}/stock/update";
 const kEndPointForValidate = "/validate";
 
 //keys

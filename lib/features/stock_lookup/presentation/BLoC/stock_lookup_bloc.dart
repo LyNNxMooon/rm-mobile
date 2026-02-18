@@ -315,13 +315,16 @@ class StockUpdateBloc extends Bloc<StockUpdateEvent, StockUpdateState> {
       ) async {
     emit(StockUpdateLoading());
     try {
-      await updateSingleStock(
+      final response = await updateSingleStock(
         stockId: event.stockId,
         description: event.description,
         sell: event.sell,
       );
-
-      emit(StockUpdateSuccess("Update request sent to RM Agent."));
+      if (response.success) {
+        emit(StockUpdateSuccess(response.message));
+      } else {
+        emit(StockUpdateError("Failed to update stock: ${response.message}"));
+      }
     } catch (error) {
       emit(StockUpdateError("Failed to send update: $error"));
     }

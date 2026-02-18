@@ -4,6 +4,7 @@ import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
+import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
 
 abstract class DataAgent {
@@ -31,6 +32,14 @@ abstract class DataAgent {
   );
 
   Future<StockLookupApiResponse> fetchShopfrontStocks(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  );
+
+  Future<StockUpdateResponse> updateShopfrontStock(
     String ip,
     int port,
     String shopfrontId,

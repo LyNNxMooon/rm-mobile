@@ -129,6 +129,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
                             ActionCard(
                               onTap: () {
+                                final currentState = context
+                                    .read<FetchStockBloc>()
+                                    .state;
+
                                 // Old setup disabled:
                                 // if (currentState is! FetchStockProgress) {
                                 //   context.read<ShopFrontConnectionBloc>().add(
@@ -138,6 +142,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 //     ),
                                 //   );
                                 // }
+
+                                if (currentState is! FetchStockProgress) {
+                                  context.read<FetchStockBloc>().add(
+                                    StartSyncEvent(
+                                      ipAddress:
+                                          AppGlobals.instance.currentHostIp ??
+                                          "",
+                                    ),
+                                  );
+                                }
 
                                 context.navigateToNext(const ScannerScreen());
                               },

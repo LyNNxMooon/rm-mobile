@@ -1,15 +1,14 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
+import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
 import 'package:rmstock_scanner/network/LAN_sharing/lan_network_service_impl.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
-import 'package:rmstock_scanner/utils/log_utils.dart';
 
 import '../../../entities/vos/filter_criteria.dart';
 import '../../../local_db/local_db_dao.dart';
@@ -344,40 +343,45 @@ class StockLookupModels implements StockLookupRepo {
     required double sell,
   }) async {
     try {
-      final String jsonContent = _StockUpdateJsonBuilder.buildJson(
-        mobileId: mobileID,
-        mobileName: mobileName,
-        shopfrontName: shopfrontName,
-        stockId: stockId,
-        description: description,
-        sell: sell,
-      );
+      // Old setup disabled:
+      // final String jsonContent = _StockUpdateJsonBuilder.buildJson(...);
+      // final String fileName = "${mobileID}_stockUpdate_$timestamp.json.gz";
+      // return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(...);
+      return;
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
 
-      final now = DateTime.now();
-      String pad(int v) => v.toString().padLeft(2, '0');
+  @override
+  Future<StockUpdateResponse> updateStockDetailsFromApi({
+    required String ip,
+    required int port,
+    required String apiKey,
+    required String shopfrontId,
+    required int stockId,
+    required String description,
+    required double sell,
+  }) async {
+    try {
+      final String now = DateTime.now().toIso8601String();
+      final body = {
+        "items": [
+          {
+            "stock_id": stockId,
+            "description": description,
+            "sell": sell,
+            "date_modified": now,
+          },
+        ],
+      };
 
-      final String timestamp =
-          "${now.year}"
-          "${pad(now.month)}"
-          "${pad(now.day)}"
-          "${pad(now.hour)}"
-          "${pad(now.minute)}"
-          "${pad(now.second)}";
-
-      final String fileName =
-          "${mobileID}_stockUpdate_$timestamp.json.gz";
-
-      logger.d(address);
-
-      return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(
-        address: address,
-        fullPath: fullPath,
-        username: username ?? AppGlobals.instance.defaultUserName,
-        password: password ?? AppGlobals.instance.defaultPwd,
-        fileName: fileName,
-        fileContent: jsonContent,
-        isCheck: true,
-        isBackup: false,
+      return await DataAgentImpl.instance.updateShopfrontStock(
+        ip,
+        port,
+        shopfrontId,
+        apiKey,
+        body,
       );
     } on Exception catch (error) {
       return Future.error(error);
@@ -385,34 +389,7 @@ class StockLookupModels implements StockLookupRepo {
   }
 }
 
-class _StockUpdateJsonBuilder {
-  static String buildJson({
-    required String mobileId,
-    required String mobileName,
-    required String shopfrontName,
-    required int stockId,
-    required String description,
-    required double sell,
-  }) {
-    final now = DateTime.now().toIso8601String();
-
-    final Map<String, dynamic> finalMap = {
-      "mobile_device_id": mobileId,
-      "mobile_device_name": mobileName,
-      "shopfront": shopfrontName,
-      "total_stocks": 1,
-      "date_started": now,
-      "date_ended": now,
-      "data": [
-        {
-          "stock_id": stockId,
-          "description": description,
-          "sell": sell,
-          "date_modified": now,
-        }
-      ],
-    };
-
-    return const JsonEncoder.withIndent('  ').convert(finalMap);
-  }
-}
+// Old setup disabled:
+// class _StockUpdateJsonBuilder {
+//   static String buildJson(...) { ... }
+// }

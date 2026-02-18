@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
+import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
 import 'package:rmstock_scanner/network/api/api_service.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent.dart';
@@ -130,6 +131,27 @@ class DataAgentImpl implements DataAgent {
       ).asStream().map((event) => event).first;
     } on Exception catch (error) {
       logger.e('Error fetching shopfront stocks from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<StockUpdateResponse> updateShopfrontStock(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.updateShopfrontStock(
+        shopfrontId,
+        apiKey,
+        body,
+      ).asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error updating shopfront stock from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }
