@@ -371,7 +371,15 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
                         return Hero(
                           tag: 'stock_image_${widget.stock.stockID}',
-                          child: SizedBox(
+                          child: Container(
+                            decoration: BoxDecoration(
+                               color: kSecondaryColor,
+                              borderRadius: const BorderRadius.only(
+                                bottomRight: Radius.circular(20),
+                                bottomLeft: Radius.circular(20),
+                              ),
+                            ),
+                           
                             width: double.infinity,
                             height: imageHeight,
                             child: ClipRRect(
