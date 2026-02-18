@@ -230,23 +230,36 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "Upload",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    child: BlocBuilder<StockImageUploadBloc, StockImageUploadState>(
+                      builder: (context, state) {
+                        final bool isUploading = state is StockImageUploading;
+                        return ElevatedButton(
+                          onPressed: isUploading
+                              ? null
+                              : () => Navigator.pop(context, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kPrimaryColor,
+                            disabledBackgroundColor: kPrimaryColor.withOpacity(0.85),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: isUploading
+                              ? const CupertinoActivityIndicator(
+                                  radius: 11,
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  "Upload",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        );
+                      },
                     ),
                   ),
                 ],
