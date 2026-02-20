@@ -39,7 +39,7 @@ class SendFinalStocktakeToRm {
         final DeviceMetadata mobileInfo = await DeviceMetaDataUtils.instance
             .getDeviceInformation();
 
-        await repository.finalSendingStocktaketoRM(
+        final response = await repository.finalSendingStocktaketoRM(
           address: ip,
           fullPath: fullPath,
           mobileID: mobileInfo.deviceId,
@@ -50,6 +50,10 @@ class SendFinalStocktakeToRm {
           dataToSync: unsyncedStocks,
           auditData: auditData,
         );
+
+        if (!response.success) {
+          return Future.error(response.message);
+        }
 
         final now = DateTime.now();
         String pad(int v) => v.toString().padLeft(2, '0');

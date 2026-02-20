@@ -363,8 +363,8 @@ class StocktakeValidationBloc
     emit(
       StocktakeValidationProgress(
         current: 0,
-        total: 60,
-        message: "Waiting for agent...",
+        total: 1,
+        message: "Validating stocktake...",
       ),
     );
 

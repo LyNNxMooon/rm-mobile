@@ -3,13 +3,15 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:rmstock_scanner/entities/response/audit_report_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmstock_scanner/entities/vos/audit_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
 
 import '../../../entities/vos/stock_vo.dart';
 import '../../../local_db/local_db_dao.dart';
@@ -18,6 +20,7 @@ import '../domain/repositories/stocktake_repo.dart';
 
 class StocktakeModel implements StocktakeRepo {
   //Data manipulation can be done here (E.g. substituting data for null values returned from API)
+  StocktakeInitcheckResponse? _lastInitcheckResponse;
 
   @override
 Future<StockSearchResult> fetchStockDetails(String query, String shopfront) async {
@@ -41,7 +44,7 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
   }
 
   @override
-  Future commitToLanFolder({
+  Future<StocktakeInitcheckResponse> commitToLanFolder({
     required String address,
     required String fullPath,
     required String? username,
@@ -52,44 +55,54 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
     required List<CountedStockVO> dataToSync,
   }) async {
     try {
-      final String jsonContent = _StocktakeJsonBuilder.buildJson(
-        dataToSync,
-        mobileID,
-        mobileName,
-        shopfrontName,
+      // Old setup disabled:
+      // final String jsonContent = _StocktakeJsonBuilder.buildJson(...);
+      // final String fileName = "${mobileID}_initCheck_$timestamp.json.gz";
+      // return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(...);
+
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+
+      if (address.trim().isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty) {
+        throw Exception("Missing host/shopfront setup for init check.");
+      }
+
+      final DateTime dateStarted = dataToSync.isNotEmpty
+          ? dataToSync
+              .map((e) => e.stocktakeDate)
+              .reduce((a, b) => a.isBefore(b) ? a : b)
+          : DateTime.now();
+
+      final body = <String, dynamic>{
+        "mobile_device_id": mobileID,
+        "mobile_device_name": mobileName,
+        "date_started": dateStarted.toIso8601String(),
+        "data": dataToSync.map((e) => {"stock_id": e.stockID}).toList(),
+      };
+
+      final response = await DataAgentImpl.instance.stocktakeInitCheck(
+        address,
+        resolvedPort,
+        resolvedShopfrontId,
+        resolvedApiKey,
+        body,
       );
-
-      final now = DateTime.now();
-
-      String pad(int value) => value.toString().padLeft(2, '0');
-
-      final String timestamp =
-          "${now.year}"
-          "${pad(now.month)}"
-          "${pad(now.day)}"
-          "${pad(now.hour)}"
-          "${pad(now.minute)}"
-          "${pad(now.second)}";
-
-      final String fileName = "${mobileID}_initCheck_$timestamp.json.gz";
-
-      return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(
-        address: address,
-        fullPath: fullPath,
-        username: username ?? AppGlobals.instance.defaultUserName,
-        password: password ?? AppGlobals.instance.defaultPwd,
-        fileName: fileName,
-        fileContent: jsonContent,
-        isCheck: true,
-        isBackup: false,
-      );
+      _lastInitcheckResponse = response;
+      return response;
     } on Exception catch (error) {
       return Future.error(error);
     }
   }
 
   @override
-  Future finalSendingStocktaketoRM({
+  Future<StocktakeCommitResponse> finalSendingStocktaketoRM({
     required String address,
     required String fullPath,
     required String? username,
@@ -136,36 +149,58 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
         }
       }
 
-      final String jsonContent = _StocktakeJsonBuilder.buildJson(
-        adjustedData,
-        mobileID,
-        mobileName,
-        shopfrontName,
-      );
+      // Old setup disabled:
+      // final String jsonContent = _StocktakeJsonBuilder.buildJson(...);
+      // final String fileName = "${mobileID}_stocktake_$timestamp.json.gz";
+      // return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(...);
 
-      final now = DateTime.now();
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
 
-      String pad(int value) => value.toString().padLeft(2, '0');
+      if (address.trim().isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty) {
+        throw Exception("Missing host/shopfront setup for stocktake commit.");
+      }
 
-      final String timestamp =
-          "${now.year}"
-          "${pad(now.month)}"
-          "${pad(now.day)}"
-          "${pad(now.hour)}"
-          "${pad(now.minute)}"
-          "${pad(now.second)}";
+      final DateTime dateStarted = adjustedData.isNotEmpty
+          ? adjustedData
+              .map((e) => e.stocktakeDate)
+              .reduce((a, b) => a.isBefore(b) ? a : b)
+          : DateTime.now();
+      final DateTime dateEnded = adjustedData.isNotEmpty
+          ? adjustedData
+              .map((e) => e.dateModified)
+              .reduce((a, b) => a.isAfter(b) ? a : b)
+          : DateTime.now();
 
-      final String fileName = "${mobileID}_stocktake_$timestamp.json.gz";
+      final body = <String, dynamic>{
+        "mobile_device_id": mobileID,
+        "mobile_device_name": mobileName,
+        "date_started": dateStarted.toIso8601String(),
+        "date_ended": dateEnded.toIso8601String(),
+        "data": adjustedData
+            .map(
+              (s) => {
+                "stocktake_date": s.stocktakeDate.toIso8601String(),
+                "stock_id": s.stockID,
+                "quantity": s.quantity,
+              },
+            )
+            .toList(),
+      };
 
-      return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(
-        address: address,
-        fullPath: fullPath,
-        username: username ?? AppGlobals.instance.defaultUserName,
-        password: password ?? AppGlobals.instance.defaultPwd,
-        fileName: fileName,
-        fileContent: jsonContent,
-        isCheck: false,
-        isBackup: false,
+      return DataAgentImpl.instance.stocktakeCommit(
+        address,
+        resolvedPort,
+        resolvedShopfrontId,
+        resolvedApiKey,
+        body,
       );
     } on Exception catch (error) {
       return Future.error(error);
@@ -227,39 +262,14 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
     required String mobileID,
     required String shopfront,
   }) async* {
-    final sanitizedId = mobileID.replaceAll(" ", "_");
+    // Old setup disabled:
+    // pollForStocktakeValidationFile -> downloadAndDeleteFile -> gzip decode -> AuditReport.fromJson
+    yield AuditSyncStatus(0, 1, "Processing validation result...");
 
-    // same idea as stock sync
-    yield AuditSyncStatus(0, 1, "Waiting for agent...");
-
-    final file = await LanNetworkServiceImpl.instance
-        .pollForStocktakeValidationFile(
-          address: ipAddress,
-          fullPath: fullPath,
-          username: username ?? AppGlobals.instance.defaultUserName,
-          password: password ?? AppGlobals.instance.defaultPwd,
-          fileNamePattern: "${sanitizedId}_auditReport_",
-          maxRetries: 60,
-        );
-
-    if (file == null) {
-      throw Exception("RM-Mobile Manager did not respond in time.");
+    final report = _lastInitcheckResponse;
+    if (report == null) {
+      throw Exception("No init-check result found. Please send validation first.");
     }
-
-    yield AuditSyncStatus(0, 1, "Downloading report...");
-
-    final bytes = await LanNetworkServiceImpl.instance.downloadAndDeleteFile(
-      address: ipAddress,
-      username: username ?? AppGlobals.instance.defaultUserName,
-      password: password ?? AppGlobals.instance.defaultPwd,
-      fileToDownload: file,
-    );
-
-    yield AuditSyncStatus(0, 1, "Decoding report...");
-
-    final jsonString = utf8.decode(GZipCodec().decode(bytes));
-    final decoded = jsonDecode(jsonString) as Map<String, dynamic>;
-    final report = AuditReport.fromJson(decoded);
 
     if (report.data.isEmpty) {
       yield AuditSyncStatus(1, 1, "No transactions found.", rows: const []);

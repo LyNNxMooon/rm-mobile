@@ -5,6 +5,8 @@ import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/picture_upload_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
 
@@ -55,6 +57,22 @@ abstract class DataAgent {
     int stockId,
     String apiKey,
     List<int> jpgBytes,
+  );
+
+  Future<StocktakeInitcheckResponse> stocktakeInitCheck(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  );
+
+  Future<StocktakeCommitResponse> stocktakeCommit(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
   );
 
   Future<ValidateResponse> validate(

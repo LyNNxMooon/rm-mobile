@@ -7,6 +7,8 @@ import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/picture_upload_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
 import 'package:rmstock_scanner/network/api/api_service.dart';
@@ -176,6 +178,48 @@ class DataAgentImpl implements DataAgent {
       ).asStream().map((event) => event).first;
     } on Exception catch (error) {
       logger.e('Error uploading shopfront picture from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<StocktakeInitcheckResponse> stocktakeInitCheck(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.stocktakeInitCheck(
+        shopfrontId,
+        apiKey,
+        body,
+      ).asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error calling stocktake init check from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<StocktakeCommitResponse> stocktakeCommit(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.stocktakeCommit(
+        shopfrontId,
+        apiKey,
+        body,
+      ).asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error calling stocktake commit from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }

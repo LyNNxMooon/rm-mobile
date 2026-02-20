@@ -39,7 +39,7 @@ class CommitStocktake {
             .getDeviceInformation();
             
 
-        await repository.commitToLanFolder(
+        final response = await repository.commitToLanFolder(
           address: ip,
           fullPath: fullPath,
           mobileID: mobileInfo.deviceId,
@@ -49,6 +49,10 @@ class CommitStocktake {
           password: pwd,
           dataToSync: unsyncedStocks,
         );
+
+        if (!response.success) {
+          return Future.error(response.message);
+        }
 
       } else {
         return Future.error("Please connect to a network!");

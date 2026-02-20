@@ -1,4 +1,6 @@
 import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
@@ -17,7 +19,7 @@ abstract class StocktakeRepo {
     String newQty,
   );
 
-  Future commitToLanFolder({
+  Future<StocktakeInitcheckResponse> commitToLanFolder({
     required String address,
     required String fullPath,
     required String? username,
@@ -39,7 +41,7 @@ abstract class StocktakeRepo {
     required List<CountedStockVO> dataToSync,
   });
 
-  Future finalSendingStocktaketoRM({
+  Future<StocktakeCommitResponse> finalSendingStocktaketoRM({
     required String address,
     required String fullPath,
     required String? username,

@@ -15,6 +15,10 @@ const kEndPointForShopfrontStockUpdate =
     "/shopfronts/{$kPathParamForShopfrontId}/stock/update";
 const kEndPointForPictureUpload =
     "/shopfronts/{$kPathParamForShopfrontId}/pictures/{$kPathParamForStockId}";
+const kEndPointForStocktakeInitCheck =
+    "/shopfronts/{$kPathParamForShopfrontId}/stocktake/initcheck";
+const kEndPointForStocktakeCommit =
+    "/shopfronts/{$kPathParamForShopfrontId}/stocktake/commit";
 const kEndPointForValidate = "/validate";
 
 //keys
