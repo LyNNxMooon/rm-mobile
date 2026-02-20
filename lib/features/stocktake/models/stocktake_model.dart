@@ -21,6 +21,21 @@ import '../domain/repositories/stocktake_repo.dart';
 class StocktakeModel implements StocktakeRepo {
   //Data manipulation can be done here (E.g. substituting data for null values returned from API)
   StocktakeInitcheckResponse? _lastInitcheckResponse;
+  DateTime? _lastStocktakeApiCallAt;
+
+  // Protect initcheck/commit endpoints from back-to-back calls (429 rate limit).
+  static const Duration _stocktakeApiMinGap = Duration(seconds: 2);
+
+  Future<void> _enforceStocktakeApiCooldown() async {
+    final DateTime now = DateTime.now();
+    if (_lastStocktakeApiCallAt != null) {
+      final Duration elapsed = now.difference(_lastStocktakeApiCallAt!);
+      if (elapsed < _stocktakeApiMinGap) {
+        await Future.delayed(_stocktakeApiMinGap - elapsed);
+      }
+    }
+    _lastStocktakeApiCallAt = DateTime.now();
+  }
 
   @override
 Future<StockSearchResult> fetchStockDetails(String query, String shopfront) async {
@@ -87,6 +102,7 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
         "data": dataToSync.map((e) => {"stock_id": e.stockID}).toList(),
       };
 
+      await _enforceStocktakeApiCooldown();
       final response = await DataAgentImpl.instance.stocktakeInitCheck(
         address,
         resolvedPort,
@@ -195,6 +211,7 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
             .toList(),
       };
 
+      await _enforceStocktakeApiCooldown();
       return DataAgentImpl.instance.stocktakeCommit(
         address,
         resolvedPort,
