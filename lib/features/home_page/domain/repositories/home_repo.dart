@@ -51,6 +51,14 @@ abstract class HomeRepo {
 
   Future<int> runHistoryCleanup();
 
+  Future<bool> getAutoBackupEnabled();
+
+  Future<void> setAutoBackupEnabled(bool enabled);
+
+  Future<DateTime?> getLastAutoBackupAt();
+
+  Future<void> setLastAutoBackupAt(DateTime timestamp);
+
   Future<DiscoverResponse> discoverHost(String ip, int port);
 
   Future<PaircodeResponse> getPairCodes(String ip, int port);

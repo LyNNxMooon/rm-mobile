@@ -3,10 +3,13 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_hist
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_host.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_auto_backup_enabled.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/connect_to_shopfront_api.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/get_pair_codes.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/pair_device.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/run_auto_backup_if_due.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_auto_backup_enabled.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
@@ -328,15 +331,26 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final LoadRetentionDays loadRetentionDays;
   final UpdateRetentionDays updateRetentionDays;
   final CleanupHistory cleanupHistory;
+  final LoadAutoBackupEnabled loadAutoBackupEnabled;
+  final UpdateAutoBackupEnabled updateAutoBackupEnabled;
+  final RunAutoBackupIfDue runAutoBackupIfDue;
+
+  int _currentRetentionDays = 7;
+  bool _autoBackupEnabled = false;
 
   SettingsBloc({
     required this.loadRetentionDays,
     required this.updateRetentionDays,
     required this.cleanupHistory,
+    required this.loadAutoBackupEnabled,
+    required this.updateAutoBackupEnabled,
+    required this.runAutoBackupIfDue,
   }) : super(SettingsInitial()) {
     on<LoadSettingsEvent>(_onLoad);
     on<ChangeRetentionDaysEvent>(_onChangeRetention);
     on<RunHistoryCleanupEvent>(_onCleanup);
+    on<ToggleAutoBackupEvent>(_onToggleAutoBackup);
+    on<CheckAutoBackupNowEvent>(_onCheckAutoBackupNow);
   }
 
   Future<void> _onLoad(
@@ -345,8 +359,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   ) async {
     emit(SettingsLoading());
     try {
-      final days = await loadRetentionDays();
-      emit(SettingsLoaded(days));
+      _currentRetentionDays = await loadRetentionDays();
+      _autoBackupEnabled = await loadAutoBackupEnabled();
+      emit(
+        SettingsLoaded(
+          _currentRetentionDays,
+          autoBackupEnabled: _autoBackupEnabled,
+        ),
+      );
     } catch (e) {
       emit(SettingsError(e.toString()));
     }
@@ -358,13 +378,15 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   ) async {
     try {
       await updateRetentionDays(event.days);
+      _currentRetentionDays = event.days;
 
       // Run cleanup immediately after change (so setting takes effect now)
       final deleted = await cleanupHistory();
       emit(
         SettingsCleanupDone(
           deletedSessions: deleted,
-          retentionDays: event.days,
+          retentionDays: _currentRetentionDays,
+          autoBackupEnabled: _autoBackupEnabled,
         ),
       );
     } catch (e) {
@@ -377,12 +399,49 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Emitter<SettingsState> emit,
   ) async {
     try {
-      final currentDays = await loadRetentionDays();
+      _currentRetentionDays = await loadRetentionDays();
       final deleted = await cleanupHistory();
       emit(
         SettingsCleanupDone(
           deletedSessions: deleted,
-          retentionDays: currentDays,
+          retentionDays: _currentRetentionDays,
+          autoBackupEnabled: _autoBackupEnabled,
+        ),
+      );
+    } catch (e) {
+      emit(SettingsError(e.toString()));
+    }
+  }
+
+  Future<void> _onToggleAutoBackup(
+    ToggleAutoBackupEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      await updateAutoBackupEnabled(event.enabled);
+      _autoBackupEnabled = event.enabled;
+      emit(
+        SettingsLoaded(
+          _currentRetentionDays,
+          autoBackupEnabled: _autoBackupEnabled,
+        ),
+      );
+    } catch (e) {
+      emit(SettingsError(e.toString()));
+    }
+  }
+
+  Future<void> _onCheckAutoBackupNow(
+    CheckAutoBackupNowEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      final didBackup = await runAutoBackupIfDue(force: event.force);
+      emit(
+        AutoBackupRunDone(
+          retentionDays: _currentRetentionDays,
+          autoBackupEnabled: _autoBackupEnabled,
+          didBackup: didBackup,
         ),
       );
     } catch (e) {

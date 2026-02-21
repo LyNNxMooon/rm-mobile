@@ -330,7 +330,7 @@ class BackupStocktakeBloc extends Bloc<StocktakeEvent, BackUpStocktakeStates> {
     try {
       await backupStocktake();
 
-      emit(BackedUpStocktake("Stocktake Backed Up to Shared Folder!"));
+      emit(BackedUpStocktake("Stocktake backup saved."));
     } catch (error) {
       if (error is String) {
         emit(ErrorBackupStocktake("Error backing up stocktake list: $error"));

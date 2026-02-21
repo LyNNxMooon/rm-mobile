@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:alert_info/alert_info.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -46,15 +47,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _selectedPort = _defaultAgentPort;
   String _selectedIp = "";
   String _selectedHostName = "";
+  Timer? _autoBackupTimer;
 
   @override
   void initState() {
     super.initState();
     context.read<SettingsBloc>().add(LoadSettingsEvent());
+    context.read<SettingsBloc>().add(CheckAutoBackupNowEvent());
+    _autoBackupTimer = Timer.periodic(const Duration(hours: 1), (_) {
+      if (!mounted) return;
+      context.read<SettingsBloc>().add(CheckAutoBackupNowEvent());
+    });
   }
 
   @override
   void dispose() {
+    _autoBackupTimer?.cancel();
     _manualIpController.dispose();
     _manualCodeController.dispose();
     _manualPortController.dispose();
@@ -446,10 +454,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: Divider(height: 1, thickness: 0.5),
                             ),
                             _buildSwitchRow(
-                              "Backup Stocktake to LAN Folder",
-                              "Save a copy to server before clearing out committed stocktake data",
+                              "Auto Backup Stocktake",
+                              "Automatically save current stocktake backup every 24 hours",
                               backupToLan,
-                              (val) => setState(() => backupToLan = val),
+                              (val) {
+                                setState(() => backupToLan = val);
+                                context.read<SettingsBloc>().add(
+                                  ToggleAutoBackupEvent(val),
+                                );
+                                if (val) {
+                                  context.read<SettingsBloc>().add(
+                                    CheckAutoBackupNowEvent(),
+                                  );
+                                }
+                              },
                             ),
                           ],
                         ),
@@ -666,11 +684,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return BlocConsumer<SettingsBloc, SettingsState>(
       listener: (context, state) {
         if (state is SettingsLoaded) {
-          setState(() => retentionDays = state.retentionDays.toDouble());
+          setState(() {
+            retentionDays = state.retentionDays.toDouble();
+            backupToLan = state.autoBackupEnabled;
+          });
         }
         if (state is SettingsCleanupDone) {
-          setState(() => retentionDays = state.retentionDays.toDouble());
+          setState(() {
+            retentionDays = state.retentionDays.toDouble();
+            backupToLan = state.autoBackupEnabled;
+          });
           // Optional: show a small snackbar/toast if wanted
+        }
+        if (state is AutoBackupRunDone) {
+          setState(() {
+            retentionDays = state.retentionDays.toDouble();
+            backupToLan = state.autoBackupEnabled;
+          });
+          if (state.didBackup) {
+            AlertInfo.show(
+              context: context,
+              text: "Auto backup completed.",
+              typeInfo: TypeInfo.success,
+              backgroundColor: kSecondaryColor,
+              iconColor: kPrimaryColor,
+              textColor: kThirdColor,
+              padding: 70,
+              position: MessagePosition.top,
+            );
+          }
         }
       },
       builder: (context, state) {

@@ -106,6 +106,16 @@ class ChangeRetentionDaysEvent extends SettingsEvent {
 
 class RunHistoryCleanupEvent extends SettingsEvent {}
 
+class ToggleAutoBackupEvent extends SettingsEvent {
+  final bool enabled;
+  ToggleAutoBackupEvent(this.enabled);
+}
+
+class CheckAutoBackupNowEvent extends SettingsEvent {
+  final bool force;
+  CheckAutoBackupNowEvent({this.force = false});
+}
+
 abstract class DiscoverHostEvents {}
 
 class DiscoverHostEvent extends DiscoverHostEvents {

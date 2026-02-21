@@ -4,6 +4,9 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_hist
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_host.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/pair_device.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/run_auto_backup_if_due.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_auto_backup_enabled.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_auto_backup_enabled.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
@@ -100,6 +103,9 @@ Future<void> init() async {
       loadRetentionDays: sl(),
       updateRetentionDays: sl(),
       cleanupHistory: sl(),
+      loadAutoBackupEnabled: sl(),
+      updateAutoBackupEnabled: sl(),
+      runAutoBackupIfDue: sl(),
     ),
   );
   sl.registerFactory(() => DiscoverHostBloc(discoverHost: sl()));
@@ -148,6 +154,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LoadRetentionDays(sl()));
   sl.registerLazySingleton(() => UpdateRetentionDays(sl()));
   sl.registerLazySingleton(() => CleanupHistory(sl()));
+  sl.registerLazySingleton(() => LoadAutoBackupEnabled(sl()));
+  sl.registerLazySingleton(() => UpdateAutoBackupEnabled(sl()));
+  sl.registerLazySingleton(() => RunAutoBackupIfDue(repository: sl(), backupStocktake: sl()));
   sl.registerLazySingleton(() => DiscoverHost(sl()));
   sl.registerLazySingleton(() => GetPairCodes(sl()));
   sl.registerLazySingleton(() => PairDevice(sl()));

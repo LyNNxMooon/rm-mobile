@@ -1,7 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
@@ -10,12 +6,10 @@ import 'package:rmstock_scanner/entities/vos/audit_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
 
 import '../../../entities/vos/stock_vo.dart';
 import '../../../local_db/local_db_dao.dart';
-import '../../../network/LAN_sharing/lan_network_service_impl.dart';
 import '../domain/repositories/stocktake_repo.dart';
 
 class StocktakeModel implements StocktakeRepo {
@@ -370,40 +364,66 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
     required List<CountedStockVO> dataToSync,
   }) async {
     try {
-      final String jsonContent = _StocktakeJsonBuilder.buildJson(
+      // Old setup disabled:
+      // final String jsonContent = _StocktakeJsonBuilder.buildJson(...);
+      // final String fileName = "${mobileID}_backup_${shopfrontInFileName}_$timestamp.json.gz";
+      // return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(...);
+
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+
+      if (address.trim().isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty) {
+        throw Exception("Missing host/shopfront setup for backup.");
+      }
+
+      final List<CountedStockVO> sortedStocks = List<CountedStockVO>.from(
         dataToSync,
-        mobileID,
-        mobileName,
-        shopfrontName,
+      )..sort((a, b) => a.stocktakeDate.compareTo(b.stocktakeDate));
+
+      final DateTime dateStarted = sortedStocks.isNotEmpty
+          ? sortedStocks.first.stocktakeDate
+          : DateTime.now();
+      final DateTime dateEnded = sortedStocks.isNotEmpty
+          ? sortedStocks.last.dateModified
+          : DateTime.now();
+
+      final body = <String, dynamic>{
+        "mobile_device_id": mobileID,
+        "mobile_device_name": mobileName,
+        "shopfront": shopfrontName,
+        "total_stocks": dataToSync.length,
+        "date_started": dateStarted.toIso8601String(),
+        "date_ended": dateEnded.toIso8601String(),
+        "data": dataToSync
+            .map(
+              (s) => {
+                "stocktake_date": s.stocktakeDate.toIso8601String(),
+                "stock_id": s.stockID,
+                "quantity": s.quantity,
+                "date_modified": s.dateModified.toIso8601String(),
+              },
+            )
+            .toList(),
+      };
+
+      final response = await DataAgentImpl.instance.stocktakeBackup(
+        address,
+        resolvedPort,
+        resolvedShopfrontId,
+        resolvedApiKey,
+        body,
       );
-
-      final now = DateTime.now();
-
-      String pad(int value) => value.toString().padLeft(2, '0');
-
-      final String timestamp =
-          "${now.year}"
-          "${pad(now.month)}"
-          "${pad(now.day)}"
-          "${pad(now.hour)}"
-          "${pad(now.minute)}"
-          "${pad(now.second)}";
-
-      String shopfrontInFileName = shopfrontName.split(r'\').last;
-
-      final String fileName =
-          "${mobileID}_backup_${shopfrontInFileName}_$timestamp.json.gz";
-
-      return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(
-        address: address,
-        fullPath: fullPath,
-        username: username ?? AppGlobals.instance.defaultUserName,
-        password: password ?? AppGlobals.instance.defaultPwd,
-        fileName: fileName,
-        fileContent: jsonContent,
-        isCheck: false,
-        isBackup: true,
-      );
+      if (!response.success) {
+        throw Exception(response.message);
+      }
+      return;
     } on Exception catch (error) {
       return Future.error(error);
     }
@@ -417,29 +437,37 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
     required String password,
     required String fileName,
   }) async {
-    final Uint8List gzBytes = await LanNetworkServiceImpl.instance
-        .downloadBackupFileBytes(
-          address: address,
-          fullPath: fullPath,
-          username: username,
-          password: password,
-          fileName: fileName,
-        );
+    // Old setup disabled:
+    // final Uint8List gzBytes = await LanNetworkServiceImpl.instance.downloadBackupFileBytes(...);
+    // final jsonString = utf8.decode(GZipCodec().decode(gzBytes));
+    // final Map<String, dynamic> decoded = jsonDecode(jsonString);
 
-    final jsonString = utf8.decode(GZipCodec().decode(gzBytes));
-    final Map<String, dynamic> decoded = jsonDecode(jsonString);
+    final int resolvedPort =
+        int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+        5000;
+    final String resolvedApiKey =
+        (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+    final String resolvedShopfrontId =
+        (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
 
-    final List items = (decoded['data'] as List?) ?? [];
+    if (address.trim().isEmpty ||
+        resolvedApiKey.isEmpty ||
+        resolvedShopfrontId.isEmpty) {
+      throw Exception("Missing host/shopfront setup for loading backup.");
+    }
 
-    return items.map((e) {
-      final m = e as Map<String, dynamic>;
-      return BackupStocktakeItemVO(
-        stockId: (m['stock_id'] as num).toInt(),
-        quantity: (m['quantity'] as num),
-        stocktakeDate: DateTime.parse(m['stocktake_date'].toString()),
-        dateModified: DateTime.parse(m['date_modified'].toString()),
-      );
-    }).toList();
+    final response = await DataAgentImpl.instance.loadStocktakeBackup(
+      address,
+      resolvedPort,
+      resolvedShopfrontId,
+      fileName,
+      resolvedApiKey,
+    );
+    if (!response.success) {
+      throw Exception(response.message);
+    }
+
+    return response.data.data;
   }
 
   @override
@@ -450,39 +478,42 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
     required String password,
     required String mobileId,
   }) async {
-    final names = await LanNetworkServiceImpl.instance.listBackupFiles(
-      address: address,
-      fullPath: fullPath,
-      username: username,
-      password: password,
-      mobileId: mobileId,
-    );
+    // Old setup disabled:
+    // final names = await LanNetworkServiceImpl.instance.listBackupFiles(...);
 
-    return names.map((file) {
-      final dt = _parseTimestampFromFileName(file) ?? DateTime.now();
-      return BackupSessionVO(fileName: file, createdAt: dt);
+    final int resolvedPort =
+        int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+        5000;
+    final String resolvedApiKey =
+        (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+    final String resolvedShopfrontId =
+        (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+
+    if (address.trim().isEmpty ||
+        resolvedApiKey.isEmpty ||
+        resolvedShopfrontId.isEmpty) {
+      throw Exception("Missing host/shopfront setup for backup sessions.");
+    }
+
+    final response = await DataAgentImpl.instance.getStocktakeBackupList(
+      address,
+      resolvedPort,
+      resolvedShopfrontId,
+      resolvedApiKey,
+    );
+    if (!response.success) {
+      throw Exception(response.message);
+    }
+
+    return response.items.map((item) {
+      final parsed = DateTime.tryParse(item.lastWriteUtc);
+      final dt = parsed != null ? parsed.toLocal() : DateTime.now();
+      return BackupSessionVO(fileName: item.fileName, createdAt: dt);
     }).toList();
   }
 
-  DateTime? _parseTimestampFromFileName(String fileName) {
-    final end = fileName.indexOf(".json");
-
-    if (end < 14) return null;
-
-    final ts = fileName.substring(end - 14, end);
-
-    try {
-      final y = int.parse(ts.substring(0, 4));
-      final mo = int.parse(ts.substring(4, 6));
-      final d = int.parse(ts.substring(6, 8));
-      final h = int.parse(ts.substring(8, 10));
-      final mi = int.parse(ts.substring(10, 12));
-      final s = int.parse(ts.substring(12, 14));
-      return DateTime(y, mo, d, h, mi, s);
-    } catch (_) {
-      return null;
-    }
-  }
+  // Old setup disabled:
+  // DateTime? _parseTimestampFromFileName(String fileName) { ... }
 }
 
 class StocktakePagedResult {
@@ -509,45 +540,10 @@ class AuditSyncStatus {
   AuditSyncStatus(this.processed, this.total, this.message, {this.rows});
 }
 
-class _StocktakeJsonBuilder {
-  static String buildJson(
-    List<CountedStockVO> stocks,
-    String mobileId,
-    String mobileName,
-    String shopfrontName,
-  ) {
-    if (stocks.isEmpty) return "{}";
-
-    // Sort to find correct start/end dates
-    final sortedStocks = List<CountedStockVO>.from(stocks)
-      ..sort((a, b) => a.stocktakeDate.compareTo(b.stocktakeDate));
-
-    final firstRecord = sortedStocks.first;
-    final lastRecord = sortedStocks.last;
-
-    // Filter only required fields as per requirements
-    final List<Map<String, dynamic>> dataList = sortedStocks.map((s) {
-      return {
-        "stocktake_date": s.stocktakeDate.toIso8601String(),
-        "stock_id": s.stockID,
-        "quantity": s.quantity,
-        "date_modified": s.dateModified.toIso8601String(),
-      };
-    }).toList();
-
-    final Map<String, dynamic> finalMap = {
-      "mobile_device_id": mobileId,
-      "mobile_device_name": mobileName,
-      "shopfront": shopfrontName,
-      "total_stocks": stocks.length,
-      "date_started": firstRecord.stocktakeDate.toIso8601String(),
-      "date_ended": lastRecord.dateModified.toIso8601String(),
-      "data": dataList,
-    };
-
-    return const JsonEncoder.withIndent('  ').convert(finalMap);
-  }
-}
+// Old setup disabled:
+// class _StocktakeJsonBuilder {
+//   static String buildJson(...) { ... }
+// }
 
 class TransactionTypeHelper {
   static String translate(String code) {

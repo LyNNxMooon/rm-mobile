@@ -13,11 +13,11 @@ class RestoreBackupDialog extends StatelessWidget {
   const RestoreBackupDialog({super.key});
 
   String _fmt(DateTime dt) =>
-      "${dt.day.toString().padLeft(2, '0')}/"
-      "${dt.month.toString().padLeft(2, '0')}/"
-      "${dt.year} "
-      "${dt.hour.toString().padLeft(2, '0')}:"
-      "${dt.minute.toString().padLeft(2, '0')}";
+      "${dt.toLocal().day.toString().padLeft(2, '0')}/"
+      "${dt.toLocal().month.toString().padLeft(2, '0')}/"
+      "${dt.toLocal().year} "
+      "${dt.toLocal().hour.toString().padLeft(2, '0')}:"
+      "${dt.toLocal().minute.toString().padLeft(2, '0')}";
 
   @override
   Widget build(BuildContext context) {

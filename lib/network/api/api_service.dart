@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart' hide Headers;
 import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
+import 'package:rmstock_scanner/entities/response/backup_list_response.dart';
+import 'package:rmstock_scanner/entities/response/load_backup_response.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
@@ -7,6 +9,7 @@ import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/picture_upload_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_backup_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_list_response.dart';
@@ -136,6 +139,38 @@ abstract class ApiService {
     @Path(kPathParamForShopfrontId) String shopfrontId,
     @Header("x-api-key") String apiKey,
     @Body() Map<String, dynamic> body,
+  );
+
+  @POST(kEndPointForStocktakeBackup)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<StocktakeBackupResponse> stocktakeBackup(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Header("x-api-key") String apiKey,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @GET(kEndPointForStocktakeBackup)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<BackupListResponse> getStocktakeBackupList(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Header("x-api-key") String apiKey,
+  );
+
+  @GET(kEndPointForStocktakeBackupLoad)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<LoadBackupResponse> loadStocktakeBackup(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Path(kPathParamForFileName) String fileName,
+    @Header("x-api-key") String apiKey,
   );
 
   @POST(kEndPointForValidate)

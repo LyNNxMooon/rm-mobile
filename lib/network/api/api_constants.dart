@@ -19,6 +19,10 @@ const kEndPointForStocktakeInitCheck =
     "/shopfronts/{$kPathParamForShopfrontId}/stocktake/initcheck";
 const kEndPointForStocktakeCommit =
     "/shopfronts/{$kPathParamForShopfrontId}/stocktake/commit";
+const kEndPointForStocktakeBackup =
+    "/shopfronts/{$kPathParamForShopfrontId}/stocktake/backup";
+const kEndPointForStocktakeBackupLoad =
+    "/shopfronts/{$kPathParamForShopfrontId}/stocktake/backup/{$kPathParamForFileName}";
 const kEndPointForValidate = "/validate";
 
 //keys
@@ -26,5 +30,6 @@ const kPathParamForHostIP = "HostIP";
 const kPathParamForBarcode = "Barcode";
 const kPathParamForShopfrontId = "ShopfrontId";
 const kPathParamForStockId = "StockId";
+const kPathParamForFileName = "FileName";
 const kQueryParamKeyForLastStockID = "lastStockId";
 const kQueryParamKeyForPageSize = "pageSize";

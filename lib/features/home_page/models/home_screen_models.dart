@@ -17,6 +17,8 @@ import '../../../utils/global_var_utils.dart';
 
 class HomeScreenModels implements HomeRepo {
   //Data manipulation can be done here (E.g. substituting data for null values returned from API)
+  static const String _kAutoBackupEnabledKey = "auto_backup_enabled";
+  static const String _kLastAutoBackupAtKey = "last_auto_backup_at";
 
   @override
   Future<List<NetworkComputerVO>> fetchNetworkPCs() async {
@@ -173,6 +175,51 @@ class HomeScreenModels implements HomeRepo {
   @override
   Future<int> runHistoryCleanup() {
     return LocalDbDAO.instance.cleanupHistoryByRetention();
+  }
+
+  @override
+  Future<bool> getAutoBackupEnabled() async {
+    try {
+      final raw = await LocalDbDAO.instance.getAppConfig(_kAutoBackupEnabledKey);
+      return raw == "1";
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<void> setAutoBackupEnabled(bool enabled) async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(
+        _kAutoBackupEnabledKey,
+        enabled ? "1" : "0",
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<DateTime?> getLastAutoBackupAt() async {
+    try {
+      final raw = await LocalDbDAO.instance.getAppConfig(_kLastAutoBackupAtKey);
+      if (raw == null || raw.isEmpty) return null;
+      return DateTime.tryParse(raw);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<void> setLastAutoBackupAt(DateTime timestamp) async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(
+        _kLastAutoBackupAtKey,
+        timestamp.toUtc().toIso8601String(),
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
   }
 
   @override

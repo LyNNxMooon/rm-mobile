@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
+import 'package:rmstock_scanner/entities/response/backup_list_response.dart';
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
+import 'package:rmstock_scanner/entities/response/load_backup_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/picture_upload_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_backup_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
@@ -220,6 +223,67 @@ class DataAgentImpl implements DataAgent {
       ).asStream().map((event) => event).first;
     } on Exception catch (error) {
       logger.e('Error calling stocktake commit from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<StocktakeBackupResponse> stocktakeBackup(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.stocktakeBackup(
+        shopfrontId,
+        apiKey,
+        body,
+      ).asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error backing up stocktake from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<BackupListResponse> getStocktakeBackupList(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.getStocktakeBackupList(
+        shopfrontId,
+        apiKey,
+      ).asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error fetching backup list from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<LoadBackupResponse> loadStocktakeBackup(
+    String ip,
+    int port,
+    String shopfrontId,
+    String fileName,
+    String apiKey,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService.loadStocktakeBackup(
+        shopfrontId,
+        fileName,
+        apiKey,
+      ).asStream().map((event) => event).first;
+    } on Exception catch (error) {
+      logger.e('Error loading backup from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }

@@ -5,7 +5,6 @@ import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/utils/device_meta_data_utils.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/internet_connection_utils.dart';
-import 'package:rmstock_scanner/utils/network_credentials_check_utils.dart';
 
 class BackupStocktake {
   final StocktakeRepo repository;
@@ -22,17 +21,11 @@ class BackupStocktake {
         final List<CountedStockVO> unsyncedStocks = await LocalDbDAO.instance
             .getUnsyncedStocks(shopfront);
 
-        String? user;
-        String? pwd;
-
-        if (await NetworkCredentialsCheckUtils.instance
-            .isRequiredNetworkCredentials(ipAddress: ip)) {
-          final Map<String, dynamic>? savedCred = await LocalDbDAO.instance
-              .getNetworkCredential(ip: ip);
-
-          user = savedCred?['username'];
-          pwd = savedCred?['password'];
-        }
+        // Old setup disabled:
+        // String? user;
+        // String? pwd;
+        // if (await NetworkCredentialsCheckUtils.instance
+        //     .isRequiredNetworkCredentials(ipAddress: ip)) { ... }
 
         final DeviceMetadata mobileInfo = await DeviceMetaDataUtils.instance
             .getDeviceInformation();
@@ -43,8 +36,8 @@ class BackupStocktake {
           mobileID: mobileInfo.deviceId,
           mobileName: mobileInfo.name,
           shopfrontName: AppGlobals.instance.shopfront ?? "",
-          username: user,
-          password: pwd,
+          username: null,
+          password: null,
           dataToSync: unsyncedStocks,
         );
       } else {

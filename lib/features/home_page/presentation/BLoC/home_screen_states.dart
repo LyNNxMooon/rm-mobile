@@ -161,7 +161,8 @@ class SettingsLoading extends SettingsState {}
 
 class SettingsLoaded extends SettingsState {
   final int retentionDays;
-  SettingsLoaded(this.retentionDays);
+  final bool autoBackupEnabled;
+  SettingsLoaded(this.retentionDays, {required this.autoBackupEnabled});
 }
 
 class SettingsError extends SettingsState {
@@ -172,7 +173,24 @@ class SettingsError extends SettingsState {
 class SettingsCleanupDone extends SettingsState {
   final int deletedSessions;
   final int retentionDays;
-  SettingsCleanupDone({required this.deletedSessions, required this.retentionDays});
+  final bool autoBackupEnabled;
+  SettingsCleanupDone({
+    required this.deletedSessions,
+    required this.retentionDays,
+    required this.autoBackupEnabled,
+  });
+}
+
+class AutoBackupRunDone extends SettingsState {
+  final int retentionDays;
+  final bool autoBackupEnabled;
+  final bool didBackup;
+
+  AutoBackupRunDone({
+    required this.retentionDays,
+    required this.autoBackupEnabled,
+    required this.didBackup,
+  });
 }
 
 abstract class DiscoverHostStates {}
