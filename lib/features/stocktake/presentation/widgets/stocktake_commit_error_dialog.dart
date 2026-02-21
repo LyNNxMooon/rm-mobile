@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
-import '../../../home_page/presentation/BLoC/home_screen_events.dart';
-import '../../../home_page/presentation/widgets/network_pc_dialog.dart';
 
 class StocktakeCommitErrorDialog extends StatelessWidget {
   const StocktakeCommitErrorDialog({super.key, required this.message});
@@ -68,18 +64,6 @@ class StocktakeCommitErrorDialog extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   context.navigateBack();
-
-                  context.read<FetchingNetworkPCBloc>().add(
-                    FetchNetworkPCEvent(),
-                  );
-
-                  showDialog(
-                    //barrierDismissible: false,
-                    context: context,
-                    builder: (context) {
-                      return NetworkPcDialog();
-                    },
-                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
