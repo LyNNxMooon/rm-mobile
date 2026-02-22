@@ -174,6 +174,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                       filterColumn: searchCol,
                                       sortColumn: _dbFilterCol,
                                       filters: currentFilters,
+                                      shouldToggleSort: true,
                                     ),
                                   );
                                 },
@@ -333,6 +334,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                         filterColumn: "Barcode",
                         sortColumn: _dbFilterCol,
                         filters: currentFilters,
+                        shouldToggleSort: false,
                       ),
                     );
                   }
@@ -382,6 +384,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     filterColumn: searchCol,
                     sortColumn: _dbFilterCol,
                     filters: currentFilters,
+                    shouldToggleSort: false,
                   ),
                 );
               });
@@ -412,6 +415,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     filterColumn: "Barcode",
                     sortColumn: _dbFilterCol,
                     filters: currentFilters,
+                    shouldToggleSort: false,
                   ),
                 );
               }
@@ -520,7 +524,6 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           child: FadeInAnimation(
             child: GestureDetector(
               onTap: () {
-
                 context.navigateToNext(StockDetailsScreen(stock: stock));
               },
               child: Container(

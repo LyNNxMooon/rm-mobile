@@ -7,11 +7,14 @@ class FetchFirstPageEvent extends StockListEvent {
   final String filterColumn;
   final String sortColumn;
   final FilterCriteria? filters;
+  final bool shouldToggleSort;
+
   FetchFirstPageEvent({
     this.query = "",
     this.filterColumn = "description",
     this.sortColumn = "description",
     this.filters,
+    this.shouldToggleSort = false,
   });
 }
 
@@ -52,7 +55,6 @@ class UploadStockImageEvent extends StockImageUploadEvent {
 
   UploadStockImageEvent({required this.stockId, required this.imagePath});
 }
-
 
 //Stock update
 abstract class StockUpdateEvent {}

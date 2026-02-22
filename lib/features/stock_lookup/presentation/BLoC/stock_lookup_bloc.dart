@@ -23,10 +23,12 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
           ? state as StockListLoaded
           : null;
 
-      bool isAscending = true;
+      bool isAscending = prevState?.isAscending ?? true;
 
-      //Toggle only if same column tapped again
-      if (prevState != null && prevState.currentSortCol == event.sortColumn) {
+      // Toggle sort direction only on explicit chip tap of the same column.
+      if (event.shouldToggleSort &&
+          prevState != null &&
+          prevState.currentSortCol == event.sortColumn) {
         isAscending = !prevState.isAscending;
       }
 
@@ -266,9 +268,15 @@ class FullImageBloc extends Bloc<StockListEvent, FullImageState> {
 
       final newRev = {...current.rev};
       newRev[event.stockId] = (newRev[event.stockId] ?? 0) + 1;
-      emit(current.copyWith(imagePaths: updated, loading: loadingDone, rev: newRev));
+      emit(
+        current.copyWith(
+          imagePaths: updated,
+          loading: loadingDone,
+          rev: newRev,
+        ),
+      );
     } catch (_) {
-       if (_reqVer[event.stockId] != ver) return;
+      if (_reqVer[event.stockId] != ver) return;
       final loadingDone = {...newLoading}..remove(event.stockId);
       emit(current.copyWith(imagePaths: cleared, loading: loadingDone));
     }
@@ -297,7 +305,9 @@ class StockImageUploadBloc
       if (response.success) {
         emit(StockImageUploaded(response.message));
       } else {
-        emit(StockImageUploadError("Failed to upload image: ${response.message}"));
+        emit(
+          StockImageUploadError("Failed to upload image: ${response.message}"),
+        );
       }
     } catch (e) {
       emit(StockImageUploadError(e.toString()));
@@ -310,14 +320,14 @@ class StockUpdateBloc extends Bloc<StockUpdateEvent, StockUpdateState> {
   final UpdateSingleStock updateSingleStock;
 
   StockUpdateBloc({required this.updateSingleStock})
-      : super(StockUpdateInitial()) {
+    : super(StockUpdateInitial()) {
     on<SubmitStockUpdateEvent>(_onSubmit);
   }
 
   Future<void> _onSubmit(
-      SubmitStockUpdateEvent event,
-      Emitter<StockUpdateState> emit,
-      ) async {
+    SubmitStockUpdateEvent event,
+    Emitter<StockUpdateState> emit,
+  ) async {
     emit(StockUpdateLoading());
     try {
       final response = await updateSingleStock(

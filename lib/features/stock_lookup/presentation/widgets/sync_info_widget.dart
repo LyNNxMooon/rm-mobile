@@ -18,9 +18,7 @@ class SyncInfoWidget extends StatelessWidget {
         listener: (context, state) {
           if (state is FetchStockSuccess) {
             context.read<StockListBloc>().add(
-              FetchFirstPageEvent(
-                
-              ),
+              FetchFirstPageEvent(shouldToggleSort: false),
             );
             context.read<FilterOptionsBloc>().add(LoadFilterOptionsEvent());
           }
