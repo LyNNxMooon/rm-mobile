@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
@@ -24,7 +24,7 @@ class NetworkPcDialog extends StatefulWidget {
 
 class _NetworkPcDialogState extends State<NetworkPcDialog> {
   static const int _defaultAgentPort = 5000;
-  NetworkComputerVO? _selectedPc;
+  NetworkServerVO? _selectedPc;
   int _selectedPort = _defaultAgentPort;
   bool _isPairFlowLoading = false;
   final TextEditingController _connectCodeController = TextEditingController();
@@ -43,7 +43,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     showTopSnackBar(Overlay.of(context), CustomSnackBar.error(message: message));
   }
 
-  void _startPairingFlow(NetworkComputerVO pc, BuildContext context) {
+  void _startPairingFlow(NetworkServerVO pc, BuildContext context) {
     setState(() {
       _selectedPc = pc;
       _selectedPort = _defaultAgentPort;
@@ -288,7 +288,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                                       PairDeviceEvent(
                                         ip: _selectedPc!.ipAddress,
                                         hostName:
-                                            _selectedPc!.hostName ?? "Unknown-PC",
+                                            _selectedPc!.hostName ?? "Unknown-Server",
                                         port: _selectedPort,
                                         pairingCode: pairingCode,
                                       ),
@@ -417,7 +417,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                 barrierDismissible: false,
                 context: navigator.context,
                 builder: (_) => ShopfrontsDialog(
-                  pc: NetworkComputerVO(
+                  pc: NetworkServerVO(
                     ipAddress: selectedPc.ipAddress,
                     hostName: selectedPc.hostName,
                   ),
@@ -466,11 +466,11 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.computer, color: kSecondaryColor),
+                    const Icon(Icons.dns_rounded, color: kSecondaryColor),
                     const SizedBox(width: 20),
                     Expanded(
                       child: Text(
-                        "Network PCs",
+                        "Network Servers",
                         style: getSmartTitle(fontSize: 18),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -480,9 +480,9 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                 ),
               ),
               Flexible(
-                child: BlocBuilder<FetchingNetworkPCBloc, FetchingNetworkPCStates>(
+                child: BlocBuilder<FetchingNetworkServerBloc, FetchingNetworkServerStates>(
                   builder: (context, state) {
-                    if (state is FetchingNetworkPCs) {
+                    if (state is FetchingNetworkServers) {
                       return Center(
                         child: SingleChildScrollView(
                           child: Column(
@@ -490,7 +490,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                "Finding Network PCs...",
+                                "Finding Network Servers...",
                                 style: getSmartTitle(color: kThirdColor, fontSize: 16),
                               ),
                               Container(
@@ -506,7 +506,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                           ),
                         ),
                       );
-                    } else if (state is ErrorFetchingNetworkPCs) {
+                    } else if (state is ErrorFetchingNetworkServers) {
                       return Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: SingleChildScrollView(
@@ -527,8 +527,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                               const SizedBox(height: 10),
                               TextButton(
                                 onPressed: () {
-                                  context.read<FetchingNetworkPCBloc>().add(
-                                    FetchNetworkPCEvent(),
+                                  context.read<FetchingNetworkServerBloc>().add(
+                                    FetchNetworkServerEvent(),
                                   );
                                 },
                                 child: const Text(
@@ -540,11 +540,11 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                           ),
                         ),
                       );
-                    } else if (state is NetworkPCsLoaded) {
+                    } else if (state is NetworkServersLoaded) {
                       if (state.pcList.isEmpty) {
                         return const Padding(
                           padding: EdgeInsets.all(30),
-                          child: Text("No computers found on the network."),
+                          child: Text("No servers found on the network."),
                         );
                       }
 
@@ -559,7 +559,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                           endIndent: 16,
                         ),
                         itemBuilder: (context, index) {
-                          return _buildPCTile(state.pcList[index], context);
+                          return _buildServerTile(state.pcList[index], context);
                         },
                       );
                     }
@@ -574,7 +574,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     );
   }
 
-  Widget _buildPCTile(NetworkComputerVO pc, BuildContext ctx) {
+  Widget _buildServerTile(NetworkServerVO pc, BuildContext ctx) {
     return InkWell(
       onTap: () {
         _startPairingFlow(pc, ctx);
@@ -601,7 +601,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
             const SizedBox(width: 16),
             Expanded(
               child: Text(
-                pc.hostName ?? "Unknown-PC",
+                pc.hostName ?? "Unknown-Server",
                 style: const TextStyle(color: kThirdColor),
                 maxLines: 1, // Fix overflow
                 overflow: TextOverflow.ellipsis, // Fix overflow
@@ -646,7 +646,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
             //       showDialog(
             //         context: ctx,
             //         builder: (_) => ShopfrontsDialog(
-            //           pc: NetworkComputerVO(
+            //           pc: NetworkServerVO(
             //             ipAddress: AppGlobals.instance.currentHostIp ?? "",
             //             hostName: AppGlobals.instance.hostName ?? "",
             //           ),

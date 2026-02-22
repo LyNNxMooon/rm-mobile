@@ -73,8 +73,8 @@ class _MyAppState extends State<MyApp> {
     return MultiBlocProvider(
       providers: [
         BlocProvider<StocktakeBloc>(create: (_) => sl<StocktakeBloc>()),
-        BlocProvider<FetchingNetworkPCBloc>(
-          create: (_) => sl<FetchingNetworkPCBloc>(),
+        BlocProvider<FetchingNetworkServerBloc>(
+          create: (_) => sl<FetchingNetworkServerBloc>(),
         ),
         BlocProvider<GettingDirectoryBloc>(
           create: (_) => sl<GettingDirectoryBloc>(),

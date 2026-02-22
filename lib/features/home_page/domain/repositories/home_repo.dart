@@ -4,10 +4,10 @@ import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 
-import '../../../../entities/vos/network_computer_vo.dart';
+import '../../../../entities/vos/network_server_vo.dart';
 
 abstract class HomeRepo {
-  Future<List<NetworkComputerVO>> fetchNetworkPCs();
+  Future<List<NetworkServerVO>> fetchNetworkServers();
   Future<List<String>> getDirectoryList(
     String address,
     String path,

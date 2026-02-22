@@ -2,25 +2,25 @@ import 'package:rmstock_scanner/entities/response/discover_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
-import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 
-//Network PCs fetching states
-abstract class FetchingNetworkPCStates {}
+//Network Servers fetching states
+abstract class FetchingNetworkServerStates {}
 
-class FetchingNetworkPCInitial extends FetchingNetworkPCStates {}
+class FetchingNetworkServerInitial extends FetchingNetworkServerStates {}
 
-class FetchingNetworkPCs extends FetchingNetworkPCStates {}
+class FetchingNetworkServers extends FetchingNetworkServerStates {}
 
-class NetworkPCsLoaded extends FetchingNetworkPCStates {
-  final List<NetworkComputerVO> pcList;
+class NetworkServersLoaded extends FetchingNetworkServerStates {
+  final List<NetworkServerVO> pcList;
 
-  NetworkPCsLoaded({required this.pcList});
+  NetworkServersLoaded({required this.pcList});
 }
 
-class ErrorFetchingNetworkPCs extends FetchingNetworkPCStates {
+class ErrorFetchingNetworkServers extends FetchingNetworkServerStates {
   final String message;
 
-  ErrorFetchingNetworkPCs({required this.message});
+  ErrorFetchingNetworkServers({required this.message});
 }
 
 //directory fetching states
@@ -120,7 +120,7 @@ class AutoConnectedToPublicFolder extends AutoConnectionStates {
 }
 
 class ErrorAutoConnection extends AutoConnectionStates {
-  final NetworkComputerVO pcHolder;
+  final NetworkServerVO pcHolder;
   final String message;
 
   ErrorAutoConnection(this.message, this.pcHolder);

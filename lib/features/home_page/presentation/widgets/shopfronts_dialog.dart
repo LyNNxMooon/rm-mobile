@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -27,7 +27,7 @@ class ShopfrontsDialog extends StatefulWidget {
     this.apiKey,
   });
 
-  final NetworkComputerVO pc;
+  final NetworkServerVO pc;
   final String previousPath;
   final bool isPairedFlow;
   final int? port;

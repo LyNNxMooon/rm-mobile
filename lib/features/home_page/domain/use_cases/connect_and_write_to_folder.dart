@@ -54,12 +54,12 @@ class ConnectAndWriteToFolder {
           LocalDbDAO.instance.addNetworkPath(
             "//$ip/$fullPath",
             '',
-            hostName ?? "UnknownPC($ip)",
+            hostName ?? "UnknownServer($ip)",
           );
         }
 
         AppGlobals.instance.currentHostIp = ip;
-        AppGlobals.instance.hostName = hostName ?? "UnknownPC($ip)";
+        AppGlobals.instance.hostName = hostName ?? "UnknownServer($ip)";
         AppGlobals.instance.currentPath = "//$ip/$fullPath";
       } else {
         return Future.error("Please connect to a network!");

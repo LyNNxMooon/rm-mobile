@@ -229,7 +229,7 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
           children: [
             // Header
             const Text(
-              "Price Calculator",
+              "Sell Price (RRP) Calculator",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,

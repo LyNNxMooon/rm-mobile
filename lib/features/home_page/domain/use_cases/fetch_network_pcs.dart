@@ -1,4 +1,4 @@
-import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 
 import '../../../../utils/internet_connection_utils.dart';
@@ -8,10 +8,10 @@ class FetchNetworkPcs {
 
   FetchNetworkPcs(this.repository);
 
-  Future<List<NetworkComputerVO>> call() async {
+  Future<List<NetworkServerVO>> call() async {
     try {
       if (await InternetConnectionUtils.instance.checkInternetConnection()) {
-        return repository.fetchNetworkPCs();
+        return repository.fetchNetworkServers();
       } else {
         return Future.error("Please connect to a network!");
       }

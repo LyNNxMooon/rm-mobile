@@ -40,12 +40,12 @@ class AutoConnectToDefaultFolder {
           LocalDbDAO.instance.addNetworkPath(
             "//$ip/$sharedFolder",
             '',
-            hostName ?? "UnknownPC($ip)",
+            hostName ?? "UnknownServer($ip)",
           );
         }
 
         AppGlobals.instance.currentHostIp = ip;
-        AppGlobals.instance.hostName = hostName ?? "UnknownPC($ip)";
+        AppGlobals.instance.hostName = hostName ?? "UnknownServer($ip)";
         AppGlobals.instance.currentPath = "//$ip/$sharedFolder";
 
         logger.d("Use case for auto connection was triggered");

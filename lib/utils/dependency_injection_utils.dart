@@ -60,7 +60,7 @@ Future<void> init() async {
 
   //Blocs
   sl.registerFactory(() => StocktakeBloc(countAndSaveToLocaldb: sl()));
-  sl.registerFactory(() => FetchingNetworkPCBloc(fetchNetworkPcs: sl()));
+  sl.registerFactory(() => FetchingNetworkServerBloc(fetchNetworkPcs: sl()));
   sl.registerFactory(() => GettingDirectoryBloc(getToSharedFolder: sl()));
   sl.registerFactory(() => ConnectingFolderBloc(connectAndWriteToFolder: sl()));
   sl.registerFactory(

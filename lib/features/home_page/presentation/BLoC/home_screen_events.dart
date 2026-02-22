@@ -30,7 +30,7 @@ class ConnectToShopfrontEvent extends HomeScreenEvents {
   });
 }
 
-class FetchNetworkPCEvent extends HomeScreenEvents {}
+class FetchNetworkServerEvent extends HomeScreenEvents {}
 
 class GetDirectoryEvent extends HomeScreenEvents {
   final String ipAddress;

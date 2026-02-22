@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
-import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:smb_connect/smb_connect.dart';
 
 abstract class LanNetworkService {
-  Future<List<NetworkComputerVO>> scanNetwork();
+  Future<List<NetworkServerVO>> scanNetwork();
 
   Future<List<String>> getDirectoryListing({
     required String address,

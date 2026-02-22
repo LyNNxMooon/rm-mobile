@@ -7,7 +7,7 @@ import 'package:rmstock_scanner/features/home_page/presentation/widgets/shopfron
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../../entities/vos/network_computer_vo.dart';
+import '../../../../entities/vos/network_server_vo.dart';
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
@@ -206,7 +206,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
         context: context,
         builder: (context) {
           return ShopfrontsDialog(
-            pc: NetworkComputerVO(
+            pc: NetworkServerVO(
               ipAddress: AppGlobals.instance.currentHostIp ?? "",
               hostName: AppGlobals.instance.hostName ?? "",
             ),

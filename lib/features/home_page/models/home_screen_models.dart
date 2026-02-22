@@ -5,7 +5,7 @@ import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dar
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
-import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
@@ -21,7 +21,7 @@ class HomeScreenModels implements HomeRepo {
   static const String _kLastAutoBackupAtKey = "last_auto_backup_at";
 
   @override
-  Future<List<NetworkComputerVO>> fetchNetworkPCs() async {
+  Future<List<NetworkServerVO>> fetchNetworkServers() async {
     try {
       return LanNetworkServiceImpl.instance.scanNetwork();
     } on Exception catch (error) {

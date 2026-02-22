@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showNetworkDialog() {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     logger.d("State is noticed");
-    context.read<FetchingNetworkPCBloc>().add(FetchNetworkPCEvent());
+    context.read<FetchingNetworkServerBloc>().add(FetchNetworkServerEvent());
     showDialog(
       context: context,
       builder: (context) {

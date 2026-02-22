@@ -14,7 +14,7 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_reten
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
-import '../../../../entities/vos/network_computer_vo.dart';
+import '../../../../entities/vos/network_server_vo.dart';
 import '../../../../utils/log_utils.dart';
 import '../../domain/use_cases/auto_connect_to_default_folder.dart';
 import '../../domain/use_cases/connect_and_write_to_folder.dart';
@@ -23,28 +23,28 @@ import '../../domain/use_cases/fetch_network_pcs.dart';
 import '../../domain/use_cases/fetch_stock_data.dart';
 import '../../domain/use_cases/get_to_shared_folder.dart';
 
-class FetchingNetworkPCBloc
-    extends Bloc<HomeScreenEvents, FetchingNetworkPCStates> {
+class FetchingNetworkServerBloc
+    extends Bloc<HomeScreenEvents, FetchingNetworkServerStates> {
   final FetchNetworkPcs fetchNetworkPcs;
 
-  FetchingNetworkPCBloc({required this.fetchNetworkPcs})
-    : super(FetchingNetworkPCInitial()) {
-    on<FetchNetworkPCEvent>(_onFetchNetworkPC);
+  FetchingNetworkServerBloc({required this.fetchNetworkPcs})
+    : super(FetchingNetworkServerInitial()) {
+    on<FetchNetworkServerEvent>(_onFetchNetworkServer);
   }
 
-  Future<void> _onFetchNetworkPC(
-    FetchNetworkPCEvent event,
-    Emitter<FetchingNetworkPCStates> emit,
+  Future<void> _onFetchNetworkServer(
+    FetchNetworkServerEvent event,
+    Emitter<FetchingNetworkServerStates> emit,
   ) async {
-    emit(FetchingNetworkPCs());
+    emit(FetchingNetworkServers());
     try {
       final pcList = await fetchNetworkPcs();
 
-      emit(NetworkPCsLoaded(pcList: pcList));
+      emit(NetworkServersLoaded(pcList: pcList));
     } catch (error) {
       emit(
-        ErrorFetchingNetworkPCs(
-          message: "Error fetching network computers: $error",
+        ErrorFetchingNetworkServers(
+          message: "Error fetching network servers: $error",
         ),
       );
     }
@@ -264,7 +264,7 @@ class AutoConnectionBloc extends Bloc<HomeScreenEvents, AutoConnectionStates> {
       emit(
         ErrorAutoConnection(
           e.toString(),
-          NetworkComputerVO(
+          NetworkServerVO(
             ipAddress: event.ipAddress,
             hostName: event.hostName ?? "",
           ),

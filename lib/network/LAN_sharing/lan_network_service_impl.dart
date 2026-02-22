@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
-import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:rmstock_scanner/network/LAN_sharing/lan_network_service.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'dart:io';
@@ -17,10 +17,10 @@ class LanNetworkServiceImpl implements LanNetworkService {
   final NetworkInfo _networkInfo = NetworkInfo();
 
   @override
-  Future<List<NetworkComputerVO>> scanNetwork() async {
+  Future<List<NetworkServerVO>> scanNetwork() async {
     //await Permission.locationWhenInUse.request();
 
-    List<NetworkComputerVO> devices = [];
+    List<NetworkServerVO> devices = [];
 
     final String? ip = await _networkInfo.getWifiIP();
     if (ip == null || ip == '0.0.0.0') {
@@ -45,13 +45,13 @@ class LanNetworkServiceImpl implements LanNetworkService {
         batch.map((hostIp) => _checkSmbPort(hostIp)),
       );
 
-      devices.addAll(results.whereType<NetworkComputerVO>());
+      devices.addAll(results.whereType<NetworkServerVO>());
     }
 
     return devices;
   }
 
-  Future<NetworkComputerVO?> _checkSmbPort(String targetIp) async {
+  Future<NetworkServerVO?> _checkSmbPort(String targetIp) async {
     try {
       final socket = await Socket.connect(
         targetIp,
@@ -65,7 +65,7 @@ class LanNetworkServiceImpl implements LanNetworkService {
         final hostEntry = await InternetAddress(targetIp).reverse();
 
         if (hostEntry.host == targetIp) {
-          hostname = "($targetIp)UnknownPC";
+          hostname = "($targetIp)UnknownServer";
         } else {
           hostname = hostEntry.host;
           if (hostname.endsWith('.local')) {
@@ -76,10 +76,10 @@ class LanNetworkServiceImpl implements LanNetworkService {
           }
         }
       } catch (e) {
-        hostname = "($targetIp)UnknownPC";
+        hostname = "($targetIp)UnknownServer";
       }
 
-      return NetworkComputerVO(ipAddress: targetIp, hostName: hostname);
+      return NetworkServerVO(ipAddress: targetIp, hostName: hostname);
     } catch (e) {
       return null;
     }

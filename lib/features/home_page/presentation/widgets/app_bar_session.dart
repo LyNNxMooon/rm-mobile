@@ -30,7 +30,7 @@ class AppBarSession extends StatelessWidget {
                 final String displayText =
                     (host == null || host.isEmpty)
                     ? 'Connect To Network...'
-                    : "PC: $host";
+                    : "Server: $host";
 
                 return Text(
                   displayText,
@@ -49,8 +49,8 @@ class AppBarSession extends StatelessWidget {
             children: [
               InkWell(
                 onTap: () {
-                  context.read<FetchingNetworkPCBloc>().add(
-                    FetchNetworkPCEvent(),
+                  context.read<FetchingNetworkServerBloc>().add(
+                    FetchNetworkServerEvent(),
                   );
 
                   showDialog(

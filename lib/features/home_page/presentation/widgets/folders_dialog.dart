@@ -2,7 +2,7 @@ import 'package:alert_info/alert_info.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/widgets/shopfronts_dialog.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
@@ -20,7 +20,7 @@ import '../BLoC/home_screen_states.dart';
 class FoldersDialog extends StatefulWidget {
   const FoldersDialog({super.key, required this.pc, this.previousPath = ""});
 
-  final NetworkComputerVO pc;
+  final NetworkServerVO pc;
   final String previousPath;
 
   @override
@@ -176,7 +176,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                     if (state.directList.isEmpty) {
                       return const Padding(
                         padding: EdgeInsets.all(30),
-                        child: Text("No folders shared on this computer."),
+                        child: Text("No folders shared on this server."),
                       );
                     }
 

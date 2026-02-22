@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/network_computer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
@@ -369,7 +369,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 barrierDismissible: false,
                 context: context,
                 builder: (_) => ShopfrontsDialog(
-                  pc: NetworkComputerVO(
+                  pc: NetworkServerVO(
                     ipAddress: _selectedIp,
                     hostName: _selectedHostName,
                   ),
