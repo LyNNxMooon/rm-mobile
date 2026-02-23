@@ -348,7 +348,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                     ),
                   );
                   showDialog(
-                    barrierDismissible: false,
+                   // barrierDismissible: false,
                     context: context,
                     builder: (context) {
                       return ShopfrontsDialog(

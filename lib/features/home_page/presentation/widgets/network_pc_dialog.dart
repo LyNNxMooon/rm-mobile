@@ -414,7 +414,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
               );
 
               showDialog(
-                barrierDismissible: false,
+                //barrierDismissible: false,
                 context: navigator.context,
                 builder: (_) => ShopfrontsDialog(
                   pc: NetworkServerVO(

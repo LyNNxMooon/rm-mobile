@@ -366,7 +366,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
 
               showDialog(
-                barrierDismissible: false,
+                //barrierDismissible: false,
                 context: context,
                 builder: (_) => ShopfrontsDialog(
                   pc: NetworkServerVO(

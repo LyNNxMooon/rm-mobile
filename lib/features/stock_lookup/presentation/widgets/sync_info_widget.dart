@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
@@ -17,9 +18,24 @@ class SyncInfoWidget extends StatelessWidget {
       child: BlocConsumer<FetchStockBloc, FetchStockStates>(
         listener: (context, state) {
           if (state is FetchStockSuccess) {
-            context.read<StockListBloc>().add(
-              FetchFirstPageEvent(shouldToggleSort: false),
-            );
+            final stockState = context.read<StockListBloc>().state;
+
+            if (stockState is StockListLoaded) {
+              context.read<StockListBloc>().add(
+                FetchFirstPageEvent(
+                  query: stockState.currentQuery,
+                  filterColumn: stockState.currentFilterCol,
+                  sortColumn: stockState.currentSortCol,
+                  filters: stockState.activeFilters,
+                  shouldToggleSort: false,
+                ),
+              );
+            } else {
+              context.read<StockListBloc>().add(
+                FetchFirstPageEvent(shouldToggleSort: false),
+              );
+            }
+
             context.read<FilterOptionsBloc>().add(LoadFilterOptionsEvent());
           }
         },
