@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_limit_response.dart';
 import 'package:rmstock_scanner/entities/vos/audit_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
@@ -32,14 +33,16 @@ class StocktakeModel implements StocktakeRepo {
   }
 
   @override
-Future<StockSearchResult> fetchStockDetails(String query, String shopfront) async {
-  try {
-    return LocalDbDAO.instance.getStockBySearch(query, shopfront);
-  } catch (error) {
-    return Future.error(error);
+  Future<StockSearchResult> fetchStockDetails(
+    String query,
+    String shopfront,
+  ) async {
+    try {
+      return LocalDbDAO.instance.getStockBySearch(query, shopfront);
+    } catch (error) {
+      return Future.error(error);
+    }
   }
-}
-
 
   @override
   Future<StockVO?> fetchStockDetailsByID(int id, String shopfront) async {
@@ -70,7 +73,9 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
       // return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(...);
 
       final int resolvedPort =
-          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          int.tryParse(
+            (await LocalDbDAO.instance.getHostPort() ?? "").trim(),
+          ) ??
           5000;
       final String resolvedApiKey =
           (await LocalDbDAO.instance.getApiKey() ?? "").trim();
@@ -85,8 +90,8 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
 
       final DateTime dateStarted = dataToSync.isNotEmpty
           ? dataToSync
-              .map((e) => e.stocktakeDate)
-              .reduce((a, b) => a.isBefore(b) ? a : b)
+                .map((e) => e.stocktakeDate)
+                .reduce((a, b) => a.isBefore(b) ? a : b)
           : DateTime.now();
 
       final body = <String, dynamic>{
@@ -165,7 +170,9 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
       // return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(...);
 
       final int resolvedPort =
-          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          int.tryParse(
+            (await LocalDbDAO.instance.getHostPort() ?? "").trim(),
+          ) ??
           5000;
       final String resolvedApiKey =
           (await LocalDbDAO.instance.getApiKey() ?? "").trim();
@@ -180,13 +187,13 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
 
       final DateTime dateStarted = adjustedData.isNotEmpty
           ? adjustedData
-              .map((e) => e.stocktakeDate)
-              .reduce((a, b) => a.isBefore(b) ? a : b)
+                .map((e) => e.stocktakeDate)
+                .reduce((a, b) => a.isBefore(b) ? a : b)
           : DateTime.now();
       final DateTime dateEnded = adjustedData.isNotEmpty
           ? adjustedData
-              .map((e) => e.dateModified)
-              .reduce((a, b) => a.isAfter(b) ? a : b)
+                .map((e) => e.dateModified)
+                .reduce((a, b) => a.isAfter(b) ? a : b)
           : DateTime.now();
 
       final body = <String, dynamic>{
@@ -279,7 +286,9 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
 
     final report = _lastInitcheckResponse;
     if (report == null) {
-      throw Exception("No init-check result found. Please send validation first.");
+      throw Exception(
+        "No init-check result found. Please send validation first.",
+      );
     }
 
     if (report.data.isEmpty) {
@@ -329,6 +338,33 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
   }
 
   @override
+  Future<StocktakeLimitResponse> fetchStocktakeLimit({
+    required String address,
+  }) async {
+    try {
+      final int resolvedPort =
+          int.tryParse(
+            (await LocalDbDAO.instance.getHostPort() ?? "").trim(),
+          ) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+
+      if (address.trim().isEmpty || resolvedApiKey.isEmpty) {
+        throw Exception("Missing host/api-key setup for stocktake limit.");
+      }
+
+      return DataAgentImpl.instance.getStocktakeLimit(
+        address,
+        resolvedPort,
+        resolvedApiKey,
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
   Future<StocktakePagedResult> fetchUnsyncedStocktakePage({
     required String shopfront,
     required int pageIndex,
@@ -370,7 +406,9 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
       // return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(...);
 
       final int resolvedPort =
-          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          int.tryParse(
+            (await LocalDbDAO.instance.getHostPort() ?? "").trim(),
+          ) ??
           5000;
       final String resolvedApiKey =
           (await LocalDbDAO.instance.getApiKey() ?? "").trim();
@@ -445,8 +483,8 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
     final int resolvedPort =
         int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
         5000;
-    final String resolvedApiKey =
-        (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+    final String resolvedApiKey = (await LocalDbDAO.instance.getApiKey() ?? "")
+        .trim();
     final String resolvedShopfrontId =
         (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
 
@@ -484,8 +522,8 @@ Future<StockSearchResult> fetchStockDetails(String query, String shopfront) asyn
     final int resolvedPort =
         int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
         5000;
-    final String resolvedApiKey =
-        (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+    final String resolvedApiKey = (await LocalDbDAO.instance.getApiKey() ?? "")
+        .trim();
     final String resolvedShopfrontId =
         (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
 

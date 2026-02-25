@@ -27,7 +27,6 @@ class StockDuplicatesFound extends ScannerStates {
   StockDuplicatesFound(this.matches);
 }
 
-
 abstract class StockFetchingStates {}
 
 class StockDetailsInitial extends StockFetchingStates {}
@@ -152,6 +151,33 @@ class ErrorBackupStocktake extends BackUpStocktakeStates {
   ErrorBackupStocktake(this.message);
 }
 
+//Stocktake Trial Limit
+abstract class StocktakeLimitStates {}
+
+class StocktakeLimitInitial extends StocktakeLimitStates {}
+
+class StocktakeLimitLoading extends StocktakeLimitStates {}
+
+class StocktakeLimitLoaded extends StocktakeLimitStates {
+  final int limit;
+  final int used;
+  final int remaining;
+
+  StocktakeLimitLoaded({
+    required this.limit,
+    required this.used,
+    required this.remaining,
+  });
+
+  bool get isUnlimited => limit == 0 && used == 0 && remaining == 0;
+}
+
+class StocktakeLimitError extends StocktakeLimitStates {
+  final String message;
+
+  StocktakeLimitError(this.message);
+}
+
 //Stocktake Validation
 abstract class StocktakeValidationState {}
 
@@ -223,7 +249,6 @@ class StocktakeHistoryError extends StocktakeHistoryState {
   final String message;
   StocktakeHistoryError(this.message);
 }
-
 
 //Backup
 abstract class BackupRestoreState {}

@@ -96,6 +96,9 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<CommittingStocktakeBloc>(
           create: (_) => sl<CommittingStocktakeBloc>(),
         ),
+        BlocProvider<StocktakeLimitBloc>(
+          create: (_) => sl<StocktakeLimitBloc>(),
+        ),
         BlocProvider<AutoConnectionBloc>(
           create: (_) => sl<AutoConnectionBloc>(),
         ),

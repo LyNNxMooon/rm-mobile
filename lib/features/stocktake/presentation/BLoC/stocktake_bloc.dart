@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counti
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessions.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sesstion_items.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_limit.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_page.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/load_backup_sessions.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/restore_backup_session.dart';
@@ -66,7 +67,6 @@ class ScannerBloc extends Bloc<StocktakeEvent, ScannerStates> {
     }
   }
 }
-
 
 class StockDetailsBloc extends Bloc<StocktakeEvent, StockFetchingStates> {
   final FetchCountedStockById fetchCountedStockById;
@@ -299,15 +299,12 @@ class CommittingStocktakeBloc
       emit(CommittedStocktake("Stocktake data sent for validation!"));
     } catch (error) {
       if (error is String) {
-        emit(ErrorCommitingStocktake("Error commiting stocktake list: $error"));
+        emit(ErrorCommitingStocktake(error));
       } else {
         var e = error as dynamic;
 
-        emit(
-          ErrorCommitingStocktake(
-            "Error commiting stocktake list: ${e.message.toString()}",
-          ),
-        );
+        final dynamic msg = e.message;
+        emit(ErrorCommitingStocktake(msg?.toString() ?? error.toString()));
       }
     }
   }
@@ -343,6 +340,34 @@ class BackupStocktakeBloc extends Bloc<StocktakeEvent, BackUpStocktakeStates> {
           ),
         );
       }
+    }
+  }
+}
+
+class StocktakeLimitBloc extends Bloc<StocktakeEvent, StocktakeLimitStates> {
+  final FetchStocktakeLimit fetchStocktakeLimit;
+
+  StocktakeLimitBloc({required this.fetchStocktakeLimit})
+    : super(StocktakeLimitInitial()) {
+    on<FetchStocktakeLimitEvent>(_onFetch);
+  }
+
+  Future<void> _onFetch(
+    FetchStocktakeLimitEvent event,
+    Emitter<StocktakeLimitStates> emit,
+  ) async {
+    emit(StocktakeLimitLoading());
+    try {
+      final result = await fetchStocktakeLimit();
+      emit(
+        StocktakeLimitLoaded(
+          limit: result.limit,
+          used: result.used,
+          remaining: result.remaining,
+        ),
+      );
+    } catch (error) {
+      emit(StocktakeLimitError(error.toString()));
     }
   }
 }
@@ -463,16 +488,13 @@ class StocktakeHistoryBloc extends Bloc<StocktakeEvent, StocktakeHistoryState> {
   }
 }
 
-
 //Backup
 class BackupRestoreBloc extends Bloc<BackupRestoreEvent, BackupRestoreState> {
   final LoadBackupSessions loadSessions;
   final RestoreBackupSession restoreSession;
 
-  BackupRestoreBloc({
-    required this.loadSessions,
-    required this.restoreSession,
-  }) : super(BackupRestoreInitial()) {
+  BackupRestoreBloc({required this.loadSessions, required this.restoreSession})
+    : super(BackupRestoreInitial()) {
     on<LoadBackupSessionsEvent>(_onLoad);
     on<RestoreBackupSessionEvent>(_onRestore);
   }

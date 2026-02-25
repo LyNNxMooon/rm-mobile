@@ -10,6 +10,7 @@ import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart
 import 'package:rmstock_scanner/entities/response/stocktake_backup_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_limit_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
 
@@ -101,9 +102,11 @@ abstract class DataAgent {
     String apiKey,
   );
 
-  Future<ValidateResponse> validate(
+  Future<StocktakeLimitResponse> getStocktakeLimit(
     String ip,
     int port,
     String apiKey,
   );
+
+  Future<ValidateResponse> validate(String ip, int port, String apiKey);
 }

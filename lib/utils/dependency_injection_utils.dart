@@ -18,6 +18,7 @@ import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_counte
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessions.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sesstion_items.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_limit.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_page.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/load_backup_sessions.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/restore_backup_session.dart';
@@ -80,6 +81,7 @@ Future<void> init() async {
   );
   sl.registerFactory(() => FetchingStocktakeListBloc(fetchStocktakePage: sl()));
   sl.registerFactory(() => CommittingStocktakeBloc(commitStocktake: sl()));
+  sl.registerFactory(() => StocktakeLimitBloc(fetchStocktakeLimit: sl()));
   sl.registerFactory(
     () => AutoConnectionBloc(autoConnectToDefaultFolder: sl()),
   );
@@ -146,6 +148,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetFilterOptions(sl()));
   sl.registerLazySingleton(() => FetchCountingStock(sl()));
   sl.registerLazySingleton(() => FetchStocktakeAuditReport(sl()));
+  sl.registerLazySingleton(() => FetchStocktakeLimit(sl()));
   sl.registerLazySingleton(() => SendFinalStocktakeToRm(sl()));
   sl.registerLazySingleton(() => FetchThumbnail(sl()));
   sl.registerLazySingleton(() => FetchFullImage(sl()));
@@ -156,7 +159,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CleanupHistory(sl()));
   sl.registerLazySingleton(() => LoadAutoBackupEnabled(sl()));
   sl.registerLazySingleton(() => UpdateAutoBackupEnabled(sl()));
-  sl.registerLazySingleton(() => RunAutoBackupIfDue(repository: sl(), backupStocktake: sl()));
+  sl.registerLazySingleton(
+    () => RunAutoBackupIfDue(repository: sl(), backupStocktake: sl()),
+  );
   sl.registerLazySingleton(() => DiscoverHost(sl()));
   sl.registerLazySingleton(() => GetPairCodes(sl()));
   sl.registerLazySingleton(() => PairDevice(sl()));

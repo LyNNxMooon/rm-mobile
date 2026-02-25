@@ -12,12 +12,12 @@ class StocktakeValidationInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 15.0, right: 15, bottom: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 15.0),
       child: BlocBuilder<StocktakeValidationBloc, StocktakeValidationState>(
         builder: (context, state) {
           if (state is StocktakeValidationProgress) {
             return Container(
-              margin: const EdgeInsets.only(top: 5, bottom: 2),
+              margin: const EdgeInsets.only(top: 4, bottom: 4),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: kSecondaryColor,

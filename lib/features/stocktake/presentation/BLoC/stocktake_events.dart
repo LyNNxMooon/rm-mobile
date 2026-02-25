@@ -16,7 +16,6 @@ class SelectDuplicateStock extends StocktakeEvent {
   SelectDuplicateStock({required this.selected});
 }
 
-
 class FetchStockDetailsByID extends StocktakeEvent {
   final int stockId;
   final num qty;
@@ -72,6 +71,7 @@ class PrevStocktakePageEvent extends StocktakeEvent {}
 
 class BackUpStocktakeEvent extends StocktakeEvent {}
 
+class FetchStocktakeLimitEvent extends StocktakeEvent {}
 
 //backup
 abstract class BackupRestoreEvent {}

@@ -9,7 +9,8 @@ const kEndPointForDiscover = "/discover";
 const kEndPointForPairCode = "/paircode";
 const kEndPointForParing = "/pair";
 const kEndPointForShopfronts = "/shopfronts";
-const kEndPointForConnectShopfront = "/shopfronts/{$kPathParamForShopfrontId}/connect";
+const kEndPointForConnectShopfront =
+    "/shopfronts/{$kPathParamForShopfrontId}/connect";
 const kEndPointForStockLookup = "/shopfronts/{$kPathParamForShopfrontId}/stock";
 const kEndPointForShopfrontStockUpdate =
     "/shopfronts/{$kPathParamForShopfrontId}/stock/update";
@@ -23,6 +24,7 @@ const kEndPointForStocktakeBackup =
     "/shopfronts/{$kPathParamForShopfrontId}/stocktake/backup";
 const kEndPointForStocktakeBackupLoad =
     "/shopfronts/{$kPathParamForShopfrontId}/stocktake/backup/{$kPathParamForFileName}";
+const kEndPointForStocktakeLimit = "/stocktake/limit";
 const kEndPointForValidate = "/validate";
 
 //keys

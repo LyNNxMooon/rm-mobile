@@ -11,6 +11,7 @@ import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_backup_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
+import 'package:rmstock_scanner/entities/response/stocktake_limit_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_list_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
@@ -73,7 +74,9 @@ abstract class ApiService {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
   })
-  Future<ShopfrontsApiResponse> getShopfronts(@Header("x-api-key") String apiKey);
+  Future<ShopfrontsApiResponse> getShopfronts(
+    @Header("x-api-key") String apiKey,
+  );
 
   @POST(kEndPointForConnectShopfront)
   @Headers(<String, dynamic>{
@@ -170,6 +173,15 @@ abstract class ApiService {
   Future<LoadBackupResponse> loadStocktakeBackup(
     @Path(kPathParamForShopfrontId) String shopfrontId,
     @Path(kPathParamForFileName) String fileName,
+    @Header("x-api-key") String apiKey,
+  );
+
+  @GET(kEndPointForStocktakeLimit)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<StocktakeLimitResponse> getStocktakeLimit(
     @Header("x-api-key") String apiKey,
   );
 

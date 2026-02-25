@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/widgets/stocktake_validation_info.dart';
 
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
@@ -139,7 +138,6 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
           thickness: 0.5,
           color: kGreyColor,
         ),
-        StocktakeValidationInfo(),
       ],
     );
   }

@@ -27,6 +27,8 @@ import '../widgets/stocktake_commit_error_dialog.dart';
 import '../widgets/stocktake_list_app_bar.dart';
 import '../widgets/stocktake_search_and_filter_bar.dart';
 import '../widgets/stocktake_success_dialog.dart';
+import '../widgets/stocktake_trial_limit_info.dart';
+import '../widgets/stocktake_validation_info.dart';
 
 class Debouncer {
   final int milliseconds;
@@ -84,6 +86,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     context.read<FetchingStocktakeListBloc>().add(
       FetchStocktakeListEvent(reset: true),
     );
+    context.read<StocktakeLimitBloc>().add(FetchStocktakeLimitEvent());
   }
 
   @override
@@ -101,8 +104,10 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         child: Column(
           children: [
             const StocktakeListAppBar(),
+            const StocktakeValidationInfo(),
+            const StocktakeTrialLimitInfo(),
             finalStocktakeLoading(),
-            const SizedBox(height: 5),
+            const SizedBox(height: 6),
             StocktakeSearchAndFilterBar(
               onChanged: (value) {
                 _searchQuery = value;
@@ -121,7 +126,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                 builder: (_) => const FilterDialog(),
               ),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 10),
             Expanded(child: _buildItemsList()),
             stockCountUpdateListener(),
           ],
@@ -168,35 +173,42 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     return BlocConsumer<SendingFinalStocktakeBloc, SendingFinalStocktakeStates>(
       listener: (context, state) {
         if (state is ErrorSendingStocktake) {
+          context.read<StocktakeLimitBloc>().add(FetchStocktakeLimitEvent());
           _showError(state.message);
         }
 
         if (state is SentStocktakeToRM) {
-
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (context) => StocktakeSuccessDialog(
               message: state.message,
               onOkayPressed: () {
-
                 Navigator.of(context).pop();
 
                 context.read<FetchingStocktakeListBloc>().add(
                   FetchStocktakeListEvent(),
-                ); context.read<FetchingStocktakeListBloc>().add(
+                );
+                context.read<FetchingStocktakeListBloc>().add(
                   FetchStocktakeListEvent(),
+                );
+                context.read<StocktakeLimitBloc>().add(
+                  FetchStocktakeLimitEvent(),
                 );
               },
             ),
           );
-
         }
       },
       builder: (context, state) {
         if (state is LoadingToSendStocktake) {
           return Container(
-            margin: const EdgeInsets.only(bottom: 6, left: 15, right: 15),
+            margin: const EdgeInsets.only(
+              left: 15,
+              right: 15,
+              top: 4,
+              bottom: 4,
+            ),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: kSecondaryColor,
@@ -268,6 +280,9 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
               );
             } else if (state is ErrorCommitingStocktake) {
               context.navigateBack();
+              context.read<StocktakeLimitBloc>().add(
+                FetchStocktakeLimitEvent(),
+              );
               _showError(state.message);
             } else if (state is CommittedStocktake) {
               context.navigateBack();
@@ -457,7 +472,8 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                             ),
                           ),
                           const SizedBox(height: 2), // Spacing
-                          Wrap( // Wrap handles overflow better than Row here
+                          Wrap(
+                            // Wrap handles overflow better than Row here
                             spacing: 8,
                             runSpacing: 4,
                             children: [
@@ -473,7 +489,10 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                               // Vertical Divider Visual
                               Text(
                                 "|",
-                                style: TextStyle(color: kGreyColor, fontSize: 12),
+                                style: TextStyle(
+                                  color: kGreyColor,
+                                  fontSize: 12,
+                                ),
                               ),
                               Text(
                                 "In-Stock: ${stock.inStock}",
@@ -532,6 +551,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
       ),
     );
   }
+
   Widget _buildValidationDialog(StocktakeValidationHasAudits state) {
     final double safeMaxHeight = MediaQuery.of(context).size.height * 0.7;
 
