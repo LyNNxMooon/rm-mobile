@@ -17,9 +17,11 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../local_db/local_db_dao.dart';
+import '../../../../utils/global_var_utils.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_bloc.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_events.dart';
 import '../../../stocktake/presentation/widgets/delete_all_confirmation_dialog.dart';
+import 'staff_login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -31,9 +33,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   static const int _defaultAgentPort = 5000;
 
-  // Mock Data (Replace with BLoC state later)
-  String staffName = "John Doe";
-  String staffID = "STF-001";
   double retentionDays = 10;
   bool backupToLan = true;
 
@@ -70,7 +69,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showError(BuildContext context, String message) {
-    showTopSnackBar(Overlay.of(context), CustomSnackBar.error(message: message));
+    showTopSnackBar(
+      Overlay.of(context),
+      CustomSnackBar.error(message: message),
+    );
   }
 
   void _startManualConnection(BuildContext context) {
@@ -116,7 +118,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 20,
+                ),
                 decoration: const BoxDecoration(
                   gradient: kGColor,
                   borderRadius: BorderRadius.only(
@@ -147,7 +152,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: TextField(
                         controller: _manualPortController,
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         decoration: InputDecoration(
                           hintText: "Port (e.g. 5000)",
                           contentPadding: const EdgeInsets.symmetric(
@@ -224,7 +231,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 20,
+                ),
                 decoration: const BoxDecoration(
                   gradient: kGColor,
                   borderRadius: BorderRadius.only(
@@ -399,145 +409,174 @@ class _SettingsScreenState extends State<SettingsScreen> {
             }
           },
         ),
+        BlocListener<StaffAuthBloc, StaffAuthStates>(
+          listener: (context, state) async {
+            if (state is StaffSignedOut) {
+              if (!mounted) return;
+              await context.navigateToNext(const StaffLoginScreen());
+              if (!mounted) return;
+              setState(() {});
+            }
+
+            if (state is StaffAuthenticated) {
+              if (!mounted) return;
+              setState(() {});
+            }
+          },
+        ),
       ],
       child: Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: kGColor),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildAppBar(context),
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 10),
+        body: Container(
+          decoration: const BoxDecoration(gradient: kGColor),
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildAppBar(context),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 10),
 
-                      _buildSectionTitle("Staff Profile"),
-                      _buildGlassContainer(
-                        child: Column(
-                          children: [
-                            _buildInfoRow(
-                              Icons.badge_outlined,
-                              "Staff ID",
-                              staffID,
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 15),
-                              child: Divider(height: 1, thickness: 0.5),
-                            ),
-                            _buildInfoRow(
-                              Icons.person_outline,
-                              "Staff Name",
-                              staffName,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildSignOutButton(),
-                          ],
+                        _buildSectionTitle("Staff Profile"),
+                        _buildGlassContainer(
+                          child: Column(
+                            children: [
+                              _buildInfoRow(
+                                Icons.badge_outlined,
+                                "Staff ID",
+                                AppGlobals.instance.staffNo ?? "-",
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildInfoRow(
+                                Icons.person_outline,
+                                "Staff Name",
+                                AppGlobals.instance.staffName ?? "-",
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildInfoRow(
+                                Icons.groups_2_outlined,
+                                "Staff Group",
+                                AppGlobals.instance.staffGroupNames.isEmpty
+                                    ? "-"
+                                    : AppGlobals.instance.staffGroupNames.join(
+                                        ", ",
+                                      ),
+                              ),
+                              const SizedBox(height: 10),
+                              _buildSignOutButton(),
+                            ],
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: 25),
+                        const SizedBox(height: 25),
 
-                      _buildSectionTitle("Data & Backup"),
-                      _buildGlassContainer(
-                        child: Column(
-                          children: [
-                            _buildSliderRow(),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 15),
-                              child: Divider(height: 1, thickness: 0.5),
-                            ),
-                            _buildSwitchRow(
-                              "Auto Backup Stocktake",
-                              "Automatically save current stocktake backup every 24 hours",
-                              backupToLan,
-                              (val) {
-                                setState(() => backupToLan = val);
-                                context.read<SettingsBloc>().add(
-                                  ToggleAutoBackupEvent(val),
-                                );
-                                if (val) {
+                        _buildSectionTitle("Data & Backup"),
+                        _buildGlassContainer(
+                          child: Column(
+                            children: [
+                              _buildSliderRow(),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildSwitchRow(
+                                "Auto Backup Stocktake",
+                                "Automatically save current stocktake backup every 24 hours",
+                                backupToLan,
+                                (val) {
+                                  setState(() => backupToLan = val);
                                   context.read<SettingsBloc>().add(
-                                    CheckAutoBackupNowEvent(),
+                                    ToggleAutoBackupEvent(val),
                                   );
-                                }
-                              },
-                            ),
-                          ],
+                                  if (val) {
+                                    context.read<SettingsBloc>().add(
+                                      CheckAutoBackupNowEvent(),
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: 25),
+                        const SizedBox(height: 25),
 
-                      _buildSectionTitle("Maintenance"),
-                      _buildGlassContainer(
-                        child: Column(
-                          children: [
-                            _buildActionRow(
-                              Icons.settings_ethernet_outlined,
-                              "Manual Connection",
-                              "Connect with host IP and pairing code",
-                              kPrimaryColor,
-                              () => _showManualConnectionDialog(context),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 15),
-                              child: Divider(height: 1, thickness: 0.5),
-                            ),
-                            _buildActionRow(
-                              Icons.restore_page_outlined,
-                              "Restore Data",
-                              "Recover deleted stocktake from server",
-                              Colors.blue,
-                              () {
-                                context.read<BackupRestoreBloc>().add(
-                                  LoadBackupSessionsEvent(),
-                                );
-                                showDialog(
-                                  context: context,
-                                  builder: (_) => const RestoreBackupDialog(),
-                                );
-                              },
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 15),
-                              child: Divider(height: 1, thickness: 0.5),
-                            ),
-                            _buildActionRow(
-                              Icons.delete_forever_outlined,
-                              "Delete All Current Stocktake",
-                              "Clear all currently counted stocktake list permanently on this device.",
-                              kErrorColor,
-                              () => _showDeleteConfirmation(context),
-                            ),
-                          ],
+                        _buildSectionTitle("Maintenance"),
+                        _buildGlassContainer(
+                          child: Column(
+                            children: [
+                              _buildActionRow(
+                                Icons.settings_ethernet_outlined,
+                                "Manual Connection",
+                                "Connect with host IP and pairing code",
+                                kPrimaryColor,
+                                () => _showManualConnectionDialog(context),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildActionRow(
+                                Icons.restore_page_outlined,
+                                "Restore Data",
+                                "Recover deleted stocktake from server",
+                                Colors.blue,
+                                () {
+                                  context.read<BackupRestoreBloc>().add(
+                                    LoadBackupSessionsEvent(),
+                                  );
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => const RestoreBackupDialog(),
+                                  );
+                                },
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildActionRow(
+                                Icons.delete_forever_outlined,
+                                "Delete All Current Stocktake",
+                                "Clear all currently counted stocktake list permanently on this device.",
+                                kErrorColor,
+                                () => _showDeleteConfirmation(context),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: 30),
-                      Text(
-                        "App Version 1.0.0 (AAAPOS Pty Ltd)",
-                        style: TextStyle(
-                          color: kSecondaryColor.withOpacity(0.6),
-                          fontSize: 12,
+                        const SizedBox(height: 30),
+                        Text(
+                          "App Version 1.0.0 (AAAPOS Pty Ltd)",
+                          style: TextStyle(
+                            color: kSecondaryColor.withOpacity(0.6),
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildAppBar(BuildContext context) {
@@ -657,7 +696,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: double.infinity,
         child: OutlinedButton(
           onPressed: () {
-            // Logout Logic
+            context.read<StaffAuthBloc>().add(SignOutStaffEvent());
           },
           style: OutlinedButton.styleFrom(
             backgroundColor: kErrorColor.withOpacity(0.2),

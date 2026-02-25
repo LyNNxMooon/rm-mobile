@@ -7,6 +7,7 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final bool isEnabled;
+  final bool obscureText;
   final IconData? leadingIcon;
   final TextInputType? keyboardType;
   final void Function(String)? function;
@@ -19,17 +20,19 @@ class CustomTextField extends StatelessWidget {
     required this.controller,
     required this.hintText,
     this.isEnabled = true,
+    this.obscureText = false,
     this.leadingIcon,
     this.keyboardType,
     this.function,
     this.focusNode,
     this.submitFunction,
-    this.textInputAction
+    this.textInputAction,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      obscureText: obscureText,
       textInputAction: textInputAction,
       focusNode: focusNode,
       onChanged: function,

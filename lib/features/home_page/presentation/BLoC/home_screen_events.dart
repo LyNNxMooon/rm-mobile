@@ -1,5 +1,3 @@
-
-
 abstract class HomeScreenEvents {}
 
 class FetchShops extends HomeScreenEvents {
@@ -77,7 +75,6 @@ class FetchStockDataEvent extends HomeScreenEvents {
   FetchStockDataEvent({required this.ipAddress, this.userName, this.pwd});
 }
 
-
 abstract class FetchStockEvents {}
 
 class StartSyncEvent extends FetchStockEvents {
@@ -85,15 +82,8 @@ class StartSyncEvent extends FetchStockEvents {
   final String? username;
   final String? password;
 
-  StartSyncEvent({
-    required this.ipAddress,
-    this.username,
-    this.password,
-  });
-
-
+  StartSyncEvent({required this.ipAddress, this.username, this.password});
 }
-
 
 abstract class SettingsEvent {}
 
@@ -178,3 +168,28 @@ class FetchShopsFromApi extends HomeScreenEvents {
   });
 }
 
+abstract class StaffAuthEvents {}
+
+class AuthenticateStaffEvent extends StaffAuthEvents {
+  final String ip;
+  final int port;
+  final String apiKey;
+  final String shopfrontId;
+  final String shopfrontName;
+  final String staffNo;
+  final String password;
+
+  AuthenticateStaffEvent({
+    required this.ip,
+    required this.port,
+    required this.apiKey,
+    required this.shopfrontId,
+    required this.shopfrontName,
+    required this.staffNo,
+    required this.password,
+  });
+}
+
+class LoadSavedStaffSessionEvent extends StaffAuthEvents {}
+
+class SignOutStaffEvent extends StaffAuthEvents {}

@@ -1,4 +1,5 @@
 import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
+import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
 import 'package:rmstock_scanner/entities/response/backup_list_response.dart';
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
 import 'package:rmstock_scanner/entities/response/load_backup_response.dart';
@@ -13,6 +14,7 @@ import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.d
 import 'package:rmstock_scanner/entities/response/stocktake_limit_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
+import 'package:rmstock_scanner/entities/response/security_groups_response.dart';
 
 abstract class DataAgent {
   Future<DiscoverResponse> discoverHost(String ip, int port);
@@ -99,6 +101,21 @@ abstract class DataAgent {
     int port,
     String shopfrontId,
     String fileName,
+    String apiKey,
+  );
+
+  Future<AuthenticateStaffResponse> authenticateStaff(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  );
+
+  Future<SecurityGroupsResponse> getSecurityGroups(
+    String ip,
+    int port,
+    String shopfrontId,
     String apiKey,
   );
 

@@ -18,6 +18,7 @@ import '../widgets/action_card.dart';
 import '../widgets/app_bar_session.dart';
 import '../widgets/glass_drawer.dart';
 import '../widgets/network_pc_dialog.dart';
+import 'staff_login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
 
     context.read<SettingsBloc>().add(RunHistoryCleanupEvent());
+    context.read<StaffAuthBloc>().add(LoadSavedStaffSessionEvent());
 
     final currentParamState = context
         .read<NetworkSavedPathValidationBloc>()
@@ -44,6 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _promptStaffLoginIfNeeded();
+    });
+
     // Old setup disabled:
     // if (currentParamState is ConnectionValid &&
     //     context.read<ShopFrontConnectionBloc>().state
@@ -55,6 +61,19 @@ class _HomeScreenState extends State<HomeScreen> {
     //     ),
     //   );
     // }
+  }
+
+  Future<void> _promptStaffLoginIfNeeded() async {
+    final hasShopfront = (AppGlobals.instance.shopfront ?? "")
+        .trim()
+        .isNotEmpty;
+    if (!hasShopfront) return;
+
+    if (!AppGlobals.instance.isStaffSignedIn) {
+      await context.navigateToNext(const StaffLoginScreen());
+      if (!mounted) return;
+      setState(() {});
+    }
   }
 
   void _showNetworkDialog() {
@@ -76,13 +95,24 @@ class _HomeScreenState extends State<HomeScreen> {
     final double screenHeight = MediaQuery.of(context).size.height;
     final double topContentHeight = screenHeight * 0.42;
 
-    return BlocListener<NetworkSavedPathValidationBloc, LoadingSplashStates>(
-      listener: (context, state) {
-        if (state is ErrorFetchingSavedPaths ||
-            state is ErrorCheckingConnection) {
-          _showNetworkDialog();
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<NetworkSavedPathValidationBloc, LoadingSplashStates>(
+          listener: (context, state) {
+            if (state is ErrorFetchingSavedPaths ||
+                state is ErrorCheckingConnection) {
+              _showNetworkDialog();
+            }
+          },
+        ),
+        BlocListener<StaffAuthBloc, StaffAuthStates>(
+          listener: (context, state) {
+            if (state is StaffSignedOut || state is StaffUnauthenticated) {
+              _promptStaffLoginIfNeeded();
+            }
+          },
+        ),
+      ],
       child: Scaffold(
         extendBody: true,
         backgroundColor: kPrimaryColor,
@@ -129,6 +159,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
                             ActionCard(
                               onTap: () {
+                                if (!AppGlobals.instance.hasPermission(
+                                  "StockManagement_Stocktake",
+                                )) {
+                                  showTopSnackBar(
+                                    Overlay.of(context),
+                                    const CustomSnackBar.error(
+                                      message:
+                                          "You do not have permission to start stocktaking.",
+                                    ),
+                                  );
+                                  return;
+                                }
+
                                 final currentState = context
                                     .read<FetchStockBloc>()
                                     .state;

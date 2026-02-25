@@ -25,6 +25,10 @@ const kEndPointForStocktakeBackup =
 const kEndPointForStocktakeBackupLoad =
     "/shopfronts/{$kPathParamForShopfrontId}/stocktake/backup/{$kPathParamForFileName}";
 const kEndPointForStocktakeLimit = "/stocktake/limit";
+const kEndPointForAuthenticateStaff =
+    "/shopfronts/{$kPathParamForShopfrontId}/security/authenticate";
+const kEndPointForSecurityGroups =
+    "/shopfronts/{$kPathParamForShopfrontId}/security/groups";
 const kEndPointForValidate = "/validate";
 
 //keys

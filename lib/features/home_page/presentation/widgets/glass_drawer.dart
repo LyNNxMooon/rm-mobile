@@ -5,6 +5,8 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/widgets/shopfronts_dialog.dart'
     show ShopfrontsDialog;
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/network_server_vo.dart';
@@ -68,34 +70,36 @@ class _GlassDrawerState extends State<GlassDrawer> {
                   const SizedBox(height: 15),
 
                   Padding(
-                    padding: const EdgeInsets.only(
-                      left: 28,
-                      right: 28,
-                    ),
-                    child:
-                    BlocBuilder<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
-                      builder: (context, state) {
-                        final shop = AppGlobals.instance.shopfront;
-                        //final host = AppGlobals.instance.hostName;
-                        final shopText = (shop == null || shop.isEmpty)
-                            ? "Connect to a shopfront..."
-                            : shop.split(r'\\').last;
+                    padding: const EdgeInsets.only(left: 28, right: 28),
+                    child: BlocBuilder<StaffAuthBloc, StaffAuthStates>(
+                      builder: (context, staffState) {
+                        return BlocBuilder<
+                          ShopFrontConnectionBloc,
+                          ShopfrontConnectionStates
+                        >(
+                          builder: (context, state) {
+                            final shop = AppGlobals.instance.shopfront;
+                            final shopText = (shop == null || shop.isEmpty)
+                                ? "Connect to a shopfront..."
+                                : shop.split(r'\\').last;
 
-                        return Text(
-                          shopText,
-                          style: const TextStyle(
-                            color: kSecondaryColor,
-                            fontSize: 18,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                            return Text(
+                              shopText,
+                              style: const TextStyle(
+                                color: kSecondaryColor,
+                                fontSize: 18,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          },
                         );
                       },
                     ),
                   ),
 
                   Expanded(child: dashBoardView(scrollController)),
-                  const SizedBox(height: 10,)
+                  const SizedBox(height: 10),
                 ],
               ),
             ),
@@ -123,7 +127,8 @@ class _GlassDrawerState extends State<GlassDrawer> {
 
         double targetHeight = 85.0;
 
-        double naturalGridHeight = (rowCount * targetHeight) + ((rowCount - 1) * spacing) + 40;
+        double naturalGridHeight =
+            (rowCount * targetHeight) + ((rowCount - 1) * spacing) + 40;
 
         // If the screen is tall (Tablet Portrait), we have extra vertical space.
         if (height > naturalGridHeight) {
@@ -218,6 +223,17 @@ class _GlassDrawerState extends State<GlassDrawer> {
         },
       );
     } else if (index == 1) {
+      if (!AppGlobals.instance.hasAnyPermission(const <String>[
+        "Information_Stock",
+      ])) {
+        showTopSnackBar(
+          Overlay.of(context),
+          const CustomSnackBar.error(
+            message: "You do not have permission to access Stock Lookup.",
+          ),
+        );
+        return;
+      }
       context.navigateToNext(const StockLookupScreen());
     } else {
       context.navigateToNext(const ComingSoonScreen());
@@ -225,13 +241,13 @@ class _GlassDrawerState extends State<GlassDrawer> {
   }
 
   Widget _buildGridItem(
-      String title,
-      String subTitle,
-      IconData icon,
-      BuildContext context,
-      int index,
-      int columnCount,
-      ) {
+    String title,
+    String subTitle,
+    IconData icon,
+    BuildContext context,
+    int index,
+    int columnCount,
+  ) {
     return AnimationConfiguration.staggeredGrid(
       position: index,
       duration: const Duration(milliseconds: 1500),

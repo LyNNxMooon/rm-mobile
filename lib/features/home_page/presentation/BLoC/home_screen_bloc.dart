@@ -1,12 +1,16 @@
 import 'package:bloc/bloc.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_history.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_host.dart';
+import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/authenticate_staff.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_session.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_auto_backup_enabled.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/connect_to_shopfront_api.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/get_pair_codes.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/pair_device.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/sign_out_staff.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/run_auto_backup_if_due.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_auto_backup_enabled.dart';
@@ -15,6 +19,7 @@ import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
 import '../../../../entities/vos/network_server_vo.dart';
+import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
 import '../../domain/use_cases/auto_connect_to_default_folder.dart';
 import '../../domain/use_cases/connect_and_write_to_folder.dart';
@@ -181,8 +186,7 @@ class ShopFrontConnectionBloc
   ShopFrontConnectionBloc({
     required this.connectToShopfront,
     required this.connectToShopfrontApi,
-  })
-    : super(ConnectionInitial()) {
+  }) : super(ConnectionInitial()) {
     on<ConnectToShopfrontEvent>(_onConnectToShopfront);
     on<ConnectToShopfrontApiEvent>(_onConnectToShopfrontApi);
   }
@@ -453,7 +457,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 class DiscoverHostBloc extends Bloc<DiscoverHostEvents, DiscoverHostStates> {
   final DiscoverHost discoverHost;
 
-  DiscoverHostBloc({required this.discoverHost}) : super(DiscoverHostInitial()) {
+  DiscoverHostBloc({required this.discoverHost})
+    : super(DiscoverHostInitial()) {
     on<DiscoverHostEvent>(_onDiscoverHost);
   }
 
@@ -519,6 +524,88 @@ class PairDeviceBloc extends Bloc<PairDeviceEvents, PairDeviceStates> {
       }
     } catch (e) {
       emit(PairDeviceError(e.toString()));
+    }
+  }
+}
+
+class StaffAuthBloc extends Bloc<StaffAuthEvents, StaffAuthStates> {
+  final AuthenticateStaff authenticateStaff;
+  final LoadSavedStaffSession loadSavedStaffSession;
+  final SignOutStaff signOutStaff;
+
+  StaffAuthBloc({
+    required this.authenticateStaff,
+    required this.loadSavedStaffSession,
+    required this.signOutStaff,
+  }) : super(StaffAuthInitial()) {
+    on<AuthenticateStaffEvent>(_onAuthenticateStaff);
+    on<LoadSavedStaffSessionEvent>(_onLoadSavedStaffSession);
+    on<SignOutStaffEvent>(_onSignOutStaff);
+  }
+
+  Future<void> _onAuthenticateStaff(
+    AuthenticateStaffEvent event,
+    Emitter<StaffAuthStates> emit,
+  ) async {
+    emit(StaffAuthenticating());
+    try {
+      final response = await authenticateStaff(
+        ip: event.ip,
+        port: event.port,
+        apiKey: event.apiKey,
+        shopfrontId: event.shopfrontId,
+        shopfrontName: event.shopfrontName,
+        staffNo: event.staffNo,
+        password: event.password,
+      );
+
+      if (response.success) {
+        emit(StaffAuthenticated(response));
+      } else {
+        emit(StaffUnauthenticated(response.message));
+      }
+    } catch (error) {
+      emit(StaffAuthError(error.toString()));
+    }
+  }
+
+  Future<void> _onLoadSavedStaffSession(
+    LoadSavedStaffSessionEvent event,
+    Emitter<StaffAuthStates> emit,
+  ) async {
+    try {
+      final loaded = await loadSavedStaffSession();
+      if (loaded && AppGlobals.instance.isStaffSignedIn) {
+        emit(
+          StaffAuthenticated(
+            AuthenticateStaffResponse(
+              success: true,
+              message: "Authenticated",
+              securityEnabled: AppGlobals.instance.securityEnabled,
+              staff: null,
+              groupIds: AppGlobals.instance.staffGroupIds,
+              grantedPermissions: const <StaffPermission>[],
+              restrictedPermissions: const <StaffPermission>[],
+            ),
+          ),
+        );
+      } else {
+        emit(StaffUnauthenticated("Please sign in."));
+      }
+    } catch (error) {
+      emit(StaffAuthError(error.toString()));
+    }
+  }
+
+  Future<void> _onSignOutStaff(
+    SignOutStaffEvent event,
+    Emitter<StaffAuthStates> emit,
+  ) async {
+    try {
+      await signOutStaff();
+      emit(StaffSignedOut());
+    } catch (error) {
+      emit(StaffAuthError(error.toString()));
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
+import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
 import 'package:rmstock_scanner/entities/response/backup_list_response.dart';
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
 import 'package:rmstock_scanner/entities/response/load_backup_response.dart';
@@ -15,6 +16,7 @@ import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.d
 import 'package:rmstock_scanner/entities/response/stocktake_limit_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
+import 'package:rmstock_scanner/entities/response/security_groups_response.dart';
 import 'package:rmstock_scanner/network/api/api_service.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent.dart';
 import '../../entities/response/error_response.dart';
@@ -338,6 +340,47 @@ class DataAgentImpl implements DataAgent {
           .first;
     } on Exception catch (error) {
       logger.e('Error loading backup from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<AuthenticateStaffResponse> authenticateStaff(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService
+          .authenticateStaff(shopfrontId, apiKey, body)
+          .asStream()
+          .map((event) => event)
+          .first;
+    } on Exception catch (error) {
+      logger.e('Error authenticating staff from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<SecurityGroupsResponse> getSecurityGroups(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService
+          .getSecurityGroups(shopfrontId, apiKey)
+          .asStream()
+          .map((event) => event)
+          .first;
+    } on Exception catch (error) {
+      logger.e('Error loading security groups from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }

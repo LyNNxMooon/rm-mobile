@@ -22,21 +22,32 @@ class AppBarSession extends StatelessWidget {
         children: [
           // Responsive Text Area
           Flexible(
-            child: BlocBuilder<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
-              builder: (context, state) {
-                final host = AppGlobals.instance.hostName;
-                //final shop = AppGlobals.instance.shopfront;
+            child: BlocBuilder<StaffAuthBloc, StaffAuthStates>(
+              builder: (context, staffState) {
+                return BlocBuilder<
+                  ShopFrontConnectionBloc,
+                  ShopfrontConnectionStates
+                >(
+                  builder: (context, state) {
+                    final host = AppGlobals.instance.hostName;
+                    final shop = AppGlobals.instance.shopfront;
 
-                final String displayText =
-                    (host == null || host.isEmpty)
-                    ? 'Connect To Network...'
-                    : "Server: $host";
+                    final String displayText = (host == null || host.isEmpty)
+                        ? 'Connect To Network...'
+                        : ((shop == null || shop.isEmpty)
+                              ? "Server: $host"
+                              : "Server: $host  |  Shopfront: ${shop.split(r'\\').last}");
 
-                return Text(
-                  displayText,
-                  style: getSmartTitle(fontSize: 18, color: kSecondaryColor),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                    return Text(
+                      displayText,
+                      style: getSmartTitle(
+                        fontSize: 18,
+                        color: kSecondaryColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  },
                 );
               },
             ),

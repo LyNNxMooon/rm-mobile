@@ -2,10 +2,13 @@ import 'package:get_it/get_it.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_history.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_host.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/authenticate_staff.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_session.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/pair_device.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/run_auto_backup_if_due.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_auto_backup_enabled.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/sign_out_staff.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_auto_backup_enabled.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
@@ -113,6 +116,13 @@ Future<void> init() async {
   sl.registerFactory(() => DiscoverHostBloc(discoverHost: sl()));
   sl.registerFactory(() => PairCodeBloc(getPairCodes: sl()));
   sl.registerFactory(() => PairDeviceBloc(pairDevice: sl()));
+  sl.registerFactory(
+    () => StaffAuthBloc(
+      authenticateStaff: sl(),
+      loadSavedStaffSession: sl(),
+      signOutStaff: sl(),
+    ),
+  );
   sl.registerFactory(() => StockDetailsBloc(fetchCountedStockById: sl()));
   sl.registerFactory(() => StockCountUpdateBloc(updateStockCount: sl()));
   sl.registerFactory(() => StockImageUploadBloc(uploadUseCase: sl()));
@@ -165,6 +175,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DiscoverHost(sl()));
   sl.registerLazySingleton(() => GetPairCodes(sl()));
   sl.registerLazySingleton(() => PairDevice(sl()));
+  sl.registerLazySingleton(() => AuthenticateStaff(sl()));
+  sl.registerLazySingleton(() => LoadSavedStaffSession(sl()));
+  sl.registerLazySingleton(() => SignOutStaff(sl()));
   sl.registerLazySingleton(() => FetchCountedStockById(sl()));
   sl.registerLazySingleton(() => UpdateStockCount(sl()));
   sl.registerLazySingleton(() => FetchStocktakePage(sl()));

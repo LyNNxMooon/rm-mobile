@@ -1,4 +1,5 @@
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
+import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
@@ -57,7 +58,7 @@ class FolderConnected extends ConnectingFolderStates {
   final String message;
   final String path;
 
-  FolderConnected({required this.path,required this.message});
+  FolderConnected({required this.path, required this.message});
 }
 
 class ErrorConnectingFolder extends ConnectingFolderStates {
@@ -245,4 +246,30 @@ class PairDeviceError extends PairDeviceStates {
   final String message;
 
   PairDeviceError(this.message);
+}
+
+abstract class StaffAuthStates {}
+
+class StaffAuthInitial extends StaffAuthStates {}
+
+class StaffAuthenticating extends StaffAuthStates {}
+
+class StaffAuthenticated extends StaffAuthStates {
+  final AuthenticateStaffResponse response;
+
+  StaffAuthenticated(this.response);
+}
+
+class StaffUnauthenticated extends StaffAuthStates {
+  final String message;
+
+  StaffUnauthenticated(this.message);
+}
+
+class StaffSignedOut extends StaffAuthStates {}
+
+class StaffAuthError extends StaffAuthStates {
+  final String message;
+
+  StaffAuthError(this.message);
 }

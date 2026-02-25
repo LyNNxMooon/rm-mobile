@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart' hide Headers;
 import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
+import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
 import 'package:rmstock_scanner/entities/response/backup_list_response.dart';
 import 'package:rmstock_scanner/entities/response/load_backup_response.dart';
 import 'package:retrofit/retrofit.dart';
@@ -13,6 +14,7 @@ import 'package:rmstock_scanner/entities/response/stocktake_backup_response.dart
 import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_limit_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
+import 'package:rmstock_scanner/entities/response/security_groups_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_list_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
@@ -173,6 +175,27 @@ abstract class ApiService {
   Future<LoadBackupResponse> loadStocktakeBackup(
     @Path(kPathParamForShopfrontId) String shopfrontId,
     @Path(kPathParamForFileName) String fileName,
+    @Header("x-api-key") String apiKey,
+  );
+
+  @POST(kEndPointForAuthenticateStaff)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<AuthenticateStaffResponse> authenticateStaff(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Header("x-api-key") String apiKey,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @GET(kEndPointForSecurityGroups)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<SecurityGroupsResponse> getSecurityGroups(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
     @Header("x-api-key") String apiKey,
   );
 

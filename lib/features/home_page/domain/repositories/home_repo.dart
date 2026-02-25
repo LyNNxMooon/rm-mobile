@@ -1,7 +1,9 @@
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
+import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
 import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
+import 'package:rmstock_scanner/entities/response/security_groups_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 
 import '../../../../entities/vos/network_server_vo.dart';
@@ -83,4 +85,25 @@ abstract class HomeRepo {
     required String shopfrontId,
     required String shopfrontName,
   });
+
+  Future<AuthenticateStaffResponse> authenticateStaff({
+    required String ip,
+    required int port,
+    required String apiKey,
+    required String shopfrontId,
+    required String shopfrontName,
+    required String staffNo,
+    required String password,
+  });
+
+  Future<SecurityGroupsResponse> fetchSecurityGroups({
+    required String ip,
+    required int port,
+    required String apiKey,
+    required String shopfrontId,
+  });
+
+  Future<bool> loadSavedStaffSession();
+
+  Future<void> signOutStaff();
 }

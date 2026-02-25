@@ -135,6 +135,7 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<DiscoverHostBloc>(create: (_) => sl<DiscoverHostBloc>()),
         BlocProvider<PairCodeBloc>(create: (_) => sl<PairCodeBloc>()),
         BlocProvider<PairDeviceBloc>(create: (_) => sl<PairDeviceBloc>()),
+        BlocProvider<StaffAuthBloc>(create: (_) => sl<StaffAuthBloc>()),
       ],
       child: MaterialApp(
         title: 'RM-Mobile',

@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:rmstock_scanner/entities/response/discover_response.dart';
+import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
 import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
 import 'package:rmstock_scanner/entities/response/paircode_response.dart';
 import 'package:rmstock_scanner/entities/response/pair_response.dart';
+import 'package:rmstock_scanner/entities/response/security_groups_response.dart';
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
@@ -11,6 +13,7 @@ import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
 
 import '../../../local_db/local_db_dao.dart';
+import '../../../local_db/sqlite/sqlite_constants.dart';
 import '../../../network/LAN_sharing/lan_network_service_impl.dart';
 import '../../../utils/device_meta_data_utils.dart';
 import '../../../utils/global_var_utils.dart';
@@ -180,7 +183,9 @@ class HomeScreenModels implements HomeRepo {
   @override
   Future<bool> getAutoBackupEnabled() async {
     try {
-      final raw = await LocalDbDAO.instance.getAppConfig(_kAutoBackupEnabledKey);
+      final raw = await LocalDbDAO.instance.getAppConfig(
+        _kAutoBackupEnabledKey,
+      );
       return raw == "1";
     } on Exception catch (error) {
       return Future.error(error);
@@ -250,7 +255,8 @@ class HomeScreenModels implements HomeRepo {
     required String pairingCode,
   }) async {
     try {
-      final mobileInfo = await DeviceMetaDataUtils.instance.getDeviceInformation();
+      final mobileInfo = await DeviceMetaDataUtils.instance
+          .getDeviceInformation();
 
       final response = await DataAgentImpl.instance.pairDevice(ip, port, {
         "PairingCode": pairingCode,
@@ -293,7 +299,8 @@ class HomeScreenModels implements HomeRepo {
           .map((e) => e.name)
           .toList();
       final Map<String, String> idMap = {
-        for (final s in response.shopfronts.where((e) => e.isEnabled)) s.name: s.id,
+        for (final s in response.shopfronts.where((e) => e.isEnabled))
+          s.name: s.id,
       };
       AppGlobals.instance.pairedShopfrontIdsByName = idMap;
 
@@ -303,7 +310,9 @@ class HomeScreenModels implements HomeRepo {
         await LocalDbDAO.instance.saveShopfrontName(assigned.first.name);
       } else if (response.assignedShopfrontId != null &&
           response.assignedShopfrontId!.isNotEmpty) {
-        await LocalDbDAO.instance.saveShopfrontId(response.assignedShopfrontId!);
+        await LocalDbDAO.instance.saveShopfrontId(
+          response.assignedShopfrontId!,
+        );
       }
 
       return ShopfrontResponse(
@@ -338,6 +347,220 @@ class HomeScreenModels implements HomeRepo {
       }
 
       return response;
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<AuthenticateStaffResponse> authenticateStaff({
+    required String ip,
+    required int port,
+    required String apiKey,
+    required String shopfrontId,
+    required String shopfrontName,
+    required String staffNo,
+    required String password,
+  }) async {
+    try {
+      final connectResponse = await DataAgentImpl.instance.connectShopfront(
+        ip,
+        port,
+        shopfrontId,
+        apiKey,
+      );
+
+      if (!connectResponse.success) {
+        return Future.error(connectResponse.message);
+      }
+
+      await LocalDbDAO.instance.saveShopfrontId(shopfrontId);
+      await LocalDbDAO.instance.saveShopfrontName(shopfrontName);
+      AppGlobals.instance.shopfront = shopfrontName;
+
+      final response = await DataAgentImpl.instance.authenticateStaff(
+        ip,
+        port,
+        shopfrontId,
+        apiKey,
+        <String, dynamic>{"staff_no": staffNo, "password": password},
+      );
+
+      await LocalDbDAO.instance.saveAppConfig(
+        kSecurityEnabledKey,
+        response.securityEnabled ? "1" : "0",
+      );
+      AppGlobals.instance.securityEnabled = response.securityEnabled;
+
+      if (!response.success || response.staff == null) {
+        await signOutStaff();
+        return response;
+      }
+
+      List<String> resolvedGroupNames = <String>[];
+      try {
+        final groups = await fetchSecurityGroups(
+          ip: ip,
+          port: port,
+          apiKey: apiKey,
+          shopfrontId: shopfrontId,
+        );
+        final idToName = <int, String>{
+          for (final g in groups.groups) g.groupId: g.name,
+        };
+        resolvedGroupNames = response.groupIds
+            .map((id) => idToName[id])
+            .whereType<String>()
+            .toList();
+      } catch (_) {}
+
+      final String fullName =
+          "${response.staff!.givenNames} ${response.staff!.surname}".trim();
+
+      final granted = response.grantedPermissions.map((e) => e.name).toList();
+      final restricted = response.restrictedPermissions
+          .map((e) => e.name)
+          .toList();
+
+      await LocalDbDAO.instance.saveAppConfig(
+        kStaffIdKey,
+        response.staff!.staffId.toString(),
+      );
+      await LocalDbDAO.instance.saveAppConfig(
+        kStaffNoKey,
+        response.staff!.staffNo,
+      );
+      await LocalDbDAO.instance.saveAppConfig(kStaffNameKey, fullName);
+      await LocalDbDAO.instance.saveAppConfig(
+        kStaffGroupIdsKey,
+        jsonEncode(response.groupIds),
+      );
+      await LocalDbDAO.instance.saveAppConfig(
+        kStaffGroupNamesKey,
+        jsonEncode(resolvedGroupNames),
+      );
+      await LocalDbDAO.instance.saveAppConfig(
+        kStaffGrantedPermissionsKey,
+        jsonEncode(granted),
+      );
+      await LocalDbDAO.instance.saveAppConfig(
+        kStaffRestrictedPermissionsKey,
+        jsonEncode(restricted),
+      );
+
+      AppGlobals.instance.staffId = response.staff!.staffId;
+      AppGlobals.instance.staffNo = response.staff!.staffNo;
+      AppGlobals.instance.staffName = fullName;
+      AppGlobals.instance.staffGroupIds = response.groupIds;
+      AppGlobals.instance.staffGroupNames = resolvedGroupNames;
+      AppGlobals.instance.grantedPermissions = granted.toSet();
+      AppGlobals.instance.restrictedPermissions = restricted.toSet();
+
+      return response;
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<SecurityGroupsResponse> fetchSecurityGroups({
+    required String ip,
+    required int port,
+    required String apiKey,
+    required String shopfrontId,
+  }) async {
+    try {
+      return await DataAgentImpl.instance.getSecurityGroups(
+        ip,
+        port,
+        shopfrontId,
+        apiKey,
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<bool> loadSavedStaffSession() async {
+    try {
+      final securityEnabledRaw =
+          (await LocalDbDAO.instance.getAppConfig(kSecurityEnabledKey) ?? "1")
+              .trim();
+      final String staffIdRaw =
+          (await LocalDbDAO.instance.getAppConfig(kStaffIdKey) ?? "").trim();
+      final String staffNo =
+          (await LocalDbDAO.instance.getAppConfig(kStaffNoKey) ?? "").trim();
+      final String staffName =
+          (await LocalDbDAO.instance.getAppConfig(kStaffNameKey) ?? "").trim();
+      final String groupIdsJson =
+          (await LocalDbDAO.instance.getAppConfig(kStaffGroupIdsKey) ?? "[]")
+              .trim();
+      final String groupNamesJson =
+          (await LocalDbDAO.instance.getAppConfig(kStaffGroupNamesKey) ?? "[]")
+              .trim();
+      final String grantedJson =
+          (await LocalDbDAO.instance.getAppConfig(
+                    kStaffGrantedPermissionsKey,
+                  ) ??
+                  "[]")
+              .trim();
+      final String restrictedJson =
+          (await LocalDbDAO.instance.getAppConfig(
+                    kStaffRestrictedPermissionsKey,
+                  ) ??
+                  "[]")
+              .trim();
+
+      AppGlobals.instance.securityEnabled = securityEnabledRaw == "1";
+
+      final List<int> groupIds = (jsonDecode(groupIdsJson) as List<dynamic>)
+          .map((e) => (e as num).toInt())
+          .toList();
+      final List<String> groupNames =
+          (jsonDecode(groupNamesJson) as List<dynamic>).cast<String>();
+      final Set<String> granted = (jsonDecode(grantedJson) as List<dynamic>)
+          .cast<String>()
+          .toSet();
+      final Set<String> restricted =
+          (jsonDecode(restrictedJson) as List<dynamic>).cast<String>().toSet();
+
+      if (staffNo.isEmpty || staffName.isEmpty) {
+        AppGlobals.instance.clearStaffSession();
+        return false;
+      }
+
+      AppGlobals.instance.staffId = int.tryParse(staffIdRaw);
+      AppGlobals.instance.staffNo = staffNo;
+      AppGlobals.instance.staffName = staffName;
+      AppGlobals.instance.staffGroupIds = groupIds;
+      AppGlobals.instance.staffGroupNames = groupNames;
+      AppGlobals.instance.grantedPermissions = granted;
+      AppGlobals.instance.restrictedPermissions = restricted;
+      return true;
+    } on Exception catch (_) {
+      AppGlobals.instance.clearStaffSession();
+      return false;
+    }
+  }
+
+  @override
+  Future<void> signOutStaff() async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(kStaffIdKey, "");
+      await LocalDbDAO.instance.saveAppConfig(kStaffNoKey, "");
+      await LocalDbDAO.instance.saveAppConfig(kStaffNameKey, "");
+      await LocalDbDAO.instance.saveAppConfig(kStaffGroupIdsKey, "[]");
+      await LocalDbDAO.instance.saveAppConfig(kStaffGroupNamesKey, "[]");
+      await LocalDbDAO.instance.saveAppConfig(
+        kStaffGrantedPermissionsKey,
+        "[]",
+      );
+      await LocalDbDAO.instance.saveAppConfig(
+        kStaffRestrictedPermissionsKey,
+        "[]",
+      );
+      AppGlobals.instance.clearStaffSession();
     } on Exception catch (error) {
       return Future.error(error);
     }
