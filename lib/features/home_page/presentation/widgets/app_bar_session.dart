@@ -30,13 +30,10 @@ class AppBarSession extends StatelessWidget {
                 >(
                   builder: (context, state) {
                     final host = AppGlobals.instance.hostName;
-                    final shop = AppGlobals.instance.shopfront;
 
                     final String displayText = (host == null || host.isEmpty)
                         ? 'Connect To Network...'
-                        : ((shop == null || shop.isEmpty)
-                              ? "Server: $host"
-                              : "Server: $host  |  Shopfront: ${shop.split(r'\\').last}");
+                        : "Server: $host";
 
                     return Text(
                       displayText,
