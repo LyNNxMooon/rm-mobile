@@ -19,6 +19,7 @@ class DetailedLowerGlass extends StatefulWidget {
     required this.isGst,
     required this.stockId,
     required this.descController,
+    required this.canUpdateSellPrice,
   });
 
   final double sell;
@@ -28,6 +29,7 @@ class DetailedLowerGlass extends StatefulWidget {
   final bool isGst;
   final num stockId;
   final LanguageToolController descController;
+  final bool canUpdateSellPrice;
 
   @override
   State<DetailedLowerGlass> createState() => _DetailedLowerGlassState();
@@ -102,6 +104,9 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
   }
 
   void _openCalculator() async {
+    FocusScope.of(context).unfocus();
+    await Future.delayed(const Duration(milliseconds: 120));
+
     final double? result = await showDialog<double>(
       context: context,
       builder: (context) => PriceCalculatorDialog(
@@ -176,6 +181,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                     child: SizedBox(
                       height: 35,
                       child: TextField(
+                        enabled: widget.canUpdateSellPrice,
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
@@ -230,6 +236,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                     child: SizedBox(
                       height: 35,
                       child: TextField(
+                        enabled: widget.canUpdateSellPrice,
                         controller: _exRrpController,
                         focusNode: _exRrpFocus,
                         keyboardType: const TextInputType.numberWithOptions(
@@ -251,7 +258,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                 children: [
                   Expanded(
                     child: InkWell(
-                      onTap: _openCalculator,
+                      onTap: widget.canUpdateSellPrice ? _openCalculator : null,
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         decoration: _buttonDecoration(),
@@ -284,8 +291,11 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                   Expanded(
                     child: InkWell(
                       onTap: () {
-                        final sellText = _exRrpController.text.trim();
-                        final sellVal = double.tryParse(sellText);
+                        // If sell price is locked for this staff, keep the original
+                        // sell value and only push description changes.
+                        final sellVal = widget.canUpdateSellPrice
+                            ? double.tryParse(_exRrpController.text.trim())
+                            : widget.exSell;
 
                         if (sellVal == null) {
                           return;
@@ -360,14 +370,14 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     );
   }
 
-  BoxDecoration _buttonDecoration() {
+  BoxDecoration _buttonDecoration({bool disabled = false}) {
     return BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          kSecondaryColor.withOpacity(0.95),
-          kSecondaryColor.withOpacity(0.70),
+          kSecondaryColor.withOpacity(disabled ? 0.65 : 0.95),
+          kSecondaryColor.withOpacity(disabled ? 0.45 : 0.70),
         ],
       ),
       borderRadius: BorderRadius.circular(7),

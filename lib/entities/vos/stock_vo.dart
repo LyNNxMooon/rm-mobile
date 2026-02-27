@@ -59,6 +59,8 @@ class StockVO {
   final bool weighted;
   @JsonKey(name: 'track_serial')
   final bool trackSerial;
+  @JsonKey(name: 'last_sale_date')
+  final String? lastSaleDate;
 
   factory StockVO.fromJson(Map<String, dynamic> json) =>
       _$StockVOFromJson(json);
@@ -104,9 +106,12 @@ class StockVO {
       "date_modified": _asString(item["date_modified"]),
       "freight": _asBool(item["freight"]),
       "tare_weight": _asNum(item["tare_weight"]),
-      "unitof_measure": _asNum(item["unit_of_measure"] ?? item["unitof_measure"]),
+      "unitof_measure": _asNum(
+        item["unit_of_measure"] ?? item["unitof_measure"],
+      ),
       "weighted": _asBool(item["weighted"]),
       "track_serial": _asBool(item["track_serial"]),
+      "last_sale_date": _asNullableString(item["last_sale_date"]),
     };
 
     return StockVO.fromJsonNetwork(mapped);
@@ -147,6 +152,7 @@ class StockVO {
     required this.unitOfMeasure,
     required this.weighted,
     required this.trackSerial,
+    required this.lastSaleDate,
   });
 
   static String _asString(dynamic value) {

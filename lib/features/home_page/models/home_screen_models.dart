@@ -186,6 +186,7 @@ class HomeScreenModels implements HomeRepo {
       final raw = await LocalDbDAO.instance.getAppConfig(
         _kAutoBackupEnabledKey,
       );
+      if (raw == null || raw.isEmpty) return true;
       return raw == "1";
     } on Exception catch (error) {
       return Future.error(error);

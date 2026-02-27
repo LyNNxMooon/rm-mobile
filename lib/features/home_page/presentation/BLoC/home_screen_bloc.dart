@@ -339,8 +339,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final UpdateAutoBackupEnabled updateAutoBackupEnabled;
   final RunAutoBackupIfDue runAutoBackupIfDue;
 
-  int _currentRetentionDays = 7;
-  bool _autoBackupEnabled = false;
+  int _currentRetentionDays = 30;
+  bool _autoBackupEnabled = true;
 
   SettingsBloc({
     required this.loadRetentionDays,

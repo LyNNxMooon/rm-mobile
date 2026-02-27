@@ -37,6 +37,7 @@ const stocksTableCreationQuery = '''
     unitof_measure REAL,
     weighted INTEGER,
     track_serial INTEGER,
+    last_sale_date TEXT,
     PRIMARY KEY (stock_id, shopfront)
   )
 ''';

@@ -20,6 +20,8 @@ class DetailedUpperGlass extends StatefulWidget {
     required this.sell,
     required this.exCost,
     required this.dept,
+    required this.lastSaleDate,
+    required this.showCostPrices,
     required this.descController,
   });
 
@@ -35,14 +37,14 @@ class DetailedUpperGlass extends StatefulWidget {
   final double sell;
   final double exCost;
   final String dept;
+  final String lastSaleDate;
+  final bool showCostPrices;
 
   @override
   State<DetailedUpperGlass> createState() => _DetailedUpperGlassState();
 }
 
 class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
- 
-
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
@@ -154,15 +156,13 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                     child: SizedBox(
                       height: 35, // Slightly taller for better touch target
                       child: LanguageToolTextField(
-
                         controller: widget.descController,
                         style: const TextStyle(
                           fontSize: 14, // Increased font size
                           color: kSecondaryColor,
                         ),
-                        
+
                         decoration: InputDecoration(
-                          
                           //enabled: false,
                           hintText: "Description",
                           hintStyle: const TextStyle(
@@ -245,20 +245,30 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                 value: widget.soQty,
               ),
               const SizedBox(height: 8),
+              if (widget.showCostPrices) ...[
+                StockInfoRow(
+                  image: "assets/images/cost_white.png",
+                  icon: Icons.monetization_on_outlined,
+                  iconBgColor: Colors.lightBlue,
+                  label: "Inc Cost",
+                  value: widget.cost.toStringAsFixed(4),
+                ),
+                const SizedBox(height: 8),
+                StockInfoRow(
+                  image: "assets/images/cost_white.png",
+                  icon: Icons.monetization_on_outlined,
+                  iconBgColor: Colors.pinkAccent,
+                  label: "Ex Cost",
+                  value: widget.exCost.toStringAsFixed(4),
+                ),
+                const SizedBox(height: 8),
+              ],
               StockInfoRow(
-                image: "assets/images/cost_white.png",
-                icon: Icons.monetization_on_outlined,
-                iconBgColor: Colors.lightBlue,
-                label: "Inc Cost",
-                value: widget.cost.toStringAsFixed(4),
-              ),
-              const SizedBox(height: 8),
-              StockInfoRow(
-                image: "assets/images/cost_white.png",
-                icon: Icons.monetization_on_outlined,
-                iconBgColor: Colors.pinkAccent,
-                label: "Ex Cost",
-                value: widget.exCost.toStringAsFixed(4),
+                image: "assets/images/so.png",
+                icon: Icons.event,
+                iconBgColor: Colors.teal,
+                label: "Last Sale",
+                value: widget.lastSaleDate,
               ),
             ],
           ),

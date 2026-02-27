@@ -84,7 +84,6 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
       );
       return;
     }
-
     context.read<StaffAuthBloc>().add(
       AuthenticateStaffEvent(
         ip: ip,
@@ -226,7 +225,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                 height: 40,
                                 child: CustomTextField(
                                   controller: _passwordController,
-                                  hintText: "Password (optional)",
+                                  hintText: "Password",
                                   leadingIcon: Icons.lock_outline,
                                   obscureText: true,
                                 ),

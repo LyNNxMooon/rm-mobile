@@ -457,7 +457,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
             height: 36,
             child: CustomTextField(
               controller: _staffPwdController,
-              hintText: 'Password (optional)',
+              hintText: 'Password',
               leadingIcon: Icons.lock_outline,
               obscureText: true,
             ),

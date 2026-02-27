@@ -41,6 +41,7 @@ StockVO _$StockVOFromJson(Map<String, dynamic> json) => StockVO(
   unitOfMeasure: json['unitof_measure'] as num,
   weighted: json['weighted'] == 1,
   trackSerial: json['track_serial'] == 1,
+  lastSaleDate: json['last_sale_date'] as String?,
 );
 
 StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
@@ -78,6 +79,7 @@ StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
   unitOfMeasure: json['unitof_measure'] as num,
   weighted: json['weighted'],
   trackSerial: json['track_serial'],
+  lastSaleDate: json['last_sale_date'] as String?,
 );
 
 Map<String, dynamic> _$StockVOToJson(
@@ -119,4 +121,5 @@ Map<String, dynamic> _$StockVOToJson(
   'unitof_measure': instance.unitOfMeasure,
   'weighted': instance.weighted ? 1 : 0,
   'track_serial': instance.trackSerial ? 1 : 0,
+  'last_sale_date': instance.lastSaleDate,
 };

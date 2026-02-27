@@ -33,7 +33,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   static const int _defaultAgentPort = 5000;
 
-  double retentionDays = 10;
+  double retentionDays = 30;
   bool backupToLan = true;
 
   final TextEditingController _manualIpController = TextEditingController();

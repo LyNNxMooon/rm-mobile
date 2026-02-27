@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:alert_info/alert_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
@@ -119,6 +120,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
     context.read<StocktakeBloc>().add(
       Stocktake(qty: "1", stock: countingStock!),
     );
+  }
+
+  String _formatLastSaleDate(String? rawValue) {
+    final raw = (rawValue ?? "").trim();
+    if (raw.isEmpty) return "-";
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    return DateFormat("dd MMM yyyy, hh:mm a").format(parsed.toLocal());
   }
 
   @override
@@ -346,18 +355,21 @@ class _ScannerScreenState extends State<ScannerScreen> {
     num total = stock == null
         ? 0
         : (stock.quantity + stock.laybyQuantity + stock.salesOrderQuantity);
+    final String lastSale = stock == null
+        ? "-"
+        : _formatLastSaleDate(stock.lastSaleDate);
 
     String totalString = (total % 1 == 0)
         ? total.toInt().toString()
         : double.parse(total.toStringAsFixed(2)).toString();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10, left: 15, right: 15, top: 10),
+      padding: const EdgeInsets.only(bottom: 8, left: 15, right: 15, top: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
             decoration: BoxDecoration(
               color: kSecondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
@@ -437,7 +449,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 10),
 
                 _stockDetailsListTile(
                   image: "assets/images/desc_blue.png",
@@ -509,13 +521,21 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   value: totalString,
                   isBold: true,
                 ),
+                const SizedBox(height: 8),
+                _stockDetailsListTile(
+                  image: "assets/images/so_blue.png",
+                  color: Colors.yellow,
+                  title: "Last Sale",
+                  icon: Icons.schedule,
+                  value: lastSale,
+                ),
               ],
             ),
           ),
 
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 10),
-            height: 40, // Taller Input
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            height: 36,
             child: CustomTextField(
               focusNode: txtFieldFocusNode,
               submitFunction: (_) {
@@ -541,7 +561,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
 
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
               color: kSecondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
@@ -564,7 +584,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 const SizedBox(width: 15),
                 Expanded(
                   child: SizedBox(
-                    height: 35,
+                    height: 33,
                     width: 100,
                     child: CustomTextField(
                       submitFunction: (value) {
@@ -592,7 +612,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 3),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -610,7 +630,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   name: "LIST",
                 ),
               ),
-              const SizedBox(width: 15),
+              const SizedBox(width: 12),
 
               Expanded(
                 child: CustomStocktakeBtn(

@@ -18,15 +18,12 @@ class PriceCalculatorDialog extends StatefulWidget {
 }
 
 class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
-  // Calculator State
   String _display = "0";
   double? _firstOperand;
   String? _operator;
 
-  // Flags to manage input state
   bool _shouldResetInput = false;
 
-  // Checkbox State
   bool _isCostSelected = false;
   bool _isExclusiveSelected = false;
 
@@ -36,17 +33,14 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
     _display = _formatNumber(widget.currentSell);
   }
 
-  // Helper to remove trailing .0
   String _formatNumber(double num) {
     String s = num.toStringAsFixed(4);
-    // Remove trailing zeros
     while (s.contains('.') && (s.endsWith('0') || s.endsWith('.'))) {
       s = s.substring(0, s.length - 1);
     }
     return s;
   }
 
-  // --- Checkbox Logic ---
   void _updateDisplayBasedOnSelection() {
     double valueToSet = 0.0;
 
@@ -59,34 +53,27 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
 
       setState(() {
         _display = _formatNumber(valueToSet);
-
-        // Reset calculation state since we are loading a preset
         _firstOperand = null;
         _operator = null;
-        _shouldResetInput = true; // Next typing replaces this value
+        _shouldResetInput = true;
       });
     }
   }
 
-  // --- Real Calculator Logic ---
   void _onNumberTap(String number) {
     setState(() {
       if (_shouldResetInput) {
-        // Start fresh (e.g. after pressing + or =)
         _display = number == "." ? "0." : number;
         _shouldResetInput = false;
       } else {
-        // Append to current number
         if (_display == "0" && number != ".") {
           _display = number;
         } else {
-          // Prevent multiple dots
           if (number == "." && _display.contains(".")) return;
           _display += number;
         }
       }
 
-      // Uncheck boxes if user manually edits
       if (_isCostSelected) {
         _isCostSelected = false;
         _isExclusiveSelected = false;
@@ -99,19 +86,15 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
       final double currentVal = double.tryParse(_display) ?? 0.0;
 
       if (_firstOperand == null) {
-        // First part of equation: "5 +"
         _firstOperand = currentVal;
       } else if (_operator != null && !_shouldResetInput) {
-        // Chained calculation: "5 + 5 +" -> Calculate 10, then set up for next +
         _calculateIntermediate();
       } else {
-        // Operator changed (e.g. user pressed + then decided on -)
-        // or we just finished an equals and are using that result
         _firstOperand = currentVal;
       }
 
       _operator = nextOp;
-      _shouldResetInput = true; // Ready for second number
+      _shouldResetInput = true;
     });
   }
 
@@ -132,24 +115,18 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
         result = _firstOperand! * secondOperand;
         break;
       case "/":
-        if (secondOperand != 0) {
-          result = _firstOperand! / secondOperand;
-        } else {
-          result = 0.0; // Avoid NaN
-        }
+        result = secondOperand != 0 ? _firstOperand! / secondOperand : 0.0;
         break;
     }
 
-    // Update state for next step
     _display = _formatNumber(result);
-    _firstOperand = result; // Result becomes the new first operand
+    _firstOperand = result;
   }
 
   void _onEqualsTap() {
     setState(() {
       if (_operator != null && _firstOperand != null) {
         _calculateIntermediate();
-        // Clear operator so next number starts fresh equation unless operator is pressed
         _operator = null;
         _firstOperand = null;
         _shouldResetInput = true;
@@ -162,30 +139,18 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
 
     setState(() {
       if (_firstOperand != null && _operator != null) {
-        // CASE 1: Contextual Calculation (e.g., "100 + 10")
-
         if (_operator == "+" || _operator == "-") {
-          // For Addition/Subtraction, calculate % OF the first operand.
-          // Example: 100 + 10%
-          // We calculate: 100 * 0.10 = 10.
-          // The display becomes "10".
-          // Pressing "=" afterwards will do: 100 + 10 = 110.
-          double result = _firstOperand! * (currentValue / 100);
+          final result = _firstOperand! * (currentValue / 100);
           _display = _formatNumber(result);
         } else {
-          // For Multiplication/Division, standard behavior is factor conversion.
-          // Example: 100 * 10% -> 100 * 0.1
-          double result = currentValue / 100;
+          final result = currentValue / 100;
           _display = _formatNumber(result);
         }
       } else {
-        // CASE 2: Standalone (e.g., "50 %")
-        // Just convert to decimal: 0.5
-        double result = currentValue / 100;
+        final result = currentValue / 100;
         _display = _formatNumber(result);
       }
 
-      // We flag this as a completed input so typing a new number starts fresh
       _shouldResetInput = true;
     });
   }
@@ -202,7 +167,6 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
   }
 
   void _onBackspace() {
-    // If we just calculated something, backspace usually clears all
     if (_shouldResetInput && _operator == null) {
       _onClear();
       return;
@@ -218,168 +182,170 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        width: 340,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            const Text(
-              "Sell Price (RRP) Calculator",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: kPrimaryColor,
-              ),
-            ),
-            const Divider(),
-
-            // Checkboxes
-            Row(
-              children: [
-                Expanded(
-                  child: CheckboxListTile(
-                    title: const Text(
-                      "Cost Price",
-                      style: TextStyle(fontSize: 12),
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: media.size.height * 0.88),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: 340,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "Sell Price (RRP) Calculator",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: kPrimaryColor,
                     ),
-                    value: _isCostSelected,
-                    activeColor: kPrimaryColor,
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    onChanged: (val) {
-                      setState(() {
-                        _isCostSelected = val ?? false;
-                        _updateDisplayBasedOnSelection();
-                      });
-                    },
                   ),
-                ),
-                Expanded(
-                  child: CheckboxListTile(
-                    title: const Text(
-                      "Is Exclusive",
-                      style: TextStyle(fontSize: 12),
+                  const Divider(),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CheckboxListTile(
+                          title: const Text(
+                            "Cost Price",
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          value: _isCostSelected,
+                          activeColor: kPrimaryColor,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          onChanged: (val) {
+                            setState(() {
+                              _isCostSelected = val ?? false;
+                              _updateDisplayBasedOnSelection();
+                            });
+                          },
+                        ),
+                      ),
+                      Expanded(
+                        child: CheckboxListTile(
+                          title: const Text(
+                            "Is Exclusive",
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          value: _isExclusiveSelected,
+                          activeColor: kPrimaryColor,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          onChanged: (val) {
+                            setState(() {
+                              _isExclusiveSelected = val ?? false;
+                              if (_isExclusiveSelected) _isCostSelected = true;
+                              _updateDisplayBasedOnSelection();
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
                     ),
-                    value: _isExclusiveSelected,
-                    activeColor: kPrimaryColor,
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    onChanged: (val) {
-                      setState(() {
-                        _isExclusiveSelected = val ?? false;
-                        if (_isExclusiveSelected) _isCostSelected = true;
-                        _updateDisplayBasedOnSelection();
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            // Display Screen
-            Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: Text(
-                _display,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: kThirdColor,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            // Calculator Grid
-            GridView.count(
-              shrinkWrap: true,
-              crossAxisCount: 4,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 1.1,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _actionBtn("C", _onClear, color: kErrorColor),
-                _opBtn("%", _onPercentTap),
-                _opBtn("/", () => _onOperatorTap("/")),
-                _actionBtn("⌫", _onBackspace, color: Colors.orange),
-
-                _numBtn("7"), _numBtn("8"), _numBtn("9"),
-                _opBtn("x", () => _onOperatorTap("x")),
-
-                _numBtn("4"), _numBtn("5"), _numBtn("6"),
-                _opBtn("-", () => _onOperatorTap("-")),
-
-                _numBtn("1"), _numBtn("2"), _numBtn("3"),
-                _opBtn("+", () => _onOperatorTap("+")),
-
-                _numBtn("0"), _numBtn("."),
-
-                // Equals Button
-                InkWell(
-                  onTap: _onEqualsTap,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
                     decoration: BoxDecoration(
-                      color: kSecondaryColor,
+                      color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[300]!),
                     ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      "=",
-                      style: TextStyle(
-                        fontSize: 22,
+                    child: Text(
+                      _display,
+                      style: const TextStyle(
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: kThirdColor,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-
-                // OK / Done Button
-                InkWell(
-                  onTap: () {
-                    // If user left an operation pending (e.g. "5 + 5" then hits OK), calculate it first
-                    if (_operator != null) _onEqualsTap();
-
-                    final val = double.tryParse(_display);
-                    Navigator.pop(context, val);
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.check, color: Colors.white),
+                  const SizedBox(height: 15),
+                  GridView.count(
+                    shrinkWrap: true,
+                    crossAxisCount: 4,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1.1,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      _actionBtn("C", _onClear, color: kErrorColor),
+                      _opBtn("%", _onPercentTap),
+                      _opBtn("/", () => _onOperatorTap("/")),
+                      _actionBtn("?", _onBackspace, color: Colors.orange),
+                      _numBtn("7"),
+                      _numBtn("8"),
+                      _numBtn("9"),
+                      _opBtn("x", () => _onOperatorTap("x")),
+                      _numBtn("4"),
+                      _numBtn("5"),
+                      _numBtn("6"),
+                      _opBtn("-", () => _onOperatorTap("-")),
+                      _numBtn("1"),
+                      _numBtn("2"),
+                      _numBtn("3"),
+                      _opBtn("+", () => _onOperatorTap("+")),
+                      _numBtn("0"),
+                      _numBtn("."),
+                      InkWell(
+                        onTap: _onEqualsTap,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: kSecondaryColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            "=",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: kThirdColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          if (_operator != null) _onEqualsTap();
+                          final val = double.tryParse(_display);
+                          Navigator.pop(context, val);
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: kPrimaryColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.check, color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  // --- Widgets (Unchanged) ---
   Widget _numBtn(String label) {
     return InkWell(
       onTap: () => _onNumberTap(label),

@@ -21,7 +21,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       _database = await openDatabase(
         path,
-        version: 1,
+        version: 2,
         onCreate: (db, version) async {
           await db.execute(stocktakeTableCreationQuery);
           await db.execute(appConfigTableCreationQuery);
@@ -31,10 +31,33 @@ class SQLiteDAOImpl extends LocalDbDAO {
           await db.execute(stocktakeHistorySessionCreationQuery);
           await db.execute(stocktakeHistoryItemsCreationQuery);
         },
+        onUpgrade: (db, oldVersion, newVersion) async {
+          if (oldVersion < 2) {
+            await _addColumnIfMissing(
+              db: db,
+              table: 'Stocks',
+              column: 'last_sale_date',
+              definition: 'TEXT',
+            );
+          }
+        },
       );
       logger.d('Successfully initialized SQLite local database!');
     } catch (error) {
       logger.e('Error initializing for SQLite local database: $error');
+    }
+  }
+
+  Future<void> _addColumnIfMissing({
+    required Database db,
+    required String table,
+    required String column,
+    required String definition,
+  }) async {
+    final info = await db.rawQuery('PRAGMA table_info($table)');
+    final hasColumn = info.any((row) => row['name'] == column);
+    if (!hasColumn) {
+      await db.execute('ALTER TABLE $table ADD COLUMN $column $definition');
     }
   }
 
@@ -230,168 +253,169 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
   @override
   Future<PaginatedStockResult> searchAndSortStocks({
-  required String shopfront,
-  required String query,
-  required String filterColumn,
-  required String sortColumn,
-  required bool ascending,
-  required int limit,
-  required int offset,
-  FilterCriteria? filters,
-}) async {
-  try {
-    final db = _database!;
-    final String q = query.trim();
+    required String shopfront,
+    required String query,
+    required String filterColumn,
+    required String sortColumn,
+    required bool ascending,
+    required int limit,
+    required int offset,
+    FilterCriteria? filters,
+  }) async {
+    try {
+      final db = _database!;
+      final String q = query.trim();
 
-    const allowedColumns = <String>{
-      'stock_id',
-      'shopfront',
-      'Barcode',
-      'description',
-      'dept_name',
-      'dept_id',
-      'custom1',
-      'custom2',
-      'cat1',
-      'cat2',
-      'cat3',
-      'supplier',
-      'quantity',
-      'picture_file_name',
-      'date_modified',
-      'cost',
-      'sell',
-    };
+      const allowedColumns = <String>{
+        'stock_id',
+        'shopfront',
+        'Barcode',
+        'description',
+        'dept_name',
+        'dept_id',
+        'custom1',
+        'custom2',
+        'cat1',
+        'cat2',
+        'cat3',
+        'supplier',
+        'quantity',
+        'picture_file_name',
+        'date_modified',
+        'cost',
+        'sell',
+      };
 
-    final String safeSortColumn =
-        allowedColumns.contains(sortColumn) ? sortColumn : 'description';
+      final String safeSortColumn = allowedColumns.contains(sortColumn)
+          ? sortColumn
+          : 'description';
 
-    final String orderBy = "$safeSortColumn ${ascending ? 'ASC' : 'DESC'}";
+      final String orderBy = "$safeSortColumn ${ascending ? 'ASC' : 'DESC'}";
 
-    String baseWhere = 'shopfront = ?';
-    final List<dynamic> baseArgs = [shopfront];
+      String baseWhere = 'shopfront = ?';
+      final List<dynamic> baseArgs = [shopfront];
 
-    if (filters != null) {
-      if (filters.dept != null) {
-        baseWhere += ' AND dept_name = ?';
-        baseArgs.add(filters.dept);
-      }
-      if (filters.cat1 != null) {
-        baseWhere += ' AND cat1 = ?';
-        baseArgs.add(filters.cat1);
-      }
-      if (filters.cat2 != null) {
-        baseWhere += ' AND cat2 = ?';
-        baseArgs.add(filters.cat2);
-      }
-      if (filters.cat3 != null) {
-        baseWhere += ' AND cat3 = ?';
-        baseArgs.add(filters.cat3);
-      }
-      if (filters.supplier != null && filters.supplier!.isNotEmpty) {
-        baseWhere += ' AND supplier LIKE ?';
-        baseArgs.add('%${filters.supplier!}%');
-      }
-      if (filters.custom1 != null && filters.custom1!.isNotEmpty) {
-        baseWhere += ' AND custom1 LIKE ?';
-        baseArgs.add('%${filters.custom1!}%');
-      }
-      if (filters.custom2 != null && filters.custom2!.isNotEmpty) {
-        baseWhere += ' AND custom2 LIKE ?';
-        baseArgs.add('%${filters.custom2!}%');
-      }
-    }
-
-    Future<PaginatedStockResult> runQuery({
-      required String whereClause,
-      required List<dynamic> args,
-    }) async {
-      final countFuture = db.rawQuery(
-        'SELECT COUNT(*) as count FROM Stocks WHERE $whereClause',
-        args,
-      );
-
-      final dataFuture = db.query(
-        'Stocks',
-        where: whereClause,
-        whereArgs: args,
-        orderBy: orderBy,
-        limit: limit,
-        offset: offset,
-      );
-
-      final results = await Future.wait([dataFuture, countFuture]);
-
-      final List<StockVO> items = (results[0] as List<Map<String, dynamic>>)
-          .map((e) => StockVO.fromJson(e))
-          .toList();
-
-      final int count =
-          Sqflite.firstIntValue(results[1] as List<Map<String, dynamic>>) ?? 0;
-
-      return PaginatedStockResult(items, count);
-    }
-
-    // Fast existence check
-    Future<bool> exists(String whereClause, List<dynamic> args) async {
-      final res = await db.rawQuery(
-        'SELECT 1 FROM Stocks WHERE $whereClause LIMIT 1',
-        args,
-      );
-      return res.isNotEmpty;
-    }
-
-    if (q.isEmpty) {
-      return runQuery(whereClause: baseWhere, args: baseArgs);
-    }
-
-    final bool isBarcodeChip = filterColumn == 'Barcode';
-    final bool isDescChip = filterColumn == 'description';
-
-    // Barcode chip: Barcode -> Description
-    if (isBarcodeChip) {
-      final barcodeWhere = '$baseWhere AND Barcode LIKE ?';
-      final barcodeArgs = [...baseArgs, '%$q%'];
-
-      if (await exists(barcodeWhere, barcodeArgs)) {
-        return runQuery(whereClause: barcodeWhere, args: barcodeArgs);
+      if (filters != null) {
+        if (filters.dept != null) {
+          baseWhere += ' AND dept_name = ?';
+          baseArgs.add(filters.dept);
+        }
+        if (filters.cat1 != null) {
+          baseWhere += ' AND cat1 = ?';
+          baseArgs.add(filters.cat1);
+        }
+        if (filters.cat2 != null) {
+          baseWhere += ' AND cat2 = ?';
+          baseArgs.add(filters.cat2);
+        }
+        if (filters.cat3 != null) {
+          baseWhere += ' AND cat3 = ?';
+          baseArgs.add(filters.cat3);
+        }
+        if (filters.supplier != null && filters.supplier!.isNotEmpty) {
+          baseWhere += ' AND supplier LIKE ?';
+          baseArgs.add('%${filters.supplier!}%');
+        }
+        if (filters.custom1 != null && filters.custom1!.isNotEmpty) {
+          baseWhere += ' AND custom1 LIKE ?';
+          baseArgs.add('%${filters.custom1!}%');
+        }
+        if (filters.custom2 != null && filters.custom2!.isNotEmpty) {
+          baseWhere += ' AND custom2 LIKE ?';
+          baseArgs.add('%${filters.custom2!}%');
+        }
       }
 
-      final descWhere = '$baseWhere AND description LIKE ?';
-      final descArgs = [...baseArgs, '%$q%'];
-      return runQuery(whereClause: descWhere, args: descArgs);
-    }
+      Future<PaginatedStockResult> runQuery({
+        required String whereClause,
+        required List<dynamic> args,
+      }) async {
+        final countFuture = db.rawQuery(
+          'SELECT COUNT(*) as count FROM Stocks WHERE $whereClause',
+          args,
+        );
 
-    // Description chip: Description -> Barcode
-    if (isDescChip) {
-      final descWhere = '$baseWhere AND description LIKE ?';
-      final descArgs = [...baseArgs, '%$q%'];
+        final dataFuture = db.query(
+          'Stocks',
+          where: whereClause,
+          whereArgs: args,
+          orderBy: orderBy,
+          limit: limit,
+          offset: offset,
+        );
 
-      if (await exists(descWhere, descArgs)) {
+        final results = await Future.wait([dataFuture, countFuture]);
+
+        final List<StockVO> items = (results[0] as List<Map<String, dynamic>>)
+            .map((e) => StockVO.fromJson(e))
+            .toList();
+
+        final int count =
+            Sqflite.firstIntValue(results[1] as List<Map<String, dynamic>>) ??
+            0;
+
+        return PaginatedStockResult(items, count);
+      }
+
+      // Fast existence check
+      Future<bool> exists(String whereClause, List<dynamic> args) async {
+        final res = await db.rawQuery(
+          'SELECT 1 FROM Stocks WHERE $whereClause LIMIT 1',
+          args,
+        );
+        return res.isNotEmpty;
+      }
+
+      if (q.isEmpty) {
+        return runQuery(whereClause: baseWhere, args: baseArgs);
+      }
+
+      final bool isBarcodeChip = filterColumn == 'Barcode';
+      final bool isDescChip = filterColumn == 'description';
+
+      // Barcode chip: Barcode -> Description
+      if (isBarcodeChip) {
+        final barcodeWhere = '$baseWhere AND Barcode LIKE ?';
+        final barcodeArgs = [...baseArgs, '%$q%'];
+
+        if (await exists(barcodeWhere, barcodeArgs)) {
+          return runQuery(whereClause: barcodeWhere, args: barcodeArgs);
+        }
+
+        final descWhere = '$baseWhere AND description LIKE ?';
+        final descArgs = [...baseArgs, '%$q%'];
         return runQuery(whereClause: descWhere, args: descArgs);
       }
 
-      final barcodeWhere = '$baseWhere AND Barcode LIKE ?';
-      final barcodeArgs = [...baseArgs, '%$q%'];
-      return runQuery(whereClause: barcodeWhere, args: barcodeArgs);
-    }
+      // Description chip: Description -> Barcode
+      if (isDescChip) {
+        final descWhere = '$baseWhere AND description LIKE ?';
+        final descArgs = [...baseArgs, '%$q%'];
 
-    // Other chips stay the same as before
-    if (!allowedColumns.contains(filterColumn)) {
-      final safeWhere = '$baseWhere AND description LIKE ?';
-      final safeArgs = [...baseArgs, '%$q%'];
-      return runQuery(whereClause: safeWhere, args: safeArgs);
-    }
+        if (await exists(descWhere, descArgs)) {
+          return runQuery(whereClause: descWhere, args: descArgs);
+        }
 
-    final whereClause = '$baseWhere AND $filterColumn LIKE ?';
-    final args = [...baseArgs, '%$q%'];
-    return runQuery(whereClause: whereClause, args: args);
-  } catch (error) {
-    logger.e('Error searching stocks: $error');
-    return Future.error(error);
+        final barcodeWhere = '$baseWhere AND Barcode LIKE ?';
+        final barcodeArgs = [...baseArgs, '%$q%'];
+        return runQuery(whereClause: barcodeWhere, args: barcodeArgs);
+      }
+
+      // Other chips stay the same as before
+      if (!allowedColumns.contains(filterColumn)) {
+        final safeWhere = '$baseWhere AND description LIKE ?';
+        final safeArgs = [...baseArgs, '%$q%'];
+        return runQuery(whereClause: safeWhere, args: safeArgs);
+      }
+
+      final whereClause = '$baseWhere AND $filterColumn LIKE ?';
+      final args = [...baseArgs, '%$q%'];
+      return runQuery(whereClause: whereClause, args: args);
+    } catch (error) {
+      logger.e('Error searching stocks: $error');
+      return Future.error(error);
+    }
   }
-}
-
 
   @override
   Future<List<String>> getDistinctValues(
@@ -495,9 +519,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
       return await getAppConfig(kShopfrontNameKey);
     } catch (error) {
       logger.e('Error getting shopfront name from local db: $error');
-      return Future.error(
-        "Error getting shopfront name from local db: $error",
-      );
+      return Future.error("Error getting shopfront name from local db: $error");
     }
   }
 
@@ -589,7 +611,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
   Future<int> getHistoryRetentionDays() async {
     try {
       final String? v = await getAppConfig(kHistoryRetentionDaysKey);
-      final int days = int.tryParse(v ?? "") ?? 10;
+      final int days = int.tryParse(v ?? "") ?? 30;
       return days.clamp(1, 30);
     } catch (e) {
       return Future.error("Error loading retention days: $e");
@@ -862,9 +884,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
       await saveAppConfig(kHostIpAddressKey, hostIpAddress);
     } catch (error) {
       logger.e('Error saving host IP address to local db: $error');
-      return Future.error(
-        "Error saving host IP address to local db: $error",
-      );
+      return Future.error("Error saving host IP address to local db: $error");
     }
   }
 
@@ -914,9 +934,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
       await saveAppConfig(kShopfrontNameKey, shopfrontName);
     } catch (error) {
       logger.e('Error saving shopfront name to local db: $error');
-      return Future.error(
-        "Error saving shopfront name to local db: $error",
-      );
+      return Future.error("Error saving shopfront name to local db: $error");
     }
   }
 
