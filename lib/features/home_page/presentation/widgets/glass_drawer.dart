@@ -26,6 +26,19 @@ class GlassDrawer extends StatefulWidget {
 }
 
 class _GlassDrawerState extends State<GlassDrawer> {
+  bool _isSyncInProgress(BuildContext context) {
+    return context.read<FetchStockBloc>().state is FetchStockProgress;
+  }
+
+  void _showSyncBlockedMessage(BuildContext context) {
+    showTopSnackBar(
+      Overlay.of(context),
+      const CustomSnackBar.info(
+        message: "Stock sync in progress. Please wait.",
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -182,6 +195,11 @@ class _GlassDrawerState extends State<GlassDrawer> {
 
   Future<void> _handleNavigation(int index, BuildContext context) async {
     if (index == 0) {
+      if (_isSyncInProgress(context)) {
+        _showSyncBlockedMessage(context);
+        return;
+      }
+
       final String? savedApiKey = await LocalDbDAO.instance.getApiKey();
       final String? savedPortText = await LocalDbDAO.instance.getHostPort();
       final int? savedPort = int.tryParse(savedPortText ?? "");

@@ -78,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showNetworkDialog() {
     if (ModalRoute.of(context)?.isCurrent != true) return;
+    if (context.read<FetchStockBloc>().state is FetchStockProgress) return;
     logger.d("State is noticed");
     context.read<FetchingNetworkServerBloc>().add(FetchNetworkServerEvent());
     showDialog(
@@ -159,6 +160,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
                             ActionCard(
                               onTap: () {
+                                if (context.read<FetchStockBloc>().state
+                                    is FetchStockProgress) {
+                                  showTopSnackBar(
+                                    Overlay.of(context),
+                                    const CustomSnackBar.info(
+                                      message:
+                                          "Stock sync in progress. Please wait.",
+                                    ),
+                                  );
+                                  return;
+                                }
+
                                 if (!AppGlobals.instance.hasPermission(
                                   "StockManagement_Stocktake",
                                 )) {

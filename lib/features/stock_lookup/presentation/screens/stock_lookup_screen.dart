@@ -9,6 +9,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:intl/intl.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/stock_details_screen.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/breathing_stock_loader.dart';
@@ -61,6 +63,19 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   final _beepSource = AssetSource('audio/beep.mp3');
 
   bool isScanner = false;
+
+  bool _isSyncInProgress() {
+    return context.read<FetchStockBloc>().state is FetchStockProgress;
+  }
+
+  void _showSyncBlockedMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Stock sync in progress. Please wait."),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -390,12 +405,22 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               });
             },
             onFilterTap: () {
+              if (_isSyncInProgress()) {
+                _showSyncBlockedMessage();
+                return;
+              }
+
               showDialog(
                 context: context,
                 builder: (_) => const StocklookupFilterDialog(),
               );
             },
             onScannerTap: () {
+              if (_isSyncInProgress()) {
+                _showSyncBlockedMessage();
+                return;
+              }
+
               FocusScope.of(context).unfocus();
               setState(() {
                 isScanner = !isScanner;
@@ -524,6 +549,10 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           child: FadeInAnimation(
             child: GestureDetector(
               onTap: () {
+                if (_isSyncInProgress()) {
+                  _showSyncBlockedMessage();
+                  return;
+                }
                 context.navigateToNext(StockDetailsScreen(stock: stock));
               },
               child: Container(

@@ -13,6 +13,19 @@ import 'network_pc_dialog.dart';
 class AppBarSession extends StatelessWidget {
   const AppBarSession({super.key});
 
+  bool _isSyncInProgress(BuildContext context) {
+    return context.read<FetchStockBloc>().state is FetchStockProgress;
+  }
+
+  void _showSyncBlockedMessage(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Stock sync in progress. Please wait."),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -57,6 +70,11 @@ class AppBarSession extends StatelessWidget {
             children: [
               InkWell(
                 onTap: () {
+                  if (_isSyncInProgress(context)) {
+                    _showSyncBlockedMessage(context);
+                    return;
+                  }
+
                   context.read<FetchingNetworkServerBloc>().add(
                     FetchNetworkServerEvent(),
                   );

@@ -48,6 +48,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _selectedHostName = "";
   Timer? _autoBackupTimer;
 
+  bool _isSyncInProgress(BuildContext context) {
+    return context.read<FetchStockBloc>().state is FetchStockProgress;
+  }
+
+  bool _blockIfSyncing(BuildContext context) {
+    if (!_isSyncInProgress(context)) return false;
+    _showError(context, "Stock sync in progress. Please wait.");
+    return true;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -534,6 +544,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 "Recover deleted stocktake from server",
                                 Colors.blue,
                                 () {
+                                  if (_blockIfSyncing(context)) return;
                                   context.read<BackupRestoreBloc>().add(
                                     LoadBackupSessionsEvent(),
                                   );
@@ -552,7 +563,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 "Delete All Current Stocktake",
                                 "Clear all currently counted stocktake list permanently on this device.",
                                 kErrorColor,
-                                () => _showDeleteConfirmation(context),
+                                () {
+                                  if (_blockIfSyncing(context)) return;
+                                  _showDeleteConfirmation(context);
+                                },
                               ),
                             ],
                           ),

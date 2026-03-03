@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
 import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
@@ -428,6 +429,80 @@ class DataAgentImpl implements DataAgent {
     String baseUrl = "http://$cleanedIp:$port/api";
 
     logger.d(baseUrl);
-    return ApiService(Dio(BaseOptions(baseUrl: baseUrl)));
+    final dio = Dio(BaseOptions(baseUrl: baseUrl));
+    dio.interceptors.add(_RetryInterceptor(dio: dio, maxRetries: 3));
+    return ApiService(dio);
+  }
+}
+
+class _RetryInterceptor extends Interceptor {
+  _RetryInterceptor({required Dio dio, this.maxRetries = 3, this.retryDelayMs = 300})
+    : _dio = dio;
+
+  final Dio _dio;
+  final int maxRetries;
+  final int retryDelayMs;
+
+  @override
+  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+    final options = err.requestOptions;
+    final int attempt = (options.extra['retry_attempt'] as int?) ?? 0;
+
+    if (attempt >= maxRetries || !_shouldRetry(err)) {
+      return handler.next(err);
+    }
+
+    final int nextAttempt = attempt + 1;
+    options.extra['retry_attempt'] = nextAttempt;
+
+    try {
+      await Future<void>.delayed(Duration(milliseconds: retryDelayMs));
+      final response = await _dio.fetch<dynamic>(options);
+      return handler.resolve(response);
+    } on DioException catch (e) {
+      return handler.next(e);
+    } catch (_) {
+      return handler.next(err);
+    }
+  }
+
+  bool _shouldRetry(DioException err) {
+    if (err.type == DioExceptionType.cancel) return false;
+    if (_isAlwaysRetryEndpoint(err.requestOptions.path)) return true;
+
+    if (err.type == DioExceptionType.connectionError ||
+        err.type == DioExceptionType.connectionTimeout ||
+        err.type == DioExceptionType.receiveTimeout ||
+        err.type == DioExceptionType.sendTimeout) {
+      return true;
+    }
+
+    final statusCode = err.response?.statusCode ?? 0;
+    return statusCode >= 500 || statusCode == 408 || statusCode == 429;
+  }
+
+  bool _isAlwaysRetryEndpoint(String path) {
+    final p = path.toLowerCase();
+
+    // /shopfronts/{id}/stock
+    if (RegExp(r'^/shopfronts/[^/]+/stock$').hasMatch(p)) return true;
+
+    // /shopfronts/{id}/stock/update
+    if (RegExp(r'^/shopfronts/[^/]+/stock/update$').hasMatch(p)) return true;
+
+    // /shopfronts/{id}/pictures/{stockId}
+    if (RegExp(r'^/shopfronts/[^/]+/pictures/[^/]+$').hasMatch(p)) return true;
+
+    // /shopfronts/{id}/stocktake/initcheck
+    if (RegExp(r'^/shopfronts/[^/]+/stocktake/initcheck$').hasMatch(p)) {
+      return true;
+    }
+
+    // /shopfronts/{id}/stocktake/commit
+    if (RegExp(r'^/shopfronts/[^/]+/stocktake/commit$').hasMatch(p)) {
+      return true;
+    }
+
+    return false;
   }
 }
