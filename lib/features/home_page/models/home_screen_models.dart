@@ -364,21 +364,6 @@ class HomeScreenModels implements HomeRepo {
     required String password,
   }) async {
     try {
-      final connectResponse = await DataAgentImpl.instance.connectShopfront(
-        ip,
-        port,
-        shopfrontId,
-        apiKey,
-      );
-
-      if (!connectResponse.success) {
-        return Future.error(connectResponse.message);
-      }
-
-      await LocalDbDAO.instance.saveShopfrontId(shopfrontId);
-      await LocalDbDAO.instance.saveShopfrontName(shopfrontName);
-      AppGlobals.instance.shopfront = shopfrontName;
-
       final response = await DataAgentImpl.instance.authenticateStaff(
         ip,
         port,
@@ -397,6 +382,11 @@ class HomeScreenModels implements HomeRepo {
         await signOutStaff();
         return response;
       }
+
+      // Persist selected shopfront only after successful staff authentication.
+      await LocalDbDAO.instance.saveShopfrontId(shopfrontId);
+      await LocalDbDAO.instance.saveShopfrontName(shopfrontName);
+      AppGlobals.instance.shopfront = shopfrontName;
 
       List<String> resolvedGroupNames = <String>[];
       try {

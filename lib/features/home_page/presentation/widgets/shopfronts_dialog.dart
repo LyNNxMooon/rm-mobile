@@ -10,6 +10,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_events.dart';
@@ -81,21 +82,31 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
         ),
         BlocListener<StaffAuthBloc, StaffAuthStates>(
           listener: (context, state) {
-            if (!widget.isPairedFlow) return;
-
             if (state is StaffAuthenticated) {
-              context.read<FetchStockBloc>().add(
-                StartSyncEvent(
-                  ipAddress: AppGlobals.instance.currentHostIp ?? "",
-                ),
-              );
+              if (widget.isPairedFlow) {
+                context.read<FetchStockBloc>().add(
+                  StartSyncEvent(
+                    ipAddress: AppGlobals.instance.currentHostIp ?? "",
+                  ),
+                );
 
-              showTopSnackBar(
-                Overlay.of(context),
-                CustomSnackBar.success(message: state.response.message),
-              );
+                showTopSnackBar(
+                  Overlay.of(context),
+                  CustomSnackBar.success(message: state.response.message),
+                );
 
-              context.navigateBack();
+                context.navigateBack();
+              } else {
+                final selectedShop = _expandedShop;
+                if (selectedShop != null) {
+                  context.read<ShopFrontConnectionBloc>().add(
+                    ConnectToShopfrontEvent(
+                      ip: widget.pc.ipAddress,
+                      shopName: selectedShop,
+                    ),
+                  );
+                }
+              }
             }
 
             if (state is StaffUnauthenticated) {
@@ -323,22 +334,12 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                     }
 
                     if (state is ShopsLoaded) {
-                      if (state.shops.shopfronts.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.all(30),
-                          child: Text("No shopfronts found."),
-                        );
-                      }
-
-                      if (state.shops.shopfronts.length == 1 &&
-                          !widget.isPairedFlow) {
-                        context.read<ShopFrontConnectionBloc>().add(
-                          ConnectToShopfrontEvent(
-                            ip: widget.pc.ipAddress,
-                            shopName: state.shops.shopfronts[0],
-                          ),
-                        );
-                      }
+                    if (state.shops.shopfronts.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.all(30),
+                        child: Text("No shopfronts found."),
+                      );
+                    }
 
                       return ListView.separated(
                         shrinkWrap: true,
@@ -373,16 +374,6 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
 
     return InkWell(
       onTap: () {
-        if (!widget.isPairedFlow) {
-          ctx.read<ShopFrontConnectionBloc>().add(
-            ConnectToShopfrontEvent(
-              ip: widget.pc.ipAddress,
-              shopName: shopName,
-            ),
-          );
-          return;
-        }
-
         setState(() {
           _expandedShop = expanded ? null : shopName;
           _staffNoController.clear();
@@ -422,8 +413,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
               ],
             ),
           ),
-          if (widget.isPairedFlow && expanded)
-            _buildStaffSignInSection(shopName, ctx),
+          if (expanded) _buildStaffSignInSection(shopName, ctx),
         ],
       ),
     );
@@ -498,7 +488,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
     );
   }
 
-  void _onTapStaffSignIn(String shopName, BuildContext ctx) {
+  Future<void> _onTapStaffSignIn(String shopName, BuildContext ctx) async {
     final staffNo = _staffNoController.text.trim();
     final password = _staffPwdController.text;
 
@@ -510,11 +500,16 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
       return;
     }
 
-    final apiKey = widget.apiKey;
-    final port = widget.port;
-    final shopfrontId = AppGlobals.instance.pairedShopfrontIdsByName[shopName];
+    final apiKey =
+        widget.apiKey ?? (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+    final int? port =
+        widget.port ??
+        int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim());
+    final shopfrontId =
+        AppGlobals.instance.pairedShopfrontIdsByName[shopName] ??
+        (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
 
-    if (apiKey == null || port == null || shopfrontId == null) {
+    if (apiKey.isEmpty || port == null || shopfrontId.isEmpty) {
       showTopSnackBar(
         Overlay.of(ctx),
         const CustomSnackBar.error(

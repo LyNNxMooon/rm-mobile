@@ -436,7 +436,7 @@ class DataAgentImpl implements DataAgent {
 }
 
 class _RetryInterceptor extends Interceptor {
-  _RetryInterceptor({required Dio dio, this.maxRetries = 3, this.retryDelayMs = 300})
+  _RetryInterceptor({required Dio dio, this.maxRetries = 3, this.retryDelayMs = 3000})
     : _dio = dio;
 
   final Dio _dio;
