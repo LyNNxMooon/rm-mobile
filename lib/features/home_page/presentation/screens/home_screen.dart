@@ -246,11 +246,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget logo() {
     return Center(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 40), //25 - original
-        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 5), //40 - with new logo
+        width: 342,
         // Slightly dynamic height for the logo container
         height: 75,
-        child: Image.asset("assets/images/rm.png", fit: BoxFit.contain),
+        child: Image.asset("assets/images/trademark.png", fit: BoxFit.fill),
       ),
     );
   }
