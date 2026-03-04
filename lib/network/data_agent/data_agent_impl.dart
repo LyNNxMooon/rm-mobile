@@ -28,6 +28,9 @@ class DataAgentImpl implements DataAgent {
 
   static final DataAgentImpl _instance = DataAgentImpl._();
   static DataAgentImpl get instance => _instance;
+  static const Duration _connectTimeout = Duration(seconds: 6);
+  static const Duration _receiveTimeout = Duration(seconds: 12);
+  static const Duration _sendTimeout = Duration(seconds: 12);
 
   //Error config for fetching
   Object throwExceptionForAPIErrors(dynamic error) {
@@ -429,26 +432,59 @@ class DataAgentImpl implements DataAgent {
     String baseUrl = "http://$cleanedIp:$port/api";
 
     logger.d(baseUrl);
-    final dio = Dio(BaseOptions(baseUrl: baseUrl));
-    dio.interceptors.add(_RetryInterceptor(dio: dio, maxRetries: 3));
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        connectTimeout: _connectTimeout,
+        receiveTimeout: _receiveTimeout,
+        sendTimeout: _sendTimeout,
+      ),
+    );
+    dio.interceptors.add(
+      _RetryInterceptor(
+        dio: dio,
+        maxRetries: 3,
+        retryDelayMs: 3000,
+        maxTotalRetryMs: 30000,
+      ),
+    );
     return ApiService(dio);
   }
 }
 
 class _RetryInterceptor extends Interceptor {
-  _RetryInterceptor({required Dio dio, this.maxRetries = 3, this.retryDelayMs = 3000})
+  _RetryInterceptor({
+    required Dio dio,
+    this.maxRetries = 3,
+    this.retryDelayMs = 3000,
+    this.maxTotalRetryMs = 30000,
+  })
     : _dio = dio;
 
   final Dio _dio;
   final int maxRetries;
   final int retryDelayMs;
+  final int maxTotalRetryMs;
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    options.extra['retry_start_ms'] ??= DateTime.now().millisecondsSinceEpoch;
+    options.extra['retry_attempt'] ??= 0;
+    handler.next(options);
+  }
 
   @override
   Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
     final options = err.requestOptions;
     final int attempt = (options.extra['retry_attempt'] as int?) ?? 0;
+    final int retryStartMs =
+        (options.extra['retry_start_ms'] as int?) ??
+        DateTime.now().millisecondsSinceEpoch;
+    final int elapsedMs = DateTime.now().millisecondsSinceEpoch - retryStartMs;
 
-    if (attempt >= maxRetries || !_shouldRetry(err)) {
+    if (attempt >= maxRetries ||
+        elapsedMs >= maxTotalRetryMs ||
+        !_shouldRetry(err)) {
       return handler.next(err);
     }
 

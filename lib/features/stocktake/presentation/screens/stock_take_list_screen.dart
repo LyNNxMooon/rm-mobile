@@ -275,7 +275,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
             if (state is LoadingToCommitStocktake) {
               showDialog(
                 context: context,
-                barrierDismissible: false,
+                //barrierDismissible: false,
                 builder: (_) => const LoadingStocktakeDialog(),
               );
             } else if (state is ErrorCommitingStocktake) {
@@ -304,7 +304,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
             } else if (state is StocktakeValidationHasAudits) {
               showDialog(
                 context: context,
-                barrierDismissible: false,
+               //barrierDismissible: false,
 
                 builder: (_) => _buildValidationDialog(state),
               );

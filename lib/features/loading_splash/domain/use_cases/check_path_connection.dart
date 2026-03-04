@@ -10,6 +10,7 @@ import '../../../../utils/log_utils.dart';
 
 class CheckPathConnection {
   final LoadingSplashRepo repository;
+  static const Duration _validateTimeout = Duration(seconds: 18);
 
   CheckPathConnection(this.repository);
 
@@ -34,11 +35,13 @@ class CheckPathConnection {
 
       try {
         if (await InternetConnectionUtils.instance.checkInternetConnection()) {
-          final isValid = await repository.validateConnection(
-            ip: savedIp!,
-            port: port,
-            apiKey: savedApiKey!,
-          );
+          final isValid = await repository
+              .validateConnection(
+                ip: savedIp!,
+                port: port,
+                apiKey: savedApiKey!,
+              )
+              .timeout(_validateTimeout);
 
           if (!isValid) return false;
 
