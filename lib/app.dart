@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmstock_scanner/features/onboarding/presentation/screens/onboarding_gate_screen.dart';
 //import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
@@ -10,7 +11,6 @@ import 'package:rmstock_scanner/utils/log_utils.dart';
 
 import 'features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import 'features/loading_splash/presentation/BLoC/loading_splash_events.dart';
-import 'features/loading_splash/presentation/screens/index_screen.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -141,7 +141,7 @@ class _MyAppState extends State<MyApp> {
         title: 'RM-Mobile',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(fontFamily: "SourceSans3"),
-        home: IndexScreen(),
+        home: const OnboardingGateScreen(),
       ),
     );
   }

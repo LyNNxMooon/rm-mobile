@@ -129,3 +129,5 @@ const String kStaffGroupNamesKey = "staff_group_names_json";
 const String kStaffGrantedPermissionsKey = "staff_granted_permissions_json";
 const String kStaffRestrictedPermissionsKey =
     "staff_restricted_permissions_json";
+const String kWelcomeSeenKey = "welcome_seen";
+const String kTermsAcceptedKey = "terms_accepted";

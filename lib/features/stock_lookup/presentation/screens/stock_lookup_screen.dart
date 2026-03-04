@@ -56,6 +56,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   String _selectedFilterChip = "Description"; // UI Label
   String _dbFilterCol = "description"; // DB Column Name
   String _searchQuery = "";
+  static const String _searchColumn = "description";
 
   final AudioPlayer _audioPlayer = AudioPlayer()
     ..setReleaseMode(ReleaseMode.stop);
@@ -171,10 +172,6 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                     _dbFilterCol = _mapChipToColumn(newLabel);
                                   });
 
-                                  String searchCol = _dbFilterCol == "quantity"
-                                      ? "description"
-                                      : _dbFilterCol;
-
                                   final currentState = context
                                       .read<StockListBloc>()
                                       .state;
@@ -186,7 +183,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   context.read<StockListBloc>().add(
                                     FetchFirstPageEvent(
                                       query: _searchQuery,
-                                      filterColumn: searchCol,
+                                      filterColumn: _searchColumn,
                                       sortColumn: _dbFilterCol,
                                       filters: currentFilters,
                                       shouldToggleSort: true,
@@ -346,7 +343,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     context.read<StockListBloc>().add(
                       FetchFirstPageEvent(
                         query: _searchQuery,
-                        filterColumn: "Barcode",
+                        filterColumn: _searchColumn,
                         sortColumn: _dbFilterCol,
                         filters: currentFilters,
                         shouldToggleSort: false,
@@ -383,10 +380,6 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
             onChanged: (value) {
               _searchQuery = value;
               _debouncer.run(() {
-                final searchCol = _dbFilterCol == "quantity"
-                    ? "description"
-                    : _dbFilterCol;
-
                 final currentState = context.read<StockListBloc>().state;
                 FilterCriteria? currentFilters;
                 if (currentState is StockListLoaded) {
@@ -396,7 +389,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 context.read<StockListBloc>().add(
                   FetchFirstPageEvent(
                     query: _searchQuery,
-                    filterColumn: searchCol,
+                    filterColumn: _searchColumn,
                     sortColumn: _dbFilterCol,
                     filters: currentFilters,
                     shouldToggleSort: false,
@@ -437,7 +430,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 context.read<StockListBloc>().add(
                   FetchFirstPageEvent(
                     query: "",
-                    filterColumn: "Barcode",
+                    filterColumn: _searchColumn,
                     sortColumn: _dbFilterCol,
                     filters: currentFilters,
                     shouldToggleSort: false,

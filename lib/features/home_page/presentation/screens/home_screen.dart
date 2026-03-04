@@ -94,6 +94,10 @@ class _HomeScreenState extends State<HomeScreen> {
     // Calculate the available height above the drawer (approx 45% of screen)
     // We use this to center the content dynamically.
     final double screenHeight = MediaQuery.of(context).size.height;
+    final media = MediaQuery.of(context);
+    final bool isTabletLandscape =
+        media.orientation == Orientation.landscape &&
+        media.size.shortestSide >= 600;
     final double topContentHeight = screenHeight * 0.42;
 
     return MultiBlocListener(
@@ -214,14 +218,18 @@ class _HomeScreenState extends State<HomeScreen> {
                               title: "Start Stocktaking",
                               subtitle: "Begin Counting Inventory Items",
                             ),
-                            SizedBox(height: screenHeight * 0.03),
+                            SizedBox(
+                              height: screenHeight * 0.03,
+                            ),
+                            if (isTabletLandscape)
+                              const SizedBox(height: 16),
                           ],
                         ),
                       ),
 
                       syncWatcher(),
 
-                      const SizedBox(height: 120),
+                      SizedBox(height: isTabletLandscape ? 140 : 120),
                     ],
                   ),
                 ),
@@ -238,11 +246,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget logo() {
     return Center(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 25),
+        padding: const EdgeInsets.symmetric(horizontal: 40), //25 - original
         width: double.infinity,
         // Slightly dynamic height for the logo container
         height: 75,
-        child: Image.asset("assets/images/trademark.png", fit: BoxFit.contain),
+        child: Image.asset("assets/images/rm.png", fit: BoxFit.contain),
       ),
     );
   }

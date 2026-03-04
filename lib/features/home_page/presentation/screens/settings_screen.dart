@@ -506,6 +506,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 "Automatically save current stocktake backup every 24 hours",
                                 backupToLan,
                                 (val) {
+                                  if (_blockIfSyncing(context)) return;
                                   setState(() => backupToLan = val);
                                   context.read<SettingsBloc>().add(
                                     ToggleAutoBackupEvent(val),
@@ -532,7 +533,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 "Manual Connection",
                                 "Connect with host IP and pairing code",
                                 kPrimaryColor,
-                                () => _showManualConnectionDialog(context),
+                                () {
+                                  if (_blockIfSyncing(context)) return;
+                                  _showManualConnectionDialog(context);
+                                },
                               ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
@@ -710,6 +714,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: double.infinity,
         child: OutlinedButton(
           onPressed: () {
+            if (_blockIfSyncing(context)) return;
             context.read<StaffAuthBloc>().add(SignOutStaffEvent());
           },
           style: OutlinedButton.styleFrom(

@@ -370,47 +370,23 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return runQuery(whereClause: baseWhere, args: baseArgs);
       }
 
-      final bool isBarcodeChip = filterColumn == 'Barcode';
-      final bool isDescChip = filterColumn == 'description';
+      // Search priority is always:
+      // Barcode -> Description -> Custom1 -> Custom2
+      // Chips are used for sorting only.
+      final searchPriority = <String>['Barcode', 'description', 'custom1', 'custom2'];
 
-      // Barcode chip: Barcode -> Description
-      if (isBarcodeChip) {
-        final barcodeWhere = '$baseWhere AND Barcode LIKE ?';
-        final barcodeArgs = [...baseArgs, '%$q%'];
-
-        if (await exists(barcodeWhere, barcodeArgs)) {
-          return runQuery(whereClause: barcodeWhere, args: barcodeArgs);
+      for (final column in searchPriority) {
+        final whereClause = '$baseWhere AND $column LIKE ?';
+        final args = [...baseArgs, '%$q%'];
+        if (await exists(whereClause, args)) {
+          return runQuery(whereClause: whereClause, args: args);
         }
-
-        final descWhere = '$baseWhere AND description LIKE ?';
-        final descArgs = [...baseArgs, '%$q%'];
-        return runQuery(whereClause: descWhere, args: descArgs);
       }
 
-      // Description chip: Description -> Barcode
-      if (isDescChip) {
-        final descWhere = '$baseWhere AND description LIKE ?';
-        final descArgs = [...baseArgs, '%$q%'];
-
-        if (await exists(descWhere, descArgs)) {
-          return runQuery(whereClause: descWhere, args: descArgs);
-        }
-
-        final barcodeWhere = '$baseWhere AND Barcode LIKE ?';
-        final barcodeArgs = [...baseArgs, '%$q%'];
-        return runQuery(whereClause: barcodeWhere, args: barcodeArgs);
-      }
-
-      // Other chips stay the same as before
-      if (!allowedColumns.contains(filterColumn)) {
-        final safeWhere = '$baseWhere AND description LIKE ?';
-        final safeArgs = [...baseArgs, '%$q%'];
-        return runQuery(whereClause: safeWhere, args: safeArgs);
-      }
-
-      final whereClause = '$baseWhere AND $filterColumn LIKE ?';
-      final args = [...baseArgs, '%$q%'];
-      return runQuery(whereClause: whereClause, args: args);
+      // No match in any prioritized column.
+      final fallbackWhere = '$baseWhere AND Barcode LIKE ?';
+      final fallbackArgs = [...baseArgs, '%$q%'];
+      return runQuery(whereClause: fallbackWhere, args: fallbackArgs);
     } catch (error) {
       logger.e('Error searching stocks: $error');
       return Future.error(error);
