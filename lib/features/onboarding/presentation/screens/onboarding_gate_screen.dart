@@ -179,8 +179,8 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
                       child: SlideTransition(
                         position: _logoSlide,
                         child: SizedBox(
-                          width: 340,
-                          height: 75,
+                          width: 380,
+                          height: 80,
                           child: Image.asset(
                             "assets/images/trademark.png",
                             fit: BoxFit.fill,

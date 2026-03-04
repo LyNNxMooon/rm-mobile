@@ -247,9 +247,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 5), //40 - with new logo
-        width: 342,
+        width: 372,
         // Slightly dynamic height for the logo container
-        height: 75,
+        height: 76,
         child: Image.asset("assets/images/trademark.png", fit: BoxFit.fill),
       ),
     );
