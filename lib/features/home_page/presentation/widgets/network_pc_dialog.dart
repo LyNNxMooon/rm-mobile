@@ -9,6 +9,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../utils/dialog_size_utils.dart';
 
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
@@ -73,6 +74,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     showDialog(
       context: context,
       builder: (_) => Dialog(
+        insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
         backgroundColor: kBgColor,
@@ -182,6 +184,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     showDialog(
       context: context,
       builder: (_) => Dialog(
+        insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
         backgroundColor: kBgColor,
@@ -447,6 +450,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
         ),
       ],
       child: Dialog(
+        insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
         backgroundColor: kBgColor,

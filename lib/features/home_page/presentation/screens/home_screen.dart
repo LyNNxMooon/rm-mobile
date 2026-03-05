@@ -95,10 +95,28 @@ class _HomeScreenState extends State<HomeScreen> {
     // We use this to center the content dynamically.
     final double screenHeight = MediaQuery.of(context).size.height;
     final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTabletPortrait =
+        isTablet && media.orientation == Orientation.portrait;
+    final bool isSmallTablet = isTablet && media.size.shortestSide < 720;
     final bool isTabletLandscape =
         media.orientation == Orientation.landscape &&
-        media.size.shortestSide >= 600;
-    final double topContentHeight = screenHeight * 0.42;
+        isTablet;
+    final double topContentHeight = isTabletPortrait
+        ? screenHeight * 0.43
+        : (isTabletLandscape ? screenHeight * 0.44 : screenHeight * 0.42);
+    final double actionCardMinHeight = isTabletPortrait
+        ? (isSmallTablet
+              ? (screenHeight * 0.125).clamp(112.0, 142.0)
+              : (screenHeight * 0.14).clamp(124.0, 168.0))
+        : (isTabletLandscape
+              ? (isSmallTablet
+                    ? (screenHeight * 0.135).clamp(108.0, 136.0)
+                    : (screenHeight * 0.15).clamp(118.0, 160.0))
+              : 0);
+    final double actionToDrawerGap = isTabletPortrait
+        ? 20
+        : (isTabletLandscape ? 18 : (screenHeight * 0.038).clamp(16.0, 26.0));
 
     return MultiBlocListener(
       listeners: [
@@ -134,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   physics: const ClampingScrollPhysics(),
                   child: Column(
                     children: [
-                      const SizedBox(height: 10),
+                      SizedBox(height: isTabletPortrait ? 4 : 10),
 
                       const AppBarSession(),
 
@@ -156,13 +174,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
                             // Use flexible spacing inside the block if needed,
                             // or smaller fixed gaps that look good when centered.
-                            SizedBox(height: screenHeight * 0.03),
+                            SizedBox(
+                              height: isTabletPortrait
+                                  ? (screenHeight * 0.018).clamp(10.0, 16.0)
+                                  : screenHeight * 0.03,
+                            ),
 
                             headerTitle(),
 
-                            SizedBox(height: screenHeight * 0.02),
+                            SizedBox(
+                              height: isTabletPortrait
+                                  ? (screenHeight * 0.012).clamp(6.0, 12.0)
+                                  : screenHeight * 0.02,
+                            ),
 
                             ActionCard(
+                              minHeight: actionCardMinHeight,
                               onTap: () {
                                 if (context.read<FetchStockBloc>().state
                                     is FetchStockProgress) {
@@ -219,10 +246,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               subtitle: "Begin Counting Inventory Items",
                             ),
                             SizedBox(
-                              height: screenHeight * 0.03,
+                              height: actionToDrawerGap,
                             ),
                             if (isTabletLandscape)
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 10),
                           ],
                         ),
                       ),
@@ -246,11 +273,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget logo() {
     return Center(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 5), //40 - with new logo
-        width: 372,
+        padding: const EdgeInsets.symmetric(horizontal: 25), //40 - with new logo
+        width: double.infinity,
         // Slightly dynamic height for the logo container
-        height: 76,
-        child: Image.asset("assets/images/trademark.png", fit: BoxFit.fill),
+        height: 75,
+        child: Image.asset("assets/images/trademark.png", fit: BoxFit.contain),
       ),
     );
   }

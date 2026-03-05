@@ -4,6 +4,7 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
+import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
 import '../../../home_page/presentation/BLoC/home_screen_events.dart';
@@ -34,6 +35,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 10,
       backgroundColor: kBgColor,

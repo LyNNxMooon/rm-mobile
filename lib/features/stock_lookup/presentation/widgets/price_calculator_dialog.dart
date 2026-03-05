@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
+import '../../../../utils/dialog_size_utils.dart';
 
 class PriceCalculatorDialog extends StatefulWidget {
   final double incCost;
@@ -185,6 +186,7 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
     final media = MediaQuery.of(context);
 
     return Dialog(
+      insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
       child: AnimatedPadding(

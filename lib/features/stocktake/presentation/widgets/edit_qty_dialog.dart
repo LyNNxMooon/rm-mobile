@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
+import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 class StockDetailsDialog extends StatelessWidget {
@@ -17,7 +18,7 @@ class StockDetailsDialog extends StatelessWidget {
     final double maxDialogHeight = MediaQuery.of(context).size.height * 0.85;
 
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 15),
+      insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: Colors.white,
       elevation: 10,

@@ -8,6 +8,7 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/filter_criteria.dart';
+import '../../../../utils/dialog_size_utils.dart';
 import '../BLoC/stock_lookup_events.dart';
 
 //Common Variables
@@ -52,7 +53,7 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      insetPadding: dialogInsetPadding(context),
       child: Container(
         width: double.infinity,
         constraints: const BoxConstraints(maxWidth: 400, maxHeight: 650),

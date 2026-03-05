@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../utils/dialog_size_utils.dart';
 
 class LoadingStocktakeDialog extends StatefulWidget {
   const LoadingStocktakeDialog({super.key});
@@ -14,6 +15,7 @@ class _LoadingStocktakeDialogState extends State<LoadingStocktakeDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 10,
       backgroundColor: kBgColor,

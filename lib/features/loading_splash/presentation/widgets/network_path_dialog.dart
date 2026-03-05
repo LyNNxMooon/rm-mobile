@@ -7,6 +7,7 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../local_db/local_db_dao.dart';
+import '../../../../utils/dialog_size_utils.dart';
 
 class NetworkPathDialog extends StatelessWidget {
   const NetworkPathDialog({super.key, required this.paths});
@@ -23,7 +24,7 @@ class NetworkPathDialog extends StatelessWidget {
     }
 
     return Dialog(
-      insetPadding: EdgeInsets.symmetric(horizontal: 10),
+      insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 10,
       backgroundColor: kBgColor,

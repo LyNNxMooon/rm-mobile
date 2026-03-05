@@ -11,6 +11,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/dependency_injection_utils.dart';
 import '../../domain/use_cases/check_if_shopfront_file_exists.dart';
 import '../BLoC/home_screen_bloc.dart';
@@ -100,6 +101,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
     final double safeMaxHeight = MediaQuery.of(context).size.height * 0.8;
 
     return Dialog(
+      insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 10,
       backgroundColor: kBgColor,

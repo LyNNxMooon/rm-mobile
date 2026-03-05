@@ -7,12 +7,14 @@ class ActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final double? minHeight;
 
   const ActionCard({
     super.key,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.minHeight,
   });
 
   @override
@@ -20,6 +22,9 @@ class ActionCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25),
       child: Container(
+        constraints: BoxConstraints(
+          minHeight: minHeight ?? 0,
+        ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,

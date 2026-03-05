@@ -11,6 +11,7 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../local_db/local_db_dao.dart';
+import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_events.dart';
@@ -126,6 +127,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
         ),
       ],
       child: Dialog(
+        insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
         backgroundColor: kBgColor,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../utils/dialog_size_utils.dart';
 
 class StocktakeQuestionDialog extends StatelessWidget {
   const StocktakeQuestionDialog({
@@ -19,6 +20,7 @@ class StocktakeQuestionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 10,
       backgroundColor: kBgColor,

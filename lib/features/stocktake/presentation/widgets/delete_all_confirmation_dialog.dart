@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../utils/dialog_size_utils.dart';
 import '../../../../constants/txt_styles.dart';
 
 class StocktakeDeleteConfirmationDialog extends StatelessWidget {
@@ -19,6 +20,7 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 10,
       backgroundColor: kBgColor,

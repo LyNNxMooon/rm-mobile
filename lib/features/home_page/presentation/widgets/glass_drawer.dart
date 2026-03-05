@@ -41,10 +41,39 @@ class _GlassDrawerState extends State<GlassDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isPortrait = media.orientation == Orientation.portrait;
+    final bool isTabletPortrait = isTablet && isPortrait;
+
+    double initialChildSize = 0.535;
+    double minChildSize = 0.535;
+    double maxChildSize = 0.88;
+
+    if (isTabletPortrait) {
+      initialChildSize = media.size.height >= 1100 ? 0.58 : 0.56;
+      minChildSize = media.size.height >= 1100 ? 0.56 : 0.54;
+      maxChildSize = 0.91;
+    } else if (isPortrait) {
+      initialChildSize = 0.535;
+      minChildSize = 0.535;
+      maxChildSize = 0.88;
+    } else if (isTablet) {
+      // Landscape tablet: start lower to keep visual gap from action card.
+      initialChildSize = 0.50;
+      minChildSize = 0.48;
+      maxChildSize = 0.90;
+    } else {
+      // Landscape phone.
+      initialChildSize = 0.49;
+      minChildSize = 0.47;
+      maxChildSize = 0.86;
+    }
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.535,
-      minChildSize: 0.535,
-      maxChildSize: 0.88,
+      initialChildSize: initialChildSize,
+      minChildSize: minChildSize,
+      maxChildSize: maxChildSize,
       builder: (context, scrollController) {
         return ClipRRect(
           borderRadius: const BorderRadius.only(
@@ -127,9 +156,13 @@ class _GlassDrawerState extends State<GlassDrawer> {
       builder: (context, constraints) {
         final double width = constraints.maxWidth;
         final double height = constraints.maxHeight;
+        final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+        final bool isTabletPortrait =
+            isTablet &&
+            MediaQuery.of(context).orientation == Orientation.portrait;
 
         int crossAxisCount = 2;
-        if (width > 600) crossAxisCount = 3;
+        if (width > 600 || isTabletPortrait) crossAxisCount = 3;
         if (width > 900) crossAxisCount = 4;
 
         const double padding = 50.0; // Horizontal padding total
@@ -138,22 +171,19 @@ class _GlassDrawerState extends State<GlassDrawer> {
         // Calculate how many rows we have
         int rowCount = (_menuItems.length / crossAxisCount).ceil();
 
-        double targetHeight = 85.0;
-
-        double naturalGridHeight =
-            (rowCount * targetHeight) + ((rowCount - 1) * spacing) + 40;
-
-        // If the screen is tall (Tablet Portrait), we have extra vertical space.
-        if (height > naturalGridHeight) {
-          double extraSpace = height - naturalGridHeight;
-          double extraPerItem = extraSpace / rowCount;
-
-          // Cap the growth so buttons don't become massive towers.
-          // Slightly increased cap to 50.0 since we removed the footer.
-          if (extraPerItem > 50.0) extraPerItem = 50.0;
-
-          targetHeight += extraPerItem;
-        }
+        // Fill drawer space adaptively to avoid large empty area under buttons.
+        final double verticalPadding = 40.0; // top+bottom from Grid padding
+        final double availableGridHeight =
+            (height - verticalPadding - ((rowCount - 1) * spacing)).clamp(
+              100.0,
+              2000.0,
+            );
+        final double minTileHeight = isTablet ? 95.0 : 85.0;
+        final double maxTileHeight = isTabletPortrait ? 190.0 : 150.0;
+        final double targetHeight = (availableGridHeight / rowCount).clamp(
+          minTileHeight,
+          maxTileHeight,
+        );
 
         final double totalSpacing = spacing * (crossAxisCount - 1);
         final double availableWidth = width - padding - totalSpacing;

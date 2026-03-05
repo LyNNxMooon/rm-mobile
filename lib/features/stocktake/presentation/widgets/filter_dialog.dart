@@ -4,6 +4,7 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../utils/dialog_size_utils.dart';
 
 //Common Variables
 final sCustom1Controller = TextEditingController();
@@ -27,7 +28,7 @@ class _FilterDialogState extends State<FilterDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      insetPadding: dialogInsetPadding(context),
       child: Container(
         width: double.infinity,
         constraints: const BoxConstraints(maxWidth: 400, maxHeight: 650),

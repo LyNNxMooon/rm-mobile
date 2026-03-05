@@ -17,6 +17,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../local_db/local_db_dao.dart';
+import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_bloc.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_events.dart';
@@ -119,6 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (_) => Dialog(
+        insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
         backgroundColor: kBgColor,
@@ -232,6 +234,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (_) => Dialog(
+        insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
         backgroundColor: kBgColor,

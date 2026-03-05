@@ -18,6 +18,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../local_db/local_db_dao.dart';
+import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../BLoC/stocktake_events.dart';
 import '../BLoC/stocktake_states.dart';
@@ -559,7 +560,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: kSecondaryColor,
       titlePadding: EdgeInsets.zero,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 24),
+      insetPadding: dialogInsetPadding(context),
       contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
       title: _buildDialogHeader(),
       content: SizedBox(

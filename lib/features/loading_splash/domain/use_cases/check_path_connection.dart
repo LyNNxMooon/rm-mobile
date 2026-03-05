@@ -25,11 +25,13 @@ class CheckPathConnection {
       if ((savedIp ?? "").isEmpty ||
           (savedPort ?? "").isEmpty ||
           (savedApiKey ?? "").isEmpty) {
+        await _clearSavedStaffSession();
         return false;
       }
 
       final int? port = int.tryParse(savedPort!);
       if (port == null || port <= 0 || port > 65535) {
+        await _clearSavedStaffSession();
         return false;
       }
 
@@ -43,7 +45,10 @@ class CheckPathConnection {
               )
               .timeout(_validateTimeout);
 
-          if (!isValid) return false;
+          if (!isValid) {
+            await _clearSavedStaffSession();
+            return false;
+          }
 
           AppGlobals.instance.currentHostIp = savedIp;
           AppGlobals.instance.hostName = savedHostName ?? savedIp;
@@ -112,13 +117,34 @@ class CheckPathConnection {
           // AppGlobals.instance.currentPath = result['path'];
           // ... SMB credential/path checks via repository.checksConnection(...)
         } else {
+          await _clearSavedStaffSession();
           return Future.error("Please connect to a network!");
         }
       } on Exception catch (_) {
+        await _clearSavedStaffSession();
         return false;
       }
     } catch (error) {
+      await _clearSavedStaffSession();
       return Future.error(error);
+    }
+  }
+
+  Future<void> _clearSavedStaffSession() async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(kStaffIdKey, "");
+      await LocalDbDAO.instance.saveAppConfig(kStaffNoKey, "");
+      await LocalDbDAO.instance.saveAppConfig(kStaffNameKey, "");
+      await LocalDbDAO.instance.saveAppConfig(kStaffGroupIdsKey, "[]");
+      await LocalDbDAO.instance.saveAppConfig(kStaffGroupNamesKey, "[]");
+      await LocalDbDAO.instance.saveAppConfig(kStaffGrantedPermissionsKey, "[]");
+      await LocalDbDAO.instance.saveAppConfig(
+        kStaffRestrictedPermissionsKey,
+        "[]",
+      );
+      AppGlobals.instance.clearStaffSession();
+    } catch (e) {
+      logger.e("Failed to clear saved staff session on connection failure: $e");
     }
   }
 }

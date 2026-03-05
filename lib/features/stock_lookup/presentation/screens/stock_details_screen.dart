@@ -21,6 +21,7 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lo
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
@@ -142,6 +143,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => Dialog(
+        insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: Colors.white,
         elevation: 10,

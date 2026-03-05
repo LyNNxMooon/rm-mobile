@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import '../../../../constants/colors.dart';
+import '../../../../utils/dialog_size_utils.dart';
 
 class DuplicateStockDialog extends StatelessWidget {
   final List<StockVO> matches;
@@ -16,7 +17,7 @@ class DuplicateStockDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: kBgColor,
       elevation: 10,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      insetPadding: dialogInsetPadding(context),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 20),
         child: Column(

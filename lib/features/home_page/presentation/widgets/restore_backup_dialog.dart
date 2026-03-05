@@ -8,6 +8,7 @@ import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_b
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
 
 class RestoreBackupDialog extends StatelessWidget {
   const RestoreBackupDialog({super.key});
@@ -27,7 +28,7 @@ class RestoreBackupDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: Colors.white,
       elevation: 10,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+      insetPadding: dialogInsetPadding(context),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         constraints: BoxConstraints(maxHeight: maxDialogHeight),
