@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
-import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
 class StocktakeQuestionDialog extends StatelessWidget {
@@ -76,49 +75,51 @@ class StocktakeQuestionDialog extends StatelessWidget {
               children: [
                 // NO Button
                 Expanded(
-                  child: SizedBox(
-                    height: 35,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        if (onNoPressed != null) {
-                          onNoPressed!();
-                        } else {
-                          Navigator.of(context).pop(); // Default Close
-                        }
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: kPrimaryColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                  child: OutlinedButton(
+                    onPressed: () {
+                      if (onNoPressed != null) {
+                        onNoPressed!();
+                      } else {
+                        Navigator.of(context).pop(); // Default Close
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(color: kPrimaryColor),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
-                        "No",
-                        style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
+                    ),
+                    child: const Text(
+                      "No",
+                      style: TextStyle(
+                        color: kPrimaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
                       ),
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 12),
-                
+
                 // YES Button
                 Expanded(
-                  child: SizedBox(
-                    height: 35,
-                    child: ElevatedButton(
-                      onPressed: onYesPressed,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor,
-                        foregroundColor: kSecondaryColor,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                  child: ElevatedButton(
+                    onPressed: onYesPressed,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kPrimaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
-                        "Yes",
-                        style: getSmartTitle(color: kSecondaryColor, fontSize: 16),
+                    ),
+                    child: const Text(
+                      "Yes",
+                      style: TextStyle(
+                        color: kSecondaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
                       ),
                     ),
                   ),

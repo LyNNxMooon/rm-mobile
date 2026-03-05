@@ -155,7 +155,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isLandscape = media.orientation == Orientation.landscape;
-    
+
     // Calculate adaptive padding similar to StockDetailsScreen
     final double cardHorizontalPadding = isTablet
         ? (media.size.width * (isLandscape ? 0.045 : 0.04)).clamp(24.0, 56.0)
@@ -246,7 +246,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                     );
                                   } else {
                                     return _buildProductDetailsPanel(
-                                      null, 
+                                      null,
                                       cardHorizontalPadding, // pass to panel
                                     );
                                   }
@@ -340,37 +340,48 @@ class _ScannerScreenState extends State<ScannerScreen> {
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
 
-    final double portraitBoost = isTablet && isPortrait
-      ? (media.size.height / 900).clamp(1.05, 1.25)
-      : 1.0;
+    // Detect medium-sized tablets (iPad Mini, regular iPad) vs large tablets (iPad Pro 12.9")
+    // Medium tablets in portrait typically have height < 1200, large tablets have 1300+
+    final bool isMediumTabletPortrait =
+        isTablet && isPortrait && media.size.height < 1200;
 
-    // Dynamic Spacing based on device
-    final double sectionGap = (isTablet ? 16.0 : 8.0) * portraitBoost;
-    final double panelVerticalPadding =
-      (isTablet ? 30.0 : 14.0) * portraitBoost;
+    // Use reduced portraitBoost for medium tablets to prevent overflow
+    final double portraitBoost = isTablet && isPortrait
+        ? (isMediumTabletPortrait
+              ? (media.size.height / 1000).clamp(1.0, 1.08)
+              : (media.size.height / 900).clamp(1.05, 1.25))
+        : 1.0;
+
+    // Dynamic Spacing based on device - reduce gaps for medium tablets
+    final double sectionGap = isMediumTabletPortrait
+        ? 10.0
+        : (isTablet ? 16.0 : 8.0) * portraitBoost;
+    final double panelVerticalPadding = isMediumTabletPortrait
+        ? 18.0
+        : (isTablet ? 30.0 : 14.0) * portraitBoost;
     final double panelHorizontalPadding = isTablet ? 24.0 : 12.0;
 
     String qty = stock == null
         ? "..."
         : ((stock.quantity % 1 == 0)
-            ? stock.quantity.toInt().toString()
-            : double.parse(stock.quantity.toStringAsFixed(2)).toString());
+              ? stock.quantity.toInt().toString()
+              : double.parse(stock.quantity.toStringAsFixed(2)).toString());
 
     String layby = stock == null
         ? "-"
         : ((stock.laybyQuantity % 1 == 0)
-            ? stock.laybyQuantity.toInt().toString()
-            : double.parse(
-                stock.laybyQuantity.toStringAsFixed(2),
-              ).toString());
+              ? stock.laybyQuantity.toInt().toString()
+              : double.parse(
+                  stock.laybyQuantity.toStringAsFixed(2),
+                ).toString());
 
     String soQty = stock == null
         ? "-"
         : ((stock.salesOrderQuantity % 1 == 0)
-            ? stock.salesOrderQuantity.toInt().toString()
-            : double.parse(
-                stock.salesOrderQuantity.toStringAsFixed(2),
-              ).toString());
+              ? stock.salesOrderQuantity.toInt().toString()
+              : double.parse(
+                  stock.salesOrderQuantity.toStringAsFixed(2),
+                ).toString());
     num total = stock == null
         ? 0
         : (stock.quantity + stock.laybyQuantity + stock.salesOrderQuantity);
@@ -382,19 +393,26 @@ class _ScannerScreenState extends State<ScannerScreen> {
         ? total.toInt().toString()
         : double.parse(total.toStringAsFixed(2)).toString();
 
+    // Reduce outer padding for medium tablets
+    final double outerVerticalPadding = isMediumTabletPortrait
+        ? 10.0
+        : (isTablet ? 20 : 8) * portraitBoost;
+
     return Padding(
       padding: EdgeInsets.only(
-          bottom: (isTablet ? 20 : 8) * portraitBoost,
-          left: horizontalPadding,
-          right: horizontalPadding,
-          top: (isTablet ? 20 : 8) * portraitBoost),
+        bottom: outerVerticalPadding,
+        left: horizontalPadding,
+        right: horizontalPadding,
+        top: outerVerticalPadding,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: EdgeInsets.symmetric(
-                vertical: panelVerticalPadding,
-                horizontal: panelHorizontalPadding),
+              vertical: panelVerticalPadding,
+              horizontal: panelHorizontalPadding,
+            ),
             decoration: BoxDecoration(
               color: kSecondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
@@ -416,7 +434,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       child: Text(
                         stock == null ? "Stock Barcode" : stock.barcode,
                         style: getSmartTitle(
-                          fontSize: isTablet ? 22 : 18, // Scale font up on tablet
+                          fontSize: isTablet
+                              ? 22
+                              : 18, // Scale font up on tablet
                           color: kThirdColor,
                         ),
                         maxLines: 1,
@@ -543,8 +563,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
           Container(
             margin: EdgeInsets.symmetric(
-                vertical: (isTablet ? 15 : 8) * portraitBoost),
-            height: (isTablet ? 50 : 36) * uiScale * portraitBoost,
+              vertical: isMediumTabletPortrait
+                  ? 8
+                  : (isTablet ? 15 : 8) * portraitBoost,
+            ),
+            height: isMediumTabletPortrait
+                ? 42 * uiScale
+                : (isTablet ? 50 : 36) * uiScale * portraitBoost,
             child: CustomTextField(
               focusNode: txtFieldFocusNode,
               submitFunction: (_) {
@@ -571,8 +596,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
           Container(
             padding: EdgeInsets.symmetric(
-                vertical: isTablet ? 14 : 8,
-                horizontal: isTablet ? 20 : 12),
+              vertical: isTablet ? 14 : 8,
+              horizontal: isTablet ? 20 : 12,
+            ),
             decoration: BoxDecoration(
               color: kSecondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
@@ -590,7 +616,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 Text(
                   "Counted Qty : ",
                   style: TextStyle(
-                      color: kGreyColor, fontSize: isTablet ? 16 : 14),
+                    color: kGreyColor,
+                    fontSize: isTablet ? 16 : 14,
+                  ),
                 ),
                 const SizedBox(width: 15),
                 Expanded(
@@ -623,10 +651,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
               ],
             ),
           ),
-          SizedBox(height: (isTablet ? 15 : 3) * portraitBoost),
+          SizedBox(
+            height: isMediumTabletPortrait
+                ? 8
+                : (isTablet ? 15 : 3) * portraitBoost,
+          ),
 
           SizedBox(
-            height: (isTablet ? 60 : 45) * uiScale * portraitBoost,
+            height: isMediumTabletPortrait
+                ? 56 * uiScale
+                : (isTablet ? 60 : 45) * uiScale * portraitBoost,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -715,7 +749,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 child: Text(
                   "Done",
                   style: TextStyle(
-                      fontSize: isTablet ? 18 : 16, color: kThirdColor),
+                    fontSize: isTablet ? 18 : 16,
+                    color: kThirdColor,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -776,7 +812,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
           children: [
             Container(
               padding: EdgeInsets.symmetric(
-                  horizontal: paddingSize, vertical: paddingSize),
+                horizontal: paddingSize,
+                vertical: paddingSize,
+              ),
               decoration: BoxDecoration(
                 color: kPrimaryColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
