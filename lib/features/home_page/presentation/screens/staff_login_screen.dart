@@ -99,6 +99,17 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isLandscape = media.orientation == Orientation.landscape;
+    final double cardMaxWidth = isTablet
+        ? (media.size.width * 0.58).clamp(420.0, 620.0)
+        : media.size.width;
+    final double logoHeight = isTablet ? 86 : 75;
+    final double topGap = isTablet ? (isLandscape ? 26 : 42) : 55;
+    final double inputHeight = isTablet ? 44 : 40;
+    final double buttonHeight = isTablet ? 42 : 38;
+
     return BlocListener<StaffAuthBloc, StaffAuthStates>(
       listener: (context, state) {
         if (state is StaffAuthenticated) {
@@ -134,136 +145,137 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 0),
                         width: double.infinity,
-                        // Slightly dynamic height for the logo container
-                        height: 75,
+                        height: logoHeight,
                         child: Image.asset(
                           "assets/images/trademark.png",
                           fit: BoxFit.contain,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 55),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                          decoration: BoxDecoration(
-                            color: kSecondaryColor.withOpacity(0.14),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: kSecondaryColor.withOpacity(0.28),
+                    SizedBox(height: topGap),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: cardMaxWidth),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                            decoration: BoxDecoration(
+                              color: kSecondaryColor.withOpacity(0.14),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: kSecondaryColor.withOpacity(0.28),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: kThirdColor.withOpacity(0.12),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: kThirdColor.withOpacity(0.12),
-                                blurRadius: 16,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Staff Sign In",
-                                style: getSmartTitle(
-                                  color: kSecondaryColor,
-                                  fontSize: 21,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "Authenticate to continue to stock operations",
-                                style: TextStyle(
-                                  color: kSecondaryColor.withOpacity(0.8),
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: kSecondaryColor.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: kSecondaryColor.withOpacity(0.25),
-                                  ),
-                                ),
-                                child: Text(
-                                  (_shopfrontName.isEmpty
-                                          ? AppGlobals.instance.shopfront
-                                          : _shopfrontName) ??
-                                      "Shopfront",
-                                  style: const TextStyle(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Staff Sign In",
+                                  style: getSmartTitle(
                                     color: kSecondaryColor,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 21,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                height: 40,
-                                child: CustomTextField(
-                                  controller: _staffNoController,
-                                  keyboardType: TextInputType.number,
-                                  hintText: "Staff ID",
-                                  leadingIcon: Icons.badge_outlined,
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Authenticate to continue to stock operations",
+                                  style: TextStyle(
+                                    color: kSecondaryColor.withOpacity(0.8),
+                                    fontSize: 12,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              SizedBox(
-                                height: 40,
-                                child: CustomTextField(
-                                  controller: _passwordController,
-                                  hintText: "Password",
-                                  leadingIcon: Icons.lock_outline,
-                                  obscureText: true,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                height: 38,
-                                child:
-                                    BlocBuilder<StaffAuthBloc, StaffAuthStates>(
-                                      builder: (context, state) {
-                                        final bool loading =
-                                            state is StaffAuthenticating;
-                                        return ElevatedButton(
-                                          onPressed: loading ? null : _onSignIn,
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: kPrimaryColor,
-                                            foregroundColor: kSecondaryColor,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(9),
-                                            ),
-                                          ),
-                                          child: loading
-                                              ? const CupertinoActivityIndicator(
-                                                  color: kSecondaryColor,
-                                                )
-                                              : const Text(
-                                                  "Sign In",
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                        );
-                                      },
+                                const SizedBox(height: 10),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: kSecondaryColor.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: kSecondaryColor.withOpacity(0.25),
                                     ),
-                              ),
-                            ],
+                                  ),
+                                  child: Text(
+                                    (_shopfrontName.isEmpty
+                                            ? AppGlobals.instance.shopfront
+                                            : _shopfrontName) ??
+                                        "Shopfront",
+                                    style: const TextStyle(
+                                      color: kSecondaryColor,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  height: inputHeight,
+                                  child: CustomTextField(
+                                    controller: _staffNoController,
+                                    keyboardType: TextInputType.number,
+                                    hintText: "Staff ID",
+                                    leadingIcon: Icons.badge_outlined,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  height: inputHeight,
+                                  child: CustomTextField(
+                                    controller: _passwordController,
+                                    hintText: "Password",
+                                    leadingIcon: Icons.lock_outline,
+                                    obscureText: true,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: buttonHeight,
+                                  child: BlocBuilder<StaffAuthBloc, StaffAuthStates>(
+                                    builder: (context, state) {
+                                      final bool loading =
+                                          state is StaffAuthenticating;
+                                      return ElevatedButton(
+                                        onPressed: loading ? null : _onSignIn,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: kPrimaryColor,
+                                          foregroundColor: kSecondaryColor,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(9),
+                                          ),
+                                        ),
+                                        child: loading
+                                            ? const CupertinoActivityIndicator(
+                                                color: kSecondaryColor,
+                                              )
+                                            : const Text(
+                                                "Sign In",
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

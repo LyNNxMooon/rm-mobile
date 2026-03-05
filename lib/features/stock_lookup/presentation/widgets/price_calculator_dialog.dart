@@ -184,6 +184,10 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final double dialogWidth = isTablet
+        ? (media.size.width * 0.56).clamp(360.0, 520.0)
+        : (media.size.width * 0.9).clamp(280.0, 400.0);
 
     return Dialog(
       insetPadding: dialogInsetPadding(context),
@@ -198,7 +202,7 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: SizedBox(
-              width: 340,
+              width: dialogWidth,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

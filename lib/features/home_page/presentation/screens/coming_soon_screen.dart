@@ -12,6 +12,14 @@ class ComingSoonScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final double outerCircle = isTablet ? 210 : 160;
+    final double innerCircle = isTablet ? 160 : 120;
+    final double iconSize = isTablet ? 78 : 60;
+    final double buttonHeight = isTablet ? 54 : 50;
+    final double sidePadding = isTablet ? 60 : 30;
+
     return Scaffold(
       backgroundColor: kBgColor,
       appBar: AppBar(
@@ -29,7 +37,7 @@ class ComingSoonScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30.0),
+        padding: EdgeInsets.symmetric(horizontal: sidePadding),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -38,24 +46,24 @@ class ComingSoonScreen extends StatelessWidget {
               alignment: Alignment.center,
               children: [
                 Container(
-                  width: 160,
-                  height: 160,
+                  width: outerCircle,
+                  height: outerCircle,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: kPrimaryColor.withOpacity(0.1),
                   ),
                 ),
                 Container(
-                  width: 120,
-                  height: 120,
+                  width: innerCircle,
+                  height: innerCircle,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: kPrimaryColor.withOpacity(0.3),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Icon(
                       Icons.rocket_launch_rounded,
-                      size: 60,
+                      size: iconSize,
                       color: kPrimaryColor,
                     ),
                   ),
@@ -85,7 +93,7 @@ class ComingSoonScreen extends StatelessWidget {
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: buttonHeight,
               child: ElevatedButton(
                 onPressed: () {
                   AlertInfo.show(
@@ -117,7 +125,7 @@ class ComingSoonScreen extends StatelessWidget {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: buttonHeight,
               child: TextButton(
                 onPressed: () => context.navigateBack(),
                 style: TextButton.styleFrom(

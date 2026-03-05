@@ -24,10 +24,22 @@ class _StockLookupScannerState extends State<StockLookupScanner> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final double scannerHeight = isTablet
+        ? (media.size.height * 0.24).clamp(170.0, 280.0)
+        : (media.size.height * 0.2).clamp(130.0, 210.0);
+    final double guideHeight = isTablet
+        ? (scannerHeight * 0.62).clamp(120.0, 170.0)
+        : (scannerHeight * 0.58).clamp(110.0, 150.0);
+    final double guideWidth = isTablet
+        ? (media.size.width * 0.52).clamp(260.0, 520.0)
+        : (media.size.width * 0.6).clamp(180.0, 340.0);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.2,
+        height: scannerHeight,
         child: Container(
           color: kThirdColor,
           child: Stack(
@@ -39,8 +51,8 @@ class _StockLookupScannerState extends State<StockLookupScanner> {
               ),
               Center(
                 child: Container(
-                  width: MediaQuery.of(context).size.width * 0.6,
-                  height: 130,
+                  width: guideWidth,
+                  height: guideHeight,
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: kPrimaryColor.withOpacity(0.7),

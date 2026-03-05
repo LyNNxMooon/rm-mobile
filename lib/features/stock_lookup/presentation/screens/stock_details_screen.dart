@@ -140,6 +140,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   }
 
   Future<void> _previewAndUpload(String path) async {
+    final media = MediaQuery.of(context);
+    final double previewHeight = (media.size.height * 0.42).clamp(190.0, 340.0);
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => Dialog(
@@ -163,7 +165,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
               const SizedBox(height: 15),
 
               Container(
-                height: 300,
+                height: previewHeight,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),

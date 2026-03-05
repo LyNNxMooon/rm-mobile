@@ -164,13 +164,30 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    const double horizontalPadding = 22;
+    final double mobileContentWidth = (media.size.width - (horizontalPadding * 2))
+        .clamp(220.0, media.size.width);
+    final double cardMaxWidth = isTablet
+        ? (media.size.width * 0.68).clamp(440.0, 760.0)
+        : media.size.width;
+    final double logoWidth = isTablet
+        ? (media.size.width * 0.46).clamp(280.0, 420.0)
+        : mobileContentWidth;
+    final double logoHeight = (logoWidth * 0.22).clamp(56.0, 88.0);
+    final double logoCardGap = isTablet ? 28 : 36;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: kGColor),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: 16,
+              ),
               child: Column(
                 children: [
                   Center(
@@ -179,83 +196,88 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
                       child: SlideTransition(
                         position: _logoSlide,
                         child: SizedBox(
-                          width: 380,
-                          height: 80,
+                          width: logoWidth,
+                          height: logoHeight,
                           child: Image.asset(
                             "assets/images/trademark.png",
-                            fit: BoxFit.fill,
+                            fit: BoxFit.contain,
                           ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 36),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
-                        decoration: BoxDecoration(
-                          color: kSecondaryColor.withOpacity(0.14),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: kSecondaryColor.withOpacity(0.30),
-                            width: 1,
+                  SizedBox(height: logoCardGap),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: cardMaxWidth),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+                          decoration: BoxDecoration(
+                            color: kSecondaryColor.withOpacity(0.14),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: kSecondaryColor.withOpacity(0.30),
+                              width: 1,
+                            ),
                           ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            FadeTransition(
-                              opacity: _titleFade,
-                              child: SlideTransition(
-                                position: _titleSlide,
-                                child: Text(
-                                  "Welcome!",
-                                  style: getSmartTitle(
-                                    color: kSecondaryColor,
-                                    fontSize: 26,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              FadeTransition(
+                                opacity: _titleFade,
+                                child: SlideTransition(
+                                  position: _titleSlide,
+                                  child: Text(
+                                    "Welcome!",
+                                    style: getSmartTitle(
+                                      color: kSecondaryColor,
+                                      fontSize: 26,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 20),
-                            FadeTransition(
-                              opacity: _bodyFade,
-                              child: SlideTransition(
-                                position: _bodySlide,
-                                child: Text(
-                                  kWelcomeContent,
-                                  style: TextStyle(
-                                    color: kSecondaryColor.withOpacity(0.92),
-                                    height: 1.45,
-                                    fontSize: 13,
+                              const SizedBox(height: 20),
+                              FadeTransition(
+                                opacity: _bodyFade,
+                                child: SlideTransition(
+                                  position: _bodySlide,
+                                  child: Text(
+                                    kWelcomeContent,
+                                    style: TextStyle(
+                                      color: kSecondaryColor.withOpacity(0.92),
+                                      height: 1.45,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 42,
-                              child: ElevatedButton(
-                                onPressed: widget.onContinue,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: kPrimaryColor,
-                                  foregroundColor: kSecondaryColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 42,
+                                child: ElevatedButton(
+                                  onPressed: widget.onContinue,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: kPrimaryColor,
+                                    foregroundColor: kSecondaryColor,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "Continue",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
-                                child: const Text(
-                                  "Continue",
-                                  style: TextStyle(fontWeight: FontWeight.w700),
-                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),

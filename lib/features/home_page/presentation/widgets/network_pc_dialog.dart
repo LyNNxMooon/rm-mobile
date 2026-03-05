@@ -70,6 +70,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
   void _showManualPortDialog(BuildContext context) {
     if (_selectedPc == null) return;
+    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.42)
+        .clamp(240.0, 340.0);
 
     showDialog(
       context: context,
@@ -79,7 +81,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
         elevation: 10,
         backgroundColor: kBgColor,
         child: Container(
-          constraints: const BoxConstraints(maxHeight: 260),
+          constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -180,6 +182,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
   void _showPairCodeDialog(BuildContext context, String pairCode) {
     _connectCodeController.clear();
+    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.52)
+        .clamp(300.0, 500.0);
 
     showDialog(
       context: context,
@@ -189,7 +193,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
         elevation: 10,
         backgroundColor: kBgColor,
         child: Container(
-          constraints: const BoxConstraints(maxHeight: 340),
+          constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -342,7 +346,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
   @override
   Widget build(BuildContext context) {
     // Calculate a safe max height (e.g., 70% of screen)
-    final double safeMaxHeight = MediaQuery.of(context).size.height * 0.7;
+    final double safeMaxHeight = (MediaQuery.of(context).size.height * 0.72)
+        .clamp(380.0, 760.0);
     //final double safeMaxWidth = MediaQuery.of(context).size.width * 0.7;
 
     return MultiBlocListener(

@@ -271,12 +271,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget logo() {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final double horizontalPad = isTablet ? 60 : 25;
+    final double logoHeight = isTablet ? 82 : 75;
     return Center(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 25), //40 - with new logo
+        padding: EdgeInsets.symmetric(horizontal: horizontalPad),
         width: double.infinity,
-        // Slightly dynamic height for the logo container
-        height: 75,
+        height: logoHeight,
         child: Image.asset("assets/images/trademark.png", fit: BoxFit.contain),
       ),
     );

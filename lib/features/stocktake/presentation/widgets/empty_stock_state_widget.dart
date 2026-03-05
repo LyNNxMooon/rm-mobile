@@ -13,6 +13,13 @@ class EmptyStockState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final double outerSize = isTablet ? 190 : 160;
+    final double innerSize = isTablet ? 155 : 130;
+    final double iconSize = isTablet ? 92 : 80;
+    final double bottomGap = isTablet ? 30 : 50;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -22,8 +29,8 @@ class EmptyStockState extends StatelessWidget {
             children: [
               // Outer Decorative Ring
               Container(
-                width: 160,
-                height: 160,
+                width: outerSize,
+                height: outerSize,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
@@ -35,8 +42,8 @@ class EmptyStockState extends StatelessWidget {
 
               // Inner Filled Circle
               Container(
-                width: 130,
-                height: 130,
+                width: innerSize,
+                height: innerSize,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: kPrimaryColor.withOpacity(0.1),
@@ -44,8 +51,8 @@ class EmptyStockState extends StatelessWidget {
                 child: Center(
                   // Using an "Open Box" icon usually signifies "Empty" better than a rocket
                   child: SizedBox(
-                    width: 80,
-                    height: 80,
+                    width: iconSize,
+                    height: iconSize,
                     child: Image.asset(
                       "assets/images/box.png",
                       fit: BoxFit.fill,
@@ -77,8 +84,7 @@ class EmptyStockState extends StatelessWidget {
             ),
           ],
 
-
-          const SizedBox(height: 86,)
+          SizedBox(height: bottomGap),
         ],
       ),
     );

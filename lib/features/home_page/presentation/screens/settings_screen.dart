@@ -117,6 +117,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showManualPortDialog(BuildContext context) {
+    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.42)
+        .clamp(240.0, 340.0);
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -125,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         elevation: 10,
         backgroundColor: kBgColor,
         child: Container(
-          constraints: const BoxConstraints(maxHeight: 260),
+          constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -230,6 +232,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showManualConnectionDialog(BuildContext context) {
     _manualIpController.text = "";
     _manualCodeController.text = "";
+    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.50)
+        .clamp(300.0, 460.0);
 
     showDialog(
       context: context,
@@ -239,7 +243,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         elevation: 10,
         backgroundColor: kBgColor,
         child: Container(
-          constraints: const BoxConstraints(maxHeight: 320),
+          constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

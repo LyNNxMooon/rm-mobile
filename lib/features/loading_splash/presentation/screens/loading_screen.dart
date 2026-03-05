@@ -23,6 +23,12 @@ class LoadingScreen extends StatefulWidget {
 class _LoadingScreenState extends State<LoadingScreen> {
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final double logoWidth = isTablet ? 210 : 160;
+    final double logoHeight = isTablet ? 150 : 120;
+    final double loadingWidth = isTablet ? 280 : 220;
+
     return BlocListener<NetworkSavedPathValidationBloc, LoadingSplashStates>(
       listener: (context, state) {
         if (state is SavedPathFetchingCompleted) {
@@ -52,8 +58,8 @@ class _LoadingScreenState extends State<LoadingScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  width: 160,
-                  height: 120,
+                  width: logoWidth,
+                  height: logoHeight,
                   child: Image.asset(appLogo, fit: BoxFit.fill),
                 ),
                 const SizedBox(height: 20),
@@ -73,7 +79,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
                 const SizedBox(height: 25),
                 SizedBox(
-                  width: 220,
+                  width: loadingWidth,
                   child: ModernLoadingBar(),
                 ),
                 const SizedBox(height: 10),

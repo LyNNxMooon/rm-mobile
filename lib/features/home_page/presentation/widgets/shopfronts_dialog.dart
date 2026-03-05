@@ -58,6 +58,9 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.78)
+        .clamp(420.0, 780.0);
+
     return MultiBlocListener(
       listeners: [
         BlocListener<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
@@ -132,7 +135,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
         elevation: 10,
         backgroundColor: kBgColor,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 560),
+          constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
