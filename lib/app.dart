@@ -20,6 +20,34 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  double _tabletTextScaleFor(BuildContext context) {
+    final Size size = MediaQuery.of(context).size;
+    final double shortestSide = size.shortestSide;
+    final double longestSide = size.longestSide;
+
+    // Keep mobile unchanged.
+    if (shortestSide < 600) return 1.0;
+
+    // Tablet/iPad adaptive scale for portrait + landscape.
+    // Use stronger scaling for large tablets/iPads.
+    if (shortestSide >= 900 || longestSide >= 1366) {
+      return 1.60;
+    }
+    if (shortestSide >= 820 || longestSide >= 1200) {
+      return 1.50;
+    }
+    if (shortestSide >= 720 || longestSide >= 1100) {
+      return 1.42;
+    }
+    return 1.34;
+  }
+
+  double _tabletUiScaleFor(double textScale) {
+    if (textScale <= 1.0) return 1.0;
+    final double scaled = 1.0 + ((textScale - 1.0) * 0.65);
+    return scaled.clamp(1.0, 1.42);
+  }
+
   @override
   initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -141,6 +169,76 @@ class _MyAppState extends State<MyApp> {
         title: 'RM-Mobile',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(fontFamily: "SourceSans3"),
+        builder: (context, child) {
+          final media = MediaQuery.of(context);
+          final double textScale = _tabletTextScaleFor(context);
+          final double uiScale = _tabletUiScaleFor(textScale);
+          final ThemeData baseTheme = Theme.of(context);
+          final double densityAdjust = ((uiScale - 1.0) * 3.2).clamp(0.0, 1.35);
+          final ThemeData scaledTheme = baseTheme.copyWith(
+            visualDensity: VisualDensity(
+              horizontal: densityAdjust,
+              vertical: densityAdjust,
+            ),
+            listTileTheme: baseTheme.listTileTheme.copyWith(
+              minVerticalPadding: (4 * uiScale).clamp(4.0, 10.0),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: (16 * uiScale).clamp(16.0, 26.0),
+                vertical: (2 * uiScale).clamp(2.0, 8.0),
+              ),
+            ),
+            inputDecorationTheme: baseTheme.inputDecorationTheme.copyWith(
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: (14 * uiScale).clamp(14.0, 22.0),
+                vertical: (13 * uiScale).clamp(13.0, 20.0),
+              ),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: (18 * uiScale).clamp(18.0, 30.0),
+                  vertical: (12 * uiScale).clamp(12.0, 20.0),
+                ),
+                minimumSize: Size(
+                  (84 * uiScale).clamp(84.0, 130.0),
+                  (42 * uiScale).clamp(42.0, 60.0),
+                ),
+              ),
+            ),
+            outlinedButtonTheme: OutlinedButtonThemeData(
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: (18 * uiScale).clamp(18.0, 30.0),
+                  vertical: (12 * uiScale).clamp(12.0, 20.0),
+                ),
+                minimumSize: Size(
+                  (84 * uiScale).clamp(84.0, 130.0),
+                  (42 * uiScale).clamp(42.0, 60.0),
+                ),
+              ),
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: (16 * uiScale).clamp(16.0, 28.0),
+                  vertical: (10 * uiScale).clamp(10.0, 18.0),
+                ),
+                minimumSize: Size(
+                  (74 * uiScale).clamp(74.0, 120.0),
+                  (38 * uiScale).clamp(38.0, 56.0),
+                ),
+              ),
+            ),
+          );
+
+          return MediaQuery(
+            data: media.copyWith(textScaler: TextScaler.linear(textScale)),
+            child: Theme(
+              data: scaledTheme,
+              child: child ?? const SizedBox.shrink(),
+            ),
+          );
+        },
         home: const OnboardingGateScreen(),
       ),
     );

@@ -34,6 +34,15 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double iconBox = (isTablet ? 56 : 45) * uiScale;
+    final double actionHeight = (isTablet ? 50 : 45) * uiScale;
+    final double actionWidth = (isTablet ? 46 : 40) * uiScale;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -44,16 +53,13 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
               const SizedBox(width: 15),
               SizedBox(
                 child: Container(
-                  width: 45,
-                  height: 45,
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(25)),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(25)),
+                  height: iconBox,
+                  width: iconBox,
+                  decoration: const BoxDecoration(shape: BoxShape.circle),
+                  child: ClipOval(
                     child: Image.asset(
                       "assets/images/appicon.png",
-                      fit: BoxFit.fill,
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
@@ -95,8 +101,8 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                   context.navigateBack();
                 },
                 child: Container(
-                  height: 45,
-                  width: 40,
+                  height: actionHeight,
+                  width: actionWidth,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -120,8 +126,8 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                     color: kSecondaryColor,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      height: 45,
-                      width: 40,
+                      height: actionHeight,
+                      width: actionWidth,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[300]!, width: 1),
@@ -147,8 +153,8 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        height: 45,
-                        width: 40,
+                        height: actionHeight,
+                        width: actionWidth,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(

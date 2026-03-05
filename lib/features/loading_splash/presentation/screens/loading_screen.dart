@@ -25,8 +25,8 @@ class _LoadingScreenState extends State<LoadingScreen> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
-    final double logoWidth = isTablet ? 210 : 160;
-    final double logoHeight = isTablet ? 150 : 120;
+    final double logoWidth = isTablet ? 260 : 160;
+    final double logoHeight = isTablet ? 188 : 120;
     final double loadingWidth = isTablet ? 280 : 220;
 
     return BlocListener<NetworkSavedPathValidationBloc, LoadingSplashStates>(

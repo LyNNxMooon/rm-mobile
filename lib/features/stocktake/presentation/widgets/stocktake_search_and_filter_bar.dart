@@ -16,6 +16,13 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double actionSize = (isTablet ? 48 : 42) * uiScale;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
       child: Row(
@@ -74,8 +81,8 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
               },
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                height: 42,
-                width: 42,
+                height: actionSize,
+                width: actionSize,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey[300]!, width: 1),

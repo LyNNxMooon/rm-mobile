@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
-import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
 class StocktakeSuccessDialog extends StatelessWidget {
@@ -76,14 +75,26 @@ class StocktakeSuccessDialog extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
                   foregroundColor: kSecondaryColor,
+                  minimumSize: const Size(double.infinity, 48),
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
+                child: const Text(
                   "Okay",
-                  style: getSmartTitle(color: kSecondaryColor, fontSize: 18),
+                  textScaler: TextScaler.noScaling,
+                  style: TextStyle(
+                    color: kSecondaryColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),

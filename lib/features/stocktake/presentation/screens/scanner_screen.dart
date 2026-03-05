@@ -152,6 +152,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isLandscape = media.orientation == Orientation.landscape;
+    
+    // Calculate adaptive padding similar to StockDetailsScreen
+    final double cardHorizontalPadding = isTablet
+        ? (media.size.width * (isLandscape ? 0.045 : 0.04)).clamp(24.0, 56.0)
+        : 15.0;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: kBgColor,
@@ -181,11 +190,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
                             ),
 
                             Padding(
-                              padding: const EdgeInsets.only(
-                                left: 15.0,
-                                right: 15,
-                                bottom: 10.0,
-                                top: 5,
+                              padding: EdgeInsets.only(
+                                left: cardHorizontalPadding,
+                                right: cardHorizontalPadding,
+                                bottom: isTablet ? 15.0 : 10.0,
+                                top: isTablet ? 15.0 : 5.0,
                               ),
                               child: ScanModeSelector(
                                 onModeChanged: (newMode) {
@@ -211,6 +220,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                               controller: scannerController,
                               isScan: isScan,
                               isManualCount: isManualCount,
+                              horizontalPadding: cardHorizontalPadding,
                               onScan: (String barcode) {
                                 context.read<ScannerBloc>().add(
                                   FetchStockDetails(barcode: barcode),
@@ -232,9 +242,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                   if (state is StockLoaded) {
                                     return _buildProductDetailsPanel(
                                       state.stock,
+                                      cardHorizontalPadding, // pass to panel
                                     );
                                   } else {
-                                    return _buildProductDetailsPanel(null);
+                                    return _buildProductDetailsPanel(
+                                      null, 
+                                      cardHorizontalPadding, // pass to panel
+                                    );
                                   }
                                 },
                                 listener: (context, state) async {
@@ -261,7 +275,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                         extentOffset: qtyController.text.length,
                                       );
                                     } else {
-                                      // user cancelled - reset state (optional)
                                       context.read<ScannerBloc>().add(
                                         ResetStocktakeEvent(ScannerInitial()),
                                       );
@@ -272,15 +285,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
                                     AlertInfo.show(
                                       context: context,
-
                                       text: 'Not Found!',
-
                                       typeInfo: TypeInfo.error,
-
                                       backgroundColor: kSecondaryColor,
-
                                       iconColor: kErrorColor,
-
                                       textColor: kErrorColor,
                                       position: MessagePosition.top,
                                       padding: 70,
@@ -288,24 +296,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                   }
                                   if (state is StockLoaded) {
                                     countingStock = state.stock;
-                                    // If Auto-Count is ON, we trigger the save immediately after load
                                     if (!isManualCount && isScan) {
                                       final barcode = state.stock.barcode;
 
-                                      // Same item → increment
                                       if (_lastAutoBarcode == barcode) {
                                         ++_autoQty;
-                                        //qtyController.text = _autoQty.toString();
                                       } else {
-                                        // New item → reset
                                         _lastAutoBarcode = barcode;
                                         _autoQty = 1;
                                       }
 
                                       qtyController.text = _autoQty.toString();
-
-                                      // _submitCount();
-
                                       _submitAutoCount();
                                     }
                                   }
@@ -330,28 +331,46 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
-  Widget _buildProductDetailsPanel(StockVO? stock) {
+  Widget _buildProductDetailsPanel(StockVO? stock, double horizontalPadding) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isPortrait = media.orientation == Orientation.portrait;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+
+    final double portraitBoost = isTablet && isPortrait
+      ? (media.size.height / 900).clamp(1.05, 1.25)
+      : 1.0;
+
+    // Dynamic Spacing based on device
+    final double sectionGap = (isTablet ? 16.0 : 8.0) * portraitBoost;
+    final double panelVerticalPadding =
+      (isTablet ? 30.0 : 14.0) * portraitBoost;
+    final double panelHorizontalPadding = isTablet ? 24.0 : 12.0;
+
     String qty = stock == null
         ? "..."
         : ((stock.quantity % 1 == 0)
-              ? stock.quantity.toInt().toString()
-              : double.parse(stock.quantity.toStringAsFixed(2)).toString());
+            ? stock.quantity.toInt().toString()
+            : double.parse(stock.quantity.toStringAsFixed(2)).toString());
 
     String layby = stock == null
         ? "-"
         : ((stock.laybyQuantity % 1 == 0)
-              ? stock.laybyQuantity.toInt().toString()
-              : double.parse(
-                  stock.laybyQuantity.toStringAsFixed(2),
-                ).toString());
+            ? stock.laybyQuantity.toInt().toString()
+            : double.parse(
+                stock.laybyQuantity.toStringAsFixed(2),
+              ).toString());
 
     String soQty = stock == null
         ? "-"
         : ((stock.salesOrderQuantity % 1 == 0)
-              ? stock.salesOrderQuantity.toInt().toString()
-              : double.parse(
-                  stock.salesOrderQuantity.toStringAsFixed(2),
-                ).toString());
+            ? stock.salesOrderQuantity.toInt().toString()
+            : double.parse(
+                stock.salesOrderQuantity.toStringAsFixed(2),
+              ).toString());
     num total = stock == null
         ? 0
         : (stock.quantity + stock.laybyQuantity + stock.salesOrderQuantity);
@@ -364,16 +383,21 @@ class _ScannerScreenState extends State<ScannerScreen> {
         : double.parse(total.toStringAsFixed(2)).toString();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8, left: 15, right: 15, top: 8),
+      padding: EdgeInsets.only(
+          bottom: (isTablet ? 20 : 8) * portraitBoost,
+          left: horizontalPadding,
+          right: horizontalPadding,
+          top: (isTablet ? 20 : 8) * portraitBoost),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+            padding: EdgeInsets.symmetric(
+                vertical: panelVerticalPadding,
+                horizontal: panelHorizontalPadding),
             decoration: BoxDecoration(
               color: kSecondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
-
               boxShadow: [
                 BoxShadow(
                   color: kThirdColor.withOpacity(0.05),
@@ -388,38 +412,22 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Container(
-                    //   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-                    //   decoration: BoxDecoration(
-                    //     color: kPrimaryColor.withOpacity(0.2),
-                    //     borderRadius: BorderRadius.circular(8),
-                    //   ),
-                    //   child:   SizedBox(
-                    //     width: 20,
-                    //     height: 20,
-                    //     child: Image.asset(
-                    //       "assets/images/bc_blue.png",
-                    //       fit: BoxFit.fill,
-                    //     ),
-                    //   ),
-                    // ),
-                    // const SizedBox(width: 5,),
                     Expanded(
                       child: Text(
                         stock == null ? "Stock Barcode" : stock.barcode,
                         style: getSmartTitle(
-                          fontSize: 18,
+                          fontSize: isTablet ? 22 : 18, // Scale font up on tablet
                           color: kThirdColor,
-                        ), // Larger Font
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isTablet ? 12 : 8,
+                        vertical: isTablet ? 8 : 4,
                       ),
                       decoration: BoxDecoration(
                         color: kPrimaryColor.withOpacity(0.1),
@@ -428,8 +436,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       child: Row(
                         children: [
                           SizedBox(
-                            width: 25,
-                            height: 25,
+                            width: isTablet ? 30 : 25,
+                            height: isTablet ? 30 : 25,
                             child: Image.asset(
                               "assets/images/qty_blue.png",
                               fit: BoxFit.fill,
@@ -438,8 +446,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
                           const SizedBox(width: 5),
                           Text(
                             "Qty On-Hand: $qty",
-                            style: const TextStyle(
-                              fontSize: 14,
+                            style: TextStyle(
+                              fontSize: isTablet ? 16 : 14,
                               color: kPrimaryColor,
                               fontWeight: FontWeight.bold,
                             ),
@@ -449,7 +457,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: isTablet ? 20 : 10),
 
                 _stockDetailsListTile(
                   image: "assets/images/desc_blue.png",
@@ -460,7 +468,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       ? "RM - Stock Description"
                       : stock.description,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: sectionGap),
                 _stockDetailsListTile(
                   image: "assets/images/dept_blue.png",
                   color: kPrimaryColor,
@@ -468,7 +476,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   icon: Icons.description,
                   value: stock == null ? "-" : stock.deptName ?? "-",
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: sectionGap),
                 _stockDetailsListTile(
                   image: "assets/images/cat_blue.png",
                   color: Colors.orangeAccent,
@@ -479,7 +487,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       : "${stock.category1} / ${stock.category2} / ${stock.category3}",
                 ),
 
-                const SizedBox(height: 8),
+                SizedBox(height: sectionGap),
                 _stockDetailsListTile(
                   image: "assets/images/cus1_blue.png",
                   color: Colors.blue,
@@ -487,7 +495,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   icon: Icons.format_paint,
                   value: stock == null ? "-" : stock.custom1 ?? "-",
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: sectionGap),
                 _stockDetailsListTile(
                   image: "assets/images/cus2_blue.png",
                   color: Colors.deepOrange,
@@ -495,7 +503,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   icon: Icons.settings,
                   value: stock == null ? "-" : stock.custom2 ?? "-",
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: sectionGap),
                 _stockDetailsListTile(
                   image: "assets/images/layby_blue.png",
                   color: Colors.purple,
@@ -503,7 +511,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   icon: Icons.numbers,
                   value: layby,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: sectionGap),
                 _stockDetailsListTile(
                   image: "assets/images/so_blue.png",
                   color: Colors.yellow,
@@ -512,7 +520,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   value: soQty,
                 ),
 
-                const SizedBox(height: 8),
+                SizedBox(height: sectionGap),
                 _stockDetailsListTile(
                   image: "assets/images/total_blue.png",
                   color: Colors.lightBlue,
@@ -521,7 +529,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   value: totalString,
                   isBold: true,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: sectionGap),
                 _stockDetailsListTile(
                   image: "assets/images/so_blue.png",
                   color: Colors.yellow,
@@ -534,8 +542,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
 
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            height: 36,
+            margin: EdgeInsets.symmetric(
+                vertical: (isTablet ? 15 : 8) * portraitBoost),
+            height: (isTablet ? 50 : 36) * uiScale * portraitBoost,
             child: CustomTextField(
               focusNode: txtFieldFocusNode,
               submitFunction: (_) {
@@ -561,11 +570,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
 
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            padding: EdgeInsets.symmetric(
+                vertical: isTablet ? 14 : 8,
+                horizontal: isTablet ? 20 : 12),
             decoration: BoxDecoration(
               color: kSecondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
-
               boxShadow: [
                 BoxShadow(
                   color: kThirdColor.withOpacity(0.05),
@@ -577,14 +587,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
             child: Row(
               children: [
-                const Text(
+                Text(
                   "Counted Qty : ",
-                  style: TextStyle(color: kGreyColor, fontSize: 14),
+                  style: TextStyle(
+                      color: kGreyColor, fontSize: isTablet ? 16 : 14),
                 ),
                 const SizedBox(width: 15),
                 Expanded(
                   child: SizedBox(
-                    height: 33,
+                    height: (isTablet ? 45 : 33) * uiScale * portraitBoost,
                     width: 100,
                     child: CustomTextField(
                       submitFunction: (value) {
@@ -612,52 +623,52 @@ class _ScannerScreenState extends State<ScannerScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 3),
+          SizedBox(height: (isTablet ? 15 : 3) * portraitBoost),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: CustomStocktakeBtn(
-                  function: () {
-                    // context.read<FetchingStocktakeListBloc>().add(
-                    //   FetchStocktakeListEvent(),
-                    // );
-                    context.navigateToNext(const StockTakeListScreen());
-                  },
-                  icon: Icons.list,
-                  bgColor: kPrimaryColor,
-                  name: "LIST",
+          SizedBox(
+            height: (isTablet ? 60 : 45) * uiScale * portraitBoost,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: CustomStocktakeBtn(
+                    function: () {
+                      context.navigateToNext(const StockTakeListScreen());
+                    },
+                    icon: Icons.list,
+                    bgColor: kPrimaryColor,
+                    name: "LIST",
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
+                SizedBox(width: isTablet ? 20 : 12),
 
-              Expanded(
-                child: CustomStocktakeBtn(
-                  function: () {
-                    qtyController.clear();
-                    context.read<ScannerBloc>().add(
-                      ResetStocktakeEvent(ScannerInitial()),
-                    );
+                Expanded(
+                  child: CustomStocktakeBtn(
+                    function: () {
+                      qtyController.clear();
+                      context.read<ScannerBloc>().add(
+                        ResetStocktakeEvent(ScannerInitial()),
+                      );
 
-                    setState(() {
-                      isScan = !isScan;
-                      _bcController.text = "";
-                      countingStock = null;
+                      setState(() {
+                        isScan = !isScan;
+                        _bcController.text = "";
+                        countingStock = null;
 
-                      _lastAutoBarcode = null;
-                      _autoQty = 0;
+                        _lastAutoBarcode = null;
+                        _autoQty = 0;
 
-                      txtFieldFocusNode.unfocus();
-                      qtyFocusNode.unfocus();
-                    });
-                  },
-                  icon: Icons.qr_code_scanner,
-                  bgColor: isScan ? Colors.redAccent : Colors.lightGreen,
-                  name: isScan ? "STOP" : "SCAN",
+                        txtFieldFocusNode.unfocus();
+                        qtyFocusNode.unfocus();
+                      });
+                    },
+                    icon: Icons.qr_code_scanner,
+                    bgColor: isScan ? Colors.redAccent : Colors.lightGreen,
+                    name: isScan ? "STOP" : "SCAN",
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -665,6 +676,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   Widget _iosDoneBar() {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+
     if (Theme.of(context).platform != TargetPlatform.iOS) {
       return const SizedBox();
     }
@@ -675,7 +692,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         if (!qtyFocusNode.hasFocus) return const SizedBox();
 
         return Container(
-          height: 44,
+          height: (isTablet ? 48 : 44) * uiScale,
           decoration: BoxDecoration(
             color: Colors.grey.shade200,
             border: const Border(top: BorderSide(color: Colors.black12)),
@@ -695,9 +712,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     );
                   }
                 },
-                child: const Text(
+                child: Text(
                   "Done",
-                  style: TextStyle(fontSize: 16, color: kThirdColor),
+                  style: TextStyle(
+                      fontSize: isTablet ? 18 : 16, color: kThirdColor),
                 ),
               ),
               const SizedBox(width: 8),
@@ -714,7 +732,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
         if (state is StocktakeError) {
           showTopSnackBar(
             Overlay.of(context),
-
             CustomSnackBar.error(message: state.message),
           );
         }
@@ -723,15 +740,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
           if (isManualCount) {
             AlertInfo.show(
               context: context,
-
               text: 'Successfully Counted!',
-
               typeInfo: TypeInfo.success,
-
               backgroundColor: kSecondaryColor,
-
               iconColor: kPrimaryColor,
-
               textColor: kThirdColor,
               padding: 70,
               position: MessagePosition.top,
@@ -739,7 +751,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
           }
         }
       },
-
       child: const SizedBox(),
     );
   }
@@ -752,39 +763,43 @@ class _ScannerScreenState extends State<ScannerScreen> {
     required String value,
     bool isBold = false,
   }) {
+    // Dynamic sizing based on device context
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double iconSize = isTablet ? 26.0 : 20.0;
+    final double fontSize = isTablet ? 16.0 : 14.0;
+    final double paddingSize = isTablet ? 8.0 : 5.0;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+              padding: EdgeInsets.symmetric(
+                  horizontal: paddingSize, vertical: paddingSize),
               decoration: BoxDecoration(
                 color: kPrimaryColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: SizedBox(
-                width: 20,
-                height: 20,
+                width: iconSize,
+                height: iconSize,
                 child: Image.asset(image, fit: BoxFit.fill),
               ),
             ),
-
-            const SizedBox(width: 8),
-
+            SizedBox(width: isTablet ? 12 : 8),
             Text(
               title,
-              style: const TextStyle(fontSize: 14, color: kGreyColor),
+              style: TextStyle(fontSize: fontSize, color: kGreyColor),
             ),
           ],
         ),
-
         Flexible(
           child: Text(
             value,
             textAlign: TextAlign.right,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: fontSize,
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               color: isBold ? kPrimaryColor : kThirdColor,
             ),

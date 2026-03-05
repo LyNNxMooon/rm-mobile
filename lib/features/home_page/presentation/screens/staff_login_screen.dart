@@ -102,13 +102,17 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isLandscape = media.orientation == Orientation.landscape;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
     final double cardMaxWidth = isTablet
         ? (media.size.width * 0.58).clamp(420.0, 620.0)
         : media.size.width;
-    final double logoHeight = isTablet ? 86 : 75;
+    final double logoHeight = isTablet ? 104 : 75;
     final double topGap = isTablet ? (isLandscape ? 26 : 42) : 55;
-    final double inputHeight = isTablet ? 44 : 40;
-    final double buttonHeight = isTablet ? 42 : 38;
+    final double inputHeight = (isTablet ? 44 : 40) * uiScale;
+    final double buttonHeight = (isTablet ? 42 : 38) * uiScale;
 
     return BlocListener<StaffAuthBloc, StaffAuthStates>(
       listener: (context, state) {
@@ -142,13 +146,16 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                        width: double.infinity,
-                        height: logoHeight,
-                        child: Image.asset(
-                          "assets/images/trademark.png",
-                          fit: BoxFit.contain,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: cardMaxWidth),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 0),
+                          width: double.infinity,
+                          height: logoHeight,
+                          child: Image.asset(
+                            "assets/images/trademark.png",
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     ),
@@ -255,6 +262,21 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: kPrimaryColor,
                                           foregroundColor: kSecondaryColor,
+                                          disabledBackgroundColor:
+                                              kPrimaryColor.withOpacity(0.7),
+                                          disabledForegroundColor:
+                                              kSecondaryColor.withOpacity(0.8),
+                                          minimumSize: Size(
+                                            double.infinity,
+                                            buttonHeight,
+                                          ),
+                                          padding: EdgeInsets.zero,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          textStyle: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                           shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(9),
@@ -264,10 +286,18 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                             ? const CupertinoActivityIndicator(
                                                 color: kSecondaryColor,
                                               )
-                                            : const Text(
-                                                "Sign In",
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
+                                            : const Center(
+                                                child: Text(
+                                                  "Sign In",
+                                                  textScaler:
+                                                      TextScaler.noScaling,
+                                                  maxLines: 1,
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color: kSecondaryColor,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
                                                 ),
                                               ),
                                       );

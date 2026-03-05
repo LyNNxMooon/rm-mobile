@@ -338,6 +338,36 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isLandscape = media.orientation == Orientation.landscape;
+    final double screenHeight = media.size.height;
+    final double screenWidth = media.size.width;
+
+    final double imageHeight = isTablet
+        ? (isLandscape
+              ? (screenHeight * 0.44).clamp(320.0, 520.0)
+              : (screenHeight * 0.42).clamp(360.0, 620.0))
+        : (screenHeight * 0.42).clamp(250.0, 400.0);
+
+    final double contentTargetHeight = isTablet
+        ? (screenHeight - imageHeight - (isLandscape ? 120 : 150)).clamp(
+            380.0,
+            980.0,
+          )
+        : 0.0;
+    final double upperMinHeight = isTablet
+        ? (contentTargetHeight * (isLandscape ? 0.56 : 0.60)).clamp(
+            260.0,
+            620.0,
+          )
+        : 0.0;
+    final double cardHorizontalPadding = isTablet
+        ? (screenWidth * (isLandscape ? 0.045 : 0.04)).clamp(24.0, 56.0)
+        : 20.0;
+    final double sectionGap = isTablet ? (isLandscape ? 16.0 : 20.0) : 20.0;
+    final double bottomGap = isTablet ? 40.0 : 100.0;
+
     final bool hideCostPrice = AppGlobals.instance.restrictedPermissions
         .contains("Miscellaneous_HideCostPriceAndProfit");
     final bool lockSellPrice = AppGlobals.instance.restrictedPermissions
@@ -417,162 +447,152 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   ListView(
                     padding: EdgeInsets.zero,
                     children: [
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          double screenHeight = MediaQuery.of(
-                            context,
-                          ).size.height;
-                          double imageHeight = screenHeight * 0.42;
-
-                          if (imageHeight > 400) imageHeight = 400;
-                          if (imageHeight < 250) imageHeight = 250;
-
-                          return Hero(
-                            tag: 'stock_image_${widget.stock.stockID}',
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: kSecondaryColor,
-                                borderRadius: const BorderRadius.only(
-                                  bottomRight: Radius.circular(20),
-                                  bottomLeft: Radius.circular(20),
-                                ),
-                              ),
-
-                              width: double.infinity,
-                              height: imageHeight,
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.only(
-                                  bottomRight: Radius.circular(20),
-                                  bottomLeft: Radius.circular(20),
-                                ),
-                                child: Builder(
-                                  builder: (context) {
-                                    final String? localImagePath =
-                                        _localSelectedImagePath;
-                                    final String imageUrl =
-                                        (widget.stock.imageUrl ?? "").trim();
-
-                                    return Stack(
-                                      fit: StackFit.expand,
-                                      children: [
-                                        if (localImagePath != null &&
-                                            localImagePath.isNotEmpty)
-                                          Image.file(
-                                            File(localImagePath),
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, _, _) =>
-                                                Container(
-                                                  color: kSecondaryColor,
-                                                ),
-                                          )
-                                        else if (imageUrl.isNotEmpty)
-                                          CachedNetworkImage(
-                                            imageUrl: imageUrl,
-                                            fit: BoxFit.cover,
-                                            errorWidget: (_, _, _) => Container(
-                                              color: kSecondaryColor,
-                                            ),
-                                          )
-                                        else
-                                          Container(color: kSecondaryColor),
-
-                                        BackdropFilter(
-                                          filter: ImageFilter.blur(
-                                            sigmaX: 2.0,
-                                            sigmaY: 2.0,
-                                          ),
-                                          child: Container(
-                                            color: Colors.black.withOpacity(
-                                              0.04,
-                                            ),
-                                          ),
-                                        ),
-
-                                        Center(
-                                          child:
-                                              (localImagePath != null &&
-                                                  localImagePath.isNotEmpty)
-                                              ? Image.file(
-                                                  File(localImagePath),
-                                                  fit: BoxFit.contain,
-                                                  errorBuilder: (_, _, _) =>
-                                                      Image.asset(
-                                                        overviewPlaceholder,
-                                                        fit: BoxFit.contain,
-                                                      ),
-                                                )
-                                              : imageUrl.isNotEmpty
-                                              ? CachedNetworkImage(
-                                                  imageUrl: imageUrl,
-                                                  fit: BoxFit.contain,
-                                                  placeholder: (_, _) =>
-                                                      Image.asset(
-                                                        overviewPlaceholder,
-                                                        fit: BoxFit.contain,
-                                                      ),
-                                                  errorWidget: (_, _, _) =>
-                                                      Image.asset(
-                                                        overviewPlaceholder,
-                                                        fit: BoxFit.contain,
-                                                      ),
-                                                )
-                                              : Image.asset(
-                                                  overviewPlaceholder,
-                                                  fit: BoxFit.contain,
-                                                ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
+                      Hero(
+                        tag: 'stock_image_${widget.stock.stockID}',
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: kSecondaryColor,
+                            borderRadius: const BorderRadius.only(
+                              bottomRight: Radius.circular(20),
+                              bottomLeft: Radius.circular(20),
                             ),
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: DetailedUpperGlass(
-                          descController: _descriptionController,
-                          dept: widget.stock.deptName ?? "-",
-                          barcode: widget.stock.barcode,
-                          qty:
-                              "Qty On-Hand: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
-
-                          cats:
-                              "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
-                          cost: cost,
-                          sell: sell,
-                          custom1: widget.stock.custom1 ?? "-",
-                          custom2: widget.stock.custom2 ?? "-",
-                          layByQty: (widget.stock.laybyQuantity % 1 == 0)
-                              ? widget.stock.laybyQuantity.toInt().toString()
-                              : double.parse(
-                                  widget.stock.laybyQuantity.toStringAsFixed(2),
-                                ).toString(),
-                          soQty: (widget.stock.salesOrderQuantity % 1 == 0)
-                              ? widget.stock.salesOrderQuantity
-                                    .toInt()
-                                    .toString()
-                              : double.parse(
-                                  widget.stock.salesOrderQuantity
-                                      .toStringAsFixed(2),
-                                ).toString(),
-                          exCost: widget.stock.cost,
-                          lastSaleDate: _formatLastSaleDate(
-                            widget.stock.lastSaleDate,
                           ),
-                          showCostPrices: !hideCostPrice,
+                          width: double.infinity,
+                          height: imageHeight,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              bottomRight: Radius.circular(20),
+                              bottomLeft: Radius.circular(20),
+                            ),
+                            child: Builder(
+                              builder: (context) {
+                                final String? localImagePath =
+                                    _localSelectedImagePath;
+                                final String imageUrl =
+                                    (widget.stock.imageUrl ?? "").trim();
+
+                                return Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    if (localImagePath != null &&
+                                        localImagePath.isNotEmpty)
+                                      Image.file(
+                                        File(localImagePath),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) =>
+                                            Container(color: kSecondaryColor),
+                                      )
+                                    else if (imageUrl.isNotEmpty)
+                                      CachedNetworkImage(
+                                        imageUrl: imageUrl,
+                                        fit: BoxFit.cover,
+                                        errorWidget: (_, _, _) =>
+                                            Container(color: kSecondaryColor),
+                                      )
+                                    else
+                                      Container(color: kSecondaryColor),
+
+                                    BackdropFilter(
+                                      filter: ImageFilter.blur(
+                                        sigmaX: 2.0,
+                                        sigmaY: 2.0,
+                                      ),
+                                      child: Container(
+                                        color: Colors.black.withOpacity(0.04),
+                                      ),
+                                    ),
+
+                                    Center(
+                                      child:
+                                          (localImagePath != null &&
+                                              localImagePath.isNotEmpty)
+                                          ? Image.file(
+                                              File(localImagePath),
+                                              fit: BoxFit.contain,
+                                              errorBuilder: (_, _, _) =>
+                                                  Image.asset(
+                                                    overviewPlaceholder,
+                                                    fit: BoxFit.contain,
+                                                  ),
+                                            )
+                                          : imageUrl.isNotEmpty
+                                          ? CachedNetworkImage(
+                                              imageUrl: imageUrl,
+                                              fit: BoxFit.contain,
+                                              placeholder: (_, _) => Image.asset(
+                                                overviewPlaceholder,
+                                                fit: BoxFit.contain,
+                                              ),
+                                              errorWidget: (_, _, _) =>
+                                                  Image.asset(
+                                                    overviewPlaceholder,
+                                                    fit: BoxFit.contain,
+                                                  ),
+                                            )
+                                          : Image.asset(
+                                              overviewPlaceholder,
+                                              fit: BoxFit.contain,
+                                            ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: sectionGap),
 
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: upperMinHeight),
+                          child: DetailedUpperGlass(
+                            descController: _descriptionController,
+                            dept: widget.stock.deptName ?? "-",
+                            barcode: widget.stock.barcode,
+                            qty:
+                                "Qty On-Hand: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
+
+                            cats:
+                                "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
+                            cost: cost,
+                            sell: sell,
+                            custom1: widget.stock.custom1 ?? "-",
+                            custom2: widget.stock.custom2 ?? "-",
+                            layByQty: (widget.stock.laybyQuantity % 1 == 0)
+                                ? widget.stock.laybyQuantity.toInt().toString()
+                                : double.parse(
+                                    widget.stock.laybyQuantity.toStringAsFixed(
+                                      2,
+                                    ),
+                                  ).toString(),
+                            soQty: (widget.stock.salesOrderQuantity % 1 == 0)
+                                ? widget.stock.salesOrderQuantity
+                                      .toInt()
+                                      .toString()
+                                : double.parse(
+                                    widget.stock.salesOrderQuantity
+                                        .toStringAsFixed(2),
+                                  ).toString(),
+                            exCost: widget.stock.cost,
+                            lastSaleDate: _formatLastSaleDate(
+                              widget.stock.lastSaleDate,
+                            ),
+                            showCostPrices: !hideCostPrice,
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: sectionGap),
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
                         child: DetailedLowerGlass(
                           descController: _descriptionController,
                           stockId: widget.stock.stockID,
@@ -585,7 +605,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 100),
+                      SizedBox(height: bottomGap),
                     ],
                   ),
                   topIconsRow(),

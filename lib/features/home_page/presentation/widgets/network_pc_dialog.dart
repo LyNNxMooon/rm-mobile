@@ -70,6 +70,13 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
   void _showManualPortDialog(BuildContext context) {
     if (_selectedPc == null) return;
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double fieldHeight = (isTablet ? 50 : 45) * uiScale;
+    final double buttonPad = (isTablet ? 14 : 12) * uiScale;
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.42)
         .clamp(240.0, 340.0);
 
@@ -115,7 +122,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
-                      height: 45,
+                      height: fieldHeight,
                       child: TextField(
                         controller: _manualPortController,
                         keyboardType: TextInputType.number,
@@ -158,7 +165,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(vertical: buttonPad),
                         ),
                         child: const Text(
                           "Try Port",
@@ -182,6 +189,13 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
   void _showPairCodeDialog(BuildContext context, String pairCode) {
     _connectCodeController.clear();
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double fieldHeight = (isTablet ? 50 : 45) * uiScale;
+    final double buttonPad = (isTablet ? 14 : 12) * uiScale;
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.52)
         .clamp(300.0, 500.0);
 
@@ -263,7 +277,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                     ),
                     const SizedBox(height: 14),
                     SizedBox(
-                      height: 45,
+                      height: fieldHeight,
                       child: CustomTextField(
                         hintText: "Enter Code",
                         controller: _connectCodeController,
@@ -308,7 +322,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: EdgeInsets.symmetric(vertical: buttonPad),
                             ),
                             child: pairState is PairingDevice
                                 ? const SizedBox(
@@ -584,6 +598,12 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
   }
 
   Widget _buildServerTile(NetworkServerVO pc, BuildContext ctx) {
+    final bool isTablet = MediaQuery.of(ctx).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(ctx).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+
     return InkWell(
       onTap: () {
         _startPairingFlow(pc, ctx);
@@ -603,8 +623,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
         child: Row(
           children: [
             SizedBox(
-              height: 35,
-              width: 35,
+              height: (isTablet ? 40 : 35) * uiScale,
+              width: (isTablet ? 40 : 35) * uiScale,
               child: Image.asset("assets/images/pc.png", fit: BoxFit.fill),
             ),
             const SizedBox(width: 16),

@@ -99,6 +99,13 @@ class _FoldersDialogState extends State<FoldersDialog> {
   Widget build(BuildContext context) {
     // Dynamic height calculation
     final double safeMaxHeight = MediaQuery.of(context).size.height * 0.8;
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double fieldHeight = (isTablet ? 48 : 45) * uiScale;
+    final double buttonVerticalPadding = (isTablet ? 14 : 12) * uiScale;
 
     return Dialog(
       insetPadding: dialogInsetPadding(context),
@@ -224,7 +231,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                             const SizedBox(height: 20),
                             // Safe Container usage
                             SizedBox(
-                              height: 45, // Slightly increased for touch safety
+                              height: fieldHeight,
                               child: CustomTextField(
                                 hintText: 'UserName',
                                 controller: _userNameController,
@@ -233,7 +240,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                             ),
                             const SizedBox(height: 5),
                             SizedBox(
-                              height: 45,
+                              height: fieldHeight,
                               child: CustomTextField(
                                 hintText: 'Password',
                                 controller: _pwdController,
@@ -261,8 +268,8 @@ class _FoldersDialogState extends State<FoldersDialog> {
                                             10,
                                           ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 12, // Increased padding
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: buttonVerticalPadding,
                                         ),
                                       ),
                                       child: Text(
@@ -295,8 +302,8 @@ class _FoldersDialogState extends State<FoldersDialog> {
                                             10,
                                           ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: buttonVerticalPadding,
                                         ),
                                       ),
                                       child: const Text(

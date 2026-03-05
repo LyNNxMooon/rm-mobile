@@ -34,6 +34,15 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double fieldHeight = (isTablet ? 44 : 40) * uiScale;
+    final double verticalPad = (isTablet ? 12 : 1) * uiScale;
+
     return Dialog(
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -83,7 +92,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
             const SizedBox(height: 20),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 10),
-              height: 40,
+              height: fieldHeight,
               child: CustomTextField(
                 hintText: 'UserName',
                 controller: _userNameController,
@@ -93,7 +102,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
             const SizedBox(height: 5),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 10),
-              height: 40,
+              height: fieldHeight,
               child: CustomTextField(
                 hintText: 'Password',
                 controller: _pwdController,
@@ -124,7 +133,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 1),
+                        padding: EdgeInsets.symmetric(vertical: verticalPad),
                       ),
                       child: Text(
                         "Retry as Guest",
@@ -158,7 +167,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 1),
+                        padding: EdgeInsets.symmetric(vertical: verticalPad),
                       ),
                       child: Text(
                         "Try Logging in",

@@ -47,13 +47,27 @@ class DetailedUpperGlass extends StatefulWidget {
 class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
   @override
   Widget build(BuildContext context) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double containerVertical = (isTablet ? 24 : 20) * uiScale;
+    final double containerHorizontal = (isTablet ? 14 : 12) * uiScale;
+    final double sectionGap = (isTablet ? 18 : 15) * uiScale;
+    final double rowGap = (isTablet ? 10 : 8) * uiScale;
+    final double descFieldHeight = (isTablet ? 40 : 35) * uiScale;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           // Margin handled by parent padding in main screen for better control
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+          padding: EdgeInsets.symmetric(
+            vertical: containerVertical,
+            horizontal: containerHorizontal,
+          ),
           decoration: BoxDecoration(
             color: kSecondaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
@@ -112,7 +126,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                   ),
                 ],
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: sectionGap),
 
               // Description Field
               Row(
@@ -149,12 +163,12 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                     ],
                   ),
 
-                  const SizedBox(width: 10),
+                  SizedBox(width: (isTablet ? 12 : 10) * uiScale),
 
                   // Responsive TextField
                   Expanded(
                     child: SizedBox(
-                      height: 35, // Slightly taller for better touch target
+                      height: descFieldHeight, // Slightly taller for better touch target
                       child: LanguageToolTextField(
                         controller: widget.descController,
                         style: const TextStyle(
@@ -196,7 +210,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                 ],
               ),
 
-              const SizedBox(height: 8),
+              SizedBox(height: rowGap),
               StockInfoRow(
                 image: "assets/images/dept.png",
                 icon: Icons.category_outlined,
@@ -204,7 +218,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                 iconBgColor: Colors.grey,
                 value: widget.dept,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: rowGap),
               StockInfoRow(
                 image: "assets/images/cat.png",
                 icon: Icons.category_outlined,
@@ -212,7 +226,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                 iconBgColor: Colors.orangeAccent,
                 value: widget.cats,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: rowGap),
               StockInfoRow(
                 image: "assets/images/cus1.png",
                 icon: Icons.format_paint,
@@ -220,7 +234,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                 label: "Custom1",
                 value: widget.custom1,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: rowGap),
               StockInfoRow(
                 image: "assets/images/cus2.png",
                 icon: Icons.settings,
@@ -228,7 +242,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                 label: "Custom2",
                 value: widget.custom2,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: rowGap),
               StockInfoRow(
                 image: "assets/images/layby.png",
                 icon: Icons.numbers,
@@ -236,7 +250,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                 label: "Lay-By Qty",
                 value: widget.layByQty,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: rowGap),
               StockInfoRow(
                 image: "assets/images/so.png",
                 icon: Icons.history,
@@ -244,7 +258,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                 label: "SO Qty",
                 value: widget.soQty,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: rowGap),
               if (widget.showCostPrices) ...[
                 StockInfoRow(
                   image: "assets/images/cost_white.png",
@@ -253,7 +267,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                   label: "Inc Cost",
                   value: widget.cost.toStringAsFixed(4),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: rowGap),
                 StockInfoRow(
                   image: "assets/images/cost_white.png",
                   icon: Icons.monetization_on_outlined,
@@ -261,7 +275,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                   label: "Ex Cost",
                   value: widget.exCost.toStringAsFixed(4),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: rowGap),
               ],
               StockInfoRow(
                 image: "assets/images/so.png",

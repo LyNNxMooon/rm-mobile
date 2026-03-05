@@ -133,12 +133,27 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double containerVertical = (isTablet ? 24 : 20) * uiScale;
+    final double containerHorizontal = (isTablet ? 14 : 12) * uiScale;
+    final double rowGap = (isTablet ? 18 : 15) * uiScale;
+    final double fieldHeight = (isTablet ? 40 : 35) * uiScale;
+    final double buttonVertical = (isTablet ? 8 : 6) * uiScale;
+    final double buttonGap = (isTablet ? 12 : 10) * uiScale;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+          padding: EdgeInsets.symmetric(
+            vertical: containerVertical,
+            horizontal: containerHorizontal,
+          ),
           decoration: BoxDecoration(
             color: kSecondaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
@@ -176,10 +191,10 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                       ),
                     ],
                   ),
-                  const SizedBox(width: 30),
+                  SizedBox(width: (isTablet ? 34 : 30) * uiScale),
                   Expanded(
                     child: SizedBox(
-                      height: 35,
+                      height: fieldHeight,
                       child: TextField(
                         enabled: widget.canUpdateSellPrice,
                         keyboardType: const TextInputType.numberWithOptions(
@@ -198,7 +213,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                   ),
                 ],
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: rowGap),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -231,10 +246,10 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                       ),
                     ],
                   ),
-                  const SizedBox(width: 30),
+                  SizedBox(width: (isTablet ? 34 : 30) * uiScale),
                   Expanded(
                     child: SizedBox(
-                      height: 35,
+                      height: fieldHeight,
                       child: TextField(
                         enabled: widget.canUpdateSellPrice,
                         controller: _exRrpController,
@@ -252,7 +267,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                   ),
                 ],
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: rowGap),
 
               Row(
                 children: [
@@ -260,7 +275,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                     child: InkWell(
                       onTap: widget.canUpdateSellPrice ? _openCalculator : null,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        padding: EdgeInsets.symmetric(vertical: buttonVertical),
                         decoration: _buttonDecoration(),
                         child: Row(
                           mainAxisAlignment:
@@ -286,7 +301,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                     ),
                   ),
 
-                  const SizedBox(width: 10),
+                  SizedBox(width: buttonGap),
 
                   Expanded(
                     child: InkWell(
@@ -312,7 +327,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        padding: EdgeInsets.symmetric(vertical: buttonVertical),
                         decoration: _buttonDecoration(),
                         child: Row(
                           mainAxisAlignment:

@@ -12,6 +12,7 @@ class Scanner extends StatefulWidget {
     required this.controller,
     required this.isScan,
     required this.isManualCount,
+    required this.horizontalPadding,
   });
 
   final BoxConstraints constraints;
@@ -19,6 +20,7 @@ class Scanner extends StatefulWidget {
   final MobileScannerController controller;
   final bool isScan;
   final bool isManualCount;
+  final double horizontalPadding;
 
   @override
   State<Scanner> createState() => _ScannerState();
@@ -109,8 +111,11 @@ class _ScannerState extends State<Scanner> {
   }
 
   Widget _scannerPlaceHolder() {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double sidePadding = isTablet ? widget.horizontalPadding : 15.0;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 15),
+      margin: EdgeInsets.symmetric(horizontal: sidePadding),
       decoration: BoxDecoration(
         gradient: kGColor,
         borderRadius: const BorderRadius.all(Radius.circular(10)),

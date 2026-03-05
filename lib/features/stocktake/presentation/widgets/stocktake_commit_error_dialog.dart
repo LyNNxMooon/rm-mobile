@@ -3,7 +3,6 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
 
 import '../../../../constants/colors.dart';
-import '../../../../constants/txt_styles.dart';
 
 class StocktakeCommitErrorDialog extends StatelessWidget {
   const StocktakeCommitErrorDialog({super.key, required this.message});
@@ -70,14 +69,28 @@ class StocktakeCommitErrorDialog extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
                   foregroundColor: kSecondaryColor,
+                  minimumSize: const Size(double.infinity, 48),
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
+                child: const Text(
                   "Okay, Got it",
-                  style: getSmartTitle(color: kSecondaryColor, fontSize: 20),
+                  textScaler: TextScaler.noScaling,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: kSecondaryColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),

@@ -60,6 +60,13 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
   Widget build(BuildContext context) {
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.78)
         .clamp(420.0, 780.0);
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double errorFieldHeight = (isTablet ? 44 : 40) * uiScale;
+    final double errorButtonVerticalPadding = (isTablet ? 12 : 1) * uiScale;
 
     return MultiBlocListener(
       listeners: [
@@ -241,7 +248,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                               ),
                               const SizedBox(height: 20),
                               SizedBox(
-                                height: 40,
+                                height: errorFieldHeight,
                                 child: CustomTextField(
                                   hintText: 'UserName',
                                   controller: _userNameController,
@@ -250,7 +257,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                               ),
                               const SizedBox(height: 5),
                               SizedBox(
-                                height: 40,
+                                height: errorFieldHeight,
                                 child: CustomTextField(
                                   hintText: 'Password',
                                   controller: _pwdController,
@@ -280,8 +287,8 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                                             10,
                                           ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 1,
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: errorButtonVerticalPadding,
                                         ),
                                       ),
                                       child: Text(
@@ -316,8 +323,8 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                                             10,
                                           ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 1,
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: errorButtonVerticalPadding,
                                         ),
                                       ),
                                       child: const Text(
@@ -427,10 +434,28 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
   Widget _buildStaffSignInSection(String shopName, BuildContext ctx) {
     final bool loading =
         ctx.watch<StaffAuthBloc>().state is StaffAuthenticating;
+    final media = MediaQuery.of(ctx);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(ctx).scale(14) / 14;
+    final double uiScale = (1.0 + ((textScale - 1.0) * 0.65)).clamp(1.0, 1.42);
+    final double fieldHeight = isTablet
+        ? (44 * uiScale).clamp(44.0, 58.0)
+        : 36.0;
+    final double buttonHeight = isTablet
+        ? (42 * uiScale).clamp(42.0, 56.0)
+        : 34.0;
+    final double sectionPadding = isTablet ? 12.0 : 10.0;
+    final double verticalGap1 = isTablet ? 8.0 : 6.0;
+    final double verticalGap2 = isTablet ? 10.0 : 8.0;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+      padding: EdgeInsets.fromLTRB(
+        sectionPadding,
+        sectionPadding,
+        sectionPadding,
+        isTablet ? 10 : 8,
+      ),
       decoration: BoxDecoration(
         color: kSecondaryColor,
         borderRadius: BorderRadius.circular(8),
@@ -439,7 +464,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
       child: Column(
         children: [
           SizedBox(
-            height: 36,
+            height: fieldHeight,
             child: CustomTextField(
               controller: _staffNoController,
               keyboardType: TextInputType.number,
@@ -447,9 +472,9 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
               leadingIcon: Icons.badge_outlined,
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: verticalGap1),
           SizedBox(
-            height: 36,
+            height: fieldHeight,
             child: CustomTextField(
               controller: _staffPwdController,
               hintText: 'Password',
@@ -457,10 +482,10 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
               obscureText: true,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: verticalGap2),
           SizedBox(
             width: double.infinity,
-            height: 34,
+            height: buttonHeight,
             child: ElevatedButton(
               onPressed: loading
                   ? null
@@ -469,14 +494,14 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                 backgroundColor: kPrimaryColor,
                 foregroundColor: kSecondaryColor,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(7),
+                  borderRadius: BorderRadius.circular(isTablet ? 9 : 7),
                 ),
                 padding: EdgeInsets.zero,
               ),
               child: loading
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
+                  ? SizedBox(
+                      height: isTablet ? 22 : 18,
+                      width: isTablet ? 22 : 18,
                       child: CupertinoActivityIndicator(color: kSecondaryColor),
                     )
                   : const Text(

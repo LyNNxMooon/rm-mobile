@@ -173,9 +173,9 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
         ? (media.size.width * 0.68).clamp(440.0, 760.0)
         : media.size.width;
     final double logoWidth = isTablet
-        ? (media.size.width * 0.46).clamp(280.0, 420.0)
+        ? (media.size.width * 0.52).clamp(320.0, 500.0)
         : mobileContentWidth;
-    final double logoHeight = (logoWidth * 0.22).clamp(56.0, 88.0);
+    final double logoHeight = (logoWidth * 0.22).clamp(56.0, 110.0);
     final double logoCardGap = isTablet ? 28 : 36;
 
     return Scaffold(
@@ -264,14 +264,28 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: kPrimaryColor,
                                     foregroundColor: kSecondaryColor,
+                                    minimumSize: const Size(double.infinity, 42),
+                                    padding: EdgeInsets.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    textStyle: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                   ),
-                                  child: const Text(
-                                    "Continue",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
+                                  child: const Center(
+                                    child: Text(
+                                      "Continue",
+                                      textScaler: TextScaler.noScaling,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: kSecondaryColor,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -444,17 +458,31 @@ class _TermsScreenState extends State<_TermsScreen> {
                                     onPressed: widget.onDecline,
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: kSecondaryColor,
+                                      minimumSize: const Size(double.infinity, 40),
+                                      padding: EdgeInsets.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       side: BorderSide(
                                         color: kSecondaryColor.withOpacity(0.7),
+                                      ),
+                                      textStyle: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
-                                    child: const Text(
-                                      "Decline",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
+                                    child: const Center(
+                                      child: Text(
+                                        "Decline",
+                                        textScaler: TextScaler.noScaling,
+                                        maxLines: 1,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: kSecondaryColor,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -469,14 +497,30 @@ class _TermsScreenState extends State<_TermsScreen> {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: kPrimaryColor,
                                       foregroundColor: kSecondaryColor,
+                                      disabledBackgroundColor: kPrimaryColor.withOpacity(0.5),
+                                      disabledForegroundColor: kSecondaryColor.withOpacity(0.6),
+                                      minimumSize: const Size(double.infinity, 40),
+                                      padding: EdgeInsets.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      textStyle: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
-                                    child: const Text(
-                                      "Agree",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
+                                    child: const Center(
+                                      child: Text(
+                                        "Agree",
+                                        textScaler: TextScaler.noScaling,
+                                        maxLines: 1,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: kSecondaryColor,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
                                   ),

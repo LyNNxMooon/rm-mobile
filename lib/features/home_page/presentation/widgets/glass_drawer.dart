@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -7,6 +8,7 @@ import 'package:rmstock_scanner/features/home_page/presentation/widgets/shopfron
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
+
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/network_server_vo.dart';
@@ -19,7 +21,16 @@ import '../BLoC/home_screen_states.dart';
 import '../screens/coming_soon_screen.dart';
 
 class GlassDrawer extends StatefulWidget {
-  const GlassDrawer({super.key});
+  const GlassDrawer({
+    super.key,
+    this.initialChildSize,
+    this.minChildSize,
+    this.maxChildSize,
+  });
+
+  final double? initialChildSize;
+  final double? minChildSize;
+  final double? maxChildSize;
 
   @override
   State<GlassDrawer> createState() => _GlassDrawerState();
@@ -46,28 +57,30 @@ class _GlassDrawerState extends State<GlassDrawer> {
     final bool isPortrait = media.orientation == Orientation.portrait;
     final bool isTabletPortrait = isTablet && isPortrait;
 
-    double initialChildSize = 0.535;
-    double minChildSize = 0.535;
-    double maxChildSize = 0.88;
+    double initialChildSize = widget.initialChildSize ?? 0.535;
+    double minChildSize = widget.minChildSize ?? 0.535;
+    double maxChildSize = widget.maxChildSize ?? 0.88;
 
-    if (isTabletPortrait) {
-      initialChildSize = media.size.height >= 1100 ? 0.58 : 0.56;
-      minChildSize = media.size.height >= 1100 ? 0.56 : 0.54;
-      maxChildSize = 0.91;
-    } else if (isPortrait) {
-      initialChildSize = 0.535;
-      minChildSize = 0.535;
-      maxChildSize = 0.88;
-    } else if (isTablet) {
-      // Landscape tablet: start lower to keep visual gap from action card.
-      initialChildSize = 0.50;
-      minChildSize = 0.48;
-      maxChildSize = 0.90;
-    } else {
-      // Landscape phone.
-      initialChildSize = 0.49;
-      minChildSize = 0.47;
-      maxChildSize = 0.86;
+    if (widget.initialChildSize == null ||
+        widget.minChildSize == null ||
+        widget.maxChildSize == null) {
+      if (isTabletPortrait) {
+        initialChildSize = media.size.height >= 1100 ? 0.58 : 0.56;
+        minChildSize = media.size.height >= 1100 ? 0.56 : 0.54;
+        maxChildSize = 0.91;
+      } else if (isPortrait) {
+        initialChildSize = 0.535;
+        minChildSize = 0.535;
+        maxChildSize = 0.88;
+      } else if (isTablet) {
+        initialChildSize = 0.50;
+        minChildSize = 0.48;
+        maxChildSize = 0.90;
+      } else {
+        initialChildSize = 0.49;
+        minChildSize = 0.47;
+        maxChildSize = 0.86;
+      }
     }
 
     return DraggableScrollableSheet(
@@ -110,14 +123,13 @@ class _GlassDrawerState extends State<GlassDrawer> {
                     ),
                   ),
                   const SizedBox(height: 15),
-
                   Padding(
                     padding: const EdgeInsets.only(left: 28, right: 28),
                     child: BlocBuilder<StaffAuthBloc, StaffAuthStates>(
                       builder: (context, staffState) {
                         return BlocBuilder<
-                          ShopFrontConnectionBloc,
-                          ShopfrontConnectionStates
+                            ShopFrontConnectionBloc,
+                            ShopfrontConnectionStates
                         >(
                           builder: (context, state) {
                             final shop = AppGlobals.instance.shopfront;
@@ -139,7 +151,6 @@ class _GlassDrawerState extends State<GlassDrawer> {
                       },
                     ),
                   ),
-
                   Expanded(child: dashBoardView(scrollController)),
                   const SizedBox(height: 10),
                 ],
@@ -165,25 +176,63 @@ class _GlassDrawerState extends State<GlassDrawer> {
         if (width > 600 || isTabletPortrait) crossAxisCount = 3;
         if (width > 900) crossAxisCount = 4;
 
-        const double padding = 50.0; // Horizontal padding total
-        double spacing = width > 600 ? 20.0 : 15.0; // More gap on tablets
+        const double verticalPadding = 40.0;
+        if (isTablet && crossAxisCount == 4) {
+          final int rowCount4 = (_menuItems.length / 4).ceil();
+          final double baseSpacing = width > 600 ? 20.0 : 15.0;
+          final double rawHeight4 =
+              (height - verticalPadding - ((rowCount4 - 1) * baseSpacing)) /
+                  rowCount4;
+          final double maxTileHeight = isTabletPortrait ? 210.0 : 170.0;
+          if (rawHeight4 > maxTileHeight) {
+            crossAxisCount = 3;
+          }
+        }
 
-        // Calculate how many rows we have
-        int rowCount = (_menuItems.length / crossAxisCount).ceil();
+        const double padding = 50.0;
+        double spacing = width > 600 ? 20.0 : 15.0;
+        final double minSpacing = width > 600 ? 18.0 : 12.0;
+        final double maxSpacing = width > 600 ? 34.0 : 24.0;
 
-        // Fill drawer space adaptively to avoid large empty area under buttons.
-        final double verticalPadding = 40.0; // top+bottom from Grid padding
+        final int rowCount = (_menuItems.length / crossAxisCount).ceil();
         final double availableGridHeight =
             (height - verticalPadding - ((rowCount - 1) * spacing)).clamp(
               100.0,
               2000.0,
             );
         final double minTileHeight = isTablet ? 95.0 : 85.0;
-        final double maxTileHeight = isTabletPortrait ? 190.0 : 150.0;
-        final double targetHeight = (availableGridHeight / rowCount).clamp(
+        double maxTileHeight = isTabletPortrait ? 210.0 : 170.0;
+        final double desiredHeight = availableGridHeight / rowCount;
+        final bool isTallDrawer = isTablet && desiredHeight > maxTileHeight;
+
+        if (isTallDrawer) {
+          spacing = (spacing * 1.35).clamp(minSpacing, maxSpacing);
+        }
+
+        final double recomputedGridHeight =
+            (height - verticalPadding - ((rowCount - 1) * spacing)).clamp(
+              100.0,
+              2000.0,
+            );
+        final double recomputedHeight = recomputedGridHeight / rowCount;
+
+        if (isTablet && recomputedHeight > maxTileHeight) {
+          maxTileHeight = desiredHeight.clamp(
+            minTileHeight,
+            maxTileHeight * 1.35,
+          );
+        }
+
+        final double targetHeight = recomputedHeight.clamp(
           minTileHeight,
           maxTileHeight,
         );
+
+        // Scale tile fonts/icons based on tablet screen size
+        final double screenScale = isTablet
+            ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.85, 1.3)
+            : 1.0;
+        final double tileScale = isTablet ? screenScale : 1.0;
 
         final double totalSpacing = spacing * (crossAxisCount - 1);
         final double availableWidth = width - padding - totalSpacing;
@@ -214,6 +263,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
                   context,
                   index,
                   crossAxisCount,
+                  tileScale,
                 ),
               );
             },
@@ -246,14 +296,6 @@ class _GlassDrawerState extends State<GlassDrawer> {
           apiKey: savedApiKey!,
         ),
       );
-
-      // Old setup disabled:
-      // context.read<ShopfrontBloc>().add(
-      //   FetchShops(
-      //     path: AppGlobals.instance.currentPath ?? '',
-      //     ipAddress: AppGlobals.instance.currentHostIp ?? "",
-      //   ),
-      // );
 
       showDialog(
         context: context,
@@ -295,7 +337,14 @@ class _GlassDrawerState extends State<GlassDrawer> {
     BuildContext context,
     int index,
     int columnCount,
+    double scale,
   ) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    // Scale fonts and icon only for tablets/iPads
+    final double titleSize = isTablet ? (14 * scale).clamp(14.0, 19.0) : 14.0;
+    final double subTitleSize = isTablet ? (11 * scale).clamp(11.0, 14.0) : 13.0;
+    final double iconSize = isTablet ? (36 * scale).clamp(32.0, 48.0) : 22.0;
+
     return AnimationConfiguration.staggeredGrid(
       position: index,
       duration: const Duration(milliseconds: 1500),
@@ -340,14 +389,14 @@ class _GlassDrawerState extends State<GlassDrawer> {
                             title,
                             style: getSmartTitle(
                               color: kPrimaryColor,
-                              fontSize: 14,
+                              fontSize: titleSize,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 5),
-                        Icon(icon, size: 22, color: kPrimaryColor),
+                        Icon(icon, size: iconSize, color: kPrimaryColor),
                       ],
                     ),
                     const SizedBox(height: 3),
@@ -356,9 +405,9 @@ class _GlassDrawerState extends State<GlassDrawer> {
                         Expanded(
                           child: Text(
                             subTitle,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: kGreyColor,
-                              fontSize: 13,
+                              fontSize: subTitleSize,
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,

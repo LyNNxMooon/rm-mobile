@@ -3,7 +3,6 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
-import '../../../../constants/txt_styles.dart';
 
 class StocktakeDeleteConfirmationDialog extends StatelessWidget {
   const StocktakeDeleteConfirmationDialog({
@@ -73,6 +72,13 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
                     child: OutlinedButton(
                       onPressed: () => context.navigateBack(),
                       style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 48),
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                         side: BorderSide(color: kGreyColor.withOpacity(0.3)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -80,6 +86,7 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
                       ),
                       child: const Text(
                         "Cancel",
+                        textScaler: TextScaler.noScaling,
                         style: TextStyle(color: kThirdColor, fontSize: 16),
                       ),
                     ),
@@ -97,16 +104,25 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kErrorColor,
                         foregroundColor: kSecondaryColor,
+                        minimumSize: const Size(double.infinity, 48),
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text(
+                      child: const Text(
                         "Delete All",
-                        style: getSmartTitle(
+                        textScaler: TextScaler.noScaling,
+                        style: TextStyle(
                           color: kSecondaryColor,
                           fontSize: 16,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),

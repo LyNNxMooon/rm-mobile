@@ -28,6 +28,42 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  _DrawerSizes _resolveDrawerSizes(MediaQueryData media) {
+    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isPortrait = media.orientation == Orientation.portrait;
+    final bool isTabletPortrait = isTablet && isPortrait;
+
+    double initialChildSize = 0.535;
+    double minChildSize = 0.535;
+    double maxChildSize = 0.88;
+
+    if (isTabletPortrait) {
+      initialChildSize = media.size.height >= 1100 ? 0.58 : 0.56;
+      minChildSize = media.size.height >= 1100 ? 0.56 : 0.54;
+      maxChildSize = 0.91;
+    } else if (isPortrait) {
+      initialChildSize = 0.535;
+      minChildSize = 0.535;
+      maxChildSize = 0.88;
+    } else if (isTablet) {
+      // Lower drawer start for tablet landscape (more gap from action card)
+      final double pxOffset = 30 / media.size.height;
+      initialChildSize = 0.50 - pxOffset;
+      minChildSize = 0.48 - pxOffset;
+      maxChildSize = 0.90;
+    } else {
+      initialChildSize = 0.49;
+      minChildSize = 0.47;
+      maxChildSize = 0.86;
+    }
+
+    return _DrawerSizes(
+      initialChildSize: initialChildSize,
+      minChildSize: minChildSize,
+      maxChildSize: maxChildSize,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -102,9 +138,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool isTabletLandscape =
         media.orientation == Orientation.landscape &&
         isTablet;
-    final double topContentHeight = isTabletPortrait
+    final drawerSizes = _resolveDrawerSizes(media);
+    final double topContentHeight = isTablet
+      ? screenHeight * (1 - drawerSizes.initialChildSize)
+      : (isTabletPortrait
         ? screenHeight * 0.43
-        : (isTabletLandscape ? screenHeight * 0.44 : screenHeight * 0.42);
+        : (isTabletLandscape ? screenHeight * 0.44 : screenHeight * 0.42));
     final double actionCardMinHeight = isTabletPortrait
         ? (isSmallTablet
               ? (screenHeight * 0.125).clamp(112.0, 142.0)
@@ -114,9 +153,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ? (screenHeight * 0.135).clamp(108.0, 136.0)
                     : (screenHeight * 0.15).clamp(118.0, 160.0))
               : 0);
-    final double actionToDrawerGap = isTabletPortrait
-        ? 20
-        : (isTabletLandscape ? 18 : (screenHeight * 0.038).clamp(16.0, 26.0));
+    final double actionToDrawerGap = isTablet
+        ? 80
+        : (screenHeight * 0.038).clamp(16.0, 26.0);
 
     return MultiBlocListener(
       listeners: [
@@ -167,9 +206,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               : topContentHeight,
                         ),
                         child: Column(
-                          mainAxisAlignment:
-                              MainAxisAlignment.center, // Center Vertically
+                          mainAxisAlignment: isTablet
+                              ? MainAxisAlignment.start
+                              : MainAxisAlignment.center,
                           children: [
+                            if (isTablet) const Spacer(),
+
                             logo(),
 
                             // Use flexible spacing inside the block if needed,
@@ -187,6 +229,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ? (screenHeight * 0.012).clamp(6.0, 12.0)
                                   : screenHeight * 0.02,
                             ),
+
+                            if (isTablet) const Spacer(),
 
                             ActionCard(
                               minHeight: actionCardMinHeight,
@@ -261,7 +305,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                const GlassDrawer(),
+                isTablet
+                    ? GlassDrawer(
+                        initialChildSize: drawerSizes.initialChildSize,
+                        minChildSize: drawerSizes.minChildSize,
+                        maxChildSize: drawerSizes.maxChildSize,
+                      )
+                    : const GlassDrawer(),
               ],
             ),
           ),
@@ -273,8 +323,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget logo() {
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
-    final double horizontalPad = isTablet ? 60 : 25;
-    final double logoHeight = isTablet ? 82 : 75;
+    // Scale logo for tablets based on screen size
+    final double tabletScale = isTablet
+        ? (media.size.shortestSide / 768).clamp(0.85, 1.3)
+        : 1.0;
+    final double horizontalPad = isTablet ? 40 : 25;
+    final double logoHeight = isTablet ? (98 * tabletScale) : 75;
     return Center(
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: horizontalPad),
@@ -286,6 +340,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget headerTitle() {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    // Scale text for tablets based on screen size
+    final double tabletScale = isTablet
+        ? (media.size.shortestSide / 768).clamp(0.85, 1.3)
+        : 1.0;
+    final double fontSize = isTablet ? (24 * tabletScale) : 24;
+
     return ShaderMask(
       shaderCallback: (bounds) {
         return const LinearGradient(
@@ -302,9 +364,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ).createShader(bounds);
       },
       blendMode: BlendMode.srcIn,
-      child: const Text(
+      child: Text(
         "Welcome to RM - Mobile",
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize),
         textAlign: TextAlign.center,
       ),
     );
@@ -349,4 +411,16 @@ class _HomeScreenState extends State<HomeScreen> {
       child: const SizedBox(),
     );
   }
+}
+
+class _DrawerSizes {
+  const _DrawerSizes({
+    required this.initialChildSize,
+    required this.minChildSize,
+    required this.maxChildSize,
+  });
+
+  final double initialChildSize;
+  final double minChildSize;
+  final double maxChildSize;
 }

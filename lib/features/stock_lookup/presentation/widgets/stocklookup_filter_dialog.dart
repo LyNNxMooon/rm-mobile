@@ -51,12 +51,36 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isPortrait = media.orientation == Orientation.portrait;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final EdgeInsets insetPadding = isTablet
+        ? EdgeInsets.symmetric(
+            horizontal: isPortrait ? 36 : 72,
+            vertical: 24,
+          )
+        : dialogInsetPadding(context);
+    final double dialogMaxWidth = isTablet
+        ? (media.size.width * (isPortrait ? 0.9 : 0.78)).clamp(520.0, 980.0)
+        : 400.0;
+    final double panelPadding = (isTablet ? 28 : 24) * uiScale;
+    final double sectionGap = (isTablet ? 14 : 12) * uiScale;
+    final double fieldHeight = (isTablet ? 52 : 46) * uiScale;
+    final double buttonHeight = (isTablet ? 54 : 50) * uiScale;
+
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: dialogInsetPadding(context),
+      insetPadding: insetPadding,
       child: Container(
         width: double.infinity,
-        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 650),
+        constraints: BoxConstraints(
+          maxWidth: dialogMaxWidth,
+          maxHeight: isTablet ? 720 : 650,
+        ),
         decoration: BoxDecoration(
           color: kBgColor,
           borderRadius: BorderRadius.circular(10),
@@ -71,7 +95,10 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: EdgeInsets.symmetric(
+                horizontal: panelPadding,
+                vertical: (isTablet ? 22 : 20) * uiScale,
+              ),
               decoration: BoxDecoration(
                 gradient: kGColor,
                 borderRadius: const BorderRadius.only(
@@ -90,7 +117,7 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
                     onTap: () => context.navigateBack(),
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: EdgeInsets.all((isTablet ? 8 : 6) * uiScale),
                       decoration: BoxDecoration(
                         color: kGreyColor.withOpacity(0.5),
                         shape: BoxShape.circle,
@@ -141,10 +168,10 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.only(
-                              top: 25,
-                              left: 60,
-                              right: 60,
+                            padding: EdgeInsets.only(
+                              top: (isTablet ? 30 : 25) * uiScale,
+                              left: (isTablet ? 70 : 60) * uiScale,
+                              right: (isTablet ? 70 : 60) * uiScale,
                               bottom: 5,
                             ),
                             child: ModernLoadingBar(),
@@ -161,33 +188,33 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
 
                 return Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(panelPadding),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionHeader("Classifications"),
-                        const SizedBox(height: 12),
+                        SizedBox(height: sectionGap),
                         _buildDropdown(
                           "Department",
                           selectedDept,
                           depts,
                           (val) => setState(() => selectedDept = val),
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: sectionGap),
                         _buildDropdown(
                           "Category 1",
                           selectedCat1,
                           c1,
                           (val) => setState(() => selectedCat1 = val),
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: sectionGap),
                         _buildDropdown(
                           "Category 2",
                           selectedCat2,
                           c2,
                           (val) => setState(() => selectedCat2 = val),
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: sectionGap),
                         _buildDropdown(
                           "Category 3",
                           selectedCat3,
@@ -195,25 +222,34 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
                           (val) => setState(() => selectedCat3 = val),
                         ),
 
-                        const SizedBox(height: 24),
+                        SizedBox(height: panelPadding),
                         _buildSectionHeader("Sourcing"),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          controller: supplierController,
-                          hintText: 'Supplier',
+                        SizedBox(height: sectionGap),
+                        SizedBox(
+                          height: fieldHeight,
+                          child: CustomTextField(
+                            controller: supplierController,
+                            hintText: 'Supplier',
+                          ),
                         ),
 
-                        const SizedBox(height: 24),
+                        SizedBox(height: panelPadding),
                         _buildSectionHeader("Custom Data"),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          controller: custom1Controller,
-                          hintText: 'Custom1',
+                        SizedBox(height: sectionGap),
+                        SizedBox(
+                          height: fieldHeight,
+                          child: CustomTextField(
+                            controller: custom1Controller,
+                            hintText: 'Custom1',
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          controller: custom2Controller,
-                          hintText: 'Custom2',
+                        SizedBox(height: sectionGap),
+                        SizedBox(
+                          height: fieldHeight,
+                          child: CustomTextField(
+                            controller: custom2Controller,
+                            hintText: 'Custom2',
+                          ),
                         ),
                       ],
                     ),
@@ -223,79 +259,85 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
             ),
 
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(panelPadding),
               child: Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          selectedDept = null;
-                          selectedCat1 = null;
-                          selectedCat2 = null;
-                          selectedCat3 = null;
-                        });
-                        supplierController.clear();
-                        custom1Controller.clear();
-                        custom2Controller.clear();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(color: kGreyColor.withOpacity(0.3)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      height: buttonHeight,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedDept = null;
+                            selectedCat1 = null;
+                            selectedCat2 = null;
+                            selectedCat3 = null;
+                          });
+                          supplierController.clear();
+                          custom1Controller.clear();
+                          custom2Controller.clear();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: BorderSide(color: kGreyColor.withOpacity(0.3)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        "Reset",
-                        style: TextStyle(color: kThirdColor.withOpacity(0.6)),
+                        child: Text(
+                          "Reset",
+                          style: TextStyle(color: kThirdColor.withOpacity(0.6)),
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: (isTablet ? 18 : 16) * uiScale),
 
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        final criteria = FilterCriteria(
-                          dept: selectedDept,
-                          cat1: selectedCat1,
-                          cat2: selectedCat2,
-                          cat3: selectedCat3,
-                          supplier: supplierController.text.trim(),
-                          custom1: custom1Controller.text.trim(),
-                          custom2: custom2Controller.text.trim(),
-                        );
+                    child: SizedBox(
+                      height: buttonHeight,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final criteria = FilterCriteria(
+                            dept: selectedDept,
+                            cat1: selectedCat1,
+                            cat2: selectedCat2,
+                            cat3: selectedCat3,
+                            supplier: supplierController.text.trim(),
+                            custom1: custom1Controller.text.trim(),
+                            custom2: custom2Controller.text.trim(),
+                          );
 
-                        // 2. Dispatch Event to Main Bloc
-                        // Note: We reset query/sort to defaults or keep them.
-                        // Usually applying heavy filters resets search query to empty.
-                        context.read<StockListBloc>().add(
-                          FetchFirstPageEvent(
-                            query:
-                                "", // Reset text search when applying heavy filters? Or keep it?
-                            // If you want to keep it, you need to pass it in constructor or
-                            // access it via context if stored in a provider.
-                            // For now, let's reset query for clean results.
-                            filters: criteria,
+                          // 2. Dispatch Event to Main Bloc
+                          // Note: We reset query/sort to defaults or keep them.
+                          // Usually applying heavy filters resets search query to empty.
+                          context.read<StockListBloc>().add(
+                            FetchFirstPageEvent(
+                              query:
+                                  "", // Reset text search when applying heavy filters? Or keep it?
+                              // If you want to keep it, you need to pass it in constructor or
+                              // access it via context if stored in a provider.
+                              // For now, let's reset query for clean results.
+                              filters: criteria,
+                            ),
+                          );
+
+                          context.navigateBack();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        );
-
-                        context.navigateBack();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      child: const Text(
-                        "Apply Filters",
-                        style: TextStyle(
-                          color: kSecondaryColor,
-                          fontWeight: FontWeight.bold,
+                        child: const Text(
+                          "Apply Filters",
+                          style: TextStyle(
+                            color: kSecondaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -328,6 +370,7 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
     Function(String?) onChanged,
   ) {
     return Container(
+      constraints: const BoxConstraints(minHeight: 46),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: kSecondaryColor,

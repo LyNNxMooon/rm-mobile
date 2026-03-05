@@ -28,24 +28,30 @@ class FilterChipRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: _filters.map((filter) {
           final isSelected = selectedFilter == filter;
           return Padding(
-            padding: const EdgeInsets.only(right: 6.0),
+            padding: EdgeInsets.only(right: isTablet ? 8.0 : 6.0),
             child: InkWell(
               onTap: () => onFilterChanged(filter),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 7,
-                  vertical: 5,
+                padding: EdgeInsets.symmetric(
+                  horizontal: (isTablet ? 10 : 7) * uiScale,
+                  vertical: (isTablet ? 8 : 5) * uiScale,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected ? kPrimaryColor : kSecondaryColor,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(isTablet ? 24 : 20),
                   border: Border.all(
                     color: isSelected ? kPrimaryColor : Colors.grey[300]!,
                   ),
@@ -63,13 +69,13 @@ class FilterChipRow extends StatelessWidget {
                       ),
                     ),
                     if (isSelected) ...[
-                      const SizedBox(width: 4),
+                      SizedBox(width: isTablet ? 6 : 4),
                       // Can pass 'isAscending' from parent to flip this icon
                       Icon(
                         isAscending
                             ? CupertinoIcons.sort_up
                             : CupertinoIcons.sort_down,
-                        size: 14,
+                        size: (isTablet ? 16 : 14) * uiScale,
                         color: kSecondaryColor,
                       ),
                     ],

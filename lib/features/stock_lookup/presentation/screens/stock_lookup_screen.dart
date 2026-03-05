@@ -358,12 +358,18 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   }
 
   Widget _buildGlassSearchBar() {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
-          height: 56,
+          height: (isTablet ? 64 : 56) * uiScale,
           decoration: BoxDecoration(
             border: Border.all(color: kGreyColor.withOpacity(0.6), width: 0.6),
             color: Colors.white.withOpacity(0.65),
@@ -448,6 +454,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     return Expanded(
       child: BlocBuilder<StockListBloc, StockListState>(
         builder: (context, state) {
+          final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
           if (state is StockListLoading) {
             return loadingWidget();
           }
@@ -467,7 +474,8 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 itemCount: state.hasReachedMax
                     ? state.stocks.length
                     : state.stocks.length + 1,
-                separatorBuilder: (ctx, i) => const SizedBox(height: 7),
+                separatorBuilder: (ctx, i) =>
+                    SizedBox(height: isTablet ? 10 : 7),
                 itemBuilder: (context, index) {
                   if (index >= state.stocks.length) {
                     return const Center(
@@ -534,6 +542,15 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   }
 
   Widget itemTile(StockVO stock, int index) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
+    final double tileVerticalPadding = (isTablet ? 10 : 8) * uiScale;
+    final double tileHorizontalPadding = (isTablet ? 16 : 15) * uiScale;
+
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(
         position: index,
@@ -561,29 +578,30 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 15,
-                  vertical: 8,
+                padding: EdgeInsets.symmetric(
+                  horizontal: tileHorizontalPadding,
+                  vertical: tileVerticalPadding,
                 ),
+                margin: EdgeInsets.zero,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // IMAGE
                     Container(
-                      width: 36,
-                      height: 36,
+                      width: thumbnailSize,
+                      height: thumbnailSize,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
                         child: Hero(
                           tag: 'stock_image_${stock.stockID}',
                           child: StockThumbnailTile(stock: stock),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 15),
+                    SizedBox(width: (isTablet ? 17 : 15) * uiScale),
 
                     // TEXT COLUMN (Responsive Fix: Wrapped in Expanded)
                     Expanded(
@@ -608,7 +626,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 3),
+                          SizedBox(height: isTablet ? 4 : 3),
                           Text(
                             stock.barcode,
                             maxLines: 1, // Ensure no wrapping vertically

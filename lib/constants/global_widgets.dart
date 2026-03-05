@@ -31,6 +31,13 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.32)).clamp(1.0, 1.18)
+        : 1.0;
+
     return TextField(
       obscureText: obscureText,
       textInputAction: textInputAction,
@@ -42,26 +49,30 @@ class CustomTextField extends StatelessWidget {
       enabled: isEnabled,
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(color: kGreyColor, fontSize: 14),
+        hintStyle: const TextStyle(color: kGreyColor, fontSize: 14),
         prefixIcon: leadingIcon != null
-            ? Icon(leadingIcon, color: kPrimaryColor, size: 20)
+            ? Icon(
+                leadingIcon,
+                color: kPrimaryColor,
+                size: (20 * uiScale).clamp(20.0, 24.0),
+              )
             : null,
         filled: true,
         fillColor: kSecondaryColor,
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 12,
-          horizontal: 10,
+        contentPadding: EdgeInsets.symmetric(
+          vertical: (12 * uiScale).clamp(12.0, 14.5),
+          horizontal: (10 * uiScale).clamp(10.0, 12.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular((10 * uiScale).clamp(10.0, 12.0)),
           borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular((10 * uiScale).clamp(10.0, 12.0)),
           borderSide: BorderSide(color: Colors.blue[700]!, width: 1.5),
         ),
         disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular((10 * uiScale).clamp(10.0, 12.0)),
           borderSide: BorderSide(color: kGreyColor, width: 1),
         ),
       ),
@@ -75,10 +86,13 @@ class ModernLoadingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double textScale =
+        MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = (1.0 + ((textScale - 1.0) * 0.65)).clamp(1.0, 1.42);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular((10 * uiScale).clamp(10.0, 14.0)),
       child: LinearProgressIndicator(
-        minHeight: 6,
+        minHeight: (6 * uiScale).clamp(6.0, 10.0),
         backgroundColor: kSecondaryColor,
         color: kGreyColor,
       ),
