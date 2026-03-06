@@ -71,5 +71,7 @@ abstract class StockLookupRepo {
     required int stockId,
     required String description,
     required double sell,
+    String? custom1,
+    String? custom2,
   });
 }

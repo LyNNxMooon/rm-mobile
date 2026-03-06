@@ -19,6 +19,8 @@ class DetailedLowerGlass extends StatefulWidget {
     required this.isGst,
     required this.stockId,
     required this.descController,
+    required this.custom1Controller,
+    required this.custom2Controller,
     required this.canUpdateSellPrice,
   });
 
@@ -29,6 +31,8 @@ class DetailedLowerGlass extends StatefulWidget {
   final bool isGst;
   final num stockId;
   final LanguageToolController descController;
+  final TextEditingController custom1Controller;
+  final TextEditingController custom2Controller;
   final bool canUpdateSellPrice;
 
   @override
@@ -317,12 +321,16 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                         }
 
                         final updatedDescription = widget.descController.text;
+                        final updatedCustom1 = widget.custom1Controller.text.trim();
+                        final updatedCustom2 = widget.custom2Controller.text.trim();
 
                         context.read<StockUpdateBloc>().add(
                           SubmitStockUpdateEvent(
                             stockId: widget.stockId.toInt(),
                             description: updatedDescription,
                             sell: sellVal,
+                            custom1: updatedCustom1.isNotEmpty ? updatedCustom1 : null,
+                            custom2: updatedCustom2.isNotEmpty ? updatedCustom2 : null,
                           ),
                         );
                       },

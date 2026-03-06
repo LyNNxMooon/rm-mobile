@@ -13,6 +13,8 @@ class UpdateSingleStock {
     required int stockId,
     required String description,
     required double sell,
+    String? custom1,
+    String? custom2,
   }) async {
     try {
       final ip = (await LocalDbDAO.instance.getHostIpAddress() ?? "").trim();
@@ -40,6 +42,8 @@ class UpdateSingleStock {
           stockId: stockId,
           description: description,
           sell: sell,
+          custom1: custom1,
+          custom2: custom2,
         );
       } else {
         return Future.error("Please connect to a network!");

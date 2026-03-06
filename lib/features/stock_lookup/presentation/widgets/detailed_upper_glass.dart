@@ -12,8 +12,8 @@ class DetailedUpperGlass extends StatefulWidget {
     required this.barcode,
     required this.qty,
     required this.cats,
-    required this.custom1,
-    required this.custom2,
+    required this.custom1Controller,
+    required this.custom2Controller,
     required this.layByQty,
     required this.soQty,
     required this.cost,
@@ -26,11 +26,11 @@ class DetailedUpperGlass extends StatefulWidget {
   });
 
   final LanguageToolController descController;
+  final TextEditingController custom1Controller;
+  final TextEditingController custom2Controller;
   final String barcode;
   final String qty;
   final String cats;
-  final String custom1;
-  final String custom2;
   final String layByQty;
   final String soQty;
   final double cost;
@@ -57,6 +57,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
     final double sectionGap = (isTablet ? 18 : 15) * uiScale;
     final double rowGap = (isTablet ? 10 : 8) * uiScale;
     final double descFieldHeight = (isTablet ? 40 : 35) * uiScale;
+    final double customFieldHeight = (isTablet ? 36 : 32) * uiScale;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
@@ -227,20 +228,146 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                 value: widget.cats,
               ),
               SizedBox(height: rowGap),
-              StockInfoRow(
-                image: "assets/images/cus1.png",
-                icon: Icons.format_paint,
-                iconBgColor: Colors.blue,
-                label: "Custom1",
-                value: widget.custom1,
+              // Custom1 Editable Field
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: Image.asset(
+                            "assets/images/cus1.png",
+                            fit: BoxFit.fill,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        "Custom1",
+                        style: TextStyle(fontSize: 14, color: kSecondaryColor),
+                      ),
+                    ],
+                  ),
+                  SizedBox(width: (isTablet ? 45 : 35) * uiScale),
+                  Expanded(
+                    child: SizedBox(
+                      height: customFieldHeight,
+                      child: TextField(
+                        controller: widget.custom1Controller,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: kSecondaryColor,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: "Custom1",
+                          hintStyle: const TextStyle(
+                            color: kGreyColor,
+                            fontSize: 14,
+                          ),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(7),
+                            borderSide: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 0.5,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(7),
+                            borderSide: const BorderSide(
+                              color: kPrimaryColor,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: rowGap),
-              StockInfoRow(
-                image: "assets/images/cus2.png",
-                icon: Icons.settings,
-                iconBgColor: Colors.deepOrange,
-                label: "Custom2",
-                value: widget.custom2,
+              // Custom2 Editable Field
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Colors.deepOrange.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: Image.asset(
+                            "assets/images/cus2.png",
+                            fit: BoxFit.fill,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        "Custom2",
+                        style: TextStyle(fontSize: 14, color: kSecondaryColor),
+                      ),
+                    ],
+                  ),
+                  SizedBox(width: (isTablet ? 45 : 35) * uiScale),
+                  Expanded(
+                    child: SizedBox(
+                      height: customFieldHeight,
+                      child: TextField(
+                        controller: widget.custom2Controller,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: kSecondaryColor,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: "Custom2",
+                          hintStyle: const TextStyle(
+                            color: kGreyColor,
+                            fontSize: 14,
+                          ),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(7),
+                            borderSide: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 0.5,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(7),
+                            borderSide: const BorderSide(
+                              color: kPrimaryColor,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: rowGap),
               StockInfoRow(

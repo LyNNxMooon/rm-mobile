@@ -46,6 +46,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   bool _shouldSyncOnExit = false;
 
   late final LanguageToolController _descriptionController;
+  late final TextEditingController _custom1Controller;
+  late final TextEditingController _custom2Controller;
 
   @override
   void initState() {
@@ -60,6 +62,13 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         );
       }
     });
+
+    _custom1Controller = TextEditingController(
+      text: widget.stock.custom1 ?? "",
+    );
+    _custom2Controller = TextEditingController(
+      text: widget.stock.custom2 ?? "",
+    );
     // Old setup disabled:
     // final pic = widget.stock.pictureFileName;
     // if (pic != null && pic.isNotEmpty) {
@@ -333,6 +342,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   @override
   void dispose() {
     _descriptionController.dispose();
+    _custom1Controller.dispose();
+    _custom2Controller.dispose();
     super.dispose();
   }
 
@@ -552,6 +563,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           constraints: BoxConstraints(minHeight: upperMinHeight),
                           child: DetailedUpperGlass(
                             descController: _descriptionController,
+                            custom1Controller: _custom1Controller,
+                            custom2Controller: _custom2Controller,
                             dept: widget.stock.deptName ?? "-",
                             barcode: widget.stock.barcode,
                             qty:
@@ -561,8 +574,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                 "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
                             cost: cost,
                             sell: sell,
-                            custom1: widget.stock.custom1 ?? "-",
-                            custom2: widget.stock.custom2 ?? "-",
                             layByQty: (widget.stock.laybyQuantity % 1 == 0)
                                 ? widget.stock.laybyQuantity.toInt().toString()
                                 : double.parse(
@@ -595,6 +606,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         ),
                         child: DetailedLowerGlass(
                           descController: _descriptionController,
+                          custom1Controller: _custom1Controller,
+                          custom2Controller: _custom2Controller,
                           stockId: widget.stock.stockID,
                           sell: sell,
                           exSell: widget.stock.sell,

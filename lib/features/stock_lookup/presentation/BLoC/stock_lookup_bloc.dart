@@ -334,6 +334,8 @@ class StockUpdateBloc extends Bloc<StockUpdateEvent, StockUpdateState> {
         stockId: event.stockId,
         description: event.description,
         sell: event.sell,
+        custom1: event.custom1,
+        custom2: event.custom2,
       );
       if (response.success) {
         emit(StockUpdateSuccess(response.message));

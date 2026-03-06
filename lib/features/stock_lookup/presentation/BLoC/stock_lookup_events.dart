@@ -63,10 +63,14 @@ class SubmitStockUpdateEvent extends StockUpdateEvent {
   final int stockId;
   final String description;
   final double sell;
+  final String? custom1;
+  final String? custom2;
 
   SubmitStockUpdateEvent({
     required this.stockId,
     required this.description,
     required this.sell,
+    this.custom1,
+    this.custom2,
   });
 }

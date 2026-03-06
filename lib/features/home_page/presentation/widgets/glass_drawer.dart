@@ -128,8 +128,8 @@ class _GlassDrawerState extends State<GlassDrawer> {
                     child: BlocBuilder<StaffAuthBloc, StaffAuthStates>(
                       builder: (context, staffState) {
                         return BlocBuilder<
-                            ShopFrontConnectionBloc,
-                            ShopfrontConnectionStates
+                          ShopFrontConnectionBloc,
+                          ShopfrontConnectionStates
                         >(
                           builder: (context, state) {
                             final shop = AppGlobals.instance.shopfront;
@@ -182,7 +182,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
           final double baseSpacing = width > 600 ? 20.0 : 15.0;
           final double rawHeight4 =
               (height - verticalPadding - ((rowCount4 - 1) * baseSpacing)) /
-                  rowCount4;
+              rowCount4;
           final double maxTileHeight = isTabletPortrait ? 210.0 : 170.0;
           if (rawHeight4 > maxTileHeight) {
             crossAxisCount = 3;
@@ -342,7 +342,9 @@ class _GlassDrawerState extends State<GlassDrawer> {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     // Scale fonts and icon only for tablets/iPads
     final double titleSize = isTablet ? (14 * scale).clamp(14.0, 19.0) : 14.0;
-    final double subTitleSize = isTablet ? (11 * scale).clamp(11.0, 14.0) : 13.0;
+    final double subTitleSize = isTablet
+        ? (11 * scale).clamp(11.0, 14.0)
+        : 13.0;
     final double iconSize = isTablet ? (36 * scale).clamp(32.0, 48.0) : 22.0;
 
     return AnimationConfiguration.staggeredGrid(
@@ -438,14 +440,19 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "icon": Icons.inventory_2_outlined,
     },
     {
-      "title": "Mobile Sales",
-      "subTitle": "Do Counter sales",
-      "icon": Icons.point_of_sale_outlined,
+      "title": "Customers",
+      "subTitle": "Search customers",
+      "icon": Icons.people,
     },
     {
       "title": "Quotes & SO",
       "subTitle": "Issue Quotes & SO",
       "icon": Icons.request_quote_outlined,
+    },
+    {
+      "title": "Mobile Sales",
+      "subTitle": "Do Counter sales",
+      "icon": Icons.point_of_sale_outlined,
     },
     {
       "title": "Purchase Orders",
@@ -476,11 +483,6 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "title": "Reporting",
       "subTitle": "Print Reports",
       "icon": Icons.newspaper_outlined,
-    },
-    {
-      "title": "Customers",
-      "subTitle": "Search customers",
-      "icon": Icons.people,
     },
     {
       "title": "Suppliers",

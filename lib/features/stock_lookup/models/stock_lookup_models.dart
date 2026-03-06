@@ -373,18 +373,27 @@ class StockLookupModels implements StockLookupRepo {
     required int stockId,
     required String description,
     required double sell,
+    String? custom1,
+    String? custom2,
   }) async {
     try {
       final String now = DateTime.now().toIso8601String();
+      final Map<String, dynamic> itemData = {
+        "stock_id": stockId,
+        "description": description,
+        "sell": sell,
+        "date_modified": now,
+      };
+
+      if (custom1 != null) {
+        itemData["custom1"] = custom1;
+      }
+      if (custom2 != null) {
+        itemData["custom2"] = custom2;
+      }
+
       final body = {
-        "items": [
-          {
-            "stock_id": stockId,
-            "description": description,
-            "sell": sell,
-            "date_modified": now,
-          },
-        ],
+        "items": [itemData],
       };
 
       return await DataAgentImpl.instance.updateShopfrontStock(
