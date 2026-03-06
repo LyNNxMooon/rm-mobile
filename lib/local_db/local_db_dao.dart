@@ -1,10 +1,12 @@
 import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
+import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 
 import '../entities/response/paginated_stock_response.dart';
+import '../entities/response/paginated_customer_response.dart';
 
 abstract class LocalDbDAO {
   static LocalDbDAO? _instance;
@@ -77,6 +79,22 @@ abstract class LocalDbDAO {
 
   Future<List<StockVO>> getStocksByBarcode(String barcode, String shopfront);
 
+  // Customer methods
+  Future<PaginatedCustomerResult> searchAndSortCustomers({
+    required String shopfront,
+    required String query,
+    required String filterColumn,
+    required String sortColumn,
+    required bool ascending,
+    required int limit,
+    required int offset,
+    FilterCriteria? filters,
+  });
+
+  Future<List<String>> getDistinctCustomerValues(String columnName, String shopfront);
+
+  Future<CustomerVO?> getCustomerById(int customerId, String shopfront);
+
   // Setters to save data
   Future<void> saveCountedStock(Map<String, dynamic> stockData);
 
@@ -88,6 +106,7 @@ abstract class LocalDbDAO {
 
   Future<void> addNetworkPath(String path, String shopfront, String hostName);
   Future<void> insertStocks(List<StockVO> stocks, String shopfront);
+  Future<void> insertCustomers(List<CustomerVO> customers, String shopfront);
   Future<void> saveAppConfig(String key, String value);
   Future<void> saveHostIpAddress(String hostIpAddress);
   Future<void> saveHostPort(String hostPort);
@@ -134,6 +153,7 @@ abstract class LocalDbDAO {
   Future<void> deleteNetworkPath(String path);
   Future<void> deleteStocktake(int stockID, String shopfront);
   Future<void> deleteAllStocktake();
+  Future<void> clearCustomersForShop(String shopfront);
   Future<void> clearStocksForShop(String shopfront);
   Future<int> deleteHistoryOlderThan(DateTime cutoffUtc);
 }

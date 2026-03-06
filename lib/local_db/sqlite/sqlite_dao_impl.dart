@@ -1,8 +1,11 @@
 import 'package:path/path.dart';
+import 'package:rmstock_scanner/entities/response/paginated_customer_response.dart';
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
+import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/customer_address_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/local_db/sqlite/sqlite_constants.dart';
@@ -21,7 +24,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       _database = await openDatabase(
         path,
-        version: 2,
+        version: 3,
         onCreate: (db, version) async {
           await db.execute(stocktakeTableCreationQuery);
           await db.execute(appConfigTableCreationQuery);
@@ -30,6 +33,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
           await db.execute(stocksTableCreationQuery);
           await db.execute(stocktakeHistorySessionCreationQuery);
           await db.execute(stocktakeHistoryItemsCreationQuery);
+          await db.execute(customersTableCreationQuery);
+          await db.execute(customerAddressesTableCreationQuery);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
           if (oldVersion < 2) {
@@ -39,6 +44,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
               column: 'last_sale_date',
               definition: 'TEXT',
             );
+          }
+          if (oldVersion < 3) {
+            await db.execute(customersTableCreationQuery);
+            await db.execute(customerAddressesTableCreationQuery);
           }
         },
       );
@@ -1278,6 +1287,334 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error updating stock quantity in local db: $error');
       return Future.error("Error updating stock quantity: $error");
+    }
+  }
+
+  // Customer Methods
+
+  @override
+  Future<void> insertCustomers(List<CustomerVO> customers, String shopfront) async {
+    try {
+      final db = _database!;
+      
+      await db.transaction((txn) async {
+        final batch = txn.batch();
+
+        for (var customer in customers) {
+          batch.insert(
+            'Customers',
+            customer.toJson(shopfront),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+
+          // Insert addresses
+          for (var address in customer.addresses) {
+            batch.insert(
+              'CustomerAddresses',
+              {
+                'address_id': address.addressId,
+                'customer_id': address.customerId,
+                'shopfront': shopfront,
+                'address_number': address.addressNumber,
+                'addr1': address.addr1,
+                'addr2': address.addr2,
+                'addr3': address.addr3,
+                'suburb': address.suburb,
+                'state': address.state,
+                'postcode': address.postcode,
+                'country': address.country,
+                'phone': address.phone,
+                'fax': address.fax,
+                'mobile': address.mobile,
+                'email': address.email,
+              },
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+        }
+        await batch.commit(noResult: true);
+      });
+      logger.d('Successfully saved ${customers.length} customers for $shopfront');
+    } catch (error) {
+      logger.e('Error saving customers for $shopfront: $error');
+      return Future.error("Error saving customers: $error");
+    }
+  }
+
+  @override
+  Future<PaginatedCustomerResult> searchAndSortCustomers({
+    required String shopfront,
+    required String query,
+    required String filterColumn,
+    required String sortColumn,
+    required bool ascending,
+    required int limit,
+    required int offset,
+    FilterCriteria? filters,
+  }) async {
+    try {
+      final db = _database!;
+      final String q = query.trim();
+
+      const allowedColumns = <String>{
+        'customer_id',
+        'shopfront',
+        'barcode',
+        'surname',
+        'given_names',
+        'company',
+        'email',
+        'phone',
+        'mobile',
+        'suburb',
+        'state',
+        'postcode',
+        'date_modified',
+      };
+
+      final String safeSortColumn = allowedColumns.contains(sortColumn)
+          ? sortColumn
+          : 'surname';
+
+      final String orderBy = "$safeSortColumn ${ascending ? 'ASC' : 'DESC'}";
+
+      String baseWhere = 'shopfront = ?';
+      final List<dynamic> baseArgs = [shopfront];
+
+      // Add filters if provided
+      if (filters != null) {
+        if (filters.custom1 != null && filters.custom1!.isNotEmpty) {
+          baseWhere += ' AND custom1 LIKE ?';
+          baseArgs.add('%${filters.custom1!}%');
+        }
+        if (filters.custom2 != null && filters.custom2!.isNotEmpty) {
+          baseWhere += ' AND custom2 LIKE ?';
+          baseArgs.add('%${filters.custom2!}%');
+        }
+        if (filters.state != null && filters.state!.isNotEmpty) {
+          baseWhere += ' AND state = ?';
+          baseArgs.add(filters.state!);
+        }
+        if (filters.suburb != null && filters.suburb!.isNotEmpty) {
+          baseWhere += ' AND suburb = ?';
+          baseArgs.add(filters.suburb!);
+        }
+        if (filters.postcode != null && filters.postcode!.isNotEmpty) {
+          baseWhere += ' AND postcode = ?';
+          baseArgs.add(filters.postcode!);
+        }
+      }
+
+      Future<PaginatedCustomerResult> runQuery({
+        required String whereClause,
+        required List<dynamic> args,
+      }) async {
+        final countFuture = db.rawQuery(
+          'SELECT COUNT(*) as count FROM Customers WHERE $whereClause',
+          args,
+        );
+
+        final dataFuture = db.query(
+          'Customers',
+          where: whereClause,
+          whereArgs: args,
+          orderBy: orderBy,
+          limit: limit,
+          offset: offset,
+        );
+
+        final results = await Future.wait([dataFuture, countFuture]);
+
+        final rows = results[0] as List<Map<String, dynamic>>;
+        final int count =
+            Sqflite.firstIntValue(results[1] as List<Map<String, dynamic>>) ??
+            0;
+
+        // Load addresses for each customer
+        final List<CustomerVO> customers = [];
+        for (final row in rows) {
+          final customerId = row['customer_id'] as int;
+          final addresses = await _getCustomerAddresses(db, customerId, shopfront);
+          customers.add(_customerFromRow(row, addresses));
+        }
+
+        return PaginatedCustomerResult(
+          customers: customers,
+          totalCount: count,
+          hasMore: offset + customers.length < count,
+        );
+      }
+
+      // Fast existence check
+      Future<bool> exists(String whereClause, List<dynamic> args) async {
+        final res = await db.rawQuery(
+          'SELECT 1 FROM Customers WHERE $whereClause LIMIT 1',
+          args,
+        );
+        return res.isNotEmpty;
+      }
+
+      if (q.isEmpty) {
+        return runQuery(whereClause: baseWhere, args: baseArgs);
+      }
+
+      // Search priority: barcode -> surname -> company -> given_names -> email 
+      final searchPriority = <String>['barcode', 'surname', 'company', 'given_names', 'email'];
+
+      for (final column in searchPriority) {
+        final whereClause = '$baseWhere AND $column LIKE ?';
+        final args = [...baseArgs, '%$q%'];
+        if (await exists(whereClause, args)) {
+          return runQuery(whereClause: whereClause, args: args);
+        }
+      }
+
+      // No match in any prioritized column.
+      final fallbackWhere = '$baseWhere AND barcode LIKE ?';
+      final fallbackArgs = [...baseArgs, '%$q%'];
+      return runQuery(whereClause: fallbackWhere, args: fallbackArgs);
+    } catch (error) {
+      logger.e('Error searching customers: $error');
+      return Future.error(error);
+    }
+  }
+
+  Future<List<CustomerAddressVO>> _getCustomerAddresses(
+    Database db,
+    int customerId,
+    String shopfront,
+  ) async {
+    final rows = await db.query(
+      'CustomerAddresses',
+      where: 'customer_id = ? AND shopfront = ?',
+      whereArgs: [customerId, shopfront],
+    );
+
+    return rows.map((row) => CustomerAddressVO(
+      addressId: row['address_id'] as int,
+      customerId: row['customer_id'] as int,
+      addressNumber: row['address_number'] as int,
+      addr1: row['addr1'] as String? ?? '',
+      addr2: row['addr2'] as String? ?? '',
+      addr3: row['addr3'] as String? ?? '',
+      suburb: row['suburb'] as String? ?? '',
+      state: row['state'] as String? ?? '',
+      postcode: row['postcode'] as String? ?? '',
+      country: row['country'] as String? ?? '',
+      phone: row['phone'] as String? ?? '',
+      fax: row['fax'] as String? ?? '',
+      mobile: row['mobile'] as String? ?? '',
+      email: row['email'] as String? ?? '',
+    )).toList();
+  }
+
+  CustomerVO _customerFromRow(Map<String, dynamic> row, List<CustomerAddressVO> addresses) {
+    return CustomerVO(
+      customerId: row['customer_id'] as int,
+      barcode: row['barcode'] as String? ?? '',
+      grade: row['grade'] as int? ?? 0,
+      notes: row['notes'] as String? ?? '',
+      comments: row['comments'] as String? ?? '',
+      status: row['status'] == 1,
+      custom1: row['custom1'] as String? ?? '',
+      custom2: row['custom2'] as String? ?? '',
+      inactive: row['inactive'] == 1,
+      dateModified: row['date_modified'] as String? ?? '',
+      surname: row['surname'] as String? ?? '',
+      givenNames: row['given_names'] as String? ?? '',
+      position: row['position'] as String? ?? '',
+      company: row['company'] as String? ?? '',
+      salutation: row['salutation'] as String? ?? '',
+      account: row['account'] == 1,
+      openedId: row['opened_id'] as int? ?? 0,
+      ownerId: row['owner_id'] as int? ?? 0,
+      limit: row['limit'] as num? ?? 0,
+      days: row['days'] as int? ?? 0,
+      fromEOM: row['from_eom'] == 1,
+      addr1: row['addr1'] as String? ?? '',
+      addr2: row['addr2'] as String? ?? '',
+      addr3: row['addr3'] as String? ?? '',
+      suburb: row['suburb'] as String? ?? '',
+      state: row['state'] as String? ?? '',
+      postcode: row['postcode'] as String? ?? '',
+      country: row['country'] as String? ?? '',
+      phone: row['phone'] as String? ?? '',
+      fax: row['fax'] as String? ?? '',
+      mobile: row['mobile'] as String? ?? '',
+      email: row['email'] as String? ?? '',
+      abn: row['abn'] as String? ?? '',
+      overseas: row['overseas'] == 1,
+      external: row['external'] == 1,
+      dateCreated: row['date_created'] as String? ?? '',
+      isBarcodePrinted: row['is_barcode_printed'] == 1,
+      documentDeliveryType: row['document_delivery_type'] as int? ?? 0,
+      groupEmailExclusionId: row['group_email_exclusion_id'] as int? ?? 0,
+      defaultDeliveryAddress: row['default_delivery_address'] as int? ?? 1,
+      addresses: addresses,
+    );
+  }
+
+  @override
+  Future<List<String>> getDistinctCustomerValues(
+    String columnName,
+    String shopfront,
+  ) async {
+    try {
+      final db = _database!;
+
+      final List<Map<String, dynamic>> result = await db.rawQuery(
+        '''
+      SELECT DISTINCT $columnName 
+      FROM Customers 
+      WHERE shopfront = ? 
+        AND $columnName IS NOT NULL 
+        AND $columnName != '' 
+      ORDER BY $columnName ASC
+    ''',
+        [shopfront],
+      );
+
+      return result.map((row) => row[columnName] as String).toList();
+    } catch (error) {
+      logger.e('Error fetching distinct $columnName for customers in $shopfront: $error');
+      return [];
+    }
+  }
+
+  @override
+  Future<CustomerVO?> getCustomerById(int customerId, String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'Customers',
+        where: 'customer_id = ? AND shopfront = ?',
+        whereArgs: [customerId, shopfront],
+        limit: 1,
+      );
+
+      if (result.isEmpty) {
+        return null;
+      }
+
+      final addresses = await _getCustomerAddresses(db, customerId, shopfront);
+      return _customerFromRow(result.first, addresses);
+    } catch (error) {
+      logger.e('Error getting customer by ID in $shopfront: $error');
+      return Future.error("Error getting customer: $error");
+    }
+  }
+
+  @override
+  Future<void> clearCustomersForShop(String shopfront) async {
+    try {
+      final db = _database!;
+      await db.transaction((txn) async {
+        await txn.delete('CustomerAddresses', where: 'shopfront = ?', whereArgs: [shopfront]);
+        await txn.delete('Customers', where: 'shopfront = ?', whereArgs: [shopfront]);
+      });
+      logger.d('Cleared customers for $shopfront');
+    } catch (error) {
+      logger.e('Error clearing customers for $shopfront: $error');
     }
   }
 }

@@ -1,4 +1,3 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'stock_list_response.dart';
 

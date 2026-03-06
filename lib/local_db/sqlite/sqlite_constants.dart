@@ -131,3 +131,71 @@ const String kStaffRestrictedPermissionsKey =
     "staff_restricted_permissions_json";
 const String kWelcomeSeenKey = "welcome_seen";
 const String kTermsAcceptedKey = "terms_accepted";
+
+const customersTableCreationQuery = '''
+  CREATE TABLE Customers (
+    customer_id INTEGER,
+    shopfront TEXT,
+    barcode TEXT,
+    grade INTEGER,
+    notes TEXT,
+    comments TEXT,
+    status INTEGER,
+    custom1 TEXT,
+    custom2 TEXT,
+    inactive INTEGER,
+    date_modified TEXT,
+    surname TEXT,
+    given_names TEXT,
+    position TEXT,
+    company TEXT,
+    salutation TEXT,
+    account INTEGER,
+    opened_id INTEGER,
+    owner_id INTEGER,
+    "limit" REAL,
+    days INTEGER,
+    from_eom INTEGER,
+    addr1 TEXT,
+    addr2 TEXT,
+    addr3 TEXT,
+    suburb TEXT,
+    state TEXT,
+    postcode TEXT,
+    country TEXT,
+    phone TEXT,
+    fax TEXT,
+    mobile TEXT,
+    email TEXT,
+    abn TEXT,
+    overseas INTEGER,
+    external INTEGER,
+    date_created TEXT,
+    is_barcode_printed INTEGER,
+    document_delivery_type INTEGER,
+    group_email_exclusion_id INTEGER,
+    default_delivery_address INTEGER,
+    PRIMARY KEY (customer_id, shopfront)
+  )
+''';
+
+const customerAddressesTableCreationQuery = '''
+  CREATE TABLE CustomerAddresses (
+    address_id INTEGER,
+    customer_id INTEGER,
+    shopfront TEXT,
+    address_number INTEGER,
+    addr1 TEXT,
+    addr2 TEXT,
+    addr3 TEXT,
+    suburb TEXT,
+    state TEXT,
+    postcode TEXT,
+    country TEXT,
+    phone TEXT,
+    fax TEXT,
+    mobile TEXT,
+    email TEXT,
+    PRIMARY KEY (address_id, customer_id, shopfront)
+  )
+''';

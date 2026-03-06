@@ -15,6 +15,7 @@ import '../../../../entities/vos/network_server_vo.dart';
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
+import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
 import '../BLoC/home_screen_states.dart';
@@ -325,6 +326,19 @@ class _GlassDrawerState extends State<GlassDrawer> {
         return;
       }
       context.navigateToNext(const StockLookupScreen());
+    } else if (index == 2) {
+      if (!AppGlobals.instance.hasAnyPermission(const <String>[
+        "Information_Customer",
+      ])) {
+        showTopSnackBar(
+          Overlay.of(context),
+          const CustomSnackBar.error(
+            message: "You do not have permission to access Customer Lookup.",
+          ),
+        );
+        return;
+      }
+      context.navigateToNext(const CustomerLookupScreen());
     } else {
       context.navigateToNext(const ComingSoonScreen());
     }

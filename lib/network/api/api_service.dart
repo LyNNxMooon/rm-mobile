@@ -14,6 +14,7 @@ import 'package:rmstock_scanner/entities/response/stocktake_backup_response.dart
 import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_limit_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
+import 'package:rmstock_scanner/entities/response/customer_lookup_api_response.dart';
 import 'package:rmstock_scanner/entities/response/security_groups_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_list_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
@@ -107,6 +108,17 @@ abstract class ApiService {
     'Content-Type': 'application/json',
   })
   Future<StockUpdateResponse> updateShopfrontStock(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Header("x-api-key") String apiKey,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST(kEndPointForCustomerLookup)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<CustomerLookupApiResponse> fetchShopfrontCustomers(
     @Path(kPathParamForShopfrontId) String shopfrontId,
     @Header("x-api-key") String apiKey,
     @Body() Map<String, dynamic> body,

@@ -5,6 +5,7 @@ import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen
 import 'package:rmstock_scanner/features/onboarding/presentation/screens/onboarding_gate_screen.dart';
 //import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 //import 'package:rmstock_scanner/features/stocktake/presentation/screens/scanner_screen.dart';
 import 'package:rmstock_scanner/utils/dependency_injection_utils.dart';
@@ -134,6 +135,9 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<FetchStockBloc>(create: (_) => sl<FetchStockBloc>()),
         BlocProvider<StockListBloc>(create: (_) => sl<StockListBloc>()),
         BlocProvider<FilterOptionsBloc>(create: (_) => sl<FilterOptionsBloc>()),
+        BlocProvider<FetchCustomerBloc>(create: (_) => sl<FetchCustomerBloc>()),
+        BlocProvider<CustomerListBloc>(create: (_) => sl<CustomerListBloc>()),
+        BlocProvider<CustomerFilterOptionsBloc>(create: (_) => sl<CustomerFilterOptionsBloc>()),
         BlocProvider<ScannerBloc>(create: (_) => sl<ScannerBloc>()),
         BlocProvider<StocktakeValidationBloc>(
           create: (_) => sl<StocktakeValidationBloc>(),

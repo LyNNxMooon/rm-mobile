@@ -14,7 +14,6 @@ AuditItem _$AuditItemFromJson(Map<String, dynamic> json) => AuditItem(
       movement: (json['movement'] as num).toDouble(),
     );
 
-// ignore: unused_element
 Map<String, dynamic> _$AuditItemToJson(AuditItem instance) => <String, dynamic>{
       'audit_date': instance.auditDate,
       'tran_type': instance.tranType,

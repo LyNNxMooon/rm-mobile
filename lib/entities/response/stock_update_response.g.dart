@@ -1,7 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-// ignore_for_file: unused_element
-
 part of 'stock_update_response.dart';
 
 // **************************************************************************
@@ -18,11 +16,11 @@ StockUpdateResponse _$StockUpdateResponseFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$StockUpdateResponseToJson(
-  StockUpdateResponse instance,
-) => <String, dynamic>{
-  'success': instance.success,
-  'message': instance.message,
-  'updated': instance.updated,
-  'missing': instance.missing,
-  'skipped': instance.skipped,
-};
+        StockUpdateResponse instance) =>
+    <String, dynamic>{
+      'success': instance.success,
+      'message': instance.message,
+      'updated': instance.updated,
+      'missing': instance.missing,
+      'skipped': instance.skipped,
+    };

@@ -6,6 +6,9 @@ class FilterCriteria {
   final String? supplier;
   final String? custom1;
   final String? custom2;
+  final String? state;
+  final String? suburb;
+  final String? postcode;
 
   FilterCriteria({
     this.dept,
@@ -15,6 +18,9 @@ class FilterCriteria {
     this.supplier,
     this.custom1,
     this.custom2,
+    this.state,
+    this.suburb,
+    this.postcode,
   });
 
   // Helper to check if any filter is active
@@ -25,5 +31,8 @@ class FilterCriteria {
       cat3 != null ||
       (supplier != null && supplier!.isNotEmpty) ||
       (custom1 != null && custom1!.isNotEmpty) ||
-      (custom2 != null && custom2!.isNotEmpty);
+      (custom2 != null && custom2!.isNotEmpty) ||
+      (state != null && state!.isNotEmpty) ||
+      (suburb != null && suburb!.isNotEmpty) ||
+      (postcode != null && postcode!.isNotEmpty);
 }

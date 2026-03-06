@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
 
 class BreathingStockLoader extends StatefulWidget {
-  const BreathingStockLoader({super.key});
+  const BreathingStockLoader({super.key, this.centerChild});
+
+  final Widget? centerChild;
 
   @override
   State<BreathingStockLoader> createState() => _BreathingStockLoaderState();
@@ -62,10 +64,11 @@ class _BreathingStockLoaderState extends State<BreathingStockLoader>
         SizedBox(
           width: 80, // Slightly smaller to fit inside rings
           height: 80,
-          child: Image.asset(
-            "assets/images/empty.png",
-            fit: BoxFit.fill,
-          ),
+          child: widget.centerChild ??
+              Image.asset(
+                "assets/images/empty.png",
+                fit: BoxFit.fill,
+              ),
         ),
       ],
     );

@@ -50,6 +50,12 @@ import '../features/stock_lookup/domain/use_cases/get_paginated_stock.dart';
 import '../features/stock_lookup/domain/use_cases/update_single_stock.dart';
 import '../features/stock_lookup/models/stock_lookup_models.dart';
 import '../features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
+import '../features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
+import '../features/customer_lookup/domain/use_cases/fetch_customer_data.dart';
+import '../features/customer_lookup/domain/use_cases/get_customer_filter_options.dart';
+import '../features/customer_lookup/domain/use_cases/get_paginated_customers.dart';
+import '../features/customer_lookup/models/customer_lookup_models.dart';
+import '../features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../features/stocktake/domain/use_cases/commit_stocktake.dart';
 import '../features/stocktake/domain/use_cases/count_and_save_to_localdb.dart';
 //import '../features/stocktake/domain/use_cases/fetch_all_stocktake_list.dart';
@@ -91,6 +97,9 @@ Future<void> init() async {
   sl.registerFactory(() => FetchStockBloc(fetchStockData: sl()));
   sl.registerFactory(() => StockListBloc(getPaginatedStock: sl()));
   sl.registerFactory(() => FilterOptionsBloc(getFilterOptions: sl()));
+  sl.registerFactory(() => FetchCustomerBloc(fetchCustomerData: sl()));
+  sl.registerFactory(() => CustomerListBloc(getPaginatedCustomers: sl()));
+  sl.registerFactory(() => CustomerFilterOptionsBloc(getCustomerFilterOptions: sl()));
   sl.registerFactory(() => ScannerBloc(fetchCountingStock: sl()));
   sl.registerFactory(
     () => StocktakeValidationBloc(fetchStocktakeAuditReport: sl()),
@@ -134,6 +143,7 @@ Future<void> init() async {
 
   //Repos
   sl.registerLazySingleton<HomeRepo>(() => HomeScreenModels());
+  sl.registerLazySingleton<CustomerLookupRepo>(() => CustomerLookupModels());
   sl.registerLazySingleton<StocktakeRepo>(() => StocktakeModel());
   sl.registerLazySingleton<LoadingSplashRepo>(() => LoadingSplashModels());
   sl.registerLazySingleton<StockLookupRepo>(() => StockLookupModels());
@@ -155,6 +165,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CheckIfShopfrontFileExists(sl()));
   sl.registerLazySingleton(() => FetchStockData(sl()));
   sl.registerLazySingleton(() => GetPaginatedStock(sl()));
+  sl.registerLazySingleton(() => FetchCustomerData(sl()));
+  sl.registerLazySingleton(() => GetPaginatedCustomers(sl()));
+  sl.registerLazySingleton(() => GetCustomerFilterOptions(sl()));
   sl.registerLazySingleton(() => GetFilterOptions(sl()));
   sl.registerLazySingleton(() => FetchCountingStock(sl()));
   sl.registerLazySingleton(() => FetchStocktakeAuditReport(sl()));
