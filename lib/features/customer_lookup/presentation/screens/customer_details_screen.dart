@@ -56,6 +56,161 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     }
   }
 
+  void _showSecondaryAddressesDialog() {
+    final double baseSize = _font(context, 14);
+    final double smallSize = _font(context, 12);
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(16),
+  ),
+  elevation: 10,
+  backgroundColor: Colors.white, // Or a slightly off-white like Color(0xFFF9FAFB) if you prefer
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // Dialog Header
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3F4F6), // Matches the scaffold background of the details screen
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+          ),
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.shade200, width: 1.5),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.location_on_outlined, size: 20, color: kPrimaryColor),
+                const SizedBox(width: 8),
+                Text(
+                  "Secondary Addresses",
+                  style: TextStyle(
+                    fontSize: _font(context, 16),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            // Close Button in header instead of actions
+            InkWell(
+              onTap: () => Navigator.pop(context),
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Icon(Icons.close, size: 20, color: Colors.grey[600]),
+              ),
+            ),
+          ],
+        ),
+      ),
+      
+      // Dialog Content (Scrollable list of addresses)
+      Flexible(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: List.generate(widget.customer.addresses.length, (index) {
+              final address = widget.customer.addresses[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Address Number Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        "Address ${address.addressNumber}",
+                        style: TextStyle(
+                          fontSize: _font(context, 12),
+                          fontWeight: FontWeight.bold,
+                          color: kPrimaryColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Address Lines
+                    if (address.addr1.isNotEmpty) ...[
+                      Text(address.addr1, style: TextStyle(fontSize: baseSize, color: Colors.black87)),
+                    ],
+                    if (address.addr2.isNotEmpty) ...[
+                      Text(address.addr2, style: TextStyle(fontSize: baseSize, color: Colors.black87)),
+                    ],
+                    if (address.addr3.isNotEmpty) ...[
+                      Text(address.addr3, style: TextStyle(fontSize: baseSize, color: Colors.black87)),
+                    ],
+                    if (address.suburb.isNotEmpty || address.state.isNotEmpty || address.postcode.isNotEmpty) ...[
+                      Text(
+                        "${address.suburb} ${address.state} ${address.postcode}".trim(),
+                        style: TextStyle(fontSize: baseSize, color: Colors.black87),
+                      ),
+                    ],
+                    if (address.country.isNotEmpty) ...[
+                      Text(address.country, style: TextStyle(fontSize: baseSize, color: Colors.black87)),
+                    ],
+                    
+                    const SizedBox(height: 12),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    
+                    // Contact Info within this address
+                    if (address.phone.isNotEmpty) ...[
+                      _buildDialogContactRow(Icons.phone_outlined, address.phone, smallSize),
+                    ],
+                    if (address.mobile.isNotEmpty) ...[
+                      _buildDialogContactRow(Icons.phone_iphone_outlined, address.mobile, smallSize),
+                    ],
+                    if (address.email.isNotEmpty) ...[
+                      _buildDialogContactRow(Icons.email_outlined, address.email, smallSize),
+                    ],
+                    
+                    // Show a message if no contact info exists for this address to avoid empty space
+                    if (address.phone.isEmpty && address.mobile.isEmpty && address.email.isEmpty) ...[
+                       Text("No contact details for this address.", style: TextStyle(fontSize: smallSize, color: Colors.grey[500], fontStyle: FontStyle.italic)),
+                    ]
+                  ],
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    ],
+  ),
+);
+      },
+    );
+  }
+
   String _getGradeLabel(int grade) {
     switch (grade) {
       case 0: return "Grade (Default)";
@@ -66,6 +221,27 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       default: return "Grade ($grade)";
     }
   }
+
+  Widget _buildDialogContactRow(IconData icon, String text, double fontSize) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey[500]),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: fontSize,
+              color: Colors.grey[700],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -259,9 +435,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 widget.customer.overseas
               ),
               _buildPillBadge(
-                widget.customer.external ? "External" : "Internal", 
-                Colors.purple, 
-                widget.customer.external
+                widget.customer.status ? "Status" : "Non-Status",
+                widget.customer.status ? Colors.green : Colors.amber,
+                true,
               ),
             ],
           ),
@@ -400,9 +576,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             child: Divider(height: 1, color: Color(0xFFEEEEEE)),
           ),
           InkWell(
-            onTap: () {
-               // Full addresses routing
-            },
+            onTap: () => _showSecondaryAddressesDialog(),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -416,7 +590,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 Row(
                   children: [
                     Text(
-                      "${widget.customer.addresses.length} Addresses",
+                      "View All Addr",
                       style: TextStyle(
                         fontSize: baseSize,
                         color: Colors.grey[600],
@@ -459,16 +633,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    "ABN",
-                    style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.customer.abn.isEmpty ? "-" : widget.customer.abn,
-                    style: TextStyle(fontSize: baseSize),
-                  ),
                 ],
               ),
             ),
@@ -487,16 +651,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       fontSize: baseSize,
                       fontWeight: FontWeight.w600,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    "Delivery Type",
-                    style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.customer.documentDeliveryType.toString(),
-                    style: TextStyle(fontSize: baseSize),
                   ),
                 ],
               ),
@@ -518,12 +672,35 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       ],
     );
   }
+
+  String _defaultDeliveryAddressLabel() {
+    final int defaultId = widget.customer.defaultDeliveryAddress;
+    if (defaultId == 0 || defaultId == 1) return 'Addr1';
+    if (defaultId == 2) return 'Addr2';
+    if (defaultId == 3) return 'Addr3';
+    return '-';
+  }
+
+  String _documentDeliveryLabel() {
+    switch (widget.customer.documentDeliveryType) {
+      case 0:
+        return 'Print';
+      case 1:
+        return 'Email';
+      case 2:
+        return 'Print & Email';
+      default:
+        return '-';
+    }
+  }
   
   Widget _buildAdditionalInfoCard() {
     return _buildSectionCard(
       title: "Additional Info",
       children: [
-        _buildDataRow("Barcode", widget.customer.barcode),
+        _buildDataRow("ABN", widget.customer.abn.isEmpty ? "-" : widget.customer.abn),
+        _buildDataRow("Default Delivery", _defaultDeliveryAddressLabel()),
+        _buildDataRow("Documents", _documentDeliveryLabel()),
         _buildDataRow("Custom 1", widget.customer.custom1),
         _buildDataRow("Custom 2", widget.customer.custom2),
       ],

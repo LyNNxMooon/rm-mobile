@@ -173,7 +173,7 @@ class _MyAppState extends State<MyApp> {
       child: MaterialApp(
         title: 'RM-Mobile',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(fontFamily: "SourceSans3"),
+        theme: ThemeData(fontFamily: "Inter"),
         builder: (context, child) {
           final media = MediaQuery.of(context);
           final double textScale = _tabletTextScaleFor(context);
