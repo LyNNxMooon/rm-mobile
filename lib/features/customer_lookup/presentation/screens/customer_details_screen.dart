@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
@@ -87,13 +89,78 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     return "$barcode - $fullName";
   }
 
+  void _showLaunchError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Future<void> _dialNumber(String number) async {
     final String trimmed = number.trim();
     if (trimmed.isEmpty) return;
 
     final Uri uri = Uri(scheme: 'tel', path: trimmed);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    final bool launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched) {
+      _showLaunchError("No phone app found for this device.");
+    }
+  }
+
+  Future<void> _emailTo(String email) async {
+    final String trimmed = email.trim();
+    if (trimmed.isEmpty) return;
+
+    final Uri mailtoUri = Uri(scheme: 'mailto', path: trimmed);
+    final bool launched = await launchUrl(
+      mailtoUri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched) {
+      _showLaunchError("No email app found for this device.");
+    }
+  }
+
+  Future<void> _openMapForAddress(String addressQuery) async {
+    final String trimmed = addressQuery.trim();
+    if (trimmed.isEmpty) return;
+
+    final Uri primaryUri = Platform.isIOS
+        ? Uri(
+            scheme: 'https',
+            host: 'maps.apple.com',
+            queryParameters: <String, String>{'q': trimmed},
+          )
+        : Uri(
+            scheme: 'geo',
+            path: '0,0',
+            queryParameters: <String, String>{'q': trimmed},
+          );
+
+    final bool launched = await launchUrl(
+      primaryUri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched) {
+      final Uri fallbackUri = Uri(
+        scheme: 'https',
+        host: 'www.google.com',
+        path: '/maps/search/',
+        queryParameters: <String, String>{'api': '1', 'query': trimmed},
+      );
+      final bool fallbackLaunched = await launchUrl(
+        fallbackUri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!fallbackLaunched) {
+        _showLaunchError("No maps app found for this device.");
+      }
     }
   }
 
@@ -163,6 +230,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           child: Column(
             children: List.generate(widget.customer.addresses.length, (index) {
               final address = widget.customer.addresses[index];
+              final List<String> addressParts = [
+                address.addr1,
+                address.addr2,
+                address.addr3,
+                "${address.suburb} ${address.state} ${address.postcode}".trim(),
+                address.country,
+              ].where((s) => s.isNotEmpty).toList();
+              final String addressQuery = addressParts.join(', ');
+              final bool showMapIcon =
+                  address.addressNumber == 2 || address.addressNumber == 3;
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(16),
@@ -181,21 +258,47 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Address Number Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        "Address ${address.addressNumber}",
-                        style: TextStyle(
-                          fontSize: _font(context, 12),
-                          fontWeight: FontWeight.bold,
-                          color: kPrimaryColor,
+                    // Address Number Badge + Map Icon
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: kPrimaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            "Address ${address.addressNumber}",
+                            style: TextStyle(
+                              fontSize: _font(context, 12),
+                              fontWeight: FontWeight.bold,
+                              color: kPrimaryColor,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (showMapIcon)
+                          InkWell(
+                            onTap: () => _openMapForAddress(addressQuery),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.map,
+                                color: Colors.redAccent,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     
@@ -498,7 +601,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 _dialNumber(resolvedNumber);
               }),
               _buildActionButton(Icons.email_outlined, "Email", () {
-                // Action for Email
+                _emailTo(widget.customer.email);
               }),
               _buildActionButton(Icons.edit, "Edit", () {
                 // TODO: wire email edit flow
@@ -575,13 +678,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   Widget _buildAddressCard() {
     final double baseSize = _font(context, 14);
-    String primaryAddressStr = [
+    final List<String> primaryAddressParts = [
       widget.customer.addr1,
       widget.customer.addr2,
       widget.customer.addr3,
       "${widget.customer.suburb} ${widget.customer.state} ${widget.customer.postcode}".trim(),
       widget.customer.country,
-    ].where((s) => s.isNotEmpty).join('\n');
+    ].where((s) => s.isNotEmpty).toList();
+
+    String primaryAddressStr = primaryAddressParts.join('\n');
+    final String primaryAddressQuery = primaryAddressParts.join(', ');
 
     if (primaryAddressStr.isEmpty) primaryAddressStr = "No primary address provided.";
 
@@ -603,14 +709,18 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 ),
               ),
             ),
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
+            InkWell(
+              onTap: () => _openMapForAddress(primaryAddressQuery),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.map, color: Colors.redAccent),
               ),
-              child: const Icon(Icons.map, color: Colors.redAccent),
             ),
           ],
         ),
