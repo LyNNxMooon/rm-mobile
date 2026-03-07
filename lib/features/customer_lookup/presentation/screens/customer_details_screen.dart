@@ -608,6 +608,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               }),
             ],
           ),
+          const SizedBox(height: 12),
+          _buildLongActionButton(
+            label: "View Transactions",
+            onTap: () {
+              // TODO: wire transactions navigation
+            },
+          ),
         ],
       ),
     );
@@ -659,6 +666,31 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLongActionButton({required String label, required VoidCallback onTap}) {
+    final double baseSize = _font(context, 14);
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: kPrimaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: baseSize,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -874,6 +906,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 ),
               ],
             );
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildLongActionButton(
+          label: "Print/Email Statement",
+          onTap: () {
+            // TODO: wire statement action
           },
         ),
       ],
