@@ -19,6 +19,8 @@ import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
@@ -323,6 +325,11 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     if (!_shouldSyncOnExit) return;
     context.read<FetchStockBloc>().add(
       StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
+    );
+    context.read<FetchCustomerBloc>().add(
+      StartCustomerSyncEvent(
+        ipAddress: AppGlobals.instance.currentHostIp ?? "",
+      ),
     );
     _shouldSyncOnExit = false;
   }

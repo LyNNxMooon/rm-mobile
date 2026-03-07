@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
@@ -47,6 +49,11 @@ class _LoadingScreenState extends State<LoadingScreen> {
         if (state is ConnectionValid) {
           context.read<FetchStockBloc>().add(
             StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
+          );
+          context.read<FetchCustomerBloc>().add(
+            StartCustomerSyncEvent(
+              ipAddress: AppGlobals.instance.currentHostIp ?? "",
+            ),
           );
         }
       },

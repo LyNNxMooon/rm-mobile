@@ -7,6 +7,8 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_states.dart';
 import '../../../stock_lookup/presentation/widgets/stock_request_error_dialog.dart';
@@ -282,6 +284,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                           "",
                                     ),
                                   );
+                                  context.read<FetchCustomerBloc>().add(
+                                    StartCustomerSyncEvent(
+                                      ipAddress:
+                                          AppGlobals.instance.currentHostIp ??
+                                          "",
+                                    ),
+                                  );
                                 }
 
                                 context.navigateToNext(const ScannerScreen());
@@ -380,6 +389,11 @@ class _HomeScreenState extends State<HomeScreen> {
         if (state is ConnectedToShopfront) {
           context.read<FetchStockBloc>().add(
             StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
+          );
+          context.read<FetchCustomerBloc>().add(
+            StartCustomerSyncEvent(
+              ipAddress: AppGlobals.instance.currentHostIp ?? "",
+            ),
           );
 
           AlertInfo.show(

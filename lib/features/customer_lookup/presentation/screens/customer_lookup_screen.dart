@@ -595,9 +595,22 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
-                        child: CustomerThumbnailTile(customer: customer),
+                      child: Hero(
+                        tag: _customerHeroTag(customer),
+                        flightShuttleBuilder: _buildCustomerHeroShuttle,
+                        placeholderBuilder: (context, size, child) {
+                          return SizedBox(
+                            width: size.width,
+                            height: size.height,
+                            child: child,
+                          );
+                        },
+                        child: ClipOval(
+                          child: CustomerThumbnailTile(
+                            customer: customer,
+                            size: thumbnailSize,
+                          ),
+                        ),
                       ),
                     ),
                     SizedBox(width: (isTablet ? 17 : 15) * uiScale),
@@ -623,7 +636,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                           ),
                           SizedBox(height: isTablet ? 4 : 3),
                           Text(
-                            _secondaryLine(customer),
+                            _barcodeLine(customer),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -638,23 +651,18 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: kPrimaryColor.withOpacity(0.1),
+                        color: (customer.account
+                                ? Colors.green
+                                : kGreyColor)
+                            .withOpacity(0.12),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
-                        _stateLabel(customer),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          color: kPrimaryColor,
-                          letterSpacing: -0.4,
-                        ),
-                        maxLines: 1,
+                      child: Icon(
+                        Icons.person,
+                        color: customer.account ? Colors.green : kGreyColor,
+                        size: 16,
                       ),
                     ),
                   ],
@@ -667,17 +675,30 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     );
   }
 
-  String _secondaryLine(CustomerVO customer) {
-    if (customer.email.isNotEmpty) return customer.email;
-    if (customer.phone.isNotEmpty) return customer.phone;
+  String _barcodeLine(CustomerVO customer) {
     if (customer.barcode.isNotEmpty) return customer.barcode;
     return '---';
   }
 
-  String _stateLabel(CustomerVO customer) {
-    if (customer.state.isNotEmpty) return customer.state;
-    if (customer.suburb.isNotEmpty) return customer.suburb;
-    return '--';
+  String _customerHeroTag(CustomerVO customer) {
+    return 'customer_avatar_${customer.customerId}';
+  }
+
+  Widget _buildCustomerHeroShuttle(
+    BuildContext context,
+    Animation<double> animation,
+    HeroFlightDirection flightDirection,
+    BuildContext fromHeroContext,
+    BuildContext toHeroContext,
+  ) {
+    final Hero toHero = toHeroContext.widget as Hero;
+    return FadeTransition(
+      opacity: animation,
+      child: Material(
+        color: Colors.transparent,
+        child: toHero.child,
+      ),
+    );
   }
 
   @override

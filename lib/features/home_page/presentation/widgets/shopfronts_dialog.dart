@@ -14,6 +14,8 @@ import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_events.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
@@ -100,6 +102,11 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                     ipAddress: AppGlobals.instance.currentHostIp ?? "",
                   ),
                 );
+                  context.read<FetchCustomerBloc>().add(
+                    StartCustomerSyncEvent(
+                      ipAddress: AppGlobals.instance.currentHostIp ?? "",
+                    ),
+                  );
 
                 showTopSnackBar(
                   Overlay.of(context),

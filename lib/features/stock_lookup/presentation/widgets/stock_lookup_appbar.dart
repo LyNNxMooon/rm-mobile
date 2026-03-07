@@ -6,6 +6,8 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
 import '../../../home_page/presentation/BLoC/home_screen_events.dart';
 import '../../../home_page/presentation/BLoC/home_screen_states.dart';
@@ -148,6 +150,12 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                         context.read<FetchStockBloc>().add(
                           StartSyncEvent(
                             ipAddress: AppGlobals.instance.currentHostIp ?? "",
+                          ),
+                        );
+                        context.read<FetchCustomerBloc>().add(
+                          StartCustomerSyncEvent(
+                            ipAddress:
+                                AppGlobals.instance.currentHostIp ?? "",
                           ),
                         );
                       },

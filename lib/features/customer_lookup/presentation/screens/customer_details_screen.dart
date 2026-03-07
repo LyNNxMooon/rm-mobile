@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_thumbnail_tile.dart';
 
 import '../../../../constants/colors.dart';
 
@@ -123,23 +124,20 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: kSecondaryColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                widget.customer.surname.isNotEmpty
-                    ? widget.customer.surname[0].toUpperCase()
-                    : '?',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: kPrimaryColor,
-                ),
+          Hero(
+            tag: _customerHeroTag(widget.customer),
+            flightShuttleBuilder: _buildCustomerHeroShuttle,
+            placeholderBuilder: (context, size, child) {
+              return SizedBox(
+                width: size.width,
+                height: size.height,
+                child: child,
+              );
+            },
+            child: ClipOval(
+              child: CustomerThumbnailTile(
+                customer: widget.customer,
+                size: 70,
               ),
             ),
           ),
@@ -168,6 +166,27 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  String _customerHeroTag(CustomerVO customer) {
+    return 'customer_avatar_${customer.customerId}';
+  }
+
+  Widget _buildCustomerHeroShuttle(
+    BuildContext context,
+    Animation<double> animation,
+    HeroFlightDirection flightDirection,
+    BuildContext fromHeroContext,
+    BuildContext toHeroContext,
+  ) {
+    final Hero toHero = toHeroContext.widget as Hero;
+    return FadeTransition(
+      opacity: animation,
+      child: Material(
+        color: Colors.transparent,
+        child: toHero.child,
       ),
     );
   }
