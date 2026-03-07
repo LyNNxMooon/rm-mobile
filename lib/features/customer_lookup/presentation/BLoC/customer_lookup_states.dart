@@ -1,4 +1,5 @@
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
+import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 
 import '../../../../entities/vos/customer_vo.dart';
 
@@ -111,4 +112,23 @@ class FetchCustomerFailure extends FetchCustomerStates {
   final String errorMessage;
 
   FetchCustomerFailure({required this.errorMessage});
+}
+
+abstract class StaffDetailState {}
+
+class StaffDetailInitial extends StaffDetailState {}
+
+class StaffDetailLoading extends StaffDetailState {}
+
+class StaffDetailLoaded extends StaffDetailState {
+  final StaffDetailInfo? openedBy;
+  final StaffDetailInfo? ownerAccount;
+
+  StaffDetailLoaded({this.openedBy, this.ownerAccount});
+}
+
+class StaffDetailError extends StaffDetailState {
+  final String message;
+
+  StaffDetailError(this.message);
 }

@@ -54,6 +54,7 @@ import '../features/customer_lookup/domain/repositories/customer_lookup_repo.dar
 import '../features/customer_lookup/domain/use_cases/fetch_customer_data.dart';
 import '../features/customer_lookup/domain/use_cases/get_customer_filter_options.dart';
 import '../features/customer_lookup/domain/use_cases/get_paginated_customers.dart';
+import '../features/customer_lookup/domain/use_cases/get_staff_detail.dart';
 import '../features/customer_lookup/models/customer_lookup_models.dart';
 import '../features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../features/stocktake/domain/use_cases/commit_stocktake.dart';
@@ -100,6 +101,7 @@ Future<void> init() async {
   sl.registerFactory(() => FetchCustomerBloc(fetchCustomerData: sl()));
   sl.registerFactory(() => CustomerListBloc(getPaginatedCustomers: sl()));
   sl.registerFactory(() => CustomerFilterOptionsBloc(getCustomerFilterOptions: sl()));
+  sl.registerFactory(() => StaffDetailBloc(getStaffDetail: sl()));
   sl.registerFactory(() => ScannerBloc(fetchCountingStock: sl()));
   sl.registerFactory(
     () => StocktakeValidationBloc(fetchStocktakeAuditReport: sl()),
@@ -168,6 +170,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => FetchCustomerData(sl()));
   sl.registerLazySingleton(() => GetPaginatedCustomers(sl()));
   sl.registerLazySingleton(() => GetCustomerFilterOptions(sl()));
+  sl.registerLazySingleton(() => GetStaffDetail(sl()));
   sl.registerLazySingleton(() => GetFilterOptions(sl()));
   sl.registerLazySingleton(() => FetchCountingStock(sl()));
   sl.registerLazySingleton(() => FetchStocktakeAuditReport(sl()));

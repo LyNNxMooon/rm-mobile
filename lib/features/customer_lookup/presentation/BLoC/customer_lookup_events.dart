@@ -31,3 +31,12 @@ class StartCustomerSyncEvent extends FetchCustomerEvents {
 
   StartCustomerSyncEvent({required this.ipAddress, this.username, this.password});
 }
+
+abstract class StaffDetailEvents {}
+
+class LoadStaffDetailsEvent extends StaffDetailEvents {
+  final int openedId;
+  final int ownerId;
+
+  LoadStaffDetailsEvent({required this.openedId, required this.ownerId});
+}

@@ -1,8 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/entities/customer_sync_status.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/fetch_customer_data.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_customer_filter_options.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_paginated_customers.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_staff_detail.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 
@@ -156,5 +158,53 @@ class FetchCustomerBloc extends Bloc<FetchCustomerEvents, FetchCustomerStates> {
     } catch (e) {
       emit(FetchCustomerFailure(errorMessage: e.toString()));
     }
+  }
+}
+
+class StaffDetailBloc extends Bloc<StaffDetailEvents, StaffDetailState> {
+  final GetStaffDetail getStaffDetail;
+
+  StaffDetailBloc({required this.getStaffDetail}) : super(StaffDetailInitial()) {
+    on<LoadStaffDetailsEvent>(_onLoadStaffDetails);
+  }
+
+  Future<void> _onLoadStaffDetails(
+    LoadStaffDetailsEvent event,
+    Emitter<StaffDetailState> emit,
+  ) async {
+    emit(StaffDetailLoading());
+
+    StaffDetailInfo? openedBy;
+    StaffDetailInfo? ownerAccount;
+    String? errorMessage;
+
+    if (event.openedId > 0) {
+      try {
+        final response = await getStaffDetail(event.openedId);
+        openedBy = response.staff;
+      } catch (e) {
+        errorMessage = e.toString();
+      }
+    }
+
+    if (event.ownerId > 0) {
+      if (event.ownerId == event.openedId) {
+        ownerAccount = openedBy;
+      } else {
+        try {
+          final response = await getStaffDetail(event.ownerId);
+          ownerAccount = response.staff;
+        } catch (e) {
+          errorMessage ??= e.toString();
+        }
+      }
+    }
+
+    if (openedBy == null && ownerAccount == null && errorMessage != null) {
+      emit(StaffDetailError(errorMessage));
+      return;
+    }
+
+    emit(StaffDetailLoaded(openedBy: openedBy, ownerAccount: ownerAccount));
   }
 }

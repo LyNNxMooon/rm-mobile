@@ -142,7 +142,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
                               shopText,
                               style: const TextStyle(
                                 color: kSecondaryColor,
-                                fontSize: 18,
+                                fontSize: 16,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

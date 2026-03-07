@@ -19,6 +19,7 @@ import 'package:rmstock_scanner/entities/response/stocktake_limit_response.dart'
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
 import 'package:rmstock_scanner/entities/response/security_groups_response.dart';
+import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 import 'package:rmstock_scanner/network/api/api_service.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent.dart';
 import '../../entities/response/error_response.dart';
@@ -407,6 +408,27 @@ class DataAgentImpl implements DataAgent {
           .first;
     } on Exception catch (error) {
       logger.e('Error loading security groups from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<StaffDetailResponse> getStaffDetail(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    int staffId,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService
+          .getStaffDetail(shopfrontId, staffId, apiKey)
+          .asStream()
+          .map((event) => event)
+          .first;
+    } on Exception catch (error) {
+      logger.e('Error loading staff detail from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }

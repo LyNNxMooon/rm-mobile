@@ -355,7 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final double tabletScale = isTablet
         ? (media.size.shortestSide / 768).clamp(0.85, 1.3)
         : 1.0;
-    final double fontSize = isTablet ? (24 * tabletScale) : 24;
+    final double fontSize = isTablet ? (22 * tabletScale) : 22;
 
     return ShaderMask(
       shaderCallback: (bounds) {
@@ -374,7 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       blendMode: BlendMode.srcIn,
       child: Text(
-        "Welcome to RM - Mobile",
+        "Welcome to RM-Mobile",
         style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize),
         textAlign: TextAlign.center,
       ),

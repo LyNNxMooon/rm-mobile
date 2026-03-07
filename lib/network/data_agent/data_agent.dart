@@ -16,6 +16,7 @@ import 'package:rmstock_scanner/entities/response/stocktake_limit_response.dart'
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
 import 'package:rmstock_scanner/entities/response/security_groups_response.dart';
+import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 
 abstract class DataAgent {
   Future<DiscoverResponse> discoverHost(String ip, int port);
@@ -126,6 +127,14 @@ abstract class DataAgent {
     int port,
     String shopfrontId,
     String apiKey,
+  );
+
+  Future<StaffDetailResponse> getStaffDetail(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    int staffId,
   );
 
   Future<StocktakeLimitResponse> getStocktakeLimit(

@@ -51,7 +51,7 @@ class AppBarSession extends StatelessWidget {
                     return Text(
                       displayText,
                       style: getSmartTitle(
-                        fontSize: 18,
+                        fontSize: 16,
                         color: kSecondaryColor,
                       ),
                       maxLines: 1,

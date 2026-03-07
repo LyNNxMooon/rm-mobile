@@ -63,7 +63,7 @@ class ActionCard extends StatelessWidget {
                         Text(
                           title,
                           style: getSmartTitle(
-                            fontSize: 18,
+                            fontSize: 16,
                             color: kPrimaryColor,
                           ),
                           maxLines: 1,

@@ -30,12 +30,15 @@ const kEndPointForAuthenticateStaff =
     "/shopfronts/{$kPathParamForShopfrontId}/security/authenticate";
 const kEndPointForSecurityGroups =
     "/shopfronts/{$kPathParamForShopfrontId}/security/groups";
+const kEndPointForStaffDetail =
+    "/shopfronts/{$kPathParamForShopfrontId}/security/staff/{$kPathParamForStaffId}";
 const kEndPointForValidate = "/validate";
 
 //keys
 const kPathParamForHostIP = "HostIP";
 const kPathParamForBarcode = "Barcode";
 const kPathParamForShopfrontId = "ShopfrontId";
+const kPathParamForStaffId = "StaffId";
 const kPathParamForStockId = "StockId";
 const kPathParamForFileName = "FileName";
 const kQueryParamKeyForLastStockID = "lastStockId";

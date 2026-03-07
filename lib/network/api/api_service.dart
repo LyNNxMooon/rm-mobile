@@ -19,6 +19,7 @@ import 'package:rmstock_scanner/entities/response/security_groups_response.dart'
 import 'package:rmstock_scanner/entities/response/stock_list_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
+import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'api_constants.dart';
 part 'api_service.g.dart';
@@ -208,6 +209,17 @@ abstract class ApiService {
   })
   Future<SecurityGroupsResponse> getSecurityGroups(
     @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Header("x-api-key") String apiKey,
+  );
+
+  @GET(kEndPointForStaffDetail)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<StaffDetailResponse> getStaffDetail(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Path(kPathParamForStaffId) int staffId,
     @Header("x-api-key") String apiKey,
   );
 

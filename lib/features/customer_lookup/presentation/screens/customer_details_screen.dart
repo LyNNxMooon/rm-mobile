@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../constants/colors.dart';
 
 // Assuming you have this gradient defined in your constants
@@ -19,6 +25,19 @@ class CustomerDetailsScreen extends StatefulWidget {
 }
 
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StaffDetailBloc>().add(
+            LoadStaffDetailsEvent(
+              openedId: widget.customer.openedId,
+              ownerId: widget.customer.ownerId,
+            ),
+          );
+    });
+  }
+
   double _uiScale(BuildContext context) {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
@@ -53,6 +72,28 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       return "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}";
     } catch (e) {
       return dateStr;
+    }
+  }
+
+  String _formatStaffDisplay(StaffDetailInfo? staff) {
+    if (staff == null) return "-";
+    final String fullName =
+        "${staff.givenNames} ${staff.surname}".trim();
+    final String barcode = staff.staffNo.trim();
+
+    if (barcode.isEmpty && fullName.isEmpty) return "-";
+    if (barcode.isEmpty) return fullName;
+    if (fullName.isEmpty) return barcode;
+    return "$barcode - $fullName";
+  }
+
+  Future<void> _dialNumber(String number) async {
+    final String trimmed = number.trim();
+    if (trimmed.isEmpty) return;
+
+    final Uri uri = Uri(scheme: 'tel', path: trimmed);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     }
   }
 
@@ -451,7 +492,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildActionButton(Icons.phone_outlined, "Call", () {
-                // Action for Call
+                final String resolvedNumber = widget.customer.phone.trim().isNotEmpty
+                    ? widget.customer.phone
+                    : widget.customer.mobile;
+                _dialNumber(resolvedNumber);
               }),
               _buildActionButton(Icons.email_outlined, "Email", () {
                 // Action for Email
@@ -467,7 +511,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Widget _buildPillBadge(String text, MaterialColor themeColor, bool isActive) {
-    final double badgeSize = _font(context, 12);
+    final double badgeSize = _font(context, 11);
     // If not active, it falls back to a muted grey styling
     final bgColor = isActive ? themeColor[50] : Colors.grey[100];
     final textColor = isActive ? themeColor[700] : Colors.grey[600];
@@ -656,6 +700,71 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        BlocBuilder<StaffDetailBloc, StaffDetailState>(
+          builder: (context, state) {
+            String openedBy = "-";
+            String ownerAccount = "-";
+
+            if (state is StaffDetailLoading) {
+              openedBy = "Loading...";
+              ownerAccount = "Loading...";
+            } else if (state is StaffDetailLoaded) {
+              openedBy = _formatStaffDisplay(state.openedBy);
+              ownerAccount = _formatStaffDisplay(state.ownerAccount);
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Opened By",
+                        style: TextStyle(
+                          fontSize: smallSize,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        openedBy,
+                        style: TextStyle(
+                          fontSize: baseSize,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Owner Account",
+                        style: TextStyle(
+                          fontSize: smallSize,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        ownerAccount,
+                        style: TextStyle(
+                          fontSize: baseSize,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
