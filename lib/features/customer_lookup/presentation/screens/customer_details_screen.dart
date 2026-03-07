@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_thumbnail_tile.dart';
-
 import '../../../../constants/colors.dart';
+
+// Assuming you have this gradient defined in your constants
+const kGColor = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [Color(0xFF0F8ABE), Color(0xFF05203C)],
+);
 
 class CustomerDetailsScreen extends StatefulWidget {
   const CustomerDetailsScreen({super.key, required this.customer});
@@ -15,151 +19,119 @@ class CustomerDetailsScreen extends StatefulWidget {
 }
 
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
+  double _uiScale(BuildContext context) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    return isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+  }
+
+  double _font(BuildContext context, double size) => size * _uiScale(context);
+
+  
+  String _getInitials(String name) {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) return "";
+
+    List<String> nameParts = trimmedName.split(RegExp(r'\s+'));
+
+    if (nameParts.length == 1) {
+      String word = nameParts[0];
+      return word.length >= 2 ? word.substring(0, 2).toUpperCase() : word.toUpperCase();
+    } else {
+      String firstLetter = nameParts.first[0];
+      String lastLetter = nameParts.last[0];
+      return (firstLetter + lastLetter).toUpperCase();
+    }
+  }
+
+  String _formatDate(String dateStr) {
+    if (dateStr.isEmpty) return "-";
+    try {
+      DateTime dt = DateTime.parse(dateStr);
+      return "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}";
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  String _getGradeLabel(int grade) {
+    switch (grade) {
+      case 0: return "Grade (Default)";
+      case 1: return "Grade (A)";
+      case 2: return "Grade (B)";
+      case 3: return "Grade (C)";
+      case 4: return "Grade (D)";
+      default: return "Grade ($grade)";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBgColor,
-      appBar: AppBar(
-        backgroundColor: kSecondaryColor,
-        elevation: 0,
-        title: const Text(
-          'Customer Details',
-          style: TextStyle(color: kThirdColor, fontWeight: FontWeight.w600),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kThirdColor),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 24),
-            _buildSection('Contact Information', [
-              _buildInfoRow('Email', widget.customer.email),
-              _buildInfoRow('Phone', widget.customer.phone),
-              _buildInfoRow('Mobile', widget.customer.mobile),
-              _buildInfoRow('Fax', widget.customer.fax),
-            ]),
-            const SizedBox(height: 16),
-            _buildSection('Personal Information', [
-              _buildInfoRow('Salutation', widget.customer.salutation),
-              _buildInfoRow('Given Names', widget.customer.givenNames),
-              _buildInfoRow('Surname', widget.customer.surname),
-              _buildInfoRow('Position', widget.customer.position),
-              _buildInfoRow('Company', widget.customer.company),
-            ]),
-            const SizedBox(height: 16),
-            _buildSection('Address', [
-              _buildInfoRow('Address 1', widget.customer.addr1),
-              _buildInfoRow('Address 2', widget.customer.addr2),
-              _buildInfoRow('Address 3', widget.customer.addr3),
-              _buildInfoRow('Suburb', widget.customer.suburb),
-              _buildInfoRow('State', widget.customer.state),
-              _buildInfoRow('Postcode', widget.customer.postcode),
-              _buildInfoRow('Country', widget.customer.country),
-            ]),
-            const SizedBox(height: 16),
-            _buildSection('Account Information', [
-              _buildInfoRow('Account', widget.customer.account ? 'Yes' : 'No'),
-              _buildInfoRow('Barcode', widget.customer.barcode),
-              _buildInfoRow('Credit Limit', '\$${widget.customer.limit.toStringAsFixed(2)}'),
-              _buildInfoRow('Payment Days', widget.customer.days.toString()),
-              _buildInfoRow('From EOM', widget.customer.fromEOM ? 'Yes' : 'No'),
-              _buildInfoRow('ABN', widget.customer.abn),
-              _buildInfoRow('Status', widget.customer.inactive ? 'Inactive' : 'Active'),
-            ]),
-            const SizedBox(height: 16),
-            _buildSection('Additional Information', [
-              _buildInfoRow('Grade', widget.customer.grade.toString()),
-              _buildInfoRow('Custom 1', widget.customer.custom1),
-              _buildInfoRow('Custom 2', widget.customer.custom2),
-              _buildInfoRow('Overseas', widget.customer.overseas ? 'Yes' : 'No'),
-              _buildInfoRow('External', widget.customer.external ? 'Yes' : 'No'),
-              _buildInfoRow('Date Created', widget.customer.dateCreated),
-              _buildInfoRow('Date Modified', widget.customer.dateModified),
-            ]),
-            if (widget.customer.notes.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _buildSection('Notes', [
-                _buildNotesField(widget.customer.notes),
-              ]),
-            ],
-            if (widget.customer.comments.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _buildSection('Comments', [
-                _buildNotesField(widget.customer.comments),
-              ]),
-            ],
-            if (widget.customer.addresses.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _buildAddressesSection(),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [kPrimaryColor, kPrimaryColor.withOpacity(0.7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: kPrimaryColor.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
+      // A slightly deeper grey helps the white cards pop and look solid
+      backgroundColor: const Color(0xFFF3EFE8), 
+      body: Stack(
         children: [
-          Hero(
-            tag: _customerHeroTag(widget.customer),
-            flightShuttleBuilder: _buildCustomerHeroShuttle,
-            placeholderBuilder: (context, size, child) {
-              return SizedBox(
-                width: size.width,
-                height: size.height,
-                child: child,
-              );
-            },
-            child: ClipOval(
-              child: CustomerThumbnailTile(
-                customer: widget.customer,
-                size: 70,
-              ),
-            ),
+          // Background Gradient Container (Top Half)
+          Container(
+            height: MediaQuery.of(context).size.height * 0.4,
+            decoration: const BoxDecoration(gradient: kGColor),
           ),
-          const SizedBox(width: 16),
-          Expanded(
+          
+          // Custom App Bar Elements (Overlay)
+          SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.customer.displayName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: kSecondaryColor,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                        label: const Text(
+                          "Customers", 
+                          style: TextStyle(color: Colors.white, fontSize: 16)
+                        ),
+                        style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                      ),
+                      const Text(
+                        "Profile",
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 80), 
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'ID: ${widget.customer.customerId}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: kSecondaryColor.withOpacity(0.9),
+                
+                // Scrollable Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                    child: Column(
+                      children: [
+                        _buildHeaderCard(),
+                        const SizedBox(height: 12),
+                        _buildContactDetailsCard(),
+                        const SizedBox(height: 12),
+                        _buildAddressCard(),
+                        const SizedBox(height: 12),
+                        _buildFinancialCard(),
+                        const SizedBox(height: 12),
+                        _buildPersonalCard(),
+                        const SizedBox(height: 12),
+                        _buildAdditionalInfoCard(),
+                        if (widget.customer.notes.isNotEmpty || widget.customer.comments.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          _buildNotesCard(),
+                        ],
+                        const SizedBox(height: 12),
+                        _buildMetadataCard(),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -170,212 +142,582 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     );
   }
 
-  String _customerHeroTag(CustomerVO customer) {
-    return 'customer_avatar_${customer.customerId}';
-  }
+  // --- Card Builders ---
 
-  Widget _buildCustomerHeroShuttle(
-    BuildContext context,
-    Animation<double> animation,
-    HeroFlightDirection flightDirection,
-    BuildContext fromHeroContext,
-    BuildContext toHeroContext,
-  ) {
-    final Hero toHero = toHeroContext.widget as Hero;
-    return FadeTransition(
-      opacity: animation,
-      child: Material(
-        color: Colors.transparent,
-        child: toHero.child,
+  Widget _buildHeaderCard() {
+    final double baseSize = _font(context, 14);
+    final double smallSize = _font(context, 12);
+    final double badgeSize = _font(context, 12);
+    final double avatarSize = _font(context, 24);
+    return _buildBaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, // <--- ADDED THIS to align chips & content to the left
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Avatar
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.grey[400]!, Colors.grey[500]!],
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  _getInitials(widget.customer.displayName),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: avatarSize,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+              // Name and Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.customer.displayName,
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        // Active/Inactive Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: widget.customer.inactive ? Colors.red[50] : Colors.green[50],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            widget.customer.inactive ? 'Inactive' : 'Active',
+                            style: TextStyle(
+                              color: widget.customer.inactive ? Colors.red[700] : Colors.green[700],
+                              fontSize: badgeSize,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (widget.customer.company.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.customer.company,
+                        style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    Text(
+                      "Customer ID: ${widget.customer.customerId}",
+                      style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Permanent Chips Row (Uses Wrap so it doesn't overflow)
+          Wrap(
+            alignment: WrapAlignment.start,
+            runAlignment: WrapAlignment.start,
+            crossAxisAlignment: WrapCrossAlignment.start,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _buildPillBadge(
+                widget.customer.account ? "Account" : "Cash", 
+                Colors.green, 
+                widget.customer.account
+              ),
+              _buildPillBadge(
+                _getGradeLabel(widget.customer.grade), 
+                Colors.blue, 
+                true // Always active for visibility
+              ),
+              _buildPillBadge(
+                widget.customer.overseas ? "Overseas" : "Local", 
+                Colors.orange, 
+                widget.customer.overseas
+              ),
+              _buildPillBadge(
+                widget.customer.external ? "External" : "Internal", 
+                Colors.purple, 
+                widget.customer.external
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+          const SizedBox(height: 12),
+          
+          // Quick Action Buttons Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildActionButton(Icons.phone_outlined, "Call", () {
+                // Action for Call
+              }),
+              _buildActionButton(Icons.email_outlined, "Email", () {
+                // Action for Email
+              }),
+              _buildActionButton(Icons.edit, "Edit", () {
+                // TODO: wire email edit flow
+              }),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSection(String title, List<Widget> children) {
+  Widget _buildPillBadge(String text, MaterialColor themeColor, bool isActive) {
+    final double badgeSize = _font(context, 12);
+    // If not active, it falls back to a muted grey styling
+    final bgColor = isActive ? themeColor[50] : Colors.grey[100];
+    final textColor = isActive ? themeColor[700] : Colors.grey[600];
+    final borderColor = isActive ? themeColor[200] : Colors.grey[300];
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: kSecondaryColor,
+        color: bgColor,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: kThirdColor.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        border: Border.all(color: borderColor!, width: 0.5),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: textColor,
+          fontSize: badgeSize,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
+    final double baseSize = _font(context, 14);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: Colors.grey[800]),
+            const SizedBox(width: 8),
+            Text(
+              label, 
+              style: TextStyle(
+                fontSize: baseSize,
+                color: Colors.grey[800],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactDetailsCard() {
+    return _buildSectionCard(
+      title: "Contact Details",
+      children: [
+        _buildIconDataRow(Icons.phone_outlined, "Phone", widget.customer.phone),
+        _buildIconDataRow(Icons.phone_iphone_outlined, "Mobile", widget.customer.mobile),
+        _buildIconDataRow(Icons.email_outlined, "Email", widget.customer.email),
+        _buildIconDataRow(Icons.print_outlined, "Fax", widget.customer.fax),
+      ],
+    );
+  }
+
+  Widget _buildAddressCard() {
+    final double baseSize = _font(context, 14);
+    String primaryAddressStr = [
+      widget.customer.addr1,
+      widget.customer.addr2,
+      widget.customer.addr3,
+      "${widget.customer.suburb} ${widget.customer.state} ${widget.customer.postcode}".trim(),
+      widget.customer.country,
+    ].where((s) => s.isNotEmpty).join('\n');
+
+    if (primaryAddressStr.isEmpty) primaryAddressStr = "No primary address provided.";
+
+    return _buildSectionCard(
+      title: "Addresses",
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.business_outlined, size: 18, color: Colors.grey[700]),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                primaryAddressStr,
+                style: TextStyle(
+                  fontSize: baseSize,
+                  color: Colors.black87,
+                  height: 1.4,
+                ),
+              ),
+            ),
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.map, color: Colors.redAccent),
+            ),
+          ],
+        ),
+        if (widget.customer.addresses.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+          ),
+          InkWell(
+            onTap: () {
+               // Full addresses routing
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Secondary Addresses",
+                  style: TextStyle(
+                    fontSize: baseSize,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      "${widget.customer.addresses.length} Addresses",
+                      style: TextStyle(
+                        fontSize: baseSize,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.chevron_right, size: 16, color: Colors.grey[400]),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ]
+      ],
+    );
+  }
+
+  Widget _buildFinancialCard() {
+    final double baseSize = _font(context, 14);
+    final double smallSize = _font(context, 12);
+    return _buildSectionCard(
+      title: "Financial & Account",
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Credit Limit",
+                    style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "\$${widget.customer.limit.toStringAsFixed(2)}",
+                    style: TextStyle(
+                      fontSize: baseSize,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "ABN",
+                    style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.customer.abn.isEmpty ? "-" : widget.customer.abn,
+                    style: TextStyle(fontSize: baseSize),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Payment Terms",
+                    style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "${widget.customer.days} Days ${widget.customer.fromEOM ? 'EOM' : ''}",
+                    style: TextStyle(
+                      fontSize: baseSize,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Delivery Type",
+                    style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.customer.documentDeliveryType.toString(),
+                    style: TextStyle(fontSize: baseSize),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPersonalCard() {
+    return _buildSectionCard(
+      title: "Personal Details",
+      children: [
+        _buildDataRow("Salutation", widget.customer.salutation),
+        _buildDataRow("Given Names", widget.customer.givenNames),
+        _buildDataRow("Surname", widget.customer.surname),
+        _buildDataRow("Position", widget.customer.position),
+      ],
+    );
+  }
+  
+  Widget _buildAdditionalInfoCard() {
+    return _buildSectionCard(
+      title: "Additional Info",
+      children: [
+        _buildDataRow("Barcode", widget.customer.barcode),
+        _buildDataRow("Custom 1", widget.customer.custom1),
+        _buildDataRow("Custom 2", widget.customer.custom2),
+      ],
+    );
+  }
+
+  Widget _buildNotesCard() {
+    final double baseSize = _font(context, 14);
+    final double smallSize = _font(context, 12);
+    return _buildSectionCard(
+      title: "Notes & Comments",
+      children: [
+        if (widget.customer.notes.isNotEmpty) ...[
+          Text(
+            "Internal Notes:",
+            style: TextStyle(
+              fontSize: smallSize,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            widget.customer.notes,
+            style: TextStyle(fontSize: baseSize, color: Colors.black87),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (widget.customer.comments.isNotEmpty) ...[
+          Text(
+            "Comments:",
+            style: TextStyle(
+              fontSize: smallSize,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            widget.customer.comments,
+            style: TextStyle(fontSize: baseSize, color: Colors.black87),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMetadataCard() {
+    final double baseSize = _font(context, 14);
+    final double smallSize = _font(context, 12);
+    return _buildBaseCard(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Metadata",
+                style: TextStyle(
+                  fontSize: baseSize,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Created: ${_formatDate(widget.customer.dateCreated)}",
+                style: TextStyle(fontSize: smallSize, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              const SizedBox(height: 22), 
+              Text(
+                "Modified: ${_formatDate(widget.customer.dateModified)}",
+                style: TextStyle(fontSize: smallSize, color: Colors.grey[600]),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  // --- Sub-components ---
+
+  Widget _buildSectionCard({required String title, required List<Widget> children}) {
+    final double baseSize = _font(context, 14);
+    return _buildBaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: kPrimaryColor,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: baseSize,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const Icon(Icons.edit, size: 16, color: kPrimaryColor), 
+            ],
           ),
-          const Divider(height: 20),
+          const SizedBox(height: 12),
           ...children,
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    if (value.isEmpty) return const SizedBox.shrink();
+  Widget _buildBaseCard({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFBF7F0),
+        borderRadius: BorderRadius.circular(12),
+        // Adding a subtle stroke to give that "solid card" look from modern UI
+        border: Border.all(color: const Color(0xFFC9B9A6), width: 0.57), 
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2B2012).withOpacity(0.07),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
 
+  Widget _buildIconDataRow(IconData icon, String label, String value) {
+    if (value.isEmpty) return const SizedBox.shrink();
+    final double baseSize = _font(context, 14);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
+          Icon(icon, size: 18, color: Colors.grey[700]),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 2,
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: kGreyColor,
+              style: TextStyle(
+                fontSize: baseSize,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
               ),
             ),
           ),
           Expanded(
+            flex: 4,
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 14,
-                color: kThirdColor,
-              ),
-            ),
+              style: TextStyle(fontSize: baseSize, color: Colors.blue),
+              textAlign: TextAlign.right,
+            ), 
           ),
         ],
       ),
     );
   }
-
-  Widget _buildNotesField(String text) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: kBgColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 14,
-          color: kThirdColor,
-          height: 1.5,
+  
+  Widget _buildDataRow(String label, String value) {
+     if (value.isEmpty) return const SizedBox.shrink();
+      final double baseSize = _font(context, 14);
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(
+                label,
+                style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+              ),
+            ),
+            Expanded(
+              flex: 4,
+              child: Text(
+                value,
+                style: TextStyle(fontSize: baseSize, color: Colors.black87),
+              ),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildAddressesSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: kSecondaryColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: kThirdColor.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Delivery Addresses',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: kPrimaryColor,
-            ),
-          ),
-          const Divider(height: 20),
-          ...widget.customer.addresses.map((address) {
-            final isDefault = address.addressNumber == widget.customer.defaultDeliveryAddress;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isDefault ? kPrimaryColor.withOpacity(0.05) : kBgColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isDefault ? kPrimaryColor : kGreyColor.withOpacity(0.2),
-                  width: isDefault ? 2 : 1,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Address ${address.addressNumber}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: isDefault ? kPrimaryColor : kThirdColor,
-                        ),
-                      ),
-                      if (isDefault) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: kPrimaryColor,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'DEFAULT',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: kSecondaryColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (address.addr1.isNotEmpty)
-                    Text(address.addr1, style: const TextStyle(fontSize: 13)),
-                  if (address.addr2.isNotEmpty)
-                    Text(address.addr2, style: const TextStyle(fontSize: 13)),
-                  if (address.addr3.isNotEmpty)
-                    Text(address.addr3, style: const TextStyle(fontSize: 13)),
-                  if (address.suburb.isNotEmpty || address.state.isNotEmpty || address.postcode.isNotEmpty)
-                    Text(
-                      [address.suburb, address.state, address.postcode]
-                          .where((s) => s.isNotEmpty)
-                          .join(', '),
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                  if (address.country.isNotEmpty)
-                    Text(address.country, style: const TextStyle(fontSize: 13)),
-                  if (address.phone.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text('Phone: ${address.phone}', style: const TextStyle(fontSize: 12, color: kGreyColor)),
-                  ],
-                  if (address.mobile.isNotEmpty)
-                    Text('Mobile: ${address.mobile}', style: const TextStyle(fontSize: 12, color: kGreyColor)),
-                  if (address.email.isNotEmpty)
-                    Text('Email: ${address.email}', style: const TextStyle(fontSize: 12, color: kGreyColor)),
-                ],
-              ),
-            );
-          }).toList(),
-        ],
-      ),
-    );
+      );
   }
 }
