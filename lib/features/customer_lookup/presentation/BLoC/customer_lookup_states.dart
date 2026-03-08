@@ -1,5 +1,6 @@
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
+import 'package:rmstock_scanner/utils/enums.dart';
 
 import '../../../../entities/vos/customer_vo.dart';
 
@@ -131,4 +132,28 @@ class StaffDetailError extends StaffDetailState {
   final String message;
 
   StaffDetailError(this.message);
+}
+
+abstract class CustomerUpdateState {}
+
+class CustomerUpdateInitial extends CustomerUpdateState {}
+
+class CustomerUpdateInProgress extends CustomerUpdateState {
+  final CustomerEditSection section;
+
+  CustomerUpdateInProgress(this.section);
+}
+
+class CustomerUpdateSuccess extends CustomerUpdateState {
+  final CustomerEditSection section;
+  final String message;
+
+  CustomerUpdateSuccess({required this.section, required this.message});
+}
+
+class CustomerUpdateFailure extends CustomerUpdateState {
+  final CustomerEditSection section;
+  final String message;
+
+  CustomerUpdateFailure({required this.section, required this.message});
 }

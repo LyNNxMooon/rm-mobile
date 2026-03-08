@@ -5,6 +5,7 @@ import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/fetch_
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_customer_filter_options.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_paginated_customers.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_staff_detail.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/update_customer_details.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 
@@ -206,5 +207,49 @@ class StaffDetailBloc extends Bloc<StaffDetailEvents, StaffDetailState> {
     }
 
     emit(StaffDetailLoaded(openedBy: openedBy, ownerAccount: ownerAccount));
+  }
+}
+
+class CustomerUpdateBloc extends Bloc<CustomerUpdateEvent, CustomerUpdateState> {
+  final UpdateCustomerDetails updateCustomerDetails;
+
+  CustomerUpdateBloc({required this.updateCustomerDetails})
+      : super(CustomerUpdateInitial()) {
+    on<SubmitCustomerUpdateEvent>(_onSubmitCustomerUpdate);
+  }
+
+  Future<void> _onSubmitCustomerUpdate(
+    SubmitCustomerUpdateEvent event,
+    Emitter<CustomerUpdateState> emit,
+  ) async {
+    emit(CustomerUpdateInProgress(event.section));
+
+    try {
+      final response = await updateCustomerDetails(event.body);
+
+      if (!response.success) {
+        emit(
+          CustomerUpdateFailure(
+            section: event.section,
+            message: response.message,
+          ),
+        );
+        return;
+      }
+
+      emit(
+        CustomerUpdateSuccess(
+          section: event.section,
+          message: response.message,
+        ),
+      );
+    } catch (e) {
+      emit(
+        CustomerUpdateFailure(
+          section: event.section,
+          message: e.toString(),
+        ),
+      );
+    }
   }
 }

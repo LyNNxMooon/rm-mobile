@@ -1,4 +1,5 @@
 import '../../../../entities/vos/filter_criteria.dart';
+import '../../../../utils/enums.dart';
 
 abstract class CustomerListEvent {}
 
@@ -39,4 +40,13 @@ class LoadStaffDetailsEvent extends StaffDetailEvents {
   final int ownerId;
 
   LoadStaffDetailsEvent({required this.openedId, required this.ownerId});
+}
+
+abstract class CustomerUpdateEvent {}
+
+class SubmitCustomerUpdateEvent extends CustomerUpdateEvent {
+  final Map<String, dynamic> body;
+  final CustomerEditSection section;
+
+  SubmitCustomerUpdateEvent({required this.body, required this.section});
 }

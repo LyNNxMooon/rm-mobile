@@ -139,6 +139,7 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<CustomerListBloc>(create: (_) => sl<CustomerListBloc>()),
         BlocProvider<CustomerFilterOptionsBloc>(create: (_) => sl<CustomerFilterOptionsBloc>()),
         BlocProvider<StaffDetailBloc>(create: (_) => sl<StaffDetailBloc>()),
+        BlocProvider<CustomerUpdateBloc>(create: (_) => sl<CustomerUpdateBloc>()),
         BlocProvider<ScannerBloc>(create: (_) => sl<ScannerBloc>()),
         BlocProvider<StocktakeValidationBloc>(
           create: (_) => sl<StocktakeValidationBloc>(),

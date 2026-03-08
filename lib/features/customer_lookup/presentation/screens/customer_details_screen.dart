@@ -6,14 +6,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 import 'package:rmstock_scanner/entities/vos/customer_address_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/update_customer_details.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:rmstock_scanner/utils/enums.dart';
+import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../constants/colors.dart';
-import '../../../../utils/dependency_injection_utils.dart';
 
 // Assuming you have this gradient defined in your constants
 const kGColor = LinearGradient(
@@ -126,7 +125,7 @@ class CustomerDetailsScreen extends StatefulWidget {
 }
 
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
-  final UpdateCustomerDetails _updateCustomerDetails = UpdateCustomerDetails(sl());
+  bool _shouldSyncOnExit = false;
 
   CustomerEditSection? _editingSection;
   CustomerEditSection? _savingSection;
@@ -352,6 +351,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     });
   }
 
+  void _triggerSyncIfNeeded() {
+    if (!_shouldSyncOnExit) return;
+    context.read<FetchCustomerBloc>().add(
+      StartCustomerSyncEvent(
+        ipAddress: AppGlobals.instance.currentHostIp ?? "",
+      ),
+    );
+    _shouldSyncOnExit = false;
+  }
+
   Map<String, dynamic> _buildUpdateBody({bool includeAddresses = false}) {
     final Map<String, dynamic> item = <String, dynamic>{
       'customerId': widget.customer.customerId,
@@ -432,35 +441,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     setState(() {
       _savingSection = section;
     });
-
-    try {
-      final body = _buildUpdateBody(
-        includeAddresses: section == CustomerEditSection.address,
-      );
-      final response = await _updateCustomerDetails(body);
-
-      if (!response.success) {
-        throw Exception(response.message);
-      }
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.message)),
-      );
-
-      setState(() {
-        _editingSection = null;
-        _savingSection = null;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-      setState(() {
-        _savingSection = null;
-      });
-    }
+    final body = _buildUpdateBody(
+      includeAddresses: section == CustomerEditSection.address,
+    );
+    context
+        .read<CustomerUpdateBloc>()
+        .add(SubmitCustomerUpdateEvent(body: body, section: section));
   }
 
   InputDecoration _minimalInputDecoration() {
@@ -1014,75 +1000,109 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // A slightly deeper grey helps the white cards pop and look solid
-      backgroundColor: const Color(0xFFF3EFE8), 
-      body: Stack(
-        children: [
-          // Background Gradient Container (Top Half)
-          Container(
-            height: MediaQuery.of(context).size.height * 0.4,
-            decoration: const BoxDecoration(gradient: kGColor),
-          ),
-          
-          // Custom App Bar Elements (Overlay)
-          SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton.icon(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
-                        label: const Text(
-                          "Customers", 
-                          style: TextStyle(color: Colors.white, fontSize: 16)
-                        ),
-                        style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                      ),
-                      const Text(
-                        "Profile",
-                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 80), 
-                    ],
-                  ),
-                ),
-                
-                // Scrollable Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-                    child: Column(
-                      children: [
-                        _buildHeaderCard(),
-                        const SizedBox(height: 12),
-                        _buildContactDetailsCard(),
-                        const SizedBox(height: 12),
-                        _buildAddressCard(),
-                        const SizedBox(height: 12),
-                        _buildFinancialCard(),
-                        const SizedBox(height: 12),
-                        _buildPersonalCard(),
-                        const SizedBox(height: 12),
-                        _buildAdditionalInfoCard(),
-                        if (_notesController.text.isNotEmpty || _commentsController.text.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          _buildNotesCard(),
+    return BlocListener<CustomerUpdateBloc, CustomerUpdateState>(
+      listener: (context, state) {
+        if (state is CustomerUpdateInProgress) {
+          setState(() {
+            _savingSection = state.section;
+          });
+        } else if (state is CustomerUpdateSuccess) {
+          _shouldSyncOnExit = true;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
+          );
+          setState(() {
+            _savingSection = null;
+            _editingSection = null;
+          });
+        } else if (state is CustomerUpdateFailure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
+          );
+          setState(() {
+            _savingSection = null;
+          });
+        }
+      },
+      child: WillPopScope(
+        onWillPop: () async {
+          _triggerSyncIfNeeded();
+          return true;
+        },
+        child: Scaffold(
+          // A slightly deeper grey helps the white cards pop and look solid
+          backgroundColor: const Color(0xFFF3EFE8), 
+          body: Stack(
+            children: [
+              // Background Gradient Container (Top Half)
+              Container(
+                height: MediaQuery.of(context).size.height * 0.4,
+                decoration: const BoxDecoration(gradient: kGColor),
+              ),
+              
+              // Custom App Bar Elements (Overlay)
+              SafeArea(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () {
+                              _triggerSyncIfNeeded();
+                              Navigator.pop(context);
+                            },
+                            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                            label: const Text(
+                              "Customers", 
+                              style: TextStyle(color: Colors.white, fontSize: 16)
+                            ),
+                            style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                          ),
+                          const Text(
+                            "Profile",
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 80), 
                         ],
-                        const SizedBox(height: 12),
-                        _buildMetadataCard(),
-                      ],
+                      ),
                     ),
-                  ),
+                    
+                    // Scrollable Content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                        child: Column(
+                          children: [
+                            _buildHeaderCard(),
+                            const SizedBox(height: 12),
+                            _buildContactDetailsCard(),
+                            const SizedBox(height: 12),
+                            _buildAddressCard(),
+                            const SizedBox(height: 12),
+                            _buildFinancialCard(),
+                            const SizedBox(height: 12),
+                            _buildPersonalCard(),
+                            const SizedBox(height: 12),
+                            _buildAdditionalInfoCard(),
+                            if (_notesController.text.isNotEmpty || _commentsController.text.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              _buildNotesCard(),
+                            ],
+                            const SizedBox(height: 12),
+                            _buildMetadataCard(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

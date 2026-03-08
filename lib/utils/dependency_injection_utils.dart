@@ -103,6 +103,7 @@ Future<void> init() async {
   sl.registerFactory(() => CustomerListBloc(getPaginatedCustomers: sl()));
   sl.registerFactory(() => CustomerFilterOptionsBloc(getCustomerFilterOptions: sl()));
   sl.registerFactory(() => StaffDetailBloc(getStaffDetail: sl()));
+  sl.registerFactory(() => CustomerUpdateBloc(updateCustomerDetails: sl()));
   sl.registerFactory(() => ScannerBloc(fetchCountingStock: sl()));
   sl.registerFactory(
     () => StocktakeValidationBloc(fetchStocktakeAuditReport: sl()),
