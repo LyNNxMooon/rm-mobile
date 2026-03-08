@@ -154,13 +154,20 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   late TextEditingController _limitController;
   late TextEditingController _daysController;
   bool _fromEomValue = false;
+  late TextEditingController _ownerAccountController;
 
   late TextEditingController _abnController;
   late TextEditingController _defaultDeliveryAddressController;
   late TextEditingController _documentDeliveryTypeController;
+  late TextEditingController _custom1Controller;
+  late TextEditingController _custom2Controller;
   bool _statusValue = false;
+  bool _inactiveValue = false;
+  bool _accountValue = false;
+  bool _overseasValue = false;
 
   late TextEditingController _notesController;
+  late TextEditingController _commentsController;
 
   late Map<int, _AddressControllers> _secondaryAddressControllers;
 
@@ -202,12 +209,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
     _limitController.dispose();
     _daysController.dispose();
+    _ownerAccountController.dispose();
 
     _abnController.dispose();
     _defaultDeliveryAddressController.dispose();
     _documentDeliveryTypeController.dispose();
+    _custom1Controller.dispose();
+    _custom2Controller.dispose();
 
     _notesController.dispose();
+    _commentsController.dispose();
 
     for (final address in _secondaryAddressControllers.values) {
       address.dispose();
@@ -255,6 +266,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     _daysController =
         TextEditingController(text: widget.customer.days.toString());
     _fromEomValue = widget.customer.fromEOM;
+    _ownerAccountController =
+      TextEditingController(text: widget.customer.ownerId.toString());
 
     _abnController = TextEditingController(text: widget.customer.abn);
     _defaultDeliveryAddressController = TextEditingController(
@@ -263,9 +276,23 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     _documentDeliveryTypeController = TextEditingController(
       text: widget.customer.documentDeliveryType.toString(),
     );
+    _custom1Controller = TextEditingController(text: widget.customer.custom1);
+    _custom2Controller = TextEditingController(text: widget.customer.custom2);
     _statusValue = widget.customer.status;
+    _inactiveValue = widget.customer.inactive;
+    _accountValue = widget.customer.account;
+    _overseasValue = widget.customer.overseas;
+
+    _abnController.addListener(() {
+      if (_abnController.text.trim().isNotEmpty && _overseasValue) {
+        setState(() {
+          _overseasValue = false;
+        });
+      }
+    });
 
     _notesController = TextEditingController(text: widget.customer.notes);
+    _commentsController = TextEditingController(text: widget.customer.comments);
 
     _secondaryAddressControllers = <int, _AddressControllers>{
       2: _AddressControllers.fromCustomerAddress(
@@ -306,6 +333,25 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     return parsed ?? fallback;
   }
 
+  void _setOverseasValue(bool value) {
+    if (value && _abnController.text.trim().isNotEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Cannot set Overseas while ABN is present."),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _overseasValue = value;
+      if (_overseasValue) {
+        _accountValue = false;
+      }
+    });
+  }
+
   Map<String, dynamic> _buildUpdateBody({bool includeAddresses = false}) {
     final Map<String, dynamic> item = <String, dynamic>{
       'customerId': widget.customer.customerId,
@@ -316,6 +362,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       'position': _positionController.text.trim(),
       'salutation': _salutationController.text.trim(),
       'status': _statusValue,
+      'inactive': _inactiveValue,
+      'account': _accountValue,
+      'overseas': _overseasValue,
       'abn': _abnController.text.trim(),
       'addr1': _addr1Controller.text.trim(),
       'addr2': _addr2Controller.text.trim(),
@@ -328,7 +377,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       'fax': _faxController.text.trim(),
       'mobile': _mobileController.text.trim(),
       'email': _emailController.text.trim(),
-      'ownerId': widget.customer.ownerId,
+      'ownerId': _parseInt(
+        _ownerAccountController.text,
+        widget.customer.ownerId,
+      ),
       'fromEOM': _fromEomValue,
       'days': _parseInt(_daysController.text, widget.customer.days),
       'limit': _parseNum(_limitController.text, widget.customer.limit),
@@ -340,7 +392,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         _documentDeliveryTypeController.text,
         widget.customer.documentDeliveryType,
       ),
+      'custom1': _custom1Controller.text.trim(),
+      'custom2': _custom2Controller.text.trim(),
       'notes': _notesController.text.trim(),
+      'comments': _commentsController.text.trim(),
     };
 
     if (includeAddresses) {
@@ -503,8 +558,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   Widget _buildSwitchRow(
     String label,
     bool value,
-    ValueChanged<bool> onChanged,
-  ) {
+    ValueChanged<bool> onChanged, {
+    bool enabled = true,
+  }) {
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -517,8 +573,43 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ),
           Switch(
             value: value,
-            onChanged: onChanged,
+            onChanged: enabled ? onChanged : null,
             activeColor: kPrimaryColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownRow<T>({
+    required String label,
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    final double baseSize = _font(context, 14);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 4,
+            child: DropdownButtonFormField<T>(
+              value: value,
+              items: items,
+              onChanged: onChanged,
+              decoration: _minimalInputDecoration(),
+              style: TextStyle(fontSize: baseSize, color: Colors.black87),
+            ),
           ),
         ],
       ),
@@ -978,7 +1069,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         _buildPersonalCard(),
                         const SizedBox(height: 12),
                         _buildAdditionalInfoCard(),
-                        if (_notesController.text.isNotEmpty || widget.customer.comments.isNotEmpty) ...[
+                        if (_notesController.text.isNotEmpty || _commentsController.text.isNotEmpty) ...[
                           const SizedBox(height: 12),
                           _buildNotesCard(),
                         ],
@@ -1007,6 +1098,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final String companyName = _companyController.text.trim();
     final int gradeValue = _parseInt(_gradeController.text, widget.customer.grade);
     final bool statusValue = _statusValue;
+    final bool inactiveValue = _inactiveValue;
+    final bool accountValue = _accountValue;
+    final bool overseasValue = _overseasValue;
+    final bool isEditing = _editingSection == CustomerEditSection.header;
     return _buildBaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start, // <--- ADDED THIS to align chips & content to the left
@@ -1058,13 +1153,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: widget.customer.inactive ? Colors.red[50] : Colors.green[50],
+                            color: inactiveValue ? Colors.red[50] : Colors.green[50],
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            widget.customer.inactive ? 'Inactive' : 'Active',
+                            inactiveValue ? 'Inactive' : 'Active',
                             style: TextStyle(
-                              color: widget.customer.inactive ? Colors.red[700] : Colors.green[700],
+                              color: inactiveValue ? Colors.red[700] : Colors.green[700],
                               fontSize: badgeSize,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1102,9 +1197,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             runSpacing: 6,
             children: [
               _buildPillBadge(
-                widget.customer.account ? "Account" : "Cash", 
+                accountValue ? "Account" : "Cash", 
                 Colors.green, 
-                widget.customer.account
+                accountValue,
               ),
               _buildPillBadge(
                 _getGradeLabel(gradeValue),
@@ -1112,9 +1207,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 true // Always active for visibility
               ),
               _buildPillBadge(
-                widget.customer.overseas ? "Overseas" : "Local", 
+                overseasValue ? "Overseas" : "Local", 
                 Colors.orange, 
-                widget.customer.overseas
+                overseasValue,
               ),
               _buildPillBadge(
                 statusValue ? "Status" : "Non-Status",
@@ -1127,6 +1222,51 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           const SizedBox(height: 16),
           const Divider(height: 1, color: Color(0xFFEEEEEE)),
           const SizedBox(height: 12),
+
+          if (isEditing) ...[
+            _buildEditRow("Given Names", _givenNamesController),
+            _buildEditRow("Surname", _surnameController),
+            _buildEditRow("Company", _companyController),
+            _buildDropdownRow<int>(
+              label: "Grade",
+              value: _parseInt(_gradeController.text, widget.customer.grade),
+              items: const [
+                DropdownMenuItem(value: 0, child: Text("Default")),
+                DropdownMenuItem(value: 1, child: Text("A")),
+                DropdownMenuItem(value: 2, child: Text("B")),
+                DropdownMenuItem(value: 3, child: Text("C")),
+                DropdownMenuItem(value: 4, child: Text("D")),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() {
+                  _gradeController.text = value.toString();
+                });
+              },
+            ),
+            _buildSwitchRow(
+              "Active",
+              !_inactiveValue,
+              (value) => setState(() => _inactiveValue = !value),
+            ),
+            _buildSwitchRow(
+              "Account",
+              _accountValue,
+              (value) => setState(() => _accountValue = value),
+              enabled: !_overseasValue,
+            ),
+            _buildSwitchRow(
+              "Overseas",
+              _overseasValue,
+              (value) => _setOverseasValue(value),
+            ),
+            _buildSwitchRow(
+              "Status",
+              _statusValue,
+              (value) => setState(() => _statusValue = value),
+            ),
+            const SizedBox(height: 4),
+          ],
           
           // Quick Action Buttons Row
           Row(
@@ -1141,9 +1281,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               _buildActionButton(Icons.email_outlined, "Email", () {
                 _emailTo(widget.customer.email);
               }),
-              _buildActionButton(Icons.edit, "Edit", () {
-                // TODO: wire email edit flow
-              }),
+              _buildActionButton(
+                isEditing ? Icons.save_rounded : Icons.edit,
+                isEditing ? "Save" : "Edit",
+                () => _toggleEditSection(CustomerEditSection.header),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -1533,13 +1675,21 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        ownerAccount,
-                        style: TextStyle(
-                          fontSize: baseSize,
-                          fontWeight: FontWeight.w600,
+                      if (isEditing)
+                        TextField(
+                          controller: _ownerAccountController,
+                          keyboardType: TextInputType.number,
+                          style: TextStyle(fontSize: baseSize),
+                          decoration: _minimalInputDecoration(),
+                        )
+                      else
+                        Text(
+                          ownerAccount,
+                          style: TextStyle(
+                            fontSize: baseSize,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -1571,14 +1721,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               _buildEditRow("Given Names", _givenNamesController),
               _buildEditRow("Surname", _surnameController),
               _buildEditRow("Position", _positionController),
-              _buildEditRow("Company", _companyController),
             ]
           : [
               _buildDataRow("Salutation", _salutationController.text),
               _buildDataRow("Given Names", _givenNamesController.text),
               _buildDataRow("Surname", _surnameController.text),
               _buildDataRow("Position", _positionController.text),
-              _buildDataRow("Company", _companyController.text),
             ],
     );
   }
@@ -1621,58 +1769,48 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       children: isEditing
           ? [
               _buildEditRow("ABN", _abnController),
-              _buildEditRow(
-                "Grade",
-                _gradeController,
-                keyboardType: TextInputType.number,
+              _buildDropdownRow<int>(
+                label: "Default Delivery",
+                value: _parseInt(
+                  _defaultDeliveryAddressController.text,
+                  widget.customer.defaultDeliveryAddress,
+                ),
+                items: const [
+                  DropdownMenuItem(value: 1, child: Text("Addr1")),
+                  DropdownMenuItem(value: 2, child: Text("Addr2")),
+                  DropdownMenuItem(value: 3, child: Text("Addr3")),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    _defaultDeliveryAddressController.text = value.toString();
+                  });
+                },
               ),
-              _buildEditRow(
-                "Default Delivery",
-                _defaultDeliveryAddressController,
-                keyboardType: TextInputType.number,
+              _buildDropdownRow<int>(
+                label: "Documents",
+                value: _parseInt(
+                  _documentDeliveryTypeController.text,
+                  widget.customer.documentDeliveryType,
+                ),
+                items: const [
+                  DropdownMenuItem(value: 0, child: Text("Print")),
+                  DropdownMenuItem(value: 1, child: Text("Email")),
+                  DropdownMenuItem(value: 2, child: Text("Print & Email")),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    _documentDeliveryTypeController.text = value.toString();
+                  });
+                },
               ),
-              _buildEditRow(
-                "Documents",
-                _documentDeliveryTypeController,
-                keyboardType: TextInputType.number,
-              ),
-              _buildSwitchRow(
-                "Status",
-                _statusValue,
-                (value) => setState(() => _statusValue = value),
-              ),
-              _buildDataRow("Custom 1", widget.customer.custom1),
-              _buildDataRow("Custom 2", widget.customer.custom2),
-            ]
-          : [
-              _buildDataRow(
-                "ABN",
-                _abnController.text.isEmpty ? "-" : _abnController.text,
-              ),
-              _buildDataRow("Grade", _gradeController.text),
-              _buildDataRow("Default Delivery", _defaultDeliveryAddressLabel()),
-              _buildDataRow("Documents", _documentDeliveryLabel()),
-              _buildDataRow("Custom 1", widget.customer.custom1),
-              _buildDataRow("Custom 2", widget.customer.custom2),
-            ],
-    );
-  }
-
-  Widget _buildNotesCard() {
-    final double baseSize = _font(context, 14);
-    final double smallSize = _font(context, 12);
-    final bool isEditing = _editingSection == CustomerEditSection.notes;
-    return _buildSectionCard(
-      title: "Notes & Comments",
-      isEditing: isEditing,
-      isSaving: _savingSection == CustomerEditSection.notes,
-      onEditTap: () => _toggleEditSection(CustomerEditSection.notes),
-      children: isEditing
-          ? [
+              _buildEditRow("Custom 1", _custom1Controller),
+              _buildEditRow("Custom 2", _custom2Controller),
               Text(
                 "Internal Notes:",
                 style: TextStyle(
-                  fontSize: smallSize,
+                  fontSize: _font(context, 12),
                   color: Colors.grey[600],
                   fontWeight: FontWeight.bold,
                 ),
@@ -1680,60 +1818,78 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               const SizedBox(height: 4),
               TextField(
                 controller: _notesController,
-                maxLines: 4,
-                style: TextStyle(fontSize: baseSize),
+                maxLines: 3,
+                style: TextStyle(fontSize: _font(context, 14)),
                 decoration: _minimalInputDecoration(),
               ),
               const SizedBox(height: 12),
-              if (widget.customer.comments.isNotEmpty) ...[
-                Text(
-                  "Comments:",
-                  style: TextStyle(
-                    fontSize: smallSize,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.bold,
-                  ),
+              Text(
+                "Comments:",
+                style: TextStyle(
+                  fontSize: _font(context, 12),
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.customer.comments,
-                  style: TextStyle(fontSize: baseSize, color: Colors.black87),
-                ),
-              ],
+              ),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _commentsController,
+                maxLines: 3,
+                style: TextStyle(fontSize: _font(context, 14)),
+                decoration: _minimalInputDecoration(),
+              ),
             ]
           : [
-              if (_notesController.text.isNotEmpty) ...[
-                Text(
-                  "Internal Notes:",
-                  style: TextStyle(
-                    fontSize: smallSize,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _notesController.text,
-                  style: TextStyle(fontSize: baseSize, color: Colors.black87),
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (widget.customer.comments.isNotEmpty) ...[
-                Text(
-                  "Comments:",
-                  style: TextStyle(
-                    fontSize: smallSize,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.customer.comments,
-                  style: TextStyle(fontSize: baseSize, color: Colors.black87),
-                ),
-              ],
+              _buildDataRow(
+                "ABN",
+                _abnController.text.isEmpty ? "-" : _abnController.text,
+              ),
+              _buildDataRow("Default Delivery", _defaultDeliveryAddressLabel()),
+              _buildDataRow("Documents", _documentDeliveryLabel()),
+              _buildDataRow("Custom 1", _custom1Controller.text),
+              _buildDataRow("Custom 2", _custom2Controller.text),
             ],
+    );
+  }
+
+  Widget _buildNotesCard() {
+    final double baseSize = _font(context, 14);
+    final double smallSize = _font(context, 12);
+    return _buildSectionCard(
+      title: "Notes & Comments",
+      children: [
+        if (_notesController.text.isNotEmpty) ...[
+          Text(
+            "Internal Notes:",
+            style: TextStyle(
+              fontSize: smallSize,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _notesController.text,
+            style: TextStyle(fontSize: baseSize, color: Colors.black87),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (_commentsController.text.isNotEmpty) ...[
+          Text(
+            "Comments:",
+            style: TextStyle(
+              fontSize: smallSize,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _commentsController.text,
+            style: TextStyle(fontSize: baseSize, color: Colors.black87),
+          ),
+        ],
+      ],
     );
   }
 
