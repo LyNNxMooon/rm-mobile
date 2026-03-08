@@ -7,6 +7,7 @@ import 'package:rmstock_scanner/constants/global_widgets.dart';
 import 'package:rmstock_scanner/constants/txt_styles.dart';
 import 'package:rmstock_scanner/features/loading_splash/presentation/screens/index_screen.dart';
 import 'package:rmstock_scanner/features/onboarding/onboarding_content.dart';
+import 'package:rmstock_scanner/features/onboarding/presentation/screens/welcome_video_screen.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/local_db/sqlite/sqlite_constants.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -21,6 +22,7 @@ class OnboardingGateScreen extends StatefulWidget {
 class _OnboardingGateScreenState extends State<OnboardingGateScreen> {
   bool _isLoading = true;
   bool _termsAccepted = false;
+  bool _movedToWelcomeInCurrentLaunch = false;
   bool _movedToTermsInCurrentLaunch = false;
 
   @override
@@ -45,6 +47,13 @@ class _OnboardingGateScreenState extends State<OnboardingGateScreen> {
     if (!mounted) return;
     setState(() {
       _movedToTermsInCurrentLaunch = true;
+    });
+  }
+
+  Future<void> _onVideoWelcomeContinue() async {
+    if (!mounted) return;
+    setState(() {
+      _movedToWelcomeInCurrentLaunch = true;
     });
   }
 
@@ -73,6 +82,9 @@ class _OnboardingGateScreenState extends State<OnboardingGateScreen> {
     }
 
     if (!_termsAccepted && !_movedToTermsInCurrentLaunch) {
+      if (!_movedToWelcomeInCurrentLaunch) {
+        return WelcomeScreen(onContinue: _onVideoWelcomeContinue);
+      }
       return _WelcomeScreen(onContinue: _onWelcomeContinue);
     }
 

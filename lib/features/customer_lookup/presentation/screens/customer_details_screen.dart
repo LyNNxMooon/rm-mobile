@@ -9,6 +9,7 @@ import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_transactions_screen.dart';
 import 'package:rmstock_scanner/utils/enums.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1312,7 +1313,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           _buildLongActionButton(
             label: "View Transactions",
             onTap: () {
-              // TODO: wire transactions navigation
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CustomerTransactionsScreen(
+                    customer: widget.customer,
+                  ),
+                ),
+              );
             },
           ),
         ],
