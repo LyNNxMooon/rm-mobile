@@ -1,5 +1,6 @@
 import 'package:rmstock_scanner/entities/response/paginated_customer_response.dart';
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
+import 'package:rmstock_scanner/entities/response/customer_update_response.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/entities/customer_sync_status.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
@@ -217,6 +218,41 @@ class CustomerLookupModels implements CustomerLookupRepo {
         resolvedShopfrontId,
         resolvedApiKey,
         staffId,
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<CustomerUpdateResponse> updateCustomerDetails(
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final String resolvedIp =
+          (await LocalDbDAO.instance.getHostIpAddress() ?? "").trim();
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+
+      if (resolvedIp.isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty) {
+        throw Exception(
+          "Missing host/shopfront setup. Please reconnect to a host and shopfront.",
+        );
+      }
+
+      return await DataAgentImpl.instance.updateShopfrontCustomers(
+        resolvedIp,
+        resolvedPort,
+        resolvedShopfrontId,
+        resolvedApiKey,
+        body,
       );
     } on Exception catch (error) {
       return Future.error(error);

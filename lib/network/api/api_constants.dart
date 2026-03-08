@@ -15,6 +15,8 @@ const kEndPointForStockLookup = "/shopfronts/{$kPathParamForShopfrontId}/stock";
 const kEndPointForShopfrontStockUpdate =
     "/shopfronts/{$kPathParamForShopfrontId}/stock/update";
 const kEndPointForCustomerLookup = "/shopfronts/{$kPathParamForShopfrontId}/customers";
+const kEndPointForCustomerUpdate =
+    "/shopfronts/{$kPathParamForShopfrontId}/customers/update";
 const kEndPointForPictureUpload =
     "/shopfronts/{$kPathParamForShopfrontId}/pictures/{$kPathParamForStockId}";
 const kEndPointForStocktakeInitCheck =

@@ -1,14 +1,19 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
+import 'package:rmstock_scanner/entities/vos/customer_address_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/update_customer_details.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
+import 'package:rmstock_scanner/utils/enums.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../constants/colors.dart';
+import '../../../../utils/dependency_injection_utils.dart';
 
 // Assuming you have this gradient defined in your constants
 const kGColor = LinearGradient(
@@ -16,6 +21,100 @@ const kGColor = LinearGradient(
   end: Alignment.bottomRight,
   colors: [Color(0xFF0F8ABE), Color(0xFF05203C)],
 );
+
+class _AddressControllers {
+  _AddressControllers({
+    required this.addressNumber,
+    required this.addressId,
+    required this.addr1,
+    required this.addr2,
+    required this.addr3,
+    required this.suburb,
+    required this.state,
+    required this.postcode,
+    required this.country,
+    required this.phone,
+    required this.mobile,
+    required this.email,
+  });
+
+  final int addressNumber;
+  final int addressId;
+  final TextEditingController addr1;
+  final TextEditingController addr2;
+  final TextEditingController addr3;
+  final TextEditingController suburb;
+  final TextEditingController state;
+  final TextEditingController postcode;
+  final TextEditingController country;
+  final TextEditingController phone;
+  final TextEditingController mobile;
+  final TextEditingController email;
+
+  factory _AddressControllers.fromCustomerAddress(
+    CustomerAddressVO? address,
+    int addressNumber,
+  ) {
+    return _AddressControllers(
+      addressNumber: addressNumber,
+      addressId: address?.addressId ?? 0,
+      addr1: TextEditingController(text: address?.addr1 ?? ""),
+      addr2: TextEditingController(text: address?.addr2 ?? ""),
+      addr3: TextEditingController(text: address?.addr3 ?? ""),
+      suburb: TextEditingController(text: address?.suburb ?? ""),
+      state: TextEditingController(text: address?.state ?? ""),
+      postcode: TextEditingController(text: address?.postcode ?? ""),
+      country: TextEditingController(text: address?.country ?? ""),
+      phone: TextEditingController(text: address?.phone ?? ""),
+      mobile: TextEditingController(text: address?.mobile ?? ""),
+      email: TextEditingController(text: address?.email ?? ""),
+    );
+  }
+
+  bool get hasAnyValue {
+    return addr1.text.trim().isNotEmpty ||
+        addr2.text.trim().isNotEmpty ||
+        addr3.text.trim().isNotEmpty ||
+        suburb.text.trim().isNotEmpty ||
+        state.text.trim().isNotEmpty ||
+        postcode.text.trim().isNotEmpty ||
+        country.text.trim().isNotEmpty ||
+        phone.text.trim().isNotEmpty ||
+        mobile.text.trim().isNotEmpty ||
+        email.text.trim().isNotEmpty;
+  }
+
+  Map<String, dynamic> toUpdateMap(int customerId) {
+    return <String, dynamic>{
+      'addressId': addressId,
+      'customerId': customerId,
+      'addressNumber': addressNumber,
+      'addr1': addr1.text.trim(),
+      'addr2': addr2.text.trim(),
+      'addr3': addr3.text.trim(),
+      'suburb': suburb.text.trim(),
+      'state': state.text.trim(),
+      'postcode': postcode.text.trim(),
+      'country': country.text.trim(),
+      'phone': phone.text.trim(),
+      'mobile': mobile.text.trim(),
+      'email': email.text.trim(),
+    };
+  }
+
+  void dispose() {
+    addr1.dispose();
+    addr2.dispose();
+    addr3.dispose();
+    suburb.dispose();
+    state.dispose();
+    postcode.dispose();
+    country.dispose();
+    phone.dispose();
+    mobile.dispose();
+    email.dispose();
+  }
+}
 
 class CustomerDetailsScreen extends StatefulWidget {
   const CustomerDetailsScreen({super.key, required this.customer});
@@ -27,8 +126,47 @@ class CustomerDetailsScreen extends StatefulWidget {
 }
 
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
+  final UpdateCustomerDetails _updateCustomerDetails = UpdateCustomerDetails(sl());
+
+  CustomerEditSection? _editingSection;
+  CustomerEditSection? _savingSection;
+
+  late TextEditingController _surnameController;
+  late TextEditingController _givenNamesController;
+  late TextEditingController _companyController;
+  late TextEditingController _positionController;
+  late TextEditingController _salutationController;
+  late TextEditingController _gradeController;
+
+  late TextEditingController _phoneController;
+  late TextEditingController _faxController;
+  late TextEditingController _mobileController;
+  late TextEditingController _emailController;
+
+  late TextEditingController _addr1Controller;
+  late TextEditingController _addr2Controller;
+  late TextEditingController _addr3Controller;
+  late TextEditingController _suburbController;
+  late TextEditingController _stateController;
+  late TextEditingController _postcodeController;
+  late TextEditingController _countryController;
+
+  late TextEditingController _limitController;
+  late TextEditingController _daysController;
+  bool _fromEomValue = false;
+
+  late TextEditingController _abnController;
+  late TextEditingController _defaultDeliveryAddressController;
+  late TextEditingController _documentDeliveryTypeController;
+  bool _statusValue = false;
+
+  late TextEditingController _notesController;
+
+  late Map<int, _AddressControllers> _secondaryAddressControllers;
+
   @override
   void initState() {
+    _initControllers();
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<StaffDetailBloc>().add(
@@ -40,6 +178,44 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _surnameController.dispose();
+    _givenNamesController.dispose();
+    _companyController.dispose();
+    _positionController.dispose();
+    _salutationController.dispose();
+    _gradeController.dispose();
+
+    _phoneController.dispose();
+    _faxController.dispose();
+    _mobileController.dispose();
+    _emailController.dispose();
+
+    _addr1Controller.dispose();
+    _addr2Controller.dispose();
+    _addr3Controller.dispose();
+    _suburbController.dispose();
+    _stateController.dispose();
+    _postcodeController.dispose();
+    _countryController.dispose();
+
+    _limitController.dispose();
+    _daysController.dispose();
+
+    _abnController.dispose();
+    _defaultDeliveryAddressController.dispose();
+    _documentDeliveryTypeController.dispose();
+
+    _notesController.dispose();
+
+    for (final address in _secondaryAddressControllers.values) {
+      address.dispose();
+    }
+
+    super.dispose();
+  }
+
   double _uiScale(BuildContext context) {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
@@ -49,6 +225,364 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   double _font(BuildContext context, double size) => size * _uiScale(context);
+
+  void _initControllers() {
+    _surnameController = TextEditingController(text: widget.customer.surname);
+    _givenNamesController =
+        TextEditingController(text: widget.customer.givenNames);
+    _companyController = TextEditingController(text: widget.customer.company);
+    _positionController = TextEditingController(text: widget.customer.position);
+    _salutationController =
+        TextEditingController(text: widget.customer.salutation);
+    _gradeController =
+        TextEditingController(text: widget.customer.grade.toString());
+
+    _phoneController = TextEditingController(text: widget.customer.phone);
+    _faxController = TextEditingController(text: widget.customer.fax);
+    _mobileController = TextEditingController(text: widget.customer.mobile);
+    _emailController = TextEditingController(text: widget.customer.email);
+
+    _addr1Controller = TextEditingController(text: widget.customer.addr1);
+    _addr2Controller = TextEditingController(text: widget.customer.addr2);
+    _addr3Controller = TextEditingController(text: widget.customer.addr3);
+    _suburbController = TextEditingController(text: widget.customer.suburb);
+    _stateController = TextEditingController(text: widget.customer.state);
+    _postcodeController = TextEditingController(text: widget.customer.postcode);
+    _countryController = TextEditingController(text: widget.customer.country);
+
+    _limitController =
+        TextEditingController(text: widget.customer.limit.toString());
+    _daysController =
+        TextEditingController(text: widget.customer.days.toString());
+    _fromEomValue = widget.customer.fromEOM;
+
+    _abnController = TextEditingController(text: widget.customer.abn);
+    _defaultDeliveryAddressController = TextEditingController(
+      text: widget.customer.defaultDeliveryAddress.toString(),
+    );
+    _documentDeliveryTypeController = TextEditingController(
+      text: widget.customer.documentDeliveryType.toString(),
+    );
+    _statusValue = widget.customer.status;
+
+    _notesController = TextEditingController(text: widget.customer.notes);
+
+    _secondaryAddressControllers = <int, _AddressControllers>{
+      2: _AddressControllers.fromCustomerAddress(
+        _findSecondaryAddress(2),
+        2,
+      ),
+      3: _AddressControllers.fromCustomerAddress(
+        _findSecondaryAddress(3),
+        3,
+      ),
+    };
+  }
+
+  CustomerAddressVO? _findSecondaryAddress(int addressNumber) {
+    for (final address in widget.customer.addresses) {
+      if (address.addressNumber == addressNumber) {
+        return address;
+      }
+    }
+    return null;
+  }
+
+  String _currentDisplayName() {
+    final String given = _givenNamesController.text.trim();
+    final String surname = _surnameController.text.trim();
+    final String company = _companyController.text.trim();
+    final String name = [given, surname].where((s) => s.isNotEmpty).join(' ');
+    return company.isNotEmpty ? "$name ($company)" : name;
+  }
+
+  int _parseInt(String raw, int fallback) {
+    final parsed = int.tryParse(raw.trim());
+    return parsed ?? fallback;
+  }
+
+  num _parseNum(String raw, num fallback) {
+    final parsed = num.tryParse(raw.trim());
+    return parsed ?? fallback;
+  }
+
+  Map<String, dynamic> _buildUpdateBody({bool includeAddresses = false}) {
+    final Map<String, dynamic> item = <String, dynamic>{
+      'customerId': widget.customer.customerId,
+      'surname': _surnameController.text.trim(),
+      'givenNames': _givenNamesController.text.trim(),
+      'grade': _parseInt(_gradeController.text, widget.customer.grade),
+      'company': _companyController.text.trim(),
+      'position': _positionController.text.trim(),
+      'salutation': _salutationController.text.trim(),
+      'status': _statusValue,
+      'abn': _abnController.text.trim(),
+      'addr1': _addr1Controller.text.trim(),
+      'addr2': _addr2Controller.text.trim(),
+      'addr3': _addr3Controller.text.trim(),
+      'suburb': _suburbController.text.trim(),
+      'state': _stateController.text.trim(),
+      'postcode': _postcodeController.text.trim(),
+      'country': _countryController.text.trim(),
+      'phone': _phoneController.text.trim(),
+      'fax': _faxController.text.trim(),
+      'mobile': _mobileController.text.trim(),
+      'email': _emailController.text.trim(),
+      'ownerId': widget.customer.ownerId,
+      'fromEOM': _fromEomValue,
+      'days': _parseInt(_daysController.text, widget.customer.days),
+      'limit': _parseNum(_limitController.text, widget.customer.limit),
+      'defaultDeliveryAddress': _parseInt(
+        _defaultDeliveryAddressController.text,
+        widget.customer.defaultDeliveryAddress,
+      ),
+      'documentDeliveryType': _parseInt(
+        _documentDeliveryTypeController.text,
+        widget.customer.documentDeliveryType,
+      ),
+      'notes': _notesController.text.trim(),
+    };
+
+    if (includeAddresses) {
+      final List<Map<String, dynamic>> secondaryAddresses = [];
+      for (final address in _secondaryAddressControllers.values) {
+        if (address.hasAnyValue) {
+          secondaryAddresses.add(
+            address.toUpdateMap(widget.customer.customerId),
+          );
+        }
+      }
+      if (secondaryAddresses.isNotEmpty) {
+        item['addresses'] = secondaryAddresses;
+      }
+    }
+
+    return <String, dynamic>{'items': [item]};
+  }
+
+  Future<void> _toggleEditSection(CustomerEditSection section) async {
+    if (_savingSection != null) return;
+
+    if (_editingSection == section) {
+      await _saveSection(section);
+      return;
+    }
+
+    setState(() {
+      _editingSection = section;
+    });
+  }
+
+  Future<void> _saveSection(CustomerEditSection section) async {
+    setState(() {
+      _savingSection = section;
+    });
+
+    try {
+      final body = _buildUpdateBody(
+        includeAddresses: section == CustomerEditSection.address,
+      );
+      final response = await _updateCustomerDetails(body);
+
+      if (!response.success) {
+        throw Exception(response.message);
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response.message)),
+      );
+
+      setState(() {
+        _editingSection = null;
+        _savingSection = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+      setState(() {
+        _savingSection = null;
+      });
+    }
+  }
+
+  InputDecoration _minimalInputDecoration() {
+    return InputDecoration(
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: kPrimaryColor, width: 1.2),
+      ),
+    );
+  }
+
+  Widget _buildEditRow(
+    String label,
+    TextEditingController controller, {
+    TextInputType? keyboardType,
+    int maxLines = 1,
+  }) {
+    final double baseSize = _font(context, 14);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 4,
+            child: TextField(
+              controller: controller,
+              keyboardType: keyboardType,
+              maxLines: maxLines,
+              style: TextStyle(fontSize: baseSize),
+              decoration: _minimalInputDecoration(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditIconRow(
+    IconData icon,
+    String label,
+    TextEditingController controller, {
+    TextInputType? keyboardType,
+  }) {
+    final double baseSize = _font(context, 14);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.grey[700]),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: baseSize,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 4,
+            child: TextField(
+              controller: controller,
+              keyboardType: keyboardType,
+              style: TextStyle(fontSize: baseSize),
+              decoration: _minimalInputDecoration(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSwitchRow(
+    String label,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
+    final double baseSize = _font(context, 14);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: kPrimaryColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildSecondaryAddressEditors() {
+    final double baseSize = _font(context, 13);
+    final List<Widget> widgets = [];
+
+    for (final entry in _secondaryAddressControllers.entries) {
+      final int addressNumber = entry.key;
+      final _AddressControllers address = entry.value;
+
+      widgets.add(
+        Text(
+          "Address $addressNumber",
+          style: TextStyle(
+            fontSize: baseSize,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      );
+      widgets.add(const SizedBox(height: 6));
+      widgets.add(_buildEditRow("Addr1", address.addr1));
+      widgets.add(_buildEditRow("Addr2", address.addr2));
+      widgets.add(_buildEditRow("Addr3", address.addr3));
+      widgets.add(_buildEditRow("Suburb", address.suburb));
+      widgets.add(_buildEditRow("State", address.state));
+      widgets.add(
+        _buildEditRow(
+          "Postcode",
+          address.postcode,
+          keyboardType: TextInputType.number,
+        ),
+      );
+      widgets.add(_buildEditRow("Country", address.country));
+      widgets.add(
+        _buildEditRow(
+          "Phone",
+          address.phone,
+          keyboardType: TextInputType.phone,
+        ),
+      );
+      widgets.add(
+        _buildEditRow(
+          "Mobile",
+          address.mobile,
+          keyboardType: TextInputType.phone,
+        ),
+      );
+      widgets.add(
+        _buildEditRow(
+          "Email",
+          address.email,
+          keyboardType: TextInputType.emailAddress,
+        ),
+      );
+      widgets.add(const SizedBox(height: 12));
+    }
+
+    return widgets;
+  }
 
   
   String _getInitials(String name) {
@@ -444,7 +978,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         _buildPersonalCard(),
                         const SizedBox(height: 12),
                         _buildAdditionalInfoCard(),
-                        if (widget.customer.notes.isNotEmpty || widget.customer.comments.isNotEmpty) ...[
+                        if (_notesController.text.isNotEmpty || widget.customer.comments.isNotEmpty) ...[
                           const SizedBox(height: 12),
                           _buildNotesCard(),
                         ],
@@ -469,6 +1003,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final double smallSize = _font(context, 12);
     final double badgeSize = _font(context, 12);
     final double avatarSize = _font(context, 24);
+    final String displayName = _currentDisplayName();
+    final String companyName = _companyController.text.trim();
+    final int gradeValue = _parseInt(_gradeController.text, widget.customer.grade);
+    final bool statusValue = _statusValue;
     return _buildBaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start, // <--- ADDED THIS to align chips & content to the left
@@ -510,7 +1048,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            widget.customer.displayName,
+                              displayName.isEmpty ? widget.customer.displayName : displayName,
                             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -537,7 +1075,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     if (widget.customer.company.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
-                        widget.customer.company,
+                        companyName.isNotEmpty ? companyName : widget.customer.company,
                         style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -569,7 +1107,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 widget.customer.account
               ),
               _buildPillBadge(
-                _getGradeLabel(widget.customer.grade), 
+                _getGradeLabel(gradeValue),
                 Colors.blue, 
                 true // Always active for visibility
               ),
@@ -579,8 +1117,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 widget.customer.overseas
               ),
               _buildPillBadge(
-                widget.customer.status ? "Status" : "Non-Status",
-                widget.customer.status ? Colors.green : Colors.amber,
+                statusValue ? "Status" : "Non-Status",
+                statusValue ? Colors.green : Colors.amber,
                 true,
               ),
             ],
@@ -697,26 +1235,74 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Widget _buildContactDetailsCard() {
+    final bool isEditing = _editingSection == CustomerEditSection.contact;
     return _buildSectionCard(
       title: "Contact Details",
-      children: [
-        _buildIconDataRow(Icons.phone_outlined, "Phone", widget.customer.phone),
-        _buildIconDataRow(Icons.phone_iphone_outlined, "Mobile", widget.customer.mobile),
-        _buildIconDataRow(Icons.email_outlined, "Email", widget.customer.email),
-        _buildIconDataRow(Icons.print_outlined, "Fax", widget.customer.fax),
-      ],
+      isEditing: isEditing,
+      isSaving: _savingSection == CustomerEditSection.contact,
+      onEditTap: () => _toggleEditSection(CustomerEditSection.contact),
+      children: isEditing
+          ? [
+              _buildEditIconRow(
+                Icons.phone_outlined,
+                "Phone",
+                _phoneController,
+                keyboardType: TextInputType.phone,
+              ),
+              _buildEditIconRow(
+                Icons.phone_iphone_outlined,
+                "Mobile",
+                _mobileController,
+                keyboardType: TextInputType.phone,
+              ),
+              _buildEditIconRow(
+                Icons.email_outlined,
+                "Email",
+                _emailController,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              _buildEditIconRow(
+                Icons.print_outlined,
+                "Fax",
+                _faxController,
+                keyboardType: TextInputType.phone,
+              ),
+            ]
+          : [
+              _buildIconDataRow(
+                Icons.phone_outlined,
+                "Phone",
+                _phoneController.text,
+              ),
+              _buildIconDataRow(
+                Icons.phone_iphone_outlined,
+                "Mobile",
+                _mobileController.text,
+              ),
+              _buildIconDataRow(
+                Icons.email_outlined,
+                "Email",
+                _emailController.text,
+              ),
+              _buildIconDataRow(
+                Icons.print_outlined,
+                "Fax",
+                _faxController.text,
+              ),
+            ],
     );
   }
 
   Widget _buildAddressCard() {
     final double baseSize = _font(context, 14);
+    final bool isEditing = _editingSection == CustomerEditSection.address;
     final List<String> primaryAddressParts = [
-      widget.customer.addr1,
-      widget.customer.addr2,
-      widget.customer.addr3,
-      "${widget.customer.suburb} ${widget.customer.state} ${widget.customer.postcode}".trim(),
-      widget.customer.country,
-    ].where((s) => s.isNotEmpty).toList();
+      _addr1Controller.text,
+      _addr2Controller.text,
+      _addr3Controller.text,
+      "${_suburbController.text} ${_stateController.text} ${_postcodeController.text}".trim(),
+      _countryController.text,
+    ].where((s) => s.trim().isNotEmpty).toList();
 
     String primaryAddressStr = primaryAddressParts.join('\n');
     final String primaryAddressQuery = primaryAddressParts.join(', ');
@@ -725,124 +1311,177 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
     return _buildSectionCard(
       title: "Addresses",
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.business_outlined, size: 18, color: Colors.grey[700]),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                primaryAddressStr,
+      isEditing: isEditing,
+      isSaving: _savingSection == CustomerEditSection.address,
+      onEditTap: () => _toggleEditSection(CustomerEditSection.address),
+      children: isEditing
+          ? [
+              _buildEditRow("Addr1", _addr1Controller),
+              _buildEditRow("Addr2", _addr2Controller),
+              _buildEditRow("Addr3", _addr3Controller),
+              _buildEditRow("Suburb", _suburbController),
+              _buildEditRow("State", _stateController),
+              _buildEditRow(
+                "Postcode",
+                _postcodeController,
+                keyboardType: TextInputType.number,
+              ),
+              _buildEditRow("Country", _countryController),
+              const SizedBox(height: 8),
+              Text(
+                "Secondary Addresses",
                 style: TextStyle(
                   fontSize: baseSize,
-                  color: Colors.black87,
-                  height: 1.4,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            InkWell(
-              onTap: () => _openMapForAddress(primaryAddressQuery),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.map, color: Colors.redAccent),
-              ),
-            ),
-          ],
-        ),
-        if (widget.customer.addresses.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(height: 1, color: Color(0xFFEEEEEE)),
-          ),
-          InkWell(
-            onTap: () => _showSecondaryAddressesDialog(),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Secondary Addresses",
-                  style: TextStyle(
-                    fontSize: baseSize,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Row(
-                  children: [
-                    Text(
-                      "View All Addr",
+              const SizedBox(height: 8),
+              ..._buildSecondaryAddressEditors(),
+            ]
+          : [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.business_outlined, size: 18, color: Colors.grey[700]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      primaryAddressStr,
                       style: TextStyle(
                         fontSize: baseSize,
-                        color: Colors.grey[600],
+                        color: Colors.black87,
+                        height: 1.4,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.chevron_right, size: 16, color: Colors.grey[400]),
-                  ],
+                  ),
+                  InkWell(
+                    onTap: () => _openMapForAddress(primaryAddressQuery),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.map, color: Colors.redAccent),
+                    ),
+                  ),
+                ],
+              ),
+              if (widget.customer.addresses.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(height: 1, color: Color(0xFFEEEEEE)),
                 ),
-              ],
-            ),
-          ),
-        ]
-      ],
+                InkWell(
+                  onTap: () => _showSecondaryAddressesDialog(),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Secondary Addresses",
+                        style: TextStyle(
+                          fontSize: baseSize,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            "View All Addr",
+                            style: TextStyle(
+                              fontSize: baseSize,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 16,
+                            color: Colors.grey[400],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ]
+            ],
     );
   }
 
   Widget _buildFinancialCard() {
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
+    final bool isEditing = _editingSection == CustomerEditSection.financial;
     return _buildSectionCard(
       title: "Financial & Account",
+      isEditing: isEditing,
+      isSaving: _savingSection == CustomerEditSection.financial,
+      onEditTap: () => _toggleEditSection(CustomerEditSection.financial),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Credit Limit",
-                    style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    "\$${widget.customer.limit.toStringAsFixed(2)}",
-                    style: TextStyle(
-                      fontSize: baseSize,
-                      fontWeight: FontWeight.w600,
+        if (isEditing) ...[
+          _buildEditRow(
+            "Credit Limit",
+            _limitController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          _buildEditRow(
+            "Payment Days",
+            _daysController,
+            keyboardType: TextInputType.number,
+          ),
+          _buildSwitchRow(
+            "From EOM",
+            _fromEomValue,
+            (value) => setState(() => _fromEomValue = value),
+          ),
+        ] else ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Credit Limit",
+                      style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Payment Terms",
-                    style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    "${widget.customer.days} Days ${widget.customer.fromEOM ? 'EOM' : ''}",
-                    style: TextStyle(
-                      fontSize: baseSize,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 2),
+                    Text(
+                      "\$${_parseNum(_limitController.text, widget.customer.limit).toStringAsFixed(2)}",
+                      style: TextStyle(
+                        fontSize: baseSize,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Payment Terms",
+                      style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "${_parseInt(_daysController.text, widget.customer.days)} Days ${_fromEomValue ? 'EOM' : ''}",
+                      style: TextStyle(
+                        fontSize: baseSize,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 12),
         BlocBuilder<StaffDetailBloc, StaffDetailState>(
           builder: (context, state) {
@@ -920,19 +1559,35 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Widget _buildPersonalCard() {
+    final bool isEditing = _editingSection == CustomerEditSection.personal;
     return _buildSectionCard(
       title: "Personal Details",
-      children: [
-        _buildDataRow("Salutation", widget.customer.salutation),
-        _buildDataRow("Given Names", widget.customer.givenNames),
-        _buildDataRow("Surname", widget.customer.surname),
-        _buildDataRow("Position", widget.customer.position),
-      ],
+      isEditing: isEditing,
+      isSaving: _savingSection == CustomerEditSection.personal,
+      onEditTap: () => _toggleEditSection(CustomerEditSection.personal),
+      children: isEditing
+          ? [
+              _buildEditRow("Salutation", _salutationController),
+              _buildEditRow("Given Names", _givenNamesController),
+              _buildEditRow("Surname", _surnameController),
+              _buildEditRow("Position", _positionController),
+              _buildEditRow("Company", _companyController),
+            ]
+          : [
+              _buildDataRow("Salutation", _salutationController.text),
+              _buildDataRow("Given Names", _givenNamesController.text),
+              _buildDataRow("Surname", _surnameController.text),
+              _buildDataRow("Position", _positionController.text),
+              _buildDataRow("Company", _companyController.text),
+            ],
     );
   }
 
   String _defaultDeliveryAddressLabel() {
-    final int defaultId = widget.customer.defaultDeliveryAddress;
+    final int defaultId = _parseInt(
+      _defaultDeliveryAddressController.text,
+      widget.customer.defaultDeliveryAddress,
+    );
     if (defaultId == 0 || defaultId == 1) return 'Addr1';
     if (defaultId == 2) return 'Addr2';
     if (defaultId == 3) return 'Addr3';
@@ -940,7 +1595,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   String _documentDeliveryLabel() {
-    switch (widget.customer.documentDeliveryType) {
+    final int docType = _parseInt(
+      _documentDeliveryTypeController.text,
+      widget.customer.documentDeliveryType,
+    );
+    switch (docType) {
       case 0:
         return 'Print';
       case 1:
@@ -953,56 +1612,128 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
   
   Widget _buildAdditionalInfoCard() {
+    final bool isEditing = _editingSection == CustomerEditSection.additional;
     return _buildSectionCard(
       title: "Additional Info",
-      children: [
-        _buildDataRow("ABN", widget.customer.abn.isEmpty ? "-" : widget.customer.abn),
-        _buildDataRow("Default Delivery", _defaultDeliveryAddressLabel()),
-        _buildDataRow("Documents", _documentDeliveryLabel()),
-        _buildDataRow("Custom 1", widget.customer.custom1),
-        _buildDataRow("Custom 2", widget.customer.custom2),
-      ],
+      isEditing: isEditing,
+      isSaving: _savingSection == CustomerEditSection.additional,
+      onEditTap: () => _toggleEditSection(CustomerEditSection.additional),
+      children: isEditing
+          ? [
+              _buildEditRow("ABN", _abnController),
+              _buildEditRow(
+                "Grade",
+                _gradeController,
+                keyboardType: TextInputType.number,
+              ),
+              _buildEditRow(
+                "Default Delivery",
+                _defaultDeliveryAddressController,
+                keyboardType: TextInputType.number,
+              ),
+              _buildEditRow(
+                "Documents",
+                _documentDeliveryTypeController,
+                keyboardType: TextInputType.number,
+              ),
+              _buildSwitchRow(
+                "Status",
+                _statusValue,
+                (value) => setState(() => _statusValue = value),
+              ),
+              _buildDataRow("Custom 1", widget.customer.custom1),
+              _buildDataRow("Custom 2", widget.customer.custom2),
+            ]
+          : [
+              _buildDataRow(
+                "ABN",
+                _abnController.text.isEmpty ? "-" : _abnController.text,
+              ),
+              _buildDataRow("Grade", _gradeController.text),
+              _buildDataRow("Default Delivery", _defaultDeliveryAddressLabel()),
+              _buildDataRow("Documents", _documentDeliveryLabel()),
+              _buildDataRow("Custom 1", widget.customer.custom1),
+              _buildDataRow("Custom 2", widget.customer.custom2),
+            ],
     );
   }
 
   Widget _buildNotesCard() {
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
+    final bool isEditing = _editingSection == CustomerEditSection.notes;
     return _buildSectionCard(
       title: "Notes & Comments",
-      children: [
-        if (widget.customer.notes.isNotEmpty) ...[
-          Text(
-            "Internal Notes:",
-            style: TextStyle(
-              fontSize: smallSize,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            widget.customer.notes,
-            style: TextStyle(fontSize: baseSize, color: Colors.black87),
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (widget.customer.comments.isNotEmpty) ...[
-          Text(
-            "Comments:",
-            style: TextStyle(
-              fontSize: smallSize,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            widget.customer.comments,
-            style: TextStyle(fontSize: baseSize, color: Colors.black87),
-          ),
-        ],
-      ],
+      isEditing: isEditing,
+      isSaving: _savingSection == CustomerEditSection.notes,
+      onEditTap: () => _toggleEditSection(CustomerEditSection.notes),
+      children: isEditing
+          ? [
+              Text(
+                "Internal Notes:",
+                style: TextStyle(
+                  fontSize: smallSize,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _notesController,
+                maxLines: 4,
+                style: TextStyle(fontSize: baseSize),
+                decoration: _minimalInputDecoration(),
+              ),
+              const SizedBox(height: 12),
+              if (widget.customer.comments.isNotEmpty) ...[
+                Text(
+                  "Comments:",
+                  style: TextStyle(
+                    fontSize: smallSize,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.customer.comments,
+                  style: TextStyle(fontSize: baseSize, color: Colors.black87),
+                ),
+              ],
+            ]
+          : [
+              if (_notesController.text.isNotEmpty) ...[
+                Text(
+                  "Internal Notes:",
+                  style: TextStyle(
+                    fontSize: smallSize,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _notesController.text,
+                  style: TextStyle(fontSize: baseSize, color: Colors.black87),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (widget.customer.comments.isNotEmpty) ...[
+                Text(
+                  "Comments:",
+                  style: TextStyle(
+                    fontSize: smallSize,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.customer.comments,
+                  style: TextStyle(fontSize: baseSize, color: Colors.black87),
+                ),
+              ],
+            ],
     );
   }
 
@@ -1048,7 +1779,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   // --- Sub-components ---
 
-  Widget _buildSectionCard({required String title, required List<Widget> children}) {
+  Widget _buildSectionCard({
+    required String title,
+    required List<Widget> children,
+    VoidCallback? onEditTap,
+    bool isEditing = false,
+    bool isSaving = false,
+  }) {
     final double baseSize = _font(context, 14);
     return _buildBaseCard(
       child: Column(
@@ -1065,7 +1802,25 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   color: Colors.black87,
                 ),
               ),
-              const Icon(Icons.edit, size: 16, color: kPrimaryColor), 
+              if (onEditTap != null)
+                InkWell(
+                  onTap: onEditTap,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: isSaving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CupertinoActivityIndicator(),
+                          )
+                        : Icon(
+                            isEditing ? Icons.save_rounded : Icons.edit,
+                            size: 18,
+                            color: isEditing ? Colors.green : kPrimaryColor,
+                          ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 12),

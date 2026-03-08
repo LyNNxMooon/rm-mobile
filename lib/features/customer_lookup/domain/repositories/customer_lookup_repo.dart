@@ -1,5 +1,6 @@
 import '../../../../entities/response/paginated_customer_response.dart';
 import '../../../../entities/response/staff_detail_response.dart';
+import '../../../../entities/response/customer_update_response.dart';
 import '../../../../entities/vos/filter_criteria.dart';
 import '../entities/customer_sync_status.dart';
 
@@ -20,4 +21,8 @@ abstract class CustomerLookupRepo {
   Future<Map<String, List<String>>> getFilterOptions(String shopfront);
 
   Future<StaffDetailResponse> fetchStaffDetail(int staffId);
+
+  Future<CustomerUpdateResponse> updateCustomerDetails(
+    Map<String, dynamic> body,
+  );
 }

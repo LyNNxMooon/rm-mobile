@@ -20,6 +20,7 @@ import 'package:rmstock_scanner/entities/response/stock_list_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/response/validate_response.dart';
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
+import 'package:rmstock_scanner/entities/response/customer_update_response.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'api_constants.dart';
 part 'api_service.g.dart';
@@ -120,6 +121,17 @@ abstract class ApiService {
     'Content-Type': 'application/json',
   })
   Future<CustomerLookupApiResponse> fetchShopfrontCustomers(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Header("x-api-key") String apiKey,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST(kEndPointForCustomerUpdate)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<CustomerUpdateResponse> updateShopfrontCustomers(
     @Path(kPathParamForShopfrontId) String shopfrontId,
     @Header("x-api-key") String apiKey,
     @Body() Map<String, dynamic> body,
