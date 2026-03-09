@@ -4,6 +4,8 @@ import 'package:rmstock_scanner/constants/colors.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_states.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
@@ -12,6 +14,74 @@ class CustomerCreateScreen extends StatefulWidget {
 
   @override
   State<CustomerCreateScreen> createState() => _CustomerCreateScreenState();
+}
+
+class _AddressControllers {
+  _AddressControllers({required this.addressNumber})
+      : addr1 = TextEditingController(),
+        addr2 = TextEditingController(),
+        addr3 = TextEditingController(),
+        suburb = TextEditingController(),
+        state = TextEditingController(),
+        postcode = TextEditingController(),
+        country = TextEditingController(),
+        phone = TextEditingController(),
+        mobile = TextEditingController(),
+        email = TextEditingController();
+
+  final int addressNumber;
+  final TextEditingController addr1;
+  final TextEditingController addr2;
+  final TextEditingController addr3;
+  final TextEditingController suburb;
+  final TextEditingController state;
+  final TextEditingController postcode;
+  final TextEditingController country;
+  final TextEditingController phone;
+  final TextEditingController mobile;
+  final TextEditingController email;
+
+  bool get hasAnyValue {
+    return addr1.text.trim().isNotEmpty ||
+        addr2.text.trim().isNotEmpty ||
+        addr3.text.trim().isNotEmpty ||
+        suburb.text.trim().isNotEmpty ||
+        state.text.trim().isNotEmpty ||
+        postcode.text.trim().isNotEmpty ||
+        country.text.trim().isNotEmpty ||
+        phone.text.trim().isNotEmpty ||
+        mobile.text.trim().isNotEmpty ||
+        email.text.trim().isNotEmpty;
+  }
+
+  Map<String, dynamic> toCreateMap() {
+    return <String, dynamic>{
+      'addressNumber': addressNumber,
+      'addr1': addr1.text.trim(),
+      'addr2': addr2.text.trim(),
+      'addr3': addr3.text.trim(),
+      'suburb': suburb.text.trim(),
+      'state': state.text.trim(),
+      'postcode': postcode.text.trim(),
+      'country': country.text.trim(),
+      'phone': phone.text.trim(),
+      'mobile': mobile.text.trim(),
+      'email': email.text.trim(),
+    };
+  }
+
+  void dispose() {
+    addr1.dispose();
+    addr2.dispose();
+    addr3.dispose();
+    suburb.dispose();
+    state.dispose();
+    postcode.dispose();
+    country.dispose();
+    phone.dispose();
+    mobile.dispose();
+    email.dispose();
+  }
 }
 
 class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
@@ -45,9 +115,15 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   late TextEditingController _commentsController;
   late TextEditingController _custom1Controller;
   late TextEditingController _custom2Controller;
+  late TextEditingController _openedIdController;
+  late TextEditingController _ownerIdController;
+  late TextEditingController _defaultDeliveryAddressController;
+  late TextEditingController _documentDeliveryTypeController;
+
+  late Map<int, _AddressControllers> _secondaryAddressControllers;
   
   bool _fromEomValue = false;
-  bool _statusValue = true;
+  bool _statusValue = false;
   bool _inactiveValue = false;
   bool _accountValue = false;
   bool _overseasValue = false;
@@ -91,6 +167,23 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     _commentsController = TextEditingController();
     _custom1Controller = TextEditingController();
     _custom2Controller = TextEditingController();
+    _openedIdController = TextEditingController(text: '0');
+    _ownerIdController = TextEditingController(text: '0');
+    _defaultDeliveryAddressController = TextEditingController(text: '1');
+    _documentDeliveryTypeController = TextEditingController(text: '0');
+
+    _secondaryAddressControllers = <int, _AddressControllers>{
+      2: _AddressControllers(addressNumber: 2),
+      3: _AddressControllers(addressNumber: 3),
+    };
+
+    _abnController.addListener(() {
+      if (_abnController.text.trim().isNotEmpty && _overseasValue) {
+        setState(() {
+          _overseasValue = false;
+        });
+      }
+    });
   }
 
   @override
@@ -123,6 +216,14 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     _commentsController.dispose();
     _custom1Controller.dispose();
     _custom2Controller.dispose();
+    _openedIdController.dispose();
+    _ownerIdController.dispose();
+    _defaultDeliveryAddressController.dispose();
+    _documentDeliveryTypeController.dispose();
+
+    for (final address in _secondaryAddressControllers.values) {
+      address.dispose();
+    }
     
     super.dispose();
   }
@@ -136,6 +237,39 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   }
 
   double _font(BuildContext context, double size) => size * _uiScale(context);
+
+  int _parseInt(String raw, int fallback) {
+    final parsed = int.tryParse(raw.trim());
+    return parsed ?? fallback;
+  }
+
+  void _setOverseasValue(bool value) {
+    if (value && _abnController.text.trim().isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Cannot set Overseas while ABN is present."),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _overseasValue = value;
+      if (_overseasValue) {
+        _accountValue = false;
+      }
+    });
+  }
+
+  List<Map<String, dynamic>> _buildSecondaryAddresses() {
+    final List<Map<String, dynamic>> secondary = [];
+    for (final address in _secondaryAddressControllers.values) {
+      if (address.hasAnyValue) {
+        secondary.add(address.toCreateMap());
+      }
+    }
+    return secondary;
+  }
 
   void _generateBarcode() {
     context.read<CustomerCreateBloc>().add(GenerateBarcodeEvent());
@@ -186,7 +320,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
             "barcode": _barcodeController.text.trim(),
             "surname": _surnameController.text.trim(),
             "givenNames": _givenNamesController.text.trim(),
-            "grade": int.tryParse(_gradeController.text.trim()) ?? 0,
+            "grade": _parseInt(_gradeController.text, 0),
             "company": _companyController.text.trim(),
             "position": _positionController.text.trim(),
             "salutation": _salutationController.text.trim(),
@@ -209,15 +343,21 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
             "mobile": _mobileController.text.trim(),
             "email": _emailController.text.trim(),
             "account": _accountValue,
-            "openedId": 1,
-            "ownerId": 1,
+            "openedId": _parseInt(_openedIdController.text, 0),
+            "ownerId": _parseInt(_ownerIdController.text, 0),
             "fromEOM": _fromEomValue,
-            "days": int.tryParse(_daysController.text.trim()) ?? 0,
+            "days": _parseInt(_daysController.text, 0),
             "limit": double.tryParse(_limitController.text.trim()) ?? 0.0,
             "overseas": _overseasValue,
-            "defaultDeliveryAddress": 1,
-            "documentDeliveryType": 0,
-            "addresses": [],
+            "defaultDeliveryAddress": _parseInt(
+              _defaultDeliveryAddressController.text,
+              1,
+            ),
+            "documentDeliveryType": _parseInt(
+              _documentDeliveryTypeController.text,
+              0,
+            ),
+            "addresses": _buildSecondaryAddresses(),
           }
         ]
       };
@@ -293,6 +433,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     String label,
     bool value,
     ValueChanged<bool> onChanged,
+    {bool enabled = true}
   ) {
     final double baseSize = _font(context, 14);
     return Padding(
@@ -310,8 +451,41 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
           ),
           Switch(
             value: value,
-            onChanged: onChanged,
+            onChanged: enabled ? onChanged : null,
             activeColor: kPrimaryColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownRow<T>({
+    required String label,
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    final double baseSize = _font(context, 14);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: baseSize,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<T>(
+            value: value,
+            items: items,
+            onChanged: onChanged,
+            decoration: _minimalInputDecoration(),
+            style: TextStyle(fontSize: baseSize, color: Colors.black87),
           ),
         ],
       ),
@@ -350,6 +524,65 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     );
   }
 
+  List<Widget> _buildSecondaryAddressEditors() {
+    final double baseSize = _font(context, 13);
+    final List<Widget> widgets = [];
+
+    for (final entry in _secondaryAddressControllers.entries) {
+      final int addressNumber = entry.key;
+      final _AddressControllers address = entry.value;
+
+      widgets.add(
+        Text(
+          "Address $addressNumber",
+          style: TextStyle(
+            fontSize: baseSize,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      );
+      widgets.add(const SizedBox(height: 6));
+      widgets.add(_buildTextField(label: "Addr1", controller: address.addr1));
+      widgets.add(_buildTextField(label: "Addr2", controller: address.addr2));
+      widgets.add(_buildTextField(label: "Addr3", controller: address.addr3));
+      widgets.add(_buildTextField(label: "Suburb", controller: address.suburb));
+      widgets.add(_buildTextField(label: "State", controller: address.state));
+      widgets.add(
+        _buildTextField(
+          label: "Postcode",
+          controller: address.postcode,
+          keyboardType: TextInputType.number,
+        ),
+      );
+      widgets.add(_buildTextField(label: "Country", controller: address.country));
+      widgets.add(
+        _buildTextField(
+          label: "Phone",
+          controller: address.phone,
+          keyboardType: TextInputType.phone,
+        ),
+      );
+      widgets.add(
+        _buildTextField(
+          label: "Mobile",
+          controller: address.mobile,
+          keyboardType: TextInputType.phone,
+        ),
+      );
+      widgets.add(
+        _buildTextField(
+          label: "Email",
+          controller: address.email,
+          keyboardType: TextInputType.emailAddress,
+        ),
+      );
+      widgets.add(const SizedBox(height: 12));
+    }
+
+    return widgets;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -374,6 +607,11 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
             });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
+            );
+            context.read<FetchCustomerBloc>().add(
+              StartCustomerSyncEvent(
+                ipAddress: AppGlobals.instance.currentHostIp ?? "",
+              ),
             );
             Navigator.of(context).pop(true); // Return true to indicate success
           } else if (state is CustomerCreateError) {
@@ -473,10 +711,22 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                     label: "Position",
                     controller: _positionController,
                   ),
-                  _buildTextField(
+                  _buildDropdownRow<int>(
                     label: "Grade",
-                    controller: _gradeController,
-                    keyboardType: TextInputType.number,
+                    value: _parseInt(_gradeController.text, 0),
+                    items: const [
+                      DropdownMenuItem(value: 0, child: Text("Default")),
+                      DropdownMenuItem(value: 1, child: Text("A")),
+                      DropdownMenuItem(value: 2, child: Text("B")),
+                      DropdownMenuItem(value: 3, child: Text("C")),
+                      DropdownMenuItem(value: 4, child: Text("D")),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        _gradeController.text = value.toString();
+                      });
+                    },
                   ),
                 ],
               ),
@@ -537,6 +787,17 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                     label: "Country",
                     controller: _countryController,
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Secondary Addresses",
+                    style: TextStyle(
+                      fontSize: _font(context, 14),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ..._buildSecondaryAddressEditors(),
                 ],
               ),
               _buildSectionCard(
@@ -544,7 +805,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                 children: [
                   _buildSwitchRow("Account", _accountValue, (val) {
                     setState(() => _accountValue = val);
-                  }),
+                  }, enabled: !_overseasValue),
                   _buildSwitchRow("From EOM", _fromEomValue, (val) {
                     setState(() => _fromEomValue = val);
                   }),
@@ -559,19 +820,21 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   ),
                   _buildTextField(
+                    label: "Opened By (Staff ID)",
+                    controller: _openedIdController,
+                    keyboardType: TextInputType.number,
+                  ),
+                  _buildTextField(
+                    label: "Owner Account (Staff ID)",
+                    controller: _ownerIdController,
+                    keyboardType: TextInputType.number,
+                  ),
+                  _buildTextField(
                     label: "ABN",
                     controller: _abnController,
                   ),
                   _buildSwitchRow("Overseas", _overseasValue, (val) {
-                    if (val && _abnController.text.trim().isNotEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Cannot set Overseas while ABN is present."),
-                        ),
-                      );
-                      return;
-                    }
-                    setState(() => _overseasValue = val);
+                    _setOverseasValue(val);
                   }),
                 ],
               ),
@@ -584,6 +847,36 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                   _buildSwitchRow("Inactive", _inactiveValue, (val) {
                     setState(() => _inactiveValue = val);
                   }),
+                  _buildDropdownRow<int>(
+                    label: "Default Delivery",
+                    value: _parseInt(_defaultDeliveryAddressController.text, 1),
+                    items: const [
+                      DropdownMenuItem(value: 1, child: Text("Addr1")),
+                      DropdownMenuItem(value: 2, child: Text("Addr2")),
+                      DropdownMenuItem(value: 3, child: Text("Addr3")),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        _defaultDeliveryAddressController.text = value.toString();
+                      });
+                    },
+                  ),
+                  _buildDropdownRow<int>(
+                    label: "Documents",
+                    value: _parseInt(_documentDeliveryTypeController.text, 0),
+                    items: const [
+                      DropdownMenuItem(value: 0, child: Text("Print")),
+                      DropdownMenuItem(value: 1, child: Text("Email")),
+                      DropdownMenuItem(value: 2, child: Text("Print & Email")),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        _documentDeliveryTypeController.text = value.toString();
+                      });
+                    },
+                  ),
                   _buildTextField(
                     label: "Notes",
                     controller: _notesController,

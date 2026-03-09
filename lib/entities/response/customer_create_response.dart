@@ -20,6 +20,18 @@ class CustomerCreateResponse {
     required this.customerIds,
   });
 
-  factory CustomerCreateResponse.fromJson(Map<String, dynamic> json) =>
-      _$CustomerCreateResponseFromJson(json);
+  factory CustomerCreateResponse.fromJson(Map<String, dynamic> json) {
+    final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
+    safeJson['created'] = json['created'] ?? 0;
+    safeJson['failed'] = json['failed'] ?? 0;
+    safeJson['addressesCreated'] = json['addressesCreated'] ?? 0;
+
+    final rawIds = json['customerIds'];
+    final List<dynamic> safeIds = rawIds is List
+        ? rawIds.where((entry) => entry != null).toList()
+        : <dynamic>[];
+    safeJson['customerIds'] = safeIds;
+
+    return _$CustomerCreateResponseFromJson(safeJson);
+  }
 }

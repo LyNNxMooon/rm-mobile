@@ -4,6 +4,7 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_states.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmstock_scanner/utils/log_utils.dart';
 
 class CustomerCreateBloc extends Bloc<CustomerCreateEvent, CustomerCreateState> {
   final CreateCustomer createCustomer;
@@ -13,6 +14,7 @@ class CustomerCreateBloc extends Bloc<CustomerCreateEvent, CustomerCreateState> 
       emit(CustomerCreateLoading());
 
       try {
+        logger.d("Create customer payload: ${event.customerData}");
         final response = await createCustomer.call(event.customerData);
 
         if (response.success) {

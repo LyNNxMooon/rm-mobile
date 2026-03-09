@@ -538,7 +538,7 @@ class _ApiService implements ApiService {
     )
         .compose(
           _dio.options,
-          '/shopfronts/${shopfrontId}/customers',
+          '/shopfronts/${shopfrontId}/customers/create',
           queryParameters: queryParameters,
           data: _data,
         )

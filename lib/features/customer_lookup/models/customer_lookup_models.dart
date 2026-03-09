@@ -50,7 +50,14 @@ class CustomerLookupModels implements CustomerLookupRepo {
       final bool isFullSync =
           lastSyncTimestamp == null || lastSyncTimestamp.isEmpty;
 
-      String latestSyncTimestamp = DateTime.now().toIso8601String();
+      String latestSyncTimestamp =
+          (lastSyncTimestamp != null && lastSyncTimestamp.trim().isNotEmpty)
+              ? lastSyncTimestamp
+              : DateTime.now().toIso8601String();
+
+      String resolveSyncTimestamp(String value, String fallback) {
+        return value.trim().isNotEmpty ? value : fallback;
+      }
 
       if (isFullSync) {
         yield CustomerSyncStatus(0, 1, "Starting full sync...");
@@ -80,7 +87,10 @@ class CustomerLookupModels implements CustomerLookupRepo {
             throw Exception(response.message);
           }
 
-          latestSyncTimestamp = response.syncTimestamp;
+          latestSyncTimestamp = resolveSyncTimestamp(
+            response.syncTimestamp,
+            latestSyncTimestamp,
+          );
           total = response.totalItems > 0 ? response.totalItems : total;
 
           if (response.items.isNotEmpty) {
@@ -117,7 +127,10 @@ class CustomerLookupModels implements CustomerLookupRepo {
           throw Exception(response.message);
         }
 
-        latestSyncTimestamp = response.syncTimestamp;
+        latestSyncTimestamp = resolveSyncTimestamp(
+          response.syncTimestamp,
+          latestSyncTimestamp,
+        );
 
         if (response.items.isNotEmpty) {
           final customers = response.items.map(CustomerVO.fromApiItem).toList();
