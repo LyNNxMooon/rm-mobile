@@ -21,6 +21,11 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/cu
 import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_thumbnail_tile.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/breathing_stock_loader.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_create_screen.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/create_customer.dart';
+import 'package:rmstock_scanner/features/customer_lookup/models/customer_lookup_models.dart';
+import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
@@ -374,6 +379,52 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                     ),
                   );
                 });
+              },
+              onAddTap: () async {
+                if (_isSyncInProgress()) {
+                  _showSyncBlockedMessage();
+                  return;
+                }
+
+                // Trigger customer sync before opening create screen
+                final hostIp = await LocalDbDAO.instance.getHostIpAddress();
+                if (hostIp != null && hostIp.trim().isNotEmpty) {
+                  context.read<FetchCustomerBloc>().add(
+                    StartCustomerSyncEvent(ipAddress: hostIp.trim()),
+                  );
+
+                  // Wait for sync to complete
+                  await for (final state in context.read<FetchCustomerBloc>().stream) {
+                    if (state is! FetchCustomerProgress) {
+                      break;
+                    }
+                  }
+                }
+
+                if (!mounted) return;
+
+                final result = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => BlocProvider(
+                      create: (context) => CustomerCreateBloc(
+                        createCustomer: CreateCustomer(CustomerLookupModels()),
+                      ),
+                      child: const CustomerCreateScreen(),
+                    ),
+                  ),
+                );
+
+                if (result == true && mounted) {
+                  // Refresh the customer list after successful creation
+                  context.read<CustomerListBloc>().add(
+                    FetchFirstCustomerPageEvent(
+                      query: _searchQuery,
+                      filterColumn: _searchColumn,
+                      sortColumn: _dbFilterCol,
+                      shouldToggleSort: false,
+                    ),
+                  );
+                }
               },
               onFilterTap: () {
                 if (_isSyncInProgress()) {

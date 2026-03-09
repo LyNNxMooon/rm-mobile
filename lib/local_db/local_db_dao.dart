@@ -95,6 +95,12 @@ abstract class LocalDbDAO {
 
   Future<CustomerVO?> getCustomerById(int customerId, String shopfront);
 
+  Future<int> getNextCustomerId(String shopfront);
+
+  Future<String> getNextNumericBarcode(String shopfront);
+
+  Future<bool> checkBarcodeExists(String barcode, String shopfront);
+
   // Setters to save data
   Future<void> saveCountedStock(Map<String, dynamic> stockData);
 

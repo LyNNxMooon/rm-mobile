@@ -13,6 +13,7 @@ import 'package:rmstock_scanner/entities/response/shopfronts_api_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart';
 import 'package:rmstock_scanner/entities/response/customer_lookup_api_response.dart';
 import 'package:rmstock_scanner/entities/response/customer_update_response.dart';
+import 'package:rmstock_scanner/entities/response/customer_create_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_backup_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
@@ -263,6 +264,27 @@ class DataAgentImpl implements DataAgent {
           .first;
     } on Exception catch (error) {
       logger.e('Error updating shopfront customers from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<CustomerCreateResponse> createShopfrontCustomers(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await apiService
+          .createShopfrontCustomers(shopfrontId, apiKey, body)
+          .asStream()
+          .map((event) => event)
+          .first;
+    } on Exception catch (error) {
+      logger.e('Error creating shopfront customers from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }

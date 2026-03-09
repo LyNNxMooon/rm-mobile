@@ -6,12 +6,14 @@ class CustomerSearchFilterBar extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onFilterTap;
   final VoidCallback? onScannerTap;
+  final VoidCallback? onAddTap;
 
   const CustomerSearchFilterBar({
     super.key,
     this.onChanged,
     this.onFilterTap,
     this.onScannerTap,
+    this.onAddTap,
   });
 
   @override
@@ -41,6 +43,17 @@ class CustomerSearchFilterBar extends StatelessWidget {
             ),
           ),
         ),
+        if (onAddTap != null)
+          IconButton(
+            onPressed: onAddTap,
+            icon: Icon(
+              Icons.add_circle,
+              color: kPrimaryColor,
+              size: (isTablet ? 28 : 26) * uiScale,
+            ),
+            tooltip: 'Create New Customer',
+          ),
+        SizedBox(width: (isTablet ? 8 : 4) * uiScale),
       ],
     );
   }

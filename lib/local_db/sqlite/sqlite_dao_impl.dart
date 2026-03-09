@@ -1605,6 +1605,80 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
+  Future<int> getNextCustomerId(String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.rawQuery(
+        'SELECT MAX(customer_id) as max_id FROM Customers WHERE shopfront = ?',
+        [shopfront],
+      );
+
+      final maxId = result.first['max_id'];
+      if (maxId == null) {
+        return 1; // Start from 1 if no customers exist
+      }
+
+      return (maxId as int) + 1;
+    } catch (error) {
+      logger.e('Error getting next customer ID: $error');
+      return 1;
+    }
+  }
+
+  @override
+  Future<String> getNextNumericBarcode(String shopfront) async {
+    try {
+      final db = _database!;
+      // Get all barcodes from the database
+      final result = await db.rawQuery(
+        'SELECT barcode FROM Customers WHERE shopfront = ?',
+        [shopfront],
+      );
+
+      if (result.isEmpty) {
+        return '1'; // Start with 1 if no barcodes exist
+      }
+
+      int maxNumericValue = 0;
+      for (var row in result) {
+        final barcode = row['barcode'] as String?;
+        if (barcode != null && barcode.isNotEmpty) {
+          // Only process barcodes that are purely numeric (no characters at all)
+          final numValue = int.tryParse(barcode.trim());
+          if (numValue != null && numValue > maxNumericValue) {
+            maxNumericValue = numValue;
+          }
+        }
+      }
+
+      // Generate next barcode (just the number)
+      final nextNumber = maxNumericValue + 1;
+      return nextNumber.toString();
+    } catch (error) {
+      logger.e('Error getting next numeric barcode: $error');
+      return '1';
+    }
+  }
+
+  @override
+  Future<bool> checkBarcodeExists(String barcode, String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'Customers',
+        where: 'barcode = ? AND shopfront = ?',
+        whereArgs: [barcode, shopfront],
+        limit: 1,
+      );
+
+      return result.isNotEmpty;
+    } catch (error) {
+      logger.e('Error checking barcode existence: $error');
+      return false;
+    }
+  }
+
+  @override
   Future<void> clearCustomersForShop(String shopfront) async {
     try {
       final db = _database!;
