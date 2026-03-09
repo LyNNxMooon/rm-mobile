@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
@@ -8,6 +9,7 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
+
 
 class CustomerCreateScreen extends StatefulWidget {
   const CustomerCreateScreen({super.key});
@@ -373,56 +375,112 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     }
   }
 
+  // --- UI Styling Components matching Details Screen ---
+
   InputDecoration _minimalInputDecoration({String? hintText}) {
     return InputDecoration(
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(4),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade300),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(4),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade300),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(4),
-        borderSide: const BorderSide(color: kPrimaryColor),
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: kPrimaryColor, width: 1.2),
       ),
       hintText: hintText,
       hintStyle: TextStyle(color: Colors.grey[400]),
     );
   }
 
-  Widget _buildTextField({
-    required String label,
-    required TextEditingController controller,
+  Widget _buildBaseCard({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFBF7F0),
+        borderRadius: BorderRadius.circular(12),
+        // Adding a subtle stroke to give that "solid card" look from modern UI
+        border: Border.all(color: const Color(0xFFC9B9A6), width: 0.57), 
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2B2012).withOpacity(0.07),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required List<Widget> children,
+  }) {
+    final double baseSize = _font(context, 14);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: _buildBaseCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: baseSize,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditRow(
+    String label,
+    TextEditingController controller, {
     TextInputType? keyboardType,
     int maxLines = 1,
     String? Function(String?)? validator,
+    String? hintText,
   }) {
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: baseSize,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                label,
+                style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+              ),
             ),
           ),
-          const SizedBox(height: 6),
-          TextFormField(
-            controller: controller,
-            keyboardType: keyboardType,
-            maxLines: maxLines,
-            style: TextStyle(fontSize: baseSize),
-            decoration: _minimalInputDecoration(),
-            validator: validator,
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 4,
+            child: TextFormField(
+              controller: controller,
+              keyboardType: keyboardType,
+              maxLines: maxLines,
+              style: TextStyle(fontSize: baseSize),
+              decoration: _minimalInputDecoration(hintText: hintText),
+              validator: validator,
+            ),
           ),
         ],
       ),
@@ -443,11 +501,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: baseSize,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
+            style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
           ),
           Switch(
             value: value,
@@ -468,58 +522,31 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: baseSize,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(height: 6),
-          DropdownButtonFormField<T>(
-            value: value,
-            items: items,
-            onChanged: onChanged,
-            decoration: _minimalInputDecoration(),
-            style: TextStyle(fontSize: baseSize, color: Colors.black87),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionCard({
-    required String title,
-    required List<Widget> children,
-  }) {
-    final double baseSize = _font(context, 16);
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: baseSize,
-                fontWeight: FontWeight.bold,
-                color: kPrimaryColor,
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                label,
+                style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
               ),
             ),
-            const SizedBox(height: 16),
-            ...children,
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 4,
+            child: DropdownButtonFormField<T>(
+              value: value,
+              items: items,
+              onChanged: onChanged,
+              decoration: _minimalInputDecoration(),
+              style: TextStyle(fontSize: baseSize, color: Colors.black87),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -533,47 +560,49 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
       final _AddressControllers address = entry.value;
 
       widgets.add(
-        Text(
-          "Address $addressNumber",
-          style: TextStyle(
-            fontSize: baseSize,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Text(
+            "Address $addressNumber",
+            style: TextStyle(
+              fontSize: baseSize,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
         ),
       );
-      widgets.add(const SizedBox(height: 6));
-      widgets.add(_buildTextField(label: "Addr1", controller: address.addr1));
-      widgets.add(_buildTextField(label: "Addr2", controller: address.addr2));
-      widgets.add(_buildTextField(label: "Addr3", controller: address.addr3));
-      widgets.add(_buildTextField(label: "Suburb", controller: address.suburb));
-      widgets.add(_buildTextField(label: "State", controller: address.state));
+      widgets.add(_buildEditRow("Addr1", address.addr1));
+      widgets.add(_buildEditRow("Addr2", address.addr2));
+      widgets.add(_buildEditRow("Addr3", address.addr3));
+      widgets.add(_buildEditRow("Suburb", address.suburb));
+      widgets.add(_buildEditRow("State", address.state));
       widgets.add(
-        _buildTextField(
-          label: "Postcode",
-          controller: address.postcode,
+        _buildEditRow(
+          "Postcode",
+          address.postcode,
           keyboardType: TextInputType.number,
         ),
       );
-      widgets.add(_buildTextField(label: "Country", controller: address.country));
+      widgets.add(_buildEditRow("Country", address.country));
       widgets.add(
-        _buildTextField(
-          label: "Phone",
-          controller: address.phone,
+        _buildEditRow(
+          "Phone",
+          address.phone,
           keyboardType: TextInputType.phone,
         ),
       );
       widgets.add(
-        _buildTextField(
-          label: "Mobile",
-          controller: address.mobile,
+        _buildEditRow(
+          "Mobile",
+          address.mobile,
           keyboardType: TextInputType.phone,
         ),
       );
       widgets.add(
-        _buildTextField(
-          label: "Email",
-          controller: address.email,
+        _buildEditRow(
+          "Email",
+          address.email,
           keyboardType: TextInputType.emailAddress,
         ),
       );
@@ -583,351 +612,332 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     return widgets;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create New Customer'),
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF0F8ABE), Color(0xFF05203C)],
-            ),
+  Widget _buildLongActionButton({required String label, required VoidCallback? onTap}) {
+    final double baseSize = _font(context, 14);
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: kPrimaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
-      ),
-      body: BlocListener<CustomerCreateBloc, CustomerCreateState>(
-        listener: (context, state) {
-          if (state is CustomerCreateSuccess) {
-            setState(() {
-              _isSubmitting = false;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
-            context.read<FetchCustomerBloc>().add(
-              StartCustomerSyncEvent(
-                ipAddress: AppGlobals.instance.currentHostIp ?? "",
-              ),
-            );
-            Navigator.of(context).pop(true); // Return true to indicate success
-          } else if (state is CustomerCreateError) {
-            setState(() {
-              _isSubmitting = false;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.error)),
-            );
-          } else if (state is BarcodeValidationState) {
-            setState(() {
-              _barcodeValidationMessage = state.message;
-              _isBarcodeValid = state.isValid;
-            });
-          } else if (state is BarcodeGeneratedState) {
-            setState(() {
-              _barcodeController.text = state.barcode;
-              _isBarcodeValid = true;
-              _barcodeValidationMessage = "Barcode generated successfully";
-            });
-          }
-        },
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildSectionCard(
-                title: "Barcode",
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _barcodeController,
-                          decoration: _minimalInputDecoration(
-                            hintText: 'Enter barcode or generate one',
-                          ),
-                          onChanged: _validateBarcode,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Barcode is required';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: _generateBarcode,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Generate'),
-                      ),
-                    ],
-                  ),
-                  if (_barcodeValidationMessage != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      _barcodeValidationMessage!,
-                      style: TextStyle(
-                        color: _isBarcodeValid ? Colors.green : Colors.red,
-                        fontSize: _font(context, 12),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              _buildSectionCard(
-                title: "Personal Details",
-                children: [
-                  _buildTextField(
-                    label: "Salutation",
-                    controller: _salutationController,
-                  ),
-                  _buildTextField(
-                    label: "Given Names",
-                    controller: _givenNamesController,
-                  ),
-                  _buildTextField(
-                    label: "Surname *",
-                    controller: _surnameController,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Surname is required';
-                      }
-                      return null;
-                    },
-                  ),
-                  _buildTextField(
-                    label: "Company",
-                    controller: _companyController,
-                  ),
-                  _buildTextField(
-                    label: "Position",
-                    controller: _positionController,
-                  ),
-                  _buildDropdownRow<int>(
-                    label: "Grade",
-                    value: _parseInt(_gradeController.text, 0),
-                    items: const [
-                      DropdownMenuItem(value: 0, child: Text("Default")),
-                      DropdownMenuItem(value: 1, child: Text("A")),
-                      DropdownMenuItem(value: 2, child: Text("B")),
-                      DropdownMenuItem(value: 3, child: Text("C")),
-                      DropdownMenuItem(value: 4, child: Text("D")),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() {
-                        _gradeController.text = value.toString();
-                      });
-                    },
-                  ),
-                ],
-              ),
-              _buildSectionCard(
-                title: "Contact Information",
-                children: [
-                  _buildTextField(
-                    label: "Phone",
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  _buildTextField(
-                    label: "Fax",
-                    controller: _faxController,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  _buildTextField(
-                    label: "Mobile",
-                    controller: _mobileController,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  _buildTextField(
-                    label: "Email",
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                ],
-              ),
-              _buildSectionCard(
-                title: "Address",
-                children: [
-                  _buildTextField(
-                    label: "Address 1",
-                    controller: _addr1Controller,
-                  ),
-                  _buildTextField(
-                    label: "Address 2",
-                    controller: _addr2Controller,
-                  ),
-                  _buildTextField(
-                    label: "Address 3",
-                    controller: _addr3Controller,
-                  ),
-                  _buildTextField(
-                    label: "Suburb",
-                    controller: _suburbController,
-                  ),
-                  _buildTextField(
-                    label: "State",
-                    controller: _stateController,
-                  ),
-                  _buildTextField(
-                    label: "Postcode",
-                    controller: _postcodeController,
-                    keyboardType: TextInputType.number,
-                  ),
-                  _buildTextField(
-                    label: "Country",
-                    controller: _countryController,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Secondary Addresses",
-                    style: TextStyle(
-                      fontSize: _font(context, 14),
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ..._buildSecondaryAddressEditors(),
-                ],
-              ),
-              _buildSectionCard(
-                title: "Account Details",
-                children: [
-                  _buildSwitchRow("Account", _accountValue, (val) {
-                    setState(() => _accountValue = val);
-                  }, enabled: !_overseasValue),
-                  _buildSwitchRow("From EOM", _fromEomValue, (val) {
-                    setState(() => _fromEomValue = val);
-                  }),
-                  _buildTextField(
-                    label: "Days",
-                    controller: _daysController,
-                    keyboardType: TextInputType.number,
-                  ),
-                  _buildTextField(
-                    label: "Limit",
-                    controller: _limitController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  _buildTextField(
-                    label: "Opened By (Staff ID)",
-                    controller: _openedIdController,
-                    keyboardType: TextInputType.number,
-                  ),
-                  _buildTextField(
-                    label: "Owner Account (Staff ID)",
-                    controller: _ownerIdController,
-                    keyboardType: TextInputType.number,
-                  ),
-                  _buildTextField(
-                    label: "ABN",
-                    controller: _abnController,
-                  ),
-                  _buildSwitchRow("Overseas", _overseasValue, (val) {
-                    _setOverseasValue(val);
-                  }),
-                ],
-              ),
-              _buildSectionCard(
-                title: "Additional Information",
-                children: [
-                  _buildSwitchRow("Status", _statusValue, (val) {
-                    setState(() => _statusValue = val);
-                  }),
-                  _buildSwitchRow("Inactive", _inactiveValue, (val) {
-                    setState(() => _inactiveValue = val);
-                  }),
-                  _buildDropdownRow<int>(
-                    label: "Default Delivery",
-                    value: _parseInt(_defaultDeliveryAddressController.text, 1),
-                    items: const [
-                      DropdownMenuItem(value: 1, child: Text("Addr1")),
-                      DropdownMenuItem(value: 2, child: Text("Addr2")),
-                      DropdownMenuItem(value: 3, child: Text("Addr3")),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() {
-                        _defaultDeliveryAddressController.text = value.toString();
-                      });
-                    },
-                  ),
-                  _buildDropdownRow<int>(
-                    label: "Documents",
-                    value: _parseInt(_documentDeliveryTypeController.text, 0),
-                    items: const [
-                      DropdownMenuItem(value: 0, child: Text("Print")),
-                      DropdownMenuItem(value: 1, child: Text("Email")),
-                      DropdownMenuItem(value: 2, child: Text("Print & Email")),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() {
-                        _documentDeliveryTypeController.text = value.toString();
-                      });
-                    },
-                  ),
-                  _buildTextField(
-                    label: "Notes",
-                    controller: _notesController,
-                    maxLines: 3,
-                  ),
-                  _buildTextField(
-                    label: "Comments",
-                    controller: _commentsController,
-                    maxLines: 3,
-                  ),
-                  _buildTextField(
-                    label: "Custom 1",
-                    controller: _custom1Controller,
-                  ),
-                  _buildTextField(
-                    label: "Custom 2",
-                    controller: _custom2Controller,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _isSubmitting ? null : _submitCustomer,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+        child: _isSubmitting 
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              )
+            : Text(
+                label,
+                style: TextStyle(
+                  fontSize: baseSize,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<CustomerCreateBloc, CustomerCreateState>(
+      listener: (context, state) {
+        if (state is CustomerCreateSuccess) {
+          setState(() {
+            _isSubmitting = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
+          );
+          context.read<FetchCustomerBloc>().add(
+            StartCustomerSyncEvent(
+              ipAddress: AppGlobals.instance.currentHostIp ?? "",
+            ),
+          );
+          Navigator.of(context).pop(true);
+        } else if (state is CustomerCreateError) {
+          setState(() {
+            _isSubmitting = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.error)),
+          );
+        } else if (state is BarcodeValidationState) {
+          setState(() {
+            _barcodeValidationMessage = state.message;
+            _isBarcodeValid = state.isValid;
+          });
+        } else if (state is BarcodeGeneratedState) {
+          setState(() {
+            _barcodeController.text = state.barcode;
+            _isBarcodeValid = true;
+            _barcodeValidationMessage = "Barcode generated successfully";
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF3EFE8), // Matching background
+        body: Stack(
+          children: [
+            // Background Gradient Container (Top Half)
+            Container(
+              height: MediaQuery.of(context).size.height * 0.4,
+              decoration: const BoxDecoration(gradient: kGColor),
+            ),
+            
+            // Custom App Bar Elements (Overlay)
+            SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                          label: const Text(
+                            "Back", 
+                            style: TextStyle(color: Colors.white, fontSize: 16)
+                          ),
+                          style: TextButton.styleFrom(padding: EdgeInsets.zero),
                         ),
-                      )
-                    : Text(
-                        'Create Customer',
-                        style: TextStyle(
-                          fontSize: _font(context, 16),
-                          fontWeight: FontWeight.bold,
+                        const Text(
+                          "Create Customer",
+                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 80), 
+                      ],
+                    ),
+                  ),
+                  
+                  // Scrollable Form Content
+                  Expanded(
+                    child: Form(
+                      key: _formKey,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                        child: Column(
+                          children: [
+                            _buildSectionCard(
+                              title: "Barcode",
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _barcodeController,
+                                        style: TextStyle(fontSize: _font(context, 14)),
+                                        decoration: _minimalInputDecoration(
+                                          hintText: 'Enter or generate barcode',
+                                        ),
+                                        onChanged: _validateBarcode,
+                                        validator: (value) {
+                                          if (value == null || value.trim().isEmpty) {
+                                            return 'Barcode is required';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    ElevatedButton(
+                                      onPressed: _generateBarcode,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: kPrimaryColor,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Generate',
+                                        style: TextStyle(fontSize: _font(context, 13), fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (_barcodeValidationMessage != null) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _barcodeValidationMessage!,
+                                    style: TextStyle(
+                                      color: _isBarcodeValid ? Colors.green : Colors.red,
+                                      fontSize: _font(context, 12),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            
+                            _buildSectionCard(
+                              title: "Personal Details",
+                              children: [
+                                _buildEditRow("Salutation", _salutationController),
+                                _buildEditRow("Given Names", _givenNamesController),
+                                _buildEditRow(
+                                  "Surname *", 
+                                  _surnameController,
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Surname is required';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                _buildEditRow("Company", _companyController),
+                                _buildEditRow("Position", _positionController),
+                                _buildDropdownRow<int>(
+                                  label: "Grade",
+                                  value: _parseInt(_gradeController.text, 0),
+                                  items: const [
+                                    DropdownMenuItem(value: 0, child: Text("Default")),
+                                    DropdownMenuItem(value: 1, child: Text("A")),
+                                    DropdownMenuItem(value: 2, child: Text("B")),
+                                    DropdownMenuItem(value: 3, child: Text("C")),
+                                    DropdownMenuItem(value: 4, child: Text("D")),
+                                  ],
+                                  onChanged: (value) {
+                                    if (value == null) return;
+                                    setState(() {
+                                      _gradeController.text = value.toString();
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+
+                            _buildSectionCard(
+                              title: "Contact Information",
+                              children: [
+                                _buildEditRow("Phone", _phoneController, keyboardType: TextInputType.phone),
+                                _buildEditRow("Fax", _faxController, keyboardType: TextInputType.phone),
+                                _buildEditRow("Mobile", _mobileController, keyboardType: TextInputType.phone),
+                                _buildEditRow("Email", _emailController, keyboardType: TextInputType.emailAddress),
+                              ],
+                            ),
+
+                            _buildSectionCard(
+                              title: "Address",
+                              children: [
+                                _buildEditRow("Address 1", _addr1Controller),
+                                _buildEditRow("Address 2", _addr2Controller),
+                                _buildEditRow("Address 3", _addr3Controller),
+                                _buildEditRow("Suburb", _suburbController),
+                                _buildEditRow("State", _stateController),
+                                _buildEditRow("Postcode", _postcodeController, keyboardType: TextInputType.number),
+                                _buildEditRow("Country", _countryController),
+                                const SizedBox(height: 8),
+                                const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                                const SizedBox(height: 12),
+                                Text(
+                                  "Secondary Addresses",
+                                  style: TextStyle(
+                                    fontSize: _font(context, 14),
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ..._buildSecondaryAddressEditors(),
+                              ],
+                            ),
+
+                            _buildSectionCard(
+                              title: "Account Details",
+                              children: [
+                                _buildSwitchRow("Account", _accountValue, (val) {
+                                  setState(() => _accountValue = val);
+                                }, enabled: !_overseasValue),
+                                _buildSwitchRow("From EOM", _fromEomValue, (val) {
+                                  setState(() => _fromEomValue = val);
+                                }),
+                                const SizedBox(height: 8),
+                                _buildEditRow("Days", _daysController, keyboardType: TextInputType.number),
+                                _buildEditRow("Limit", _limitController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                                _buildEditRow("Opened By (Staff ID)", _openedIdController, keyboardType: TextInputType.number),
+                                _buildEditRow("Owner (Staff ID)", _ownerIdController, keyboardType: TextInputType.number),
+                                _buildEditRow("ABN", _abnController),
+                                _buildSwitchRow("Overseas", _overseasValue, (val) {
+                                  _setOverseasValue(val);
+                                }),
+                              ],
+                            ),
+
+                            _buildSectionCard(
+                              title: "Additional Information",
+                              children: [
+                                _buildSwitchRow("Status", _statusValue, (val) {
+                                  setState(() => _statusValue = val);
+                                }),
+                                _buildSwitchRow("Inactive", _inactiveValue, (val) {
+                                  setState(() => _inactiveValue = val);
+                                }),
+                                const SizedBox(height: 8),
+                                _buildDropdownRow<int>(
+                                  label: "Default Delivery",
+                                  value: _parseInt(_defaultDeliveryAddressController.text, 1),
+                                  items: const [
+                                    DropdownMenuItem(value: 1, child: Text("Addr1")),
+                                    DropdownMenuItem(value: 2, child: Text("Addr2")),
+                                    DropdownMenuItem(value: 3, child: Text("Addr3")),
+                                  ],
+                                  onChanged: (value) {
+                                    if (value == null) return;
+                                    setState(() {
+                                      _defaultDeliveryAddressController.text = value.toString();
+                                    });
+                                  },
+                                ),
+                                _buildDropdownRow<int>(
+                                  label: "Documents",
+                                  value: _parseInt(_documentDeliveryTypeController.text, 0),
+                                  items: const [
+                                    DropdownMenuItem(value: 0, child: Text("Print")),
+                                    DropdownMenuItem(value: 1, child: Text("Email")),
+                                    DropdownMenuItem(value: 2, child: Text("Print & Email")),
+                                  ],
+                                  onChanged: (value) {
+                                    if (value == null) return;
+                                    setState(() {
+                                      _documentDeliveryTypeController.text = value.toString();
+                                    });
+                                  },
+                                ),
+                                _buildEditRow("Notes", _notesController, maxLines: 3),
+                                _buildEditRow("Comments", _commentsController, maxLines: 3),
+                                _buildEditRow("Custom 1", _custom1Controller),
+                                _buildEditRow("Custom 2", _custom2Controller),
+                              ],
+                            ),
+                            
+                            const SizedBox(height: 12),
+                            _buildLongActionButton(
+                              label: "Create Customer",
+                              onTap: _isSubmitting ? null : _submitCustomer,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
                         ),
                       ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
