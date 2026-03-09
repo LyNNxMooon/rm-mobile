@@ -43,7 +43,14 @@ class NetworkSavedPathValidationBloc
   ) async {
     emit(CheckingConnection());
     try {
-      final bool passed = await checkPathConnection(event.path);
+      // Add timeout to prevent infinite waiting
+      final bool passed = await checkPathConnection(event.path)
+          .timeout(
+            const Duration(seconds: 20),
+            onTimeout: () {
+              return false;
+            },
+          );
 
       if (passed) {
         emit(ConnectionValid());

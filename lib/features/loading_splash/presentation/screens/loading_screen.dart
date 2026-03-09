@@ -47,12 +47,34 @@ class _LoadingScreenState extends State<LoadingScreen> {
         }
 
         if (state is ConnectionValid) {
+          // Start syncs in background - don't wait for them
           context.read<FetchStockBloc>().add(
             StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
           );
           context.read<FetchCustomerBloc>().add(
             StartCustomerSyncEvent(
               ipAddress: AppGlobals.instance.currentHostIp ?? "",
+            ),
+          );
+          // Navigation will happen automatically via IndexScreen state change
+        }
+        
+        if (state is ErrorCheckingConnection || state is ErrorFetchingSavedPaths) {
+          // Show error message but allow navigation to home screen
+          final String errorMessage;
+          if (state is ErrorCheckingConnection) {
+            errorMessage = state.message;
+          } else if (state is ErrorFetchingSavedPaths) {
+            errorMessage = state.message;
+          } else {
+            errorMessage = 'An error occurred';
+          }
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              duration: const Duration(seconds: 4),
+              backgroundColor: Colors.orange,
             ),
           );
         }
