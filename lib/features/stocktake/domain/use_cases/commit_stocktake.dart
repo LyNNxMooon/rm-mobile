@@ -15,9 +15,23 @@ class CommitStocktake {
 
   Future<void> call() async {
     try {
-      final ip = AppGlobals.instance.currentHostIp ?? "";
+      String ip = AppGlobals.instance.currentHostIp ?? "";
       final fullPath = AppGlobals.instance.currentPath ?? "";
-      final shopfront = AppGlobals.instance.shopfront ?? "";
+      String shopfront = AppGlobals.instance.shopfront ?? "";
+
+      if (ip.trim().isEmpty) {
+        ip = (await LocalDbDAO.instance.getHostIpAddress() ?? "").trim();
+        if (ip.isNotEmpty) {
+          AppGlobals.instance.currentHostIp = ip;
+        }
+      }
+
+      if (shopfront.trim().isEmpty) {
+        shopfront = (await LocalDbDAO.instance.getShopfrontName() ?? "").trim();
+        if (shopfront.isNotEmpty) {
+          AppGlobals.instance.shopfront = shopfront;
+        }
+      }
 
       if (await InternetConnectionUtils.instance.checkInternetConnection()) {
         final List<CountedStockVO> unsyncedStocks = await LocalDbDAO.instance
@@ -37,7 +51,6 @@ class CommitStocktake {
 
         final DeviceMetadata mobileInfo = await DeviceMetaDataUtils.instance
             .getDeviceInformation();
-            
 
         final response = await repository.commitToLanFolder(
           address: ip,
@@ -53,7 +66,6 @@ class CommitStocktake {
         if (!response.success) {
           return Future.error(response.message);
         }
-
       } else {
         return Future.error("Please connect to a network!");
       }

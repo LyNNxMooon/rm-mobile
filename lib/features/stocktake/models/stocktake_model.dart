@@ -72,6 +72,12 @@ class StocktakeModel implements StocktakeRepo {
       // final String fileName = "${mobileID}_initCheck_$timestamp.json.gz";
       // return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(...);
 
+      String resolvedAddress = address.trim();
+      if (resolvedAddress.isEmpty) {
+        resolvedAddress = (await LocalDbDAO.instance.getHostIpAddress() ?? "")
+            .trim();
+      }
+
       final int resolvedPort =
           int.tryParse(
             (await LocalDbDAO.instance.getHostPort() ?? "").trim(),
@@ -82,7 +88,7 @@ class StocktakeModel implements StocktakeRepo {
       final String resolvedShopfrontId =
           (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
 
-      if (address.trim().isEmpty ||
+      if (resolvedAddress.isEmpty ||
           resolvedApiKey.isEmpty ||
           resolvedShopfrontId.isEmpty) {
         throw Exception("Missing host/shopfront setup for init check.");
@@ -103,7 +109,7 @@ class StocktakeModel implements StocktakeRepo {
 
       await _enforceStocktakeApiCooldown();
       final response = await DataAgentImpl.instance.stocktakeInitCheck(
-        address,
+        resolvedAddress,
         resolvedPort,
         resolvedShopfrontId,
         resolvedApiKey,
@@ -169,6 +175,12 @@ class StocktakeModel implements StocktakeRepo {
       // final String fileName = "${mobileID}_stocktake_$timestamp.json.gz";
       // return LanNetworkServiceImpl.instance.writeStocktakeDataToSharedFolder(...);
 
+      String resolvedAddress = address.trim();
+      if (resolvedAddress.isEmpty) {
+        resolvedAddress = (await LocalDbDAO.instance.getHostIpAddress() ?? "")
+            .trim();
+      }
+
       final int resolvedPort =
           int.tryParse(
             (await LocalDbDAO.instance.getHostPort() ?? "").trim(),
@@ -179,7 +191,7 @@ class StocktakeModel implements StocktakeRepo {
       final String resolvedShopfrontId =
           (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
 
-      if (address.trim().isEmpty ||
+      if (resolvedAddress.isEmpty ||
           resolvedApiKey.isEmpty ||
           resolvedShopfrontId.isEmpty) {
         throw Exception("Missing host/shopfront setup for stocktake commit.");
@@ -214,7 +226,7 @@ class StocktakeModel implements StocktakeRepo {
 
       await _enforceStocktakeApiCooldown();
       return DataAgentImpl.instance.stocktakeCommit(
-        address,
+        resolvedAddress,
         resolvedPort,
         resolvedShopfrontId,
         resolvedApiKey,

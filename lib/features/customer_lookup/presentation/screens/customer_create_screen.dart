@@ -257,9 +257,6 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
 
     setState(() {
       _overseasValue = value;
-      if (_overseasValue) {
-        _accountValue = false;
-      }
     });
   }
 
@@ -860,7 +857,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                               children: [
                                 _buildSwitchRow("Account", _accountValue, (val) {
                                   setState(() => _accountValue = val);
-                                }, enabled: !_overseasValue),
+                                }),
                                 _buildSwitchRow("From EOM", _fromEomValue, (val) {
                                   setState(() => _fromEomValue = val);
                                 }),

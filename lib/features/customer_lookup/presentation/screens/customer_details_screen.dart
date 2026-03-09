@@ -346,9 +346,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
     setState(() {
       _overseasValue = value;
-      if (_overseasValue) {
-        _accountValue = false;
-      }
     });
   }
 
@@ -1272,8 +1269,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             _buildSwitchRow(
               "Account",
               _accountValue,
-              (value) => setState(() => _accountValue = value),
-              enabled: !_overseasValue,
+              (value) {
+                if (!value) return;
+                setState(() => _accountValue = true);
+              },
+              enabled: !_accountValue,
             ),
             _buildSwitchRow(
               "Overseas",
@@ -1798,7 +1798,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       onEditTap: () => _toggleEditSection(CustomerEditSection.additional),
       children: isEditing
           ? [
-              _buildEditRow("ABN", _abnController),
+              if (!_overseasValue) _buildEditRow("ABN", _abnController),
               _buildDropdownRow<int>(
                 label: "Default Delivery",
                 value: _parseInt(
@@ -1806,6 +1806,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   widget.customer.defaultDeliveryAddress,
                 ),
                 items: const [
+                  DropdownMenuItem(value: 0, child: Text("Addr1")),
                   DropdownMenuItem(value: 1, child: Text("Addr1")),
                   DropdownMenuItem(value: 2, child: Text("Addr2")),
                   DropdownMenuItem(value: 3, child: Text("Addr3")),
@@ -1870,10 +1871,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               ),
             ]
           : [
-              _buildDataRow(
-                "ABN",
-                _abnController.text.isEmpty ? "-" : _abnController.text,
-              ),
+              if (!_overseasValue)
+                _buildDataRow(
+                  "ABN",
+                  _abnController.text.isEmpty ? "-" : _abnController.text,
+                ),
               _buildDataRow("Default Delivery", _defaultDeliveryAddressLabel()),
               _buildDataRow("Documents", _documentDeliveryLabel()),
               _buildDataRow("Custom 1", _custom1Controller.text),
