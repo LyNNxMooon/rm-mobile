@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class AppGlobals {
   AppGlobals._();
 
@@ -6,7 +8,8 @@ class AppGlobals {
   String? currentHostIp;
   String? currentPath;
   String? shopfront;
-  String? hostName;
+  String? _hostName;
+  final ValueNotifier<String?> hostNameNotifier = ValueNotifier<String?>(null);
   Map<String, String> pairedShopfrontIdsByName = {};
   bool securityEnabled = true;
   int? staffId;
@@ -19,6 +22,12 @@ class AppGlobals {
 
   bool get isStaffSignedIn =>
       (staffNo ?? "").trim().isNotEmpty && (staffName ?? "").trim().isNotEmpty;
+
+  String? get hostName => _hostName;
+  set hostName(String? value) {
+    _hostName = value;
+    hostNameNotifier.value = value;
+  }
 
   bool hasPermission(String permission) {
     if (!securityEnabled) return true;

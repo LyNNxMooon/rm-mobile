@@ -24,6 +24,8 @@ import 'package:rmstock_scanner/entities/response/security_groups_response.dart'
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 import 'package:rmstock_scanner/network/api/api_service.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent.dart';
+import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import '../../entities/response/error_response.dart';
 import '../../utils/log_utils.dart';
 
@@ -96,15 +98,51 @@ class DataAgentImpl implements DataAgent {
     return error.mainMessage;
   }
 
+  Future<T> _callWithReconnect<T>(
+    String ip,
+    Future<T> Function() request,
+  ) async {
+    final result = await request();
+    await _markOnlineIfOffline(ip);
+    return result;
+  }
+
+  Future<void> _markOnlineIfOffline(String ip) async {
+    final currentHost = (AppGlobals.instance.hostName ?? '').trim();
+    if (currentHost.isNotEmpty) return;
+
+    try {
+      final savedHost = (await LocalDbDAO.instance.getHostName() ?? '').trim();
+      final savedIp = (await LocalDbDAO.instance.getHostIpAddress() ?? '')
+          .trim();
+
+      final String resolvedHost = savedHost.isNotEmpty
+          ? savedHost
+          : (ip.trim().isNotEmpty ? ip : savedIp);
+
+      if (resolvedHost.isNotEmpty) {
+        AppGlobals.instance.hostName = resolvedHost;
+      }
+
+      if ((AppGlobals.instance.currentHostIp ?? '').trim().isEmpty) {
+        final resolvedIp = ip.trim().isNotEmpty ? ip : savedIp;
+        if (resolvedIp.isNotEmpty) {
+          AppGlobals.instance.currentHostIp = resolvedIp;
+        }
+      }
+    } catch (_) {
+      // Ignore reconnect failures; API call already succeeded.
+    }
+  }
+
   @override
   Future<DiscoverResponse> discoverHost(String ip, int port) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .discoverHost()
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService.discoverHost().asStream().map((event) => event).first,
+      );
     } on Exception catch (error) {
       logger.e('Error discovering host from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -115,11 +153,10 @@ class DataAgentImpl implements DataAgent {
   Future<PaircodeResponse> getPairCodes(String ip, int port) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .getPairCodes()
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService.getPairCodes().asStream().map((event) => event).first,
+      );
     } on Exception catch (error) {
       logger.e('Error getting pair code from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -134,11 +171,11 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .pairDevice(body)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () =>
+            apiService.pairDevice(body).asStream().map((event) => event).first,
+      );
     } on Exception catch (error) {
       logger.e('Error pairing device from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -153,11 +190,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .getShopfronts(apiKey)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .getShopfronts(apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error getting shopfronts from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -173,11 +213,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .connectShopfront(shopfrontId, apiKey)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .connectShopfront(shopfrontId, apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error connecting shopfront from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -194,11 +237,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .fetchShopfrontStocks(shopfrontId, apiKey, body)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .fetchShopfrontStocks(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error fetching shopfront stocks from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -215,11 +261,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .updateShopfrontStock(shopfrontId, apiKey, body)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .updateShopfrontStock(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error updating shopfront stock from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -236,11 +285,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .fetchShopfrontCustomers(shopfrontId, apiKey, body)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .fetchShopfrontCustomers(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error fetching shopfront customers from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -257,11 +309,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .updateShopfrontCustomers(shopfrontId, apiKey, body)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .updateShopfrontCustomers(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error updating shopfront customers from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -278,11 +333,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .createShopfrontCustomers(shopfrontId, apiKey, body)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .createShopfrontCustomers(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error creating shopfront customers from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -300,11 +358,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .uploadShopfrontPicture(shopfrontId, stockId, apiKey, jpgBytes)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .uploadShopfrontPicture(shopfrontId, stockId, apiKey, jpgBytes)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error uploading shopfront picture from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -321,11 +382,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .stocktakeInitCheck(shopfrontId, apiKey, body)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .stocktakeInitCheck(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error calling stocktake init check from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -342,11 +406,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .stocktakeCommit(shopfrontId, apiKey, body)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .stocktakeCommit(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error calling stocktake commit from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -363,11 +430,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .stocktakeBackup(shopfrontId, apiKey, body)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .stocktakeBackup(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error backing up stocktake from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -383,11 +453,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .getStocktakeBackupList(shopfrontId, apiKey)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .getStocktakeBackupList(shopfrontId, apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error fetching backup list from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -404,11 +477,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .loadStocktakeBackup(shopfrontId, fileName, apiKey)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .loadStocktakeBackup(shopfrontId, fileName, apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error loading backup from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -425,11 +501,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .authenticateStaff(shopfrontId, apiKey, body)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .authenticateStaff(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error authenticating staff from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -445,11 +524,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .getSecurityGroups(shopfrontId, apiKey)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .getSecurityGroups(shopfrontId, apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error loading security groups from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -466,11 +548,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .getStaffDetail(shopfrontId, staffId, apiKey)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .getStaffDetail(shopfrontId, staffId, apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error loading staff detail from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -485,11 +570,14 @@ class DataAgentImpl implements DataAgent {
   ) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .getStocktakeLimit(apiKey)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .getStocktakeLimit(apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
     } on Exception catch (error) {
       logger.e('Error getting stocktake limit from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -500,11 +588,11 @@ class DataAgentImpl implements DataAgent {
   Future<ValidateResponse> validate(String ip, int port, String apiKey) async {
     try {
       final apiService = _createApiService(ip, port);
-      return await apiService
-          .validate(apiKey)
-          .asStream()
-          .map((event) => event)
-          .first;
+      return await _callWithReconnect(
+        ip,
+        () =>
+            apiService.validate(apiKey).asStream().map((event) => event).first,
+      );
     } on Exception catch (error) {
       logger.e('Error validating connection from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
@@ -546,8 +634,7 @@ class _RetryInterceptor extends Interceptor {
     this.maxRetries = 3,
     this.retryDelayMs = 3000,
     this.maxTotalRetryMs = 30000,
-  })
-    : _dio = dio;
+  }) : _dio = dio;
 
   final Dio _dio;
   final int maxRetries;
@@ -562,7 +649,10 @@ class _RetryInterceptor extends Interceptor {
   }
 
   @override
-  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
     final options = err.requestOptions;
     final int attempt = (options.extra['retry_attempt'] as int?) ?? 0;
     final int retryStartMs =

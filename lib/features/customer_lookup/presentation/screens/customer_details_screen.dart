@@ -897,17 +897,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             onTap: () => _openMapForAddress(addressQuery),
                             borderRadius: BorderRadius.circular(8),
                             child: Container(
-                              width: 36,
-                              height: 36,
+                              width: 46,
+                              height: 40,
                               decoration: BoxDecoration(
                                 color: Colors.grey[200],
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(
-                                Icons.map,
-                                color: Colors.redAccent,
-                                size: 18,
-                              ),
+                              child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset("assets/images/map.png", fit: BoxFit.fill),
+                      ),
                             ),
                           ),
                       ],
@@ -1311,7 +1310,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ),
           const SizedBox(height: 12),
           _buildLongActionButton(
-            label: "View Transactions",
+            label: "View Recent Transactions",
             onTap: () {
               Navigator.push(
                 context,
@@ -1528,13 +1527,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     onTap: () => _openMapForAddress(primaryAddressQuery),
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
-                      width: 50,
-                      height: 50,
+                      width: 60,
+                      height: 55,
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.map, color: Colors.redAccent),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset("assets/images/map.png", fit: BoxFit.fill),
+                      ),
                     ),
                   ),
                 ],
@@ -1726,12 +1728,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           },
         ),
         const SizedBox(height: 12),
-        _buildLongActionButton(
-          label: "Print/Email Statement",
-          onTap: () {
-            // TODO: wire statement action
-          },
-        ),
+        // _buildLongActionButton(
+        //   label: "Print/Email Statement",
+        //   onTap: () {
+        //     // TODO: wire statement action
+        //   },
+        // ),
       ],
     );
   }

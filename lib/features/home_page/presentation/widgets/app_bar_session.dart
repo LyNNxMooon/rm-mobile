@@ -42,41 +42,45 @@ class AppBarSession extends StatelessWidget {
                   ShopfrontConnectionStates
                 >(
                   builder: (context, state) {
-                    final host = AppGlobals.instance.hostName;
-                    final bool isOffline = host == null || host.isEmpty;
+                    return ValueListenableBuilder<String?>(
+                      valueListenable: AppGlobals.instance.hostNameNotifier,
+                      builder: (context, host, _) {
+                        final bool isOffline = host == null || host.isEmpty;
 
-                    if (isOffline) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: kErrorColor.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: kErrorColor),
-                        ),
-                        child: const Text(
-                          'Offline Mode',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: kErrorColor,
-                            fontWeight: FontWeight.w700,
+                        if (isOffline) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: kErrorColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: kErrorColor),
+                            ),
+                            child: const Text(
+                              'Offline Mode',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: kErrorColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }
+
+                        return Text(
+                          "Server: $host",
+                          style: getSmartTitle(
+                            fontSize: 16,
+                            color: kSecondaryColor,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    }
-
-                    return Text(
-                      "Server: $host",
-                      style: getSmartTitle(
-                        fontSize: 16,
-                        color: kSecondaryColor,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                        );
+                      },
                     );
                   },
                 );

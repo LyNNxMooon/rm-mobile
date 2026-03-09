@@ -130,20 +130,6 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
-    - family: Lexend
-      fonts:
-        - asset: assets/fonts/Lexend-Regular.ttf
-        - asset: assets/fonts/Lexend-Medium.ttf
-        - asset: assets/fonts/Lexend-Bold.ttf
-        - asset: assets/fonts/Lexend-SemiBold.ttf
-    - family: SourceSans3
-      fonts:
-        - asset: assets/fonts/SourceSans3-Regular.ttf
-        - asset: assets/fonts/SourceSans3-Medium.ttf
-        - asset: assets/fonts/SourceSans3-Bold.ttf
-        - asset: assets/fonts/SourceSans3-SemiBold.ttf
-        - asset: assets/fonts/SourceSans3-Light.ttf
-        - asset: assets/fonts/SourceSans3-ExtraLight.ttf
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter_24pt-Regular.ttf
