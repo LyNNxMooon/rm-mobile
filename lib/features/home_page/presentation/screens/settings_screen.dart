@@ -715,12 +715,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSignOutButton() {
+    final bool isOffline = (AppGlobals.instance.hostName ?? "").trim().isEmpty;
     return Padding(
       padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
       child: SizedBox(
         width: double.infinity,
         child: OutlinedButton(
           onPressed: () {
+            if (isOffline) {
+              _showError(context, "Connect to the network to sign off.");
+              return;
+            }
             if (_blockIfSyncing(context)) return;
             context.read<StaffAuthBloc>().add(SignOutStaffEvent());
           },

@@ -80,7 +80,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (currentParamState is ErrorFetchingSavedPaths ||
         currentParamState is ErrorCheckingConnection) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showNetworkDialog();
+        final hasSavedShopfront =
+            (AppGlobals.instance.shopfront ?? "").trim().isNotEmpty;
+        if (!hasSavedShopfront || !AppGlobals.instance.isStaffSignedIn) {
+          _showNetworkDialog();
+        }
       });
     }
 
@@ -165,7 +169,11 @@ class _HomeScreenState extends State<HomeScreen> {
           listener: (context, state) {
             if (state is ErrorFetchingSavedPaths ||
                 state is ErrorCheckingConnection) {
-              _showNetworkDialog();
+              final hasSavedShopfront =
+                  (AppGlobals.instance.shopfront ?? "").trim().isNotEmpty;
+              if (!hasSavedShopfront || !AppGlobals.instance.isStaffSignedIn) {
+                _showNetworkDialog();
+              }
             }
           },
         ),

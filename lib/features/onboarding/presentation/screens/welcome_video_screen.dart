@@ -66,21 +66,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 50,
-                    height: 50,
+                    width: 100,
+                    height: 45,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Image.asset(
                       'assets/images/aaapos.png',
-                      fit: BoxFit.contain,
+                      fit: BoxFit.fill,
                     ),
                   ),
                   const Spacer(),
                   const Text(
-                    "Streamline your workflow.\nServe customers anywhere.",
+                    "Smart inventory management, \nRight in your pocket.",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 42,

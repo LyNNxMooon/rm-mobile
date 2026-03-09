@@ -1199,7 +1199,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     ],
                     const SizedBox(height: 4),
                     Text(
-                      "Customer ID: ${widget.customer.customerId}",
+                      "Customer ID: ${widget.customer.barcode}",
                       style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
                     ),
                   ],
