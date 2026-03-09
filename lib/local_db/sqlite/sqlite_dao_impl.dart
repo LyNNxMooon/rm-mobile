@@ -25,6 +25,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
       _database = await openDatabase(
         path,
         version: 3,
+        onConfigure: (db) async {
+          await db.rawQuery('PRAGMA journal_mode=WAL');
+          await db.rawQuery('PRAGMA foreign_keys=ON');
+          await db.rawQuery('PRAGMA busy_timeout=5000');
+        },
         onCreate: (db, version) async {
           await db.execute(stocktakeTableCreationQuery);
           await db.execute(appConfigTableCreationQuery);

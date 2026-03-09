@@ -43,13 +43,34 @@ class AppBarSession extends StatelessWidget {
                 >(
                   builder: (context, state) {
                     final host = AppGlobals.instance.hostName;
+                    final bool isOffline = host == null || host.isEmpty;
 
-                    final String displayText = (host == null || host.isEmpty)
-                        ? 'Connect To Network...'
-                        : "Server: $host";
+                    if (isOffline) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: kErrorColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: kErrorColor),
+                        ),
+                        child: const Text(
+                          'Offline Mode',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: kErrorColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }
 
                     return Text(
-                      displayText,
+                      "Server: $host",
                       style: getSmartTitle(
                         fontSize: 16,
                         color: kSecondaryColor,

@@ -15,6 +15,7 @@ import '../../domain/use_cases/update_single_stock.dart';
 
 class StockListBloc extends Bloc<StockListEvent, StockListState> {
   final GetPaginatedStock getPaginatedStock;
+  bool _isLoadingMore = false;
 
   StockListBloc({required this.getPaginatedStock}) : super(StockListInitial()) {
     //Initial Load / Filter Change / Search
@@ -69,7 +70,8 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
     on<LoadMoreEvent>((event, emit) async {
       if (state is StockListLoaded) {
         final curr = state as StockListLoaded;
-        if (curr.hasReachedMax) return;
+        if (curr.hasReachedMax || _isLoadingMore) return;
+        _isLoadingMore = true;
 
         try {
           final nextPage = curr.currentPage + 1;
@@ -94,6 +96,8 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
           );
         } catch (e) {
           emit(StockListError(e.toString()));
+        } finally {
+          _isLoadingMore = false;
         }
       }
     });

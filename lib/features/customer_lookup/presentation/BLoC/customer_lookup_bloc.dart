@@ -13,6 +13,7 @@ import '../../../../utils/global_var_utils.dart';
 
 class CustomerListBloc extends Bloc<CustomerListEvent, CustomerListState> {
   final GetPaginatedCustomers getPaginatedCustomers;
+  bool _isLoadingMore = false;
 
   CustomerListBloc({required this.getPaginatedCustomers}) : super(CustomerListInitial()) {
     on<FetchFirstCustomerPageEvent>((event, emit) async {
@@ -64,7 +65,8 @@ class CustomerListBloc extends Bloc<CustomerListEvent, CustomerListState> {
     on<LoadMoreCustomersEvent>((event, emit) async {
       if (state is CustomerListLoaded) {
         final curr = state as CustomerListLoaded;
-        if (curr.hasReachedMax) return;
+        if (curr.hasReachedMax || _isLoadingMore) return;
+        _isLoadingMore = true;
 
         try {
           final nextPage = curr.currentPage + 1;
@@ -89,6 +91,8 @@ class CustomerListBloc extends Bloc<CustomerListEvent, CustomerListState> {
           );
         } catch (e) {
           emit(CustomerListError(e.toString()));
+        } finally {
+          _isLoadingMore = false;
         }
       }
     });
