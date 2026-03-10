@@ -1,13 +1,18 @@
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_states.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_staff_by_barcode.dart';
+import 'package:rmstock_scanner/utils/dependency_injection_utils.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
 
@@ -129,10 +134,28 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   bool _inactiveValue = false;
   bool _accountValue = false;
   bool _overseasValue = false;
+
+  Timer? _openedStaffLookupDebounce;
+  Timer? _ownerStaffLookupDebounce;
+  String? _openedStaffLookupMessage;
+  String? _ownerStaffLookupMessage;
+  bool _openedStaffLookupValid = false;
+  bool _ownerStaffLookupValid = false;
+  bool _openedStaffLookupLoading = false;
+  bool _ownerStaffLookupLoading = false;
+  int? _openedStaffId;
+  int? _ownerStaffId;
   
   String? _barcodeValidationMessage;
   bool _isBarcodeValid = false;
   bool _isSubmitting = false;
+
+    String get _customerCustom1Label =>
+      AppGlobals.instance.customerCustom1Label;
+    String get _customerCustom2Label =>
+      AppGlobals.instance.customerCustom2Label;
+    String get _customerStatusLabel =>
+      AppGlobals.instance.customerStatusLabel;
 
   @override
   void initState() {
@@ -169,8 +192,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     _commentsController = TextEditingController();
     _custom1Controller = TextEditingController();
     _custom2Controller = TextEditingController();
-    _openedIdController = TextEditingController(text: '0');
-    _ownerIdController = TextEditingController(text: '0');
+    _openedIdController = TextEditingController();
+    _ownerIdController = TextEditingController();
     _defaultDeliveryAddressController = TextEditingController(text: '1');
     _documentDeliveryTypeController = TextEditingController(text: '0');
 
@@ -222,6 +245,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     _ownerIdController.dispose();
     _defaultDeliveryAddressController.dispose();
     _documentDeliveryTypeController.dispose();
+
+    _openedStaffLookupDebounce?.cancel();
+    _ownerStaffLookupDebounce?.cancel();
 
     for (final address in _secondaryAddressControllers.values) {
       address.dispose();
@@ -285,6 +311,98 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     }
   }
 
+  String _formatStaffLookupMessage(StaffDetailInfo? staff) {
+    if (staff == null) return "Staff not found";
+    final name = "${staff.givenNames} ${staff.surname}".trim();
+    final staffNo = staff.staffNo.trim();
+    if (staffNo.isEmpty && name.isEmpty) return "Staff found";
+    if (staffNo.isEmpty) return "Found: $name";
+    if (name.isEmpty) return "Found: $staffNo";
+    return "Found: $staffNo - $name";
+  }
+
+  void _onOpenedStaffBarcodeChanged(String raw) {
+    _openedStaffLookupDebounce?.cancel();
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      setState(() {
+        _openedStaffLookupMessage = null;
+        _openedStaffLookupValid = false;
+        _openedStaffLookupLoading = false;
+        _openedStaffId = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _openedStaffLookupLoading = true;
+    });
+
+    _openedStaffLookupDebounce = Timer(const Duration(milliseconds: 400),
+        () async {
+      try {
+        final response = await sl<GetStaffByBarcode>().call(trimmed);
+        final staff = response.staff;
+        if (!mounted) return;
+        setState(() {
+          _openedStaffLookupValid = staff != null;
+          _openedStaffLookupMessage = _formatStaffLookupMessage(staff);
+          _openedStaffId = staff?.staffId;
+          _openedStaffLookupLoading = false;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          _openedStaffLookupValid = false;
+          _openedStaffLookupMessage = "Staff not found";
+          _openedStaffId = null;
+          _openedStaffLookupLoading = false;
+        });
+      }
+    });
+  }
+
+  void _onOwnerStaffBarcodeChanged(String raw) {
+    _ownerStaffLookupDebounce?.cancel();
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      setState(() {
+        _ownerStaffLookupMessage = null;
+        _ownerStaffLookupValid = false;
+        _ownerStaffLookupLoading = false;
+        _ownerStaffId = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _ownerStaffLookupLoading = true;
+    });
+
+    _ownerStaffLookupDebounce = Timer(const Duration(milliseconds: 400),
+        () async {
+      try {
+        final response = await sl<GetStaffByBarcode>().call(trimmed);
+        final staff = response.staff;
+        if (!mounted) return;
+        setState(() {
+          _ownerStaffLookupValid = staff != null;
+          _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
+          _ownerStaffId = staff?.staffId;
+          _ownerStaffLookupLoading = false;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          _ownerStaffLookupValid = false;
+          _ownerStaffLookupMessage = "Staff not found";
+          _ownerStaffId = null;
+          _ownerStaffLookupLoading = false;
+        });
+      }
+    });
+  }
+
   Future<void> _submitCustomer() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -300,6 +418,22 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     if (!_isBarcodeValid) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please use a valid barcode')),
+      );
+      return;
+    }
+
+    final openedBarcode = _openedIdController.text.trim();
+    if (openedBarcode.isNotEmpty && !_openedStaffLookupValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid opened by staff barcode')),
+      );
+      return;
+    }
+
+    final ownerBarcode = _ownerIdController.text.trim();
+    if (ownerBarcode.isNotEmpty && !_ownerStaffLookupValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid owner staff barcode')),
       );
       return;
     }
@@ -342,8 +476,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
             "mobile": _mobileController.text.trim(),
             "email": _emailController.text.trim(),
             "account": _accountValue,
-            "openedId": _parseInt(_openedIdController.text, 0),
-            "ownerId": _parseInt(_ownerIdController.text, 0),
+            "openedId": _openedStaffId ?? 0,
+            "opened_id": _openedStaffId ?? 0,
+            "ownerId": _ownerStaffId ?? 0,
+            "owner_id": _ownerStaffId ?? 0,
             "fromEOM": _fromEomValue,
             "days": _parseInt(_daysController.text, 0),
             "limit": double.tryParse(_limitController.text.trim()) ?? 0.0,
@@ -543,6 +679,64 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               style: TextStyle(fontSize: baseSize, color: Colors.black87),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStaffLookupRow({
+    required String label,
+    required TextEditingController controller,
+    required ValueChanged<String> onChanged,
+    required String? message,
+    required bool isValid,
+    required bool isLoading,
+  }) {
+    final double baseSize = _font(context, 14);
+    final double smallSize = _font(context, 12);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    label,
+                    style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 4,
+                child: TextFormField(
+                  controller: controller,
+                  keyboardType: TextInputType.text,
+                  style: TextStyle(fontSize: baseSize),
+                  decoration: _minimalInputDecoration(),
+                  onChanged: onChanged,
+                ),
+              ),
+            ],
+          ),
+          if (isLoading || message != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              isLoading ? "Checking staff..." : (message ?? ""),
+              style: TextStyle(
+                fontSize: smallSize,
+                color: isLoading
+                    ? Colors.grey[600]
+                    : (isValid ? Colors.green[700] : Colors.red[700]),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -864,8 +1058,22 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                 const SizedBox(height: 8),
                                 _buildEditRow("Days", _daysController, keyboardType: TextInputType.number),
                                 _buildEditRow("Limit", _limitController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
-                                _buildEditRow("Opened By (Staff ID)", _openedIdController, keyboardType: TextInputType.number),
-                                _buildEditRow("Owner (Staff ID)", _ownerIdController, keyboardType: TextInputType.number),
+                                _buildStaffLookupRow(
+                                  label: "Opened By (Staff No)",
+                                  controller: _openedIdController,
+                                  onChanged: _onOpenedStaffBarcodeChanged,
+                                  message: _openedStaffLookupMessage,
+                                  isValid: _openedStaffLookupValid,
+                                  isLoading: _openedStaffLookupLoading,
+                                ),
+                                _buildStaffLookupRow(
+                                  label: "Owner Account (Staff No)",
+                                  controller: _ownerIdController,
+                                  onChanged: _onOwnerStaffBarcodeChanged,
+                                  message: _ownerStaffLookupMessage,
+                                  isValid: _ownerStaffLookupValid,
+                                  isLoading: _ownerStaffLookupLoading,
+                                ),
                                 _buildEditRow("ABN", _abnController),
                                 _buildSwitchRow("Overseas", _overseasValue, (val) {
                                   _setOverseasValue(val);
@@ -876,7 +1084,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                             _buildSectionCard(
                               title: "Additional Information",
                               children: [
-                                _buildSwitchRow("Status", _statusValue, (val) {
+                                _buildSwitchRow(_customerStatusLabel, _statusValue, (val) {
                                   setState(() => _statusValue = val);
                                 }),
                                 _buildSwitchRow("Inactive", _inactiveValue, (val) {
@@ -915,8 +1123,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                 ),
                                 _buildEditRow("Notes", _notesController, maxLines: 3),
                                 _buildEditRow("Comments", _commentsController, maxLines: 3),
-                                _buildEditRow("Custom 1", _custom1Controller),
-                                _buildEditRow("Custom 2", _custom2Controller),
+                                _buildEditRow(_customerCustom1Label, _custom1Controller),
+                                _buildEditRow(_customerCustom2Label, _custom2Controller),
                               ],
                             ),
                             

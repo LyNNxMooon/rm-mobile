@@ -20,6 +20,12 @@ class AppGlobals {
   Set<String> grantedPermissions = <String>{};
   Set<String> restrictedPermissions = <String>{};
 
+  String stockCustom1Label = "Custom 1";
+  String stockCustom2Label = "Custom 2";
+  String customerCustom1Label = "Custom 1";
+  String customerCustom2Label = "Custom 2";
+  String customerStatusLabel = "Status";
+
   bool get isStaffSignedIn =>
       (staffNo ?? "").trim().isNotEmpty && (staffName ?? "").trim().isNotEmpty;
 
@@ -48,6 +54,25 @@ class AppGlobals {
     staffGroupNames = <String>[];
     grantedPermissions = <String>{};
     restrictedPermissions = <String>{};
+  }
+
+  void updateCustomLabels({
+    String? stock1,
+    String? stock2,
+    String? customer1,
+    String? customer2,
+    String? customer3,
+  }) {
+    stockCustom1Label = _applyLabel(stock1, stockCustom1Label);
+    stockCustom2Label = _applyLabel(stock2, stockCustom2Label);
+    customerCustom1Label = _applyLabel(customer1, customerCustom1Label);
+    customerCustom2Label = _applyLabel(customer2, customerCustom2Label);
+    customerStatusLabel = _applyLabel(customer3, customerStatusLabel);
+  }
+
+  String _applyLabel(String? incoming, String fallback) {
+    final candidate = (incoming ?? "").trim();
+    return candidate.isEmpty ? fallback : candidate;
   }
 
   final String defaultLanFolder = "C/AAAPOS RM-Mobile";

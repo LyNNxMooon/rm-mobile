@@ -38,7 +38,7 @@ class CustomerThumbnailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String initials = _getInitials(customer.givenNames);
+    final String initials = _getInitials(customer.displayName);
     final double fontSize = (size * 0.47).clamp(14.0, 32.0);
     return Container(
       alignment: Alignment.center,

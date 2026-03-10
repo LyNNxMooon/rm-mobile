@@ -87,6 +87,14 @@ class CustomerLookupModels implements CustomerLookupRepo {
             throw Exception(response.message);
           }
 
+          AppGlobals.instance.updateCustomLabels(
+            stock1: response.stock1,
+            stock2: response.stock2,
+            customer1: response.customer1,
+            customer2: response.customer2,
+            customer3: response.customer3,
+          );
+
           latestSyncTimestamp = resolveSyncTimestamp(
             response.syncTimestamp,
             latestSyncTimestamp,
@@ -126,6 +134,14 @@ class CustomerLookupModels implements CustomerLookupRepo {
         if (!response.success) {
           throw Exception(response.message);
         }
+
+        AppGlobals.instance.updateCustomLabels(
+          stock1: response.stock1,
+          stock2: response.stock2,
+          customer1: response.customer1,
+          customer2: response.customer2,
+          customer3: response.customer3,
+        );
 
         latestSyncTimestamp = resolveSyncTimestamp(
           response.syncTimestamp,
@@ -232,6 +248,44 @@ class CustomerLookupModels implements CustomerLookupRepo {
         resolvedShopfrontId,
         resolvedApiKey,
         staffId,
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<StaffDetailResponse> fetchStaffByBarcode(String staffBarcode) async {
+    try {
+      final String trimmed = staffBarcode.trim();
+      if (trimmed.isEmpty) {
+        return Future.error("Invalid staff barcode: $staffBarcode");
+      }
+
+      final String resolvedIp =
+          (await LocalDbDAO.instance.getHostIpAddress() ?? "").trim();
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+
+      if (resolvedIp.isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty) {
+        throw Exception(
+          "Missing host/shopfront setup. Please reconnect to a host and shopfront.",
+        );
+      }
+
+      return await DataAgentImpl.instance.getStaffByBarcode(
+        resolvedIp,
+        resolvedPort,
+        resolvedShopfrontId,
+        resolvedApiKey,
+        trimmed,
       );
     } on Exception catch (error) {
       return Future.error(error);

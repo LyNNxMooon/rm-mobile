@@ -23,6 +23,11 @@ CustomerLookupApiResponse _$CustomerLookupApiResponseFromJson(
       items: (json['items'] as List<dynamic>)
           .map((e) => e as Map<String, dynamic>)
           .toList(),
+      stock1: json['stock1'] as String?,
+      stock2: json['stock2'] as String?,
+      customer1: json['customer1'] as String?,
+      customer2: json['customer2'] as String?,
+      customer3: json['customer3'] as String?,
     );
 
 Map<String, dynamic> _$CustomerLookupApiResponseToJson(
@@ -40,4 +45,9 @@ Map<String, dynamic> _$CustomerLookupApiResponseToJson(
       'hasMore': instance.hasMore,
       'lastCustomerId': instance.lastCustomerId,
       'items': instance.items,
+      'stock1': instance.stock1,
+      'stock2': instance.stock2,
+      'customer1': instance.customer1,
+      'customer2': instance.customer2,
+      'customer3': instance.customer3,
     };

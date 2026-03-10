@@ -86,6 +86,14 @@ class StockLookupModels implements StockLookupRepo {
             throw Exception(response.message);
           }
 
+          AppGlobals.instance.updateCustomLabels(
+            stock1: response.stock1,
+            stock2: response.stock2,
+            customer1: response.customer1,
+            customer2: response.customer2,
+            customer3: response.customer3,
+          );
+
           latestSyncTimestamp = response.syncTimestamp;
           total = response.totalItems > 0 ? response.totalItems : total;
 
@@ -122,6 +130,14 @@ class StockLookupModels implements StockLookupRepo {
         if (!response.success) {
           throw Exception(response.message);
         }
+
+        AppGlobals.instance.updateCustomLabels(
+          stock1: response.stock1,
+          stock2: response.stock2,
+          customer1: response.customer1,
+          customer2: response.customer2,
+          customer3: response.customer3,
+        );
 
         latestSyncTimestamp = response.syncTimestamp;
 

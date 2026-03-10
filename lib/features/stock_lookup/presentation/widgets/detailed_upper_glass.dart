@@ -14,6 +14,8 @@ class DetailedUpperGlass extends StatefulWidget {
     required this.cats,
     required this.custom1Controller,
     required this.custom2Controller,
+    required this.custom1Label,
+    required this.custom2Label,
     required this.layByQty,
     required this.soQty,
     required this.cost,
@@ -28,6 +30,8 @@ class DetailedUpperGlass extends StatefulWidget {
   final LanguageToolController descController;
   final TextEditingController custom1Controller;
   final TextEditingController custom2Controller;
+  final String custom1Label;
+  final String custom2Label;
   final String barcode;
   final String qty;
   final String cats;
@@ -251,9 +255,12 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
-                        "Custom1",
-                        style: TextStyle(fontSize: 14, color: kSecondaryColor),
+                      Text(
+                        widget.custom1Label,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: kSecondaryColor,
+                        ),
                       ),
                     ],
                   ),
@@ -268,7 +275,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           color: kSecondaryColor,
                         ),
                         decoration: InputDecoration(
-                          hintText: "Custom1",
+                          hintText: widget.custom1Label,
                           hintStyle: const TextStyle(
                             color: kGreyColor,
                             fontSize: 14,
@@ -322,9 +329,12 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
-                        "Custom2",
-                        style: TextStyle(fontSize: 14, color: kSecondaryColor),
+                      Text(
+                        widget.custom2Label,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: kSecondaryColor,
+                        ),
                       ),
                     ],
                   ),
@@ -339,7 +349,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           color: kSecondaryColor,
                         ),
                         decoration: InputDecoration(
-                          hintText: "Custom2",
+                          hintText: widget.custom2Label,
                           hintStyle: const TextStyle(
                             color: kGreyColor,
                             fontSize: 14,

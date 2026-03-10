@@ -390,6 +390,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         .contains("Miscellaneous_HideCostPriceAndProfit");
     final bool lockSellPrice = AppGlobals.instance.restrictedPermissions
         .contains("Miscellaneous_LockSellPrice");
+    final String custom1Label = AppGlobals.instance.stockCustom1Label;
+    final String custom2Label = AppGlobals.instance.stockCustom2Label;
 
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
@@ -572,6 +574,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                             descController: _descriptionController,
                             custom1Controller: _custom1Controller,
                             custom2Controller: _custom2Controller,
+                            custom1Label: custom1Label,
+                            custom2Label: custom2Label,
                             dept: widget.stock.deptName ?? "-",
                             barcode: widget.stock.barcode,
                             qty:

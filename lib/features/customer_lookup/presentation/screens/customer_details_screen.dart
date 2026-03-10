@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -10,7 +11,9 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_transactions_screen.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_staff_by_barcode.dart';
 import 'package:rmstock_scanner/utils/enums.dart';
+import 'package:rmstock_scanner/utils/dependency_injection_utils.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../constants/colors.dart';
@@ -155,6 +158,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   late TextEditingController _daysController;
   bool _fromEomValue = false;
   late TextEditingController _ownerAccountController;
+  Timer? _ownerStaffLookupDebounce;
+  String? _ownerStaffLookupMessage;
+  bool _ownerStaffLookupValid = false;
+  bool _ownerStaffLookupLoading = false;
+  int? _ownerStaffId;
+  bool _ownerStaffEdited = false;
 
   late TextEditingController _abnController;
   late TextEditingController _defaultDeliveryAddressController;
@@ -174,6 +183,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   @override
   void initState() {
     _initControllers();
+    _ownerStaffId = widget.customer.ownerId;
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<StaffDetailBloc>().add(
@@ -210,6 +220,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     _limitController.dispose();
     _daysController.dispose();
     _ownerAccountController.dispose();
+    _ownerStaffLookupDebounce?.cancel();
 
     _abnController.dispose();
     _defaultDeliveryAddressController.dispose();
@@ -267,7 +278,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         TextEditingController(text: widget.customer.days.toString());
     _fromEomValue = widget.customer.fromEOM;
     _ownerAccountController =
-      TextEditingController(text: widget.customer.ownerId.toString());
+      TextEditingController();
 
     _abnController = TextEditingController(text: widget.customer.abn);
     _defaultDeliveryAddressController = TextEditingController(
@@ -323,6 +334,55 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     return company.isNotEmpty ? "$name ($company)" : name;
   }
 
+  String _formatStaffLookupMessage(StaffDetailInfo? staff) {
+    if (staff == null) return "Staff not found";
+    return "Found: ${_formatStaffDisplay(staff)}";
+  }
+
+  void _onOwnerStaffBarcodeChanged(String raw) {
+    _ownerStaffEdited = true;
+    _ownerStaffLookupDebounce?.cancel();
+
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      setState(() {
+        _ownerStaffLookupMessage = null;
+        _ownerStaffLookupValid = false;
+        _ownerStaffLookupLoading = false;
+        _ownerStaffId = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _ownerStaffLookupLoading = true;
+    });
+
+    _ownerStaffLookupDebounce = Timer(const Duration(milliseconds: 400),
+        () async {
+      try {
+        final response = await sl<GetStaffByBarcode>().call(trimmed);
+        final staff = response.staff;
+        if (!mounted) return;
+        setState(() {
+          _ownerStaffLookupValid = staff != null;
+          _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
+          _ownerStaffId = staff?.staffId;
+          _ownerStaffLookupLoading = false;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          _ownerStaffLookupValid = false;
+          _ownerStaffLookupMessage = "Staff not found";
+          _ownerStaffId = null;
+          _ownerStaffLookupLoading = false;
+        });
+      }
+    });
+  }
+
+
   int _parseInt(String raw, int fallback) {
     final parsed = int.tryParse(raw.trim());
     return parsed ?? fallback;
@@ -360,6 +420,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Map<String, dynamic> _buildUpdateBody({bool includeAddresses = false}) {
+    final int resolvedOwnerId =
+      _ownerStaffId ?? _parseInt(_ownerAccountController.text, widget.customer.ownerId);
     final Map<String, dynamic> item = <String, dynamic>{
       'customerId': widget.customer.customerId,
       'surname': _surnameController.text.trim(),
@@ -384,10 +446,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       'fax': _faxController.text.trim(),
       'mobile': _mobileController.text.trim(),
       'email': _emailController.text.trim(),
-      'ownerId': _parseInt(
-        _ownerAccountController.text,
-        widget.customer.ownerId,
-      ),
+      'ownerId': resolvedOwnerId,
+      'owner_id': resolvedOwnerId,
       'fromEOM': _fromEomValue,
       'days': _parseInt(_daysController.text, widget.customer.days),
       'limit': _parseNum(_limitController.text, widget.customer.limit),
@@ -439,6 +499,21 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     setState(() {
       _savingSection = section;
     });
+
+    if (section == CustomerEditSection.financial) {
+      final ownerBarcode = _ownerAccountController.text.trim();
+      if (ownerBarcode.isNotEmpty && !_ownerStaffLookupValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please enter a valid owner staff barcode")),
+        );
+        setState(() {
+          _savingSection = null;
+        });
+        return;
+      }
+    }
+
+
     final body = _buildUpdateBody(
       includeAddresses: section == CustomerEditSection.address,
     );
@@ -471,31 +546,54 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     TextEditingController controller, {
     TextInputType? keyboardType,
     int maxLines = 1,
+    ValueChanged<String>? onChanged,
+    String? message,
+    bool isValid = false,
+    bool isLoading = false,
   }) {
     final double baseSize = _font(context, 14);
+    final double smallSize = _font(context, 12);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 2,
+                child: Text(
+                  label,
+                  style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 4,
+                child: TextField(
+                  controller: controller,
+                  keyboardType: keyboardType,
+                  maxLines: maxLines,
+                  style: TextStyle(fontSize: baseSize),
+                  decoration: _minimalInputDecoration(),
+                  onChanged: onChanged,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 4,
-            child: TextField(
-              controller: controller,
-              keyboardType: keyboardType,
-              maxLines: maxLines,
-              style: TextStyle(fontSize: baseSize),
-              decoration: _minimalInputDecoration(),
+          if (isLoading || message != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              isLoading ? "Checking staff..." : (message ?? ""),
+              style: TextStyle(
+                fontSize: smallSize,
+                color: isLoading
+                    ? Colors.grey[600]
+                    : (isValid ? Colors.green[700] : Colors.red[700]),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -997,30 +1095,51 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<CustomerUpdateBloc, CustomerUpdateState>(
-      listener: (context, state) {
-        if (state is CustomerUpdateInProgress) {
-          setState(() {
-            _savingSection = state.section;
-          });
-        } else if (state is CustomerUpdateSuccess) {
-          _shouldSyncOnExit = true;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
-          setState(() {
-            _savingSection = null;
-            _editingSection = null;
-          });
-        } else if (state is CustomerUpdateFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
-          setState(() {
-            _savingSection = null;
-          });
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<CustomerUpdateBloc, CustomerUpdateState>(
+          listener: (context, state) {
+            if (state is CustomerUpdateInProgress) {
+              setState(() {
+                _savingSection = state.section;
+              });
+            } else if (state is CustomerUpdateSuccess) {
+              _shouldSyncOnExit = true;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+              setState(() {
+                _savingSection = null;
+                _editingSection = null;
+              });
+            } else if (state is CustomerUpdateFailure) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+              setState(() {
+                _savingSection = null;
+              });
+            }
+          },
+        ),
+        BlocListener<StaffDetailBloc, StaffDetailState>(
+          listener: (context, state) {
+            if (state is StaffDetailLoaded && !_ownerStaffEdited) {
+              final staff = state.ownerAccount;
+              if (staff == null) return;
+              final staffNo = staff.staffNo.trim();
+              if (staffNo.isEmpty) return;
+              setState(() {
+                _ownerAccountController.text = staffNo;
+                _ownerStaffId = staff.staffId;
+                _ownerStaffLookupValid = true;
+                _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
+                _ownerStaffLookupLoading = false;
+              });
+            }
+          },
+        ),
+      ],
       child: WillPopScope(
         onWillPop: () async {
           _triggerSyncIfNeeded();
@@ -1106,6 +1225,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   // --- Card Builders ---
 
+    String get _customerCustom1Label =>
+      AppGlobals.instance.customerCustom1Label;
+    String get _customerCustom2Label =>
+      AppGlobals.instance.customerCustom2Label;
+    String get _customerStatusLabel =>
+      AppGlobals.instance.customerStatusLabel;
+
   Widget _buildHeaderCard() {
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
@@ -1119,6 +1245,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final bool accountValue = _accountValue;
     final bool overseasValue = _overseasValue;
     final bool isEditing = _editingSection == CustomerEditSection.header;
+    final String statusLabel =
+      "${_customerStatusLabel}: ${statusValue ? 'True' : 'False'}";
     return _buildBaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start, // <--- ADDED THIS to align chips & content to the left
@@ -1229,7 +1357,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 overseasValue,
               ),
               _buildPillBadge(
-                statusValue ? "Status" : "Non-Status",
+                statusLabel,
                 statusValue ? Colors.green : Colors.amber,
                 true,
               ),
@@ -1281,7 +1409,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               (value) => _setOverseasValue(value),
             ),
             _buildSwitchRow(
-              "Status",
+              _customerStatusLabel,
               _statusValue,
               (value) => setState(() => _statusValue = value),
             ),
@@ -1587,6 +1715,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
     final bool isEditing = _editingSection == CustomerEditSection.financial;
+    
+    
     return _buildSectionCard(
       title: "Financial & Account",
       isEditing: isEditing,
@@ -1683,13 +1813,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        openedBy,
-                        style: TextStyle(
-                          fontSize: baseSize,
-                          fontWeight: FontWeight.w600,
+                     
+                      
+                        Text(
+                          openedBy,
+                          style: TextStyle(
+                            fontSize: baseSize,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -1706,11 +1838,34 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       ),
                       const SizedBox(height: 2),
                       if (isEditing)
-                        TextField(
-                          controller: _ownerAccountController,
-                          keyboardType: TextInputType.number,
-                          style: TextStyle(fontSize: baseSize),
-                          decoration: _minimalInputDecoration(),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextField(
+                              controller: _ownerAccountController,
+                              keyboardType: TextInputType.text,
+                              style: TextStyle(fontSize: baseSize),
+                              decoration: _minimalInputDecoration(),
+                              onChanged: _onOwnerStaffBarcodeChanged,
+                            ),
+                            if (_ownerStaffLookupLoading ||
+                                _ownerStaffLookupMessage != null) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                _ownerStaffLookupLoading
+                                    ? "Checking staff..."
+                                    : (_ownerStaffLookupMessage ?? ""),
+                                style: TextStyle(
+                                  fontSize: smallSize,
+                                  color: _ownerStaffLookupLoading
+                                      ? Colors.grey[600]
+                                      : (_ownerStaffLookupValid
+                                          ? Colors.green[700]
+                                          : Colors.red[700]),
+                                ),
+                              ),
+                            ],
+                          ],
                         )
                       else
                         Text(
@@ -1791,6 +1946,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   
   Widget _buildAdditionalInfoCard() {
     final bool isEditing = _editingSection == CustomerEditSection.additional;
+    final String custom1Label = _customerCustom1Label;
+    final String custom2Label = _customerCustom2Label;
     return _buildSectionCard(
       title: "Additional Info",
       isEditing: isEditing,
@@ -1836,8 +1993,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   });
                 },
               ),
-              _buildEditRow("Custom 1", _custom1Controller),
-              _buildEditRow("Custom 2", _custom2Controller),
+              _buildEditRow(custom1Label, _custom1Controller),
+              _buildEditRow(custom2Label, _custom2Controller),
               Text(
                 "Internal Notes:",
                 style: TextStyle(
@@ -1878,8 +2035,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 ),
               _buildDataRow("Default Delivery", _defaultDeliveryAddressLabel()),
               _buildDataRow("Documents", _documentDeliveryLabel()),
-              _buildDataRow("Custom 1", _custom1Controller.text),
-              _buildDataRow("Custom 2", _custom2Controller.text),
+              _buildDataRow(custom1Label, _custom1Controller.text),
+              _buildDataRow(custom2Label, _custom2Controller.text),
             ],
     );
   }

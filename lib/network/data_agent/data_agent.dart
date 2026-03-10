@@ -155,6 +155,14 @@ abstract class DataAgent {
     int staffId,
   );
 
+  Future<StaffDetailResponse> getStaffByBarcode(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    String staffBarcode,
+  );
+
   Future<StocktakeLimitResponse> getStocktakeLimit(
     String ip,
     int port,

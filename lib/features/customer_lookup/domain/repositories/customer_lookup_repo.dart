@@ -23,6 +23,8 @@ abstract class CustomerLookupRepo {
 
   Future<StaffDetailResponse> fetchStaffDetail(int staffId);
 
+  Future<StaffDetailResponse> fetchStaffByBarcode(String staffBarcode);
+
   Future<CustomerUpdateResponse> updateCustomerDetails(
     Map<String, dynamic> body,
   );

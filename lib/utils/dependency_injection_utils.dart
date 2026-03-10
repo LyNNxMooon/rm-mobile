@@ -54,6 +54,7 @@ import '../features/customer_lookup/domain/repositories/customer_lookup_repo.dar
 import '../features/customer_lookup/domain/use_cases/fetch_customer_data.dart';
 import '../features/customer_lookup/domain/use_cases/get_customer_filter_options.dart';
 import '../features/customer_lookup/domain/use_cases/get_paginated_customers.dart';
+import '../features/customer_lookup/domain/use_cases/get_staff_by_barcode.dart';
 import '../features/customer_lookup/domain/use_cases/get_staff_detail.dart';
 import '../features/customer_lookup/domain/use_cases/update_customer_details.dart';
 import '../features/customer_lookup/models/customer_lookup_models.dart';
@@ -172,6 +173,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => FetchCustomerData(sl()));
   sl.registerLazySingleton(() => GetPaginatedCustomers(sl()));
   sl.registerLazySingleton(() => GetCustomerFilterOptions(sl()));
+  sl.registerLazySingleton(() => GetStaffByBarcode(sl()));
   sl.registerLazySingleton(() => GetStaffDetail(sl()));
   sl.registerLazySingleton(() => UpdateCustomerDetails(sl()));
   sl.registerLazySingleton(() => GetFilterOptions(sl()));

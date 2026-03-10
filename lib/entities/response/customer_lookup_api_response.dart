@@ -16,6 +16,11 @@ class CustomerLookupApiResponse {
   final bool hasMore;
   final int? lastCustomerId;
   final List<Map<String, dynamic>> items;
+  final String? stock1;
+  final String? stock2;
+  final String? customer1;
+  final String? customer2;
+  final String? customer3;
 
   CustomerLookupApiResponse({
     required this.success,
@@ -30,6 +35,11 @@ class CustomerLookupApiResponse {
     required this.hasMore,
     required this.lastCustomerId,
     required this.items,
+    this.stock1,
+    this.stock2,
+    this.customer1,
+    this.customer2,
+    this.customer3,
   });
 
   factory CustomerLookupApiResponse.fromJson(Map<String, dynamic> json) =>

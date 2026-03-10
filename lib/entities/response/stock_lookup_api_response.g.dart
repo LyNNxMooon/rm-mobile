@@ -24,6 +24,11 @@ StockLookupApiResponse _$StockLookupApiResponseFromJson(
           .toList(),
       lastStockId: (json['lastStockId'] as num?)?.toInt(),
       hasMore: json['hasMore'] as bool,
+      stock1: json['stock1'] as String?,
+      stock2: json['stock2'] as String?,
+      customer1: json['customer1'] as String?,
+      customer2: json['customer2'] as String?,
+      customer3: json['customer3'] as String?,
     );
 
 Map<String, dynamic> _$StockLookupApiResponseToJson(
@@ -42,4 +47,9 @@ Map<String, dynamic> _$StockLookupApiResponseToJson(
       'items': instance.items,
       'lastStockId': instance.lastStockId,
       'hasMore': instance.hasMore,
+      'stock1': instance.stock1,
+      'stock2': instance.stock2,
+      'customer1': instance.customer1,
+      'customer2': instance.customer2,
+      'customer3': instance.customer3,
     };

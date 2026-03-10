@@ -247,6 +247,17 @@ abstract class ApiService {
     @Header("x-api-key") String apiKey,
   );
 
+  @GET(kEndPointForStaffByBarcode)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<StaffDetailResponse> getStaffByBarcode(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Path(kPathParamForStaffBarcode) String staffBarcode,
+    @Header("x-api-key") String apiKey,
+  );
+
   @GET(kEndPointForStocktakeLimit)
   @Headers(<String, dynamic>{
     'Accept': 'application/json',

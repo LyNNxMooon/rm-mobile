@@ -35,6 +35,8 @@ const kEndPointForSecurityGroups =
     "/shopfronts/{$kPathParamForShopfrontId}/security/groups";
 const kEndPointForStaffDetail =
     "/shopfronts/{$kPathParamForShopfrontId}/security/staff/{$kPathParamForStaffId}";
+const kEndPointForStaffByBarcode =
+    "/shopfronts/{$kPathParamForShopfrontId}/security/staff/barcode/{$kPathParamForStaffBarcode}";
 const kEndPointForValidate = "/validate";
 
 //keys
@@ -42,6 +44,7 @@ const kPathParamForHostIP = "HostIP";
 const kPathParamForBarcode = "Barcode";
 const kPathParamForShopfrontId = "ShopfrontId";
 const kPathParamForStaffId = "StaffId";
+const kPathParamForStaffBarcode = "StaffBarcode";
 const kPathParamForStockId = "StockId";
 const kPathParamForFileName = "FileName";
 const kQueryParamKeyForLastStockID = "lastStockId";

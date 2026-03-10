@@ -563,6 +563,30 @@ class DataAgentImpl implements DataAgent {
   }
 
   @override
+  Future<StaffDetailResponse> getStaffByBarcode(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    String staffBarcode,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .getStaffByBarcode(shopfrontId, staffBarcode, apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
+    } on Exception catch (error) {
+      logger.e('Error loading staff by barcode from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
   Future<StocktakeLimitResponse> getStocktakeLimit(
     String ip,
     int port,
