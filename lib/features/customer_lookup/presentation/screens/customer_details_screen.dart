@@ -157,6 +157,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   late TextEditingController _limitController;
   late TextEditingController _daysController;
   bool _fromEomValue = false;
+  late TextEditingController _openedByController;
+  Timer? _openedByStaffLookupDebounce;
+  String? _openedByStaffLookupMessage;
+  bool _openedByStaffLookupValid = false;
+  bool _openedByStaffLookupLoading = false;
+  int? _openedByStaffId;
+  bool _openedByStaffEdited = false;
   late TextEditingController _ownerAccountController;
   Timer? _ownerStaffLookupDebounce;
   String? _ownerStaffLookupMessage;
@@ -183,6 +190,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   @override
   void initState() {
     _initControllers();
+    _openedByStaffId = widget.customer.openedId;
     _ownerStaffId = widget.customer.ownerId;
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -197,6 +205,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   @override
   void dispose() {
+    _openedByController.dispose();
     _surnameController.dispose();
     _givenNamesController.dispose();
     _companyController.dispose();
@@ -277,6 +286,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     _daysController =
         TextEditingController(text: widget.customer.days.toString());
     _fromEomValue = widget.customer.fromEOM;
+    _openedByController =
+      TextEditingController();
     _ownerAccountController =
       TextEditingController();
 
@@ -337,6 +348,49 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   String _formatStaffLookupMessage(StaffDetailInfo? staff) {
     if (staff == null) return "Staff not found";
     return "Found: ${_formatStaffDisplay(staff)}";
+  }
+
+  void _onOpenedByStaffBarcodeChanged(String raw) {
+    _openedByStaffEdited = true;
+    _openedByStaffLookupDebounce?.cancel();
+
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      setState(() {
+        _openedByStaffLookupMessage = null;
+        _openedByStaffLookupValid = false;
+        _openedByStaffLookupLoading = false;
+        _openedByStaffId = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _openedByStaffLookupLoading = true;
+    });
+
+    _openedByStaffLookupDebounce = Timer(const Duration(milliseconds: 400),
+        () async {
+      try {
+        final response = await sl<GetStaffByBarcode>().call(trimmed);
+        final staff = response.staff;
+        if (!mounted) return;
+        setState(() {
+          _openedByStaffLookupValid = staff != null;
+          _openedByStaffLookupMessage = _formatStaffLookupMessage(staff);
+          _openedByStaffId = staff?.staffId;
+          _openedByStaffLookupLoading = false;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          _openedByStaffLookupValid = false;
+          _openedByStaffLookupMessage = "Staff not found";
+          _openedByStaffId = null;
+          _openedByStaffLookupLoading = false;
+        });
+      }
+    });
   }
 
   void _onOwnerStaffBarcodeChanged(String raw) {
@@ -420,6 +474,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Map<String, dynamic> _buildUpdateBody({bool includeAddresses = false}) {
+    final int resolvedOpenedId =
+      _openedByStaffId ?? _parseInt(_openedByController.text, widget.customer.openedId);
     final int resolvedOwnerId =
       _ownerStaffId ?? _parseInt(_ownerAccountController.text, widget.customer.ownerId);
     final Map<String, dynamic> item = <String, dynamic>{
@@ -446,6 +502,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       'fax': _faxController.text.trim(),
       'mobile': _mobileController.text.trim(),
       'email': _emailController.text.trim(),
+      'openedId': resolvedOpenedId,
+      'opened_id': resolvedOpenedId,
       'ownerId': resolvedOwnerId,
       'owner_id': resolvedOwnerId,
       'fromEOM': _fromEomValue,
@@ -501,6 +559,17 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     });
 
     if (section == CustomerEditSection.financial) {
+      final openedByBarcode = _openedByController.text.trim();
+      if (openedByBarcode.isNotEmpty && !_openedByStaffLookupValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please enter a valid Opened By staff barcode")),
+        );
+        setState(() {
+          _savingSection = null;
+        });
+        return;
+      }
+
       final ownerBarcode = _ownerAccountController.text.trim();
       if (ownerBarcode.isNotEmpty && !_ownerStaffLookupValid) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1124,18 +1193,40 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         ),
         BlocListener<StaffDetailBloc, StaffDetailState>(
           listener: (context, state) {
-            if (state is StaffDetailLoaded && !_ownerStaffEdited) {
-              final staff = state.ownerAccount;
-              if (staff == null) return;
-              final staffNo = staff.staffNo.trim();
-              if (staffNo.isEmpty) return;
-              setState(() {
-                _ownerAccountController.text = staffNo;
-                _ownerStaffId = staff.staffId;
-                _ownerStaffLookupValid = true;
-                _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
-                _ownerStaffLookupLoading = false;
-              });
+            if (state is StaffDetailLoaded) {
+              // Handle opened by staff
+              if (!_openedByStaffEdited) {
+                final openedByStaff = state.openedBy;
+                if (openedByStaff != null) {
+                  final staffNo = openedByStaff.staffNo.trim();
+                  if (staffNo.isNotEmpty) {
+                    setState(() {
+                      _openedByController.text = staffNo;
+                      _openedByStaffId = openedByStaff.staffId;
+                      _openedByStaffLookupValid = true;
+                      _openedByStaffLookupMessage = _formatStaffLookupMessage(openedByStaff);
+                      _openedByStaffLookupLoading = false;
+                    });
+                  }
+                }
+              }
+              
+              // Handle owner account staff
+              if (!_ownerStaffEdited) {
+                final staff = state.ownerAccount;
+                if (staff != null) {
+                  final staffNo = staff.staffNo.trim();
+                  if (staffNo.isNotEmpty) {
+                    setState(() {
+                      _ownerAccountController.text = staffNo;
+                      _ownerStaffId = staff.staffId;
+                      _ownerStaffLookupValid = true;
+                      _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
+                      _ownerStaffLookupLoading = false;
+                    });
+                  }
+                }
+              }
             }
           },
         ),
@@ -1813,8 +1904,38 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                     
-                      
+                      // Allow editing only when in edit mode and the field is empty (openedId == 0)
+                      if (isEditing && widget.customer.openedId == 0)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextField(
+                              controller: _openedByController,
+                              keyboardType: TextInputType.text,
+                              style: TextStyle(fontSize: baseSize),
+                              decoration: _minimalInputDecoration(),
+                              onChanged: _onOpenedByStaffBarcodeChanged,
+                            ),
+                            if (_openedByStaffLookupLoading ||
+                                _openedByStaffLookupMessage != null) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                _openedByStaffLookupLoading
+                                    ? "Checking staff..."
+                                    : (_openedByStaffLookupMessage ?? ""),
+                                style: TextStyle(
+                                  fontSize: smallSize,
+                                  color: _openedByStaffLookupLoading
+                                      ? Colors.grey[600]
+                                      : (_openedByStaffLookupValid
+                                          ? Colors.green[700]
+                                          : Colors.red[700]),
+                                ),
+                              ),
+                            ],
+                          ],
+                        )
+                      else
                         Text(
                           openedBy,
                           style: TextStyle(
