@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'colors.dart';
 
 //Global Text Field
-class CustomTextField extends StatelessWidget {
+class CustomTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final bool isEnabled;
@@ -30,6 +30,46 @@ class CustomTextField extends StatelessWidget {
   });
 
   @override
+  State<CustomTextField> createState() => _CustomTextFieldState();
+}
+
+class _CustomTextFieldState extends State<CustomTextField> {
+  late FocusNode _internalFocusNode;
+  FocusNode get _effectiveFocusNode => widget.focusNode ?? _internalFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _internalFocusNode = FocusNode();
+    _effectiveFocusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _effectiveFocusNode.removeListener(_onFocusChange);
+    if (widget.focusNode == null) {
+      _internalFocusNode.dispose();
+    }
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!_effectiveFocusNode.hasFocus) {
+      _trimText();
+    }
+  }
+
+  void _trimText() {
+    final trimmedValue = widget.controller.text.trim();
+    if (widget.controller.text != trimmedValue) {
+      widget.controller.value = widget.controller.value.copyWith(
+        text: trimmedValue,
+        selection: TextSelection.collapsed(offset: trimmedValue.length),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
@@ -39,20 +79,25 @@ class CustomTextField extends StatelessWidget {
         : 1.0;
 
     return TextField(
-      obscureText: obscureText,
-      textInputAction: textInputAction,
-      focusNode: focusNode,
-      onChanged: function,
-      onSubmitted: submitFunction,
-      controller: controller,
-      keyboardType: keyboardType,
-      enabled: isEnabled,
+      obscureText: widget.obscureText,
+      textInputAction: widget.textInputAction,
+      focusNode: _effectiveFocusNode,
+      onChanged: widget.function,
+      onSubmitted: (value) {
+        _trimText();
+        if (widget.submitFunction != null) {
+          widget.submitFunction!(value.trim());
+        }
+      },
+      controller: widget.controller,
+      keyboardType: widget.keyboardType,
+      enabled: widget.isEnabled,
       decoration: InputDecoration(
-        hintText: hintText,
+        hintText: widget.hintText,
         hintStyle: const TextStyle(color: kGreyColor, fontSize: 14),
-        prefixIcon: leadingIcon != null
+        prefixIcon: widget.leadingIcon != null
             ? Icon(
-                leadingIcon,
+                widget.leadingIcon,
                 color: kPrimaryColor,
                 size: (20 * uiScale).clamp(20.0, 24.0),
               )

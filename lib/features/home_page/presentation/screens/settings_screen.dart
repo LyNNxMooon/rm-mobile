@@ -169,6 +169,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                         ],
+                        onEditingComplete: () {
+                          final trimmedValue = _manualPortController.text.trim();
+                          if (_manualPortController.text != trimmedValue) {
+                            _manualPortController.value = _manualPortController.value.copyWith(
+                              text: trimmedValue,
+                              selection: TextSelection.collapsed(offset: trimmedValue.length),
+                            );
+                          }
+                        },
                         decoration: InputDecoration(
                           hintText: "Port (e.g. 5000)",
                           contentPadding: const EdgeInsets.symmetric(
@@ -280,6 +289,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       height: 45,
                       child: TextField(
                         controller: _manualIpController,
+                        onEditingComplete: () {
+                          final trimmedValue = _manualIpController.text.trim();
+                          if (_manualIpController.text != trimmedValue) {
+                            _manualIpController.value = _manualIpController.value.copyWith(
+                              text: trimmedValue,
+                              selection: TextSelection.collapsed(offset: trimmedValue.length),
+                            );
+                          }
+                        },
                         decoration: InputDecoration(
                           hintText: "Host IP",
                           border: OutlineInputBorder(
@@ -297,6 +315,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       height: 45,
                       child: TextField(
                         controller: _manualCodeController,
+                        onEditingComplete: () {
+                          final trimmedValue = _manualCodeController.text.trim();
+                          if (_manualCodeController.text != trimmedValue) {
+                            _manualCodeController.value = _manualCodeController.value.copyWith(
+                              text: trimmedValue,
+                              selection: TextSelection.collapsed(offset: trimmedValue.length),
+                            );
+                          }
+                        },
                         decoration: InputDecoration(
                           hintText: "Pairing Code",
                           border: OutlineInputBorder(

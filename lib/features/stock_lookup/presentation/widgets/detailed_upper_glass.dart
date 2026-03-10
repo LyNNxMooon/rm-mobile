@@ -274,6 +274,15 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           fontSize: 14,
                           color: kSecondaryColor,
                         ),
+                        onEditingComplete: () {
+                          final trimmedValue = widget.custom1Controller.text.trim();
+                          if (widget.custom1Controller.text != trimmedValue) {
+                            widget.custom1Controller.value = widget.custom1Controller.value.copyWith(
+                              text: trimmedValue,
+                              selection: TextSelection.collapsed(offset: trimmedValue.length),
+                            );
+                          }
+                        },
                         decoration: InputDecoration(
                           hintText: widget.custom1Label,
                           hintStyle: const TextStyle(
@@ -348,6 +357,15 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           fontSize: 14,
                           color: kSecondaryColor,
                         ),
+                        onEditingComplete: () {
+                          final trimmedValue = widget.custom2Controller.text.trim();
+                          if (widget.custom2Controller.text != trimmedValue) {
+                            widget.custom2Controller.value = widget.custom2Controller.value.copyWith(
+                              text: trimmedValue,
+                              selection: TextSelection.collapsed(offset: trimmedValue.length),
+                            );
+                          }
+                        },
                         decoration: InputDecoration(
                           hintText: widget.custom2Label,
                           hintStyle: const TextStyle(

@@ -647,6 +647,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   style: TextStyle(fontSize: baseSize),
                   decoration: _minimalInputDecoration(),
                   onChanged: onChanged,
+                  onEditingComplete: () {
+                    final trimmedValue = controller.text.trim();
+                    if (controller.text != trimmedValue) {
+                      controller.value = controller.value.copyWith(
+                        text: trimmedValue,
+                        selection: TextSelection.collapsed(offset: trimmedValue.length),
+                      );
+                    }
+                  },
                 ),
               ),
             ],
@@ -699,6 +708,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               keyboardType: keyboardType,
               style: TextStyle(fontSize: baseSize),
               decoration: _minimalInputDecoration(),
+              onEditingComplete: () {
+                final trimmedValue = controller.text.trim();
+                if (controller.text != trimmedValue) {
+                  controller.value = controller.value.copyWith(
+                    text: trimmedValue,
+                    selection: TextSelection.collapsed(offset: trimmedValue.length),
+                  );
+                }
+              },
             ),
           ),
         ],
@@ -1177,10 +1195,23 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message)),
               );
+              
+              // Refresh staff details after successful update
               setState(() {
                 _savingSection = null;
                 _editingSection = null;
+                // Reset edit flags so staff details can be refreshed
+                _openedByStaffEdited = false;
+                _ownerStaffEdited = false;
               });
+              
+              // Re-fetch staff details with updated IDs
+              context.read<StaffDetailBloc>().add(
+                LoadStaffDetailsEvent(
+                  openedId: _openedByStaffId ?? 0,
+                  ownerId: _ownerStaffId ?? 0,
+                ),
+              );
             } else if (state is CustomerUpdateFailure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message)),
@@ -1915,6 +1946,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                               style: TextStyle(fontSize: baseSize),
                               decoration: _minimalInputDecoration(),
                               onChanged: _onOpenedByStaffBarcodeChanged,
+                              onEditingComplete: () {
+                                final trimmedValue = _openedByController.text.trim();
+                                if (_openedByController.text != trimmedValue) {
+                                  _openedByController.value = _openedByController.value.copyWith(
+                                    text: trimmedValue,
+                                    selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                  );
+                                }
+                              },
                             ),
                             if (_openedByStaffLookupLoading ||
                                 _openedByStaffLookupMessage != null) ...[
@@ -1968,6 +2008,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                               style: TextStyle(fontSize: baseSize),
                               decoration: _minimalInputDecoration(),
                               onChanged: _onOwnerStaffBarcodeChanged,
+                              onEditingComplete: () {
+                                final trimmedValue = _ownerAccountController.text.trim();
+                                if (_ownerAccountController.text != trimmedValue) {
+                                  _ownerAccountController.value = _ownerAccountController.value.copyWith(
+                                    text: trimmedValue,
+                                    selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                  );
+                                }
+                              },
                             ),
                             if (_ownerStaffLookupLoading ||
                                 _ownerStaffLookupMessage != null) ...[
@@ -2130,6 +2179,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 maxLines: 3,
                 style: TextStyle(fontSize: _font(context, 14)),
                 decoration: _minimalInputDecoration(),
+                onEditingComplete: () {
+                  final trimmedValue = _notesController.text.trim();
+                  if (_notesController.text != trimmedValue) {
+                    _notesController.value = _notesController.value.copyWith(
+                      text: trimmedValue,
+                      selection: TextSelection.collapsed(offset: trimmedValue.length),
+                    );
+                  }
+                },
               ),
               const SizedBox(height: 12),
               Text(
@@ -2146,6 +2204,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 maxLines: 3,
                 style: TextStyle(fontSize: _font(context, 14)),
                 decoration: _minimalInputDecoration(),
+                onEditingComplete: () {
+                  final trimmedValue = _commentsController.text.trim();
+                  if (_commentsController.text != trimmedValue) {
+                    _commentsController.value = _commentsController.value.copyWith(
+                      text: trimmedValue,
+                      selection: TextSelection.collapsed(offset: trimmedValue.length),
+                    );
+                  }
+                },
               ),
             ]
           : [

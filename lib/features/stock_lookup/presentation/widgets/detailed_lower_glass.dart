@@ -211,6 +211,15 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                           fontSize: 14,
                           color: kSecondaryColor,
                         ),
+                        onEditingComplete: () {
+                          final trimmedValue = _rrpController.text.trim();
+                          if (_rrpController.text != trimmedValue) {
+                            _rrpController.value = _rrpController.value.copyWith(
+                              text: trimmedValue,
+                              selection: TextSelection.collapsed(offset: trimmedValue.length),
+                            );
+                          }
+                        },
                         decoration: _inputDecoration(),
                       ),
                     ),
@@ -265,6 +274,15 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                           fontSize: 14,
                           color: kSecondaryColor,
                         ),
+                        onEditingComplete: () {
+                          final trimmedValue = _exRrpController.text.trim();
+                          if (_exRrpController.text != trimmedValue) {
+                            _exRrpController.value = _exRrpController.value.copyWith(
+                              text: trimmedValue,
+                              selection: TextSelection.collapsed(offset: trimmedValue.length),
+                            );
+                          }
+                        },
                         decoration: _inputDecoration(),
                       ),
                     ),

@@ -127,6 +127,15 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                         controller: _manualPortController,
                         keyboardType: TextInputType.number,
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        onEditingComplete: () {
+                          final trimmedValue = _manualPortController.text.trim();
+                          if (_manualPortController.text != trimmedValue) {
+                            _manualPortController.value = _manualPortController.value.copyWith(
+                              text: trimmedValue,
+                              selection: TextSelection.collapsed(offset: trimmedValue.length),
+                            );
+                          }
+                        },
                         decoration: InputDecoration(
                           hintText: "Port (e.g. 5000)",
                           contentPadding: const EdgeInsets.symmetric(

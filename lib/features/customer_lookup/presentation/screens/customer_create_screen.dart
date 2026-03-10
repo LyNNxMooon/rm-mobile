@@ -613,6 +613,15 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               style: TextStyle(fontSize: baseSize),
               decoration: _minimalInputDecoration(hintText: hintText),
               validator: validator,
+              onEditingComplete: () {
+                final trimmedValue = controller.text.trim();
+                if (controller.text != trimmedValue) {
+                  controller.value = controller.value.copyWith(
+                    text: trimmedValue,
+                    selection: TextSelection.collapsed(offset: trimmedValue.length),
+                  );
+                }
+              },
             ),
           ),
         ],
@@ -721,6 +730,15 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                   style: TextStyle(fontSize: baseSize),
                   decoration: _minimalInputDecoration(),
                   onChanged: onChanged,
+                  onEditingComplete: () {
+                    final trimmedValue = controller.text.trim();
+                    if (controller.text != trimmedValue) {
+                      controller.value = controller.value.copyWith(
+                        text: trimmedValue,
+                        selection: TextSelection.collapsed(offset: trimmedValue.length),
+                      );
+                    }
+                  },
                 ),
               ),
             ],
@@ -933,6 +951,15 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                           hintText: 'Enter or generate barcode',
                                         ),
                                         onChanged: _validateBarcode,
+                                        onEditingComplete: () {
+                                          final trimmedValue = _barcodeController.text.trim();
+                                          if (_barcodeController.text != trimmedValue) {
+                                            _barcodeController.value = _barcodeController.value.copyWith(
+                                              text: trimmedValue,
+                                              selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                            );
+                                          }
+                                        },
                                         validator: (value) {
                                           if (value == null || value.trim().isEmpty) {
                                             return 'Barcode is required';

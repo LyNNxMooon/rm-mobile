@@ -319,6 +319,15 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                     fontWeight: FontWeight.bold,
                     color: kThirdColor,
                   ),
+                  onEditingComplete: () {
+                    final trimmedValue = _qtyController.text.trim();
+                    if (_qtyController.text != trimmedValue) {
+                      _qtyController.value = _qtyController.value.copyWith(
+                        text: trimmedValue,
+                        selection: TextSelection.collapsed(offset: trimmedValue.length),
+                      );
+                    }
+                  },
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     //contentPadding: EdgeInsets.symmetric(vertical: 8),
