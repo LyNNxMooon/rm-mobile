@@ -8,13 +8,16 @@ import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessti
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_limit.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_page.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/has_unsynced_stocktakes.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/load_backup_sessions.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/restore_backup_session.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/update_stock_count.dart';
-import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/delete_stocktake_item.dart';
+import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
 
 import '../../domain/use_cases/count_and_save_to_localdb.dart';
 
@@ -282,8 +285,12 @@ class FetchingStocktakeListBloc
 class CommittingStocktakeBloc
     extends Bloc<StocktakeEvent, CommitingStocktakeStates> {
   final CommitStocktake commitStocktake;
+  final HasUnsyncedStocktakes hasUnsyncedStocktakes;
 
-  CommittingStocktakeBloc({required this.commitStocktake})
+  CommittingStocktakeBloc({
+    required this.commitStocktake,
+    required this.hasUnsyncedStocktakes,
+  })
     : super(CommitingStocktakeInitial()) {
     on<CommittingStocktakeEvent>(_onCommitingStocktake);
   }
@@ -294,6 +301,15 @@ class CommittingStocktakeBloc
   ) async {
     emit(LoadingToCommitStocktake());
     try {
+      final shopfront = AppGlobals.instance.shopfront ?? "";
+      final hasUnsynced = await hasUnsyncedStocktakes(
+        shopfront: shopfront,
+      );
+      if (!hasUnsynced) {
+        emit(ErrorCommitingStocktake("No unsynced stocks found."));
+        return;
+      }
+
       await commitStocktake();
 
       emit(CommittedStocktake("Stocktake data sent for validation!"));
@@ -306,6 +322,33 @@ class CommittingStocktakeBloc
         final dynamic msg = e.message;
         emit(ErrorCommitingStocktake(msg?.toString() ?? error.toString()));
       }
+    }
+  }
+}
+
+class StocktakeDeleteBloc
+    extends Bloc<StocktakeEvent, StocktakeDeleteStates> {
+  final DeleteStocktakeItem deleteStocktakeItem;
+
+  StocktakeDeleteBloc({required this.deleteStocktakeItem})
+      : super(StocktakeDeleteInitial()) {
+    on<DeleteStocktakeEvent>(_onDeleteStocktake);
+  }
+
+  Future<void> _onDeleteStocktake(
+    DeleteStocktakeEvent event,
+    Emitter<StocktakeDeleteStates> emit,
+  ) async {
+    emit(StocktakeDeleting());
+    try {
+      final shopfront = AppGlobals.instance.shopfront ?? "";
+      await deleteStocktakeItem(
+        stockId: event.stockId,
+        shopfront: shopfront,
+      );
+      emit(StocktakeDeleted("Stocktake item deleted."));
+    } catch (error) {
+      emit(StocktakeDeleteError(error.toString()));
     }
   }
 }

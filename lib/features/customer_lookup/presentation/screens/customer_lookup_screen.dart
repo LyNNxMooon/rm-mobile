@@ -11,6 +11,7 @@ import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_details_screen.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_filter_chip_row.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_lookup_appbar.dart';
@@ -23,9 +24,6 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/breat
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_create_screen.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/create_customer.dart';
-import 'package:rmstock_scanner/features/customer_lookup/models/customer_lookup_models.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
@@ -387,30 +385,24 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                 }
 
                 // Trigger customer sync before opening create screen
-                final hostIp = await LocalDbDAO.instance.getHostIpAddress();
-                if (hostIp != null && hostIp.trim().isNotEmpty) {
-                  context.read<FetchCustomerBloc>().add(
-                    StartCustomerSyncEvent(ipAddress: hostIp.trim()),
-                  );
+                context.read<FetchCustomerBloc>().add(
+                  StartCustomerSyncEvent(ipAddress: ""),
+                );
 
-                  // Wait for sync to complete
-                  await for (final state in context.read<FetchCustomerBloc>().stream) {
-                    if (state is! FetchCustomerProgress) {
-                      break;
-                    }
+                // Wait for sync to complete
+                await for (final state
+                    in context.read<FetchCustomerBloc>().stream) {
+                  if (state is! FetchCustomerProgress) {
+                    break;
                   }
                 }
 
                 if (!mounted) return;
 
+                context.read<CustomerCreateBloc>().add(ResetCustomerCreateEvent());
                 final result = await Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => BlocProvider(
-                      create: (context) => CustomerCreateBloc(
-                        createCustomer: CreateCustomer(CustomerLookupModels()),
-                      ),
-                      child: const CustomerCreateScreen(),
-                    ),
+                    builder: (context) => const CustomerCreateScreen(),
                   ),
                 );
 

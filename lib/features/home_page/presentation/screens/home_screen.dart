@@ -286,18 +286,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                 if (currentState is! FetchStockProgress) {
                                   context.read<FetchStockBloc>().add(
-                                    StartSyncEvent(
-                                      ipAddress:
-                                          AppGlobals.instance.currentHostIp ??
-                                          "",
-                                    ),
+                                    StartSyncEvent(ipAddress: ""),
                                   );
                                   context.read<FetchCustomerBloc>().add(
-                                    StartCustomerSyncEvent(
-                                      ipAddress:
-                                          AppGlobals.instance.currentHostIp ??
-                                          "",
-                                    ),
+                                    StartCustomerSyncEvent(ipAddress: ""),
                                   );
                                 }
 
@@ -396,11 +388,11 @@ class _HomeScreenState extends State<HomeScreen> {
       listener: (context, state) {
         if (state is ConnectedToShopfront) {
           context.read<FetchStockBloc>().add(
-            StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
+            StartSyncEvent(ipAddress: ""),
           );
           context.read<FetchCustomerBloc>().add(
             StartCustomerSyncEvent(
-              ipAddress: AppGlobals.instance.currentHostIp ?? "",
+              ipAddress: "",
             ),
           );
 

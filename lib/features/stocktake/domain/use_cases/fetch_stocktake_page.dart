@@ -1,5 +1,5 @@
 import 'package:rmstock_scanner/features/stocktake/domain/repositories/stocktake_repo.dart';
-import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_paged_result.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
 class FetchStocktakePage {

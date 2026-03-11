@@ -3,9 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmstock_scanner/features/onboarding/presentation/screens/onboarding_gate_screen.dart';
+import 'package:rmstock_scanner/features/onboarding/presentation/BLoC/onboarding_bloc.dart';
 //import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 //import 'package:rmstock_scanner/features/stocktake/presentation/screens/scanner_screen.dart';
 import 'package:rmstock_scanner/utils/dependency_injection_utils.dart';
@@ -52,6 +55,9 @@ class _MyAppState extends State<MyApp> {
 
   @override
   initState() {
+    if (!sl.isRegistered<OnboardingBloc>()) {
+      init();
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndRequestPermission();
     });
@@ -126,6 +132,9 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<CommittingStocktakeBloc>(
           create: (_) => sl<CommittingStocktakeBloc>(),
         ),
+        BlocProvider<StocktakeDeleteBloc>(
+          create: (_) => sl<StocktakeDeleteBloc>(),
+        ),
         BlocProvider<StocktakeLimitBloc>(
           create: (_) => sl<StocktakeLimitBloc>(),
         ),
@@ -140,6 +149,10 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<CustomerFilterOptionsBloc>(create: (_) => sl<CustomerFilterOptionsBloc>()),
         BlocProvider<StaffDetailBloc>(create: (_) => sl<StaffDetailBloc>()),
         BlocProvider<CustomerUpdateBloc>(create: (_) => sl<CustomerUpdateBloc>()),
+        BlocProvider<CustomerCreateBloc>(create: (_) => sl<CustomerCreateBloc>()),
+        BlocProvider<StaffBarcodeLookupBloc>(
+          create: (_) => sl<StaffBarcodeLookupBloc>(),
+        ),
         BlocProvider<ScannerBloc>(create: (_) => sl<ScannerBloc>()),
         BlocProvider<StocktakeValidationBloc>(
           create: (_) => sl<StocktakeValidationBloc>(),
@@ -171,6 +184,7 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<PairCodeBloc>(create: (_) => sl<PairCodeBloc>()),
         BlocProvider<PairDeviceBloc>(create: (_) => sl<PairDeviceBloc>()),
         BlocProvider<StaffAuthBloc>(create: (_) => sl<StaffAuthBloc>()),
+        BlocProvider<OnboardingBloc>(create: (_) => sl<OnboardingBloc>()),
       ],
       child: MaterialApp(
         title: 'RM-Mobile',

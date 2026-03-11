@@ -6,7 +6,6 @@ import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loadin
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
 class NetworkPathDialog extends StatelessWidget {
@@ -101,8 +100,9 @@ class NetworkPathDialog extends StatelessWidget {
           SlidableAction(
             onPressed: (context) {
               if (paths.length != 1) {
-                 LocalDbDAO.instance.deleteNetworkPath(realPath);
-                 context.read<NetworkSavedPathValidationBloc>().add(FetchSavedPathsEvent());
+                 ctx
+                     .read<NetworkSavedPathValidationBloc>()
+                     .add(DeleteSavedPathEvent(realPath));
                  context.navigateBack();
               }
             },

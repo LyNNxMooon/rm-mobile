@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_limit_response.dart';
-import 'package:rmstock_scanner/entities/vos/audit_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_paged_result.dart';
 
 import '../../../entities/vos/stock_vo.dart';
 import '../../../local_db/local_db_dao.dart';
@@ -232,6 +232,39 @@ class StocktakeModel implements StocktakeRepo {
         resolvedApiKey,
         body,
       );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<bool> hasUnsyncedStocktakes(String shopfront) async {
+    try {
+      final unSyncedList = await LocalDbDAO.instance.getUnsyncedStocks(
+        shopfront,
+      );
+      return unSyncedList.isNotEmpty;
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<void> deleteStocktakeItem({
+    required int stockId,
+    required String shopfront,
+  }) async {
+    try {
+      await LocalDbDAO.instance.deleteStocktake(stockId, shopfront);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<void> deleteAllStocktake() async {
+    try {
+      await LocalDbDAO.instance.deleteAllStocktake();
     } on Exception catch (error) {
       return Future.error(error);
     }
@@ -566,89 +599,3 @@ class StocktakeModel implements StocktakeRepo {
   // DateTime? _parseTimestampFromFileName(String fileName) { ... }
 }
 
-class StocktakePagedResult {
-  final List<CountedStockVO> items;
-  final int totalCount;
-
-  StocktakePagedResult({required this.items, required this.totalCount});
-}
-
-class AuditWithStockVO {
-  final AuditItem audit;
-  final StockVO? stock;
-
-  AuditWithStockVO({required this.audit, required this.stock});
-}
-
-class AuditSyncStatus {
-  final int processed;
-  final int total;
-  final String message;
-
-  final List<AuditWithStockVO>? rows;
-
-  AuditSyncStatus(this.processed, this.total, this.message, {this.rows});
-}
-
-// Old setup disabled:
-// class _StocktakeJsonBuilder {
-//   static String buildJson(...) { ... }
-// }
-
-class TransactionTypeHelper {
-  static String translate(String code) {
-    switch (code) {
-      case "IV":
-        return "Invoice";
-      case "SA":
-        return "Sale";
-      case "LB":
-        return "Lay-by";
-      case "SO":
-        return "Sales Order";
-      case "QU":
-        return "Quote";
-      case "CS":
-        return "Special Order";
-      case "GR":
-        return "Goods Received";
-      case "RG":
-        return "Returned Goods";
-      case "PO":
-        return "Purchase Order";
-      case "ST":
-        return "Stocktake";
-      case "SL":
-        return "Partial Stocktake";
-      case "SI":
-        return "Single Stocktake";
-      case "MR":
-        return "Merge";
-      case "VC":
-        return "Cost Change";
-      case "VS":
-        return "Sell Price Change";
-      case "IP":
-        return "Invoice Payment";
-      case "LP":
-        return "Lay-by Payment";
-      case "SP":
-        return "Sales Order Payment";
-      case "LC":
-        return "Lay-by Conversion";
-      case "SC":
-        return "Sales Order Conversion";
-
-      default:
-        return code;
-    }
-  }
-
-  static IconData getIcon(String code) {
-    if (["SA", "IV", "LB"].contains(code)) return Icons.shopping_cart_outlined;
-    if (["GR", "PO"].contains(code)) return Icons.inventory_2_outlined;
-    if (["RG"].contains(code)) return Icons.assignment_return_outlined;
-    if (["ST", "SL", "SI"].contains(code)) return Icons.fact_check_outlined;
-    return Icons.receipt_long_outlined;
-  }
-}

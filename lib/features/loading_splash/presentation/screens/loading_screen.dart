@@ -5,7 +5,6 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
@@ -49,34 +48,32 @@ class _LoadingScreenState extends State<LoadingScreen> {
         if (state is ConnectionValid) {
           // Start syncs in background - don't wait for them
           context.read<FetchStockBloc>().add(
-            StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
+            StartSyncEvent(ipAddress: ""),
           );
           context.read<FetchCustomerBloc>().add(
-            StartCustomerSyncEvent(
-              ipAddress: AppGlobals.instance.currentHostIp ?? "",
-            ),
+            StartCustomerSyncEvent(ipAddress: ""),
           );
           // Navigation will happen automatically via IndexScreen state change
         }
         
         if (state is ErrorCheckingConnection || state is ErrorFetchingSavedPaths) {
           // Show error message but allow navigation to home screen
-          final String errorMessage;
-          if (state is ErrorCheckingConnection) {
-            errorMessage = state.message;
-          } else if (state is ErrorFetchingSavedPaths) {
-            errorMessage = state.message;
-          } else {
-            errorMessage = 'An error occurred';
-          }
+          // final String errorMessage;
+          // if (state is ErrorCheckingConnection) {
+          //   errorMessage = state.message;
+          // } else if (state is ErrorFetchingSavedPaths) {
+          //   errorMessage = state.message;
+          // } else {
+          //   errorMessage = 'An error occurred';
+          // }
           
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              duration: const Duration(seconds: 4),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(
+          //     content: Text(errorMessage),
+          //     duration: const Duration(seconds: 4),
+          //     backgroundColor: Colors.orange,
+          //   ),
+          // );
         }
       },
       child: Scaffold(

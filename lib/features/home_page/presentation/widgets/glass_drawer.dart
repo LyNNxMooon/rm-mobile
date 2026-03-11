@@ -12,7 +12,6 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/network_server_vo.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
@@ -38,6 +37,9 @@ class GlassDrawer extends StatefulWidget {
 }
 
 class _GlassDrawerState extends State<GlassDrawer> {
+  int? _savedPort;
+  String _savedApiKey = "";
+
   bool _isSyncInProgress(BuildContext context) {
     return context.read<FetchStockBloc>().state is FetchStockProgress;
   }
@@ -49,6 +51,12 @@ class _GlassDrawerState extends State<GlassDrawer> {
         message: "Stock sync in progress. Please wait.",
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<StaffAuthBloc>().add(LoadConnectionInfoEvent());
   }
 
   @override
@@ -84,7 +92,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
       }
     }
 
-    return DraggableScrollableSheet(
+    final sheet = DraggableScrollableSheet(
       initialChildSize: initialChildSize,
       minChildSize: minChildSize,
       maxChildSize: maxChildSize,
@@ -160,6 +168,18 @@ class _GlassDrawerState extends State<GlassDrawer> {
           ),
         );
       },
+    );
+
+    return BlocListener<StaffAuthBloc, StaffAuthStates>(
+      listener: (context, state) {
+        if (state is StaffConnectionInfoLoaded) {
+          setState(() {
+            _savedPort = state.port;
+            _savedApiKey = state.apiKey;
+          });
+        }
+      },
+      child: sheet,
     );
   }
 
@@ -281,20 +301,17 @@ class _GlassDrawerState extends State<GlassDrawer> {
         return;
       }
 
-      final String? savedApiKey = await LocalDbDAO.instance.getApiKey();
-      final String? savedPortText = await LocalDbDAO.instance.getHostPort();
-      final int? savedPort = int.tryParse(savedPortText ?? "");
       final String hostIp = AppGlobals.instance.currentHostIp ?? "";
 
-      if (hostIp.isEmpty || (savedApiKey ?? "").isEmpty || savedPort == null) {
+      if (hostIp.isEmpty || _savedApiKey.isEmpty || _savedPort == null) {
         return;
       }
 
       context.read<ShopfrontBloc>().add(
         FetchShopsFromApi(
           ipAddress: hostIp,
-          port: savedPort,
-          apiKey: savedApiKey!,
+          port: _savedPort!,
+          apiKey: _savedApiKey,
         ),
       );
 
@@ -308,8 +325,8 @@ class _GlassDrawerState extends State<GlassDrawer> {
             ),
             previousPath: "",
             isPairedFlow: true,
-            port: savedPort,
-            apiKey: savedApiKey,
+            port: _savedPort,
+            apiKey: _savedApiKey,
           );
         },
       );

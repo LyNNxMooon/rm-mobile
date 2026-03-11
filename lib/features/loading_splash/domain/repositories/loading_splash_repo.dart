@@ -12,4 +12,6 @@ abstract class LoadingSplashRepo {
     String? userName,
     String? pwd,
   );
+
+  Future<void> deleteSavedPath(String path);
 }

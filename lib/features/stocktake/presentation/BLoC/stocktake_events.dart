@@ -1,6 +1,6 @@
 import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 
 abstract class StocktakeEvent {}
@@ -63,6 +63,12 @@ class FetchStocktakeListEvent extends StocktakeEvent {
   final bool reset; // load from page 0 when true
   final String? query;
   FetchStocktakeListEvent({this.reset = false, this.query});
+}
+
+class DeleteStocktakeEvent extends StocktakeEvent {
+  final int stockId;
+
+  DeleteStocktakeEvent(this.stockId);
 }
 
 class NextStocktakePageEvent extends StocktakeEvent {}

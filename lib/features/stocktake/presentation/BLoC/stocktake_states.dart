@@ -1,7 +1,7 @@
 import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stocktake_history_session_row.dart';
-import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
 
 import '../../../../entities/vos/stock_vo.dart';
 
@@ -130,6 +130,25 @@ class ErrorCommitingStocktake extends CommitingStocktakeStates {
   final String message;
 
   ErrorCommitingStocktake(this.message);
+}
+
+//Delete stocktake item
+abstract class StocktakeDeleteStates {}
+
+class StocktakeDeleteInitial extends StocktakeDeleteStates {}
+
+class StocktakeDeleting extends StocktakeDeleteStates {}
+
+class StocktakeDeleted extends StocktakeDeleteStates {
+  final String message;
+
+  StocktakeDeleted(this.message);
+}
+
+class StocktakeDeleteError extends StocktakeDeleteStates {
+  final String message;
+
+  StocktakeDeleteError(this.message);
 }
 
 //Backing up stocktake

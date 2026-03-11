@@ -8,8 +8,8 @@ import 'package:rmstock_scanner/constants/txt_styles.dart';
 import 'package:rmstock_scanner/features/loading_splash/presentation/screens/index_screen.dart';
 import 'package:rmstock_scanner/features/onboarding/onboarding_content.dart';
 import 'package:rmstock_scanner/features/onboarding/presentation/screens/welcome_video_screen.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
-import 'package:rmstock_scanner/local_db/sqlite/sqlite_constants.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/features/onboarding/presentation/BLoC/onboarding_bloc.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class OnboardingGateScreen extends StatefulWidget {
@@ -28,19 +28,7 @@ class _OnboardingGateScreenState extends State<OnboardingGateScreen> {
   @override
   void initState() {
     super.initState();
-    _loadFlags();
-  }
-
-  Future<void> _loadFlags() async {
-    final String? termsAcceptedValue = await LocalDbDAO.instance.getAppConfig(
-      kTermsAcceptedKey,
-    );
-
-    if (!mounted) return;
-    setState(() {
-      _termsAccepted = termsAcceptedValue == "1";
-      _isLoading = false;
-    });
+    context.read<OnboardingBloc>().add(LoadOnboardingStatusEvent());
   }
 
   Future<void> _onWelcomeContinue() async {
@@ -58,41 +46,59 @@ class _OnboardingGateScreenState extends State<OnboardingGateScreen> {
   }
 
   Future<void> _onTermsAgree() async {
-    await LocalDbDAO.instance.saveAppConfig(kTermsAcceptedKey, "1");
+    context.read<OnboardingBloc>().add(SetTermsAcceptedEvent(true));
     if (!mounted) return;
-    setState(() {
-      _termsAccepted = true;
-    });
   }
 
   Future<void> _onTermsDecline() async {
-    await LocalDbDAO.instance.saveAppConfig(kTermsAcceptedKey, "0");
+    context.read<OnboardingBloc>().add(SetTermsAcceptedEvent(false));
     await SystemNavigator.pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    final Widget body;
     if (_isLoading) {
-      return Scaffold(
+      body = Scaffold(
         body: Container(
           decoration: const BoxDecoration(gradient: kGColor),
           child: const Center(child: ModernLoadingBar()),
         ),
       );
-    }
-
-    if (!_termsAccepted && !_movedToTermsInCurrentLaunch) {
+    } else if (!_termsAccepted && !_movedToTermsInCurrentLaunch) {
       if (!_movedToWelcomeInCurrentLaunch) {
-        return WelcomeScreen(onContinue: _onVideoWelcomeContinue);
+        body = WelcomeScreen(onContinue: _onVideoWelcomeContinue);
+      } else {
+        body = _WelcomeScreen(onContinue: _onWelcomeContinue);
       }
-      return _WelcomeScreen(onContinue: _onWelcomeContinue);
+    } else if (!_termsAccepted) {
+      body = _TermsScreen(onAgree: _onTermsAgree, onDecline: _onTermsDecline);
+    } else {
+      body = const IndexScreen();
     }
 
-    if (!_termsAccepted) {
-      return _TermsScreen(onAgree: _onTermsAgree, onDecline: _onTermsDecline);
-    }
-
-    return const IndexScreen();
+    return BlocListener<OnboardingBloc, OnboardingState>(
+      listener: (context, state) {
+        if (state is OnboardingLoading) {
+          setState(() {
+            _isLoading = true;
+          });
+        } else if (state is OnboardingLoaded) {
+          setState(() {
+            _termsAccepted = state.termsAccepted;
+            _isLoading = false;
+          });
+        } else if (state is OnboardingError) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
+          );
+        }
+      },
+      child: body,
+    );
   }
 }
 

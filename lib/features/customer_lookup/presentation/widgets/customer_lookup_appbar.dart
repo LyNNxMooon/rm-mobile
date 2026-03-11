@@ -121,9 +121,7 @@ class CustomerLookupAppbar extends StatelessWidget {
                   child: InkWell(
                     onTap: () {
                       context.read<FetchCustomerBloc>().add(
-                        StartCustomerSyncEvent(
-                          ipAddress: AppGlobals.instance.currentHostIp ?? '',
-                        ),
+                          StartCustomerSyncEvent(ipAddress: ""),
                       );
                     },
                     borderRadius: BorderRadius.circular(12),

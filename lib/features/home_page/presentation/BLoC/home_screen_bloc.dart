@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/authenticate
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_session.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_connection_info.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_auto_backup_enabled.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/connect_to_shopfront_api.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/get_pair_codes.dart';
@@ -18,6 +19,7 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_reten
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/delete_all_stocktake.dart';
 import '../../../../entities/vos/network_server_vo.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
@@ -338,6 +340,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final LoadAutoBackupEnabled loadAutoBackupEnabled;
   final UpdateAutoBackupEnabled updateAutoBackupEnabled;
   final RunAutoBackupIfDue runAutoBackupIfDue;
+  final DeleteAllStocktake deleteAllStocktake;
 
   int _currentRetentionDays = 30;
   bool _autoBackupEnabled = true;
@@ -349,12 +352,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     required this.loadAutoBackupEnabled,
     required this.updateAutoBackupEnabled,
     required this.runAutoBackupIfDue,
+    required this.deleteAllStocktake,
   }) : super(SettingsInitial()) {
     on<LoadSettingsEvent>(_onLoad);
     on<ChangeRetentionDaysEvent>(_onChangeRetention);
     on<RunHistoryCleanupEvent>(_onCleanup);
     on<ToggleAutoBackupEvent>(_onToggleAutoBackup);
     on<CheckAutoBackupNowEvent>(_onCheckAutoBackupNow);
+    on<DeleteAllStocktakeEvent>(_onDeleteAllStocktake);
   }
 
   Future<void> _onLoad(
@@ -452,6 +457,18 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       emit(SettingsError(e.toString()));
     }
   }
+
+  Future<void> _onDeleteAllStocktake(
+    DeleteAllStocktakeEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      await deleteAllStocktake();
+      emit(SettingsStocktakeDeleted("All stocktake data deleted."));
+    } catch (e) {
+      emit(SettingsError(e.toString()));
+    }
+  }
 }
 
 class DiscoverHostBloc extends Bloc<DiscoverHostEvents, DiscoverHostStates> {
@@ -531,15 +548,18 @@ class PairDeviceBloc extends Bloc<PairDeviceEvents, PairDeviceStates> {
 class StaffAuthBloc extends Bloc<StaffAuthEvents, StaffAuthStates> {
   final AuthenticateStaff authenticateStaff;
   final LoadSavedStaffSession loadSavedStaffSession;
+  final LoadSavedConnectionInfo loadSavedConnectionInfo;
   final SignOutStaff signOutStaff;
 
   StaffAuthBloc({
     required this.authenticateStaff,
     required this.loadSavedStaffSession,
+    required this.loadSavedConnectionInfo,
     required this.signOutStaff,
   }) : super(StaffAuthInitial()) {
     on<AuthenticateStaffEvent>(_onAuthenticateStaff);
     on<LoadSavedStaffSessionEvent>(_onLoadSavedStaffSession);
+    on<LoadConnectionInfoEvent>(_onLoadConnectionInfo);
     on<SignOutStaffEvent>(_onSignOutStaff);
   }
 
@@ -606,6 +626,25 @@ class StaffAuthBloc extends Bloc<StaffAuthEvents, StaffAuthStates> {
       emit(StaffSignedOut());
     } catch (error) {
       emit(StaffAuthError(error.toString()));
+    }
+  }
+
+  Future<void> _onLoadConnectionInfo(
+    LoadConnectionInfoEvent event,
+    Emitter<StaffAuthStates> emit,
+  ) async {
+    try {
+      final info = await loadSavedConnectionInfo();
+      emit(
+        StaffConnectionInfoLoaded(
+          port: info.port,
+          apiKey: info.apiKey,
+          shopfrontId: info.shopfrontId,
+          shopfrontName: info.shopfrontName,
+        ),
+      );
+    } catch (error) {
+      emit(StaffConnectionInfoError(error.toString()));
     }
   }
 }

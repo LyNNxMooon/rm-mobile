@@ -7,19 +7,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/edit_qty_dialog.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/empty_stock_state_widget.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/utils/transaction_type_helper.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/dialog_size_utils.dart';
-import '../../../../utils/global_var_utils.dart';
 import '../BLoC/stocktake_events.dart';
 import '../BLoC/stocktake_states.dart';
 import '../widgets/filter_dialog.dart';
@@ -56,21 +55,8 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   String _searchQuery = "";
 
   Future<void> _handleSendToRM() async {
-    final unSyncedList = await LocalDbDAO.instance.getUnsyncedStocks(
-      AppGlobals.instance.shopfront ?? "",
-    );
-
-    if (unSyncedList.isNotEmpty) {
-      if (mounted) {
-        context.read<CommittingStocktakeBloc>().add(CommittingStocktakeEvent());
-      }
-    } else {
-      if (mounted) {
-        showTopSnackBar(
-          Overlay.of(context),
-          const CustomSnackBar.error(message: "No unsynced stocks found."),
-        );
-      }
+    if (mounted) {
+      context.read<CommittingStocktakeBloc>().add(CommittingStocktakeEvent());
     }
   }
 
@@ -98,39 +84,57 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kBgColor,
-      floatingActionButton: _buildSubmitFAB(),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const StocktakeListAppBar(),
-            const StocktakeValidationInfo(),
-            const StocktakeTrialLimitInfo(),
-            finalStocktakeLoading(),
-            const SizedBox(height: 6),
-            StocktakeSearchAndFilterBar(
-              onChanged: (value) {
-                _searchQuery = value;
+    return BlocListener<StocktakeDeleteBloc, StocktakeDeleteStates>(
+      listener: (context, state) {
+        if (state is StocktakeDeleted) {
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.success(message: state.message),
+          );
+          context.read<FetchingStocktakeListBloc>().add(
+            FetchStocktakeListEvent(reset: true, query: _searchQuery),
+          );
+        } else if (state is StocktakeDeleteError) {
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.error(message: state.message),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: kBgColor,
+        floatingActionButton: _buildSubmitFAB(),
+        body: SafeArea(
+          child: Column(
+            children: [
+              const StocktakeListAppBar(),
+              const StocktakeValidationInfo(),
+              const StocktakeTrialLimitInfo(),
+              finalStocktakeLoading(),
+              const SizedBox(height: 6),
+              StocktakeSearchAndFilterBar(
+                onChanged: (value) {
+                  _searchQuery = value;
 
-                _debouncer.run(() {
-                  context.read<FetchingStocktakeListBloc>().add(
-                    FetchStocktakeListEvent(
-                      reset: true, // reset paging for new search
-                      query: _searchQuery,
-                    ),
-                  );
-                });
-              },
-              onFilterTap: () => showDialog(
-                context: context,
-                builder: (_) => const FilterDialog(),
+                  _debouncer.run(() {
+                    context.read<FetchingStocktakeListBloc>().add(
+                      FetchStocktakeListEvent(
+                        reset: true, // reset paging for new search
+                        query: _searchQuery,
+                      ),
+                    );
+                  });
+                },
+                onFilterTap: () => showDialog(
+                  context: context,
+                  builder: (_) => const FilterDialog(),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Expanded(child: _buildItemsList()),
-            stockCountUpdateListener(),
-          ],
+              const SizedBox(height: 10),
+              Expanded(child: _buildItemsList()),
+              stockCountUpdateListener(),
+            ],
+          ),
         ),
       ),
     );
@@ -402,12 +406,8 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
               children: [
                 SlidableAction(
                   onPressed: (_) {
-                    LocalDbDAO.instance.deleteStocktake(
-                      stock.stockID,
-                      AppGlobals.instance.shopfront ?? "",
-                    );
-                    context.read<FetchingStocktakeListBloc>().add(
-                      FetchStocktakeListEvent(),
+                    context.read<StocktakeDeleteBloc>().add(
+                      DeleteStocktakeEvent(stock.stockID),
                     );
                   },
                   backgroundColor: kErrorColor,

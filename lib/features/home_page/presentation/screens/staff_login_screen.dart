@@ -9,7 +9,6 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
@@ -34,22 +33,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
   @override
   void initState() {
     super.initState();
-    _loadConnectionData();
-  }
-
-  Future<void> _loadConnectionData() async {
-    final String? portRaw = await LocalDbDAO.instance.getHostPort();
-    final String? apiKey = await LocalDbDAO.instance.getApiKey();
-    final String? shopfrontId = await LocalDbDAO.instance.getShopfrontId();
-    final String? shopfrontName = await LocalDbDAO.instance.getShopfrontName();
-
-    if (!mounted) return;
-    setState(() {
-      _port = int.tryParse((portRaw ?? "").trim());
-      _apiKey = (apiKey ?? "").trim();
-      _shopfrontId = (shopfrontId ?? "").trim();
-      _shopfrontName = (shopfrontName ?? "").trim();
-    });
+    context.read<StaffAuthBloc>().add(LoadConnectionInfoEvent());
   }
 
   @override
@@ -126,6 +110,20 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
           );
         }
         if (state is StaffAuthError) {
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.error(message: state.message),
+          );
+        }
+        if (state is StaffConnectionInfoLoaded) {
+          setState(() {
+            _port = state.port;
+            _apiKey = state.apiKey;
+            _shopfrontId = state.shopfrontId;
+            _shopfrontName = state.shopfrontName;
+          });
+        }
+        if (state is StaffConnectionInfoError) {
           showTopSnackBar(
             Overlay.of(context),
             CustomSnackBar.error(message: state.message),

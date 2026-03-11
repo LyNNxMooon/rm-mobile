@@ -4,16 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
-import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_states.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_staff_by_barcode.dart';
-import 'package:rmstock_scanner/utils/dependency_injection_utils.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 
 class CustomerCreateScreen extends StatefulWidget {
   const CustomerCreateScreen({super.key});
@@ -189,6 +186,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   void initState() {
     super.initState();
     _initControllers();
+    context.read<CustomerCreateBloc>().add(ResetCustomerCreateEvent());
   }
 
   void _initControllers() {
@@ -316,21 +314,6 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     });
   }
 
-  List<Map<String, dynamic>> _buildSecondaryAddresses({
-    required int customerId,
-    required int startAddressId,
-  }) {
-    final List<Map<String, dynamic>> secondary = [];
-    var nextAddressId = startAddressId;
-    for (final address in _secondaryAddressControllers.values) {
-      secondary.add(
-        address.toCreateMap(addressId: nextAddressId, customerId: customerId),
-      );
-      nextAddressId += 1;
-    }
-    return secondary;
-  }
-
   void _generateBarcode() {
     context.read<CustomerCreateBloc>().add(GenerateBarcodeEvent());
   }
@@ -348,16 +331,6 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     }
   }
 
-  String _formatStaffLookupMessage(StaffDetailInfo? staff) {
-    if (staff == null) return "Staff not found";
-    final name = "${staff.givenNames} ${staff.surname}".trim();
-    final staffNo = staff.staffNo.trim();
-    if (staffNo.isEmpty && name.isEmpty) return "Staff found";
-    if (staffNo.isEmpty) return "Found: $name";
-    if (name.isEmpty) return "Found: $staffNo";
-    return "Found: $staffNo - $name";
-  }
-
   void _onOpenedStaffBarcodeChanged(String raw) {
     _openedStaffLookupDebounce?.cancel();
     final trimmed = raw.trim();
@@ -368,6 +341,12 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
         _openedStaffLookupLoading = false;
         _openedStaffId = null;
       });
+      context.read<StaffBarcodeLookupBloc>().add(
+        StaffBarcodeLookupEvent(
+          barcode: "",
+          target: StaffBarcodeTarget.openedBy,
+        ),
+      );
       return;
     }
 
@@ -377,26 +356,13 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
 
     _openedStaffLookupDebounce = Timer(
       const Duration(milliseconds: 400),
-      () async {
-        try {
-          final response = await sl<GetStaffByBarcode>().call(trimmed);
-          final staff = response.staff;
-          if (!mounted) return;
-          setState(() {
-            _openedStaffLookupValid = staff != null;
-            _openedStaffLookupMessage = _formatStaffLookupMessage(staff);
-            _openedStaffId = staff?.staffId;
-            _openedStaffLookupLoading = false;
-          });
-        } catch (_) {
-          if (!mounted) return;
-          setState(() {
-            _openedStaffLookupValid = false;
-            _openedStaffLookupMessage = "Staff not found";
-            _openedStaffId = null;
-            _openedStaffLookupLoading = false;
-          });
-        }
+      () {
+        context.read<StaffBarcodeLookupBloc>().add(
+          StaffBarcodeLookupEvent(
+            barcode: trimmed,
+            target: StaffBarcodeTarget.openedBy,
+          ),
+        );
       },
     );
   }
@@ -411,6 +377,12 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
         _ownerStaffLookupLoading = false;
         _ownerStaffId = null;
       });
+      context.read<StaffBarcodeLookupBloc>().add(
+        StaffBarcodeLookupEvent(
+          barcode: "",
+          target: StaffBarcodeTarget.owner,
+        ),
+      );
       return;
     }
 
@@ -420,26 +392,13 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
 
     _ownerStaffLookupDebounce = Timer(
       const Duration(milliseconds: 400),
-      () async {
-        try {
-          final response = await sl<GetStaffByBarcode>().call(trimmed);
-          final staff = response.staff;
-          if (!mounted) return;
-          setState(() {
-            _ownerStaffLookupValid = staff != null;
-            _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
-            _ownerStaffId = staff?.staffId;
-            _ownerStaffLookupLoading = false;
-          });
-        } catch (_) {
-          if (!mounted) return;
-          setState(() {
-            _ownerStaffLookupValid = false;
-            _ownerStaffLookupMessage = "Staff not found";
-            _ownerStaffId = null;
-            _ownerStaffLookupLoading = false;
-          });
-        }
+      () {
+        context.read<StaffBarcodeLookupBloc>().add(
+          StaffBarcodeLookupEvent(
+            barcode: trimmed,
+            target: StaffBarcodeTarget.owner,
+          ),
+        );
       },
     );
   }
@@ -483,105 +442,72 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
       return;
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
+    final List<CustomerCreateAddressInput> secondaryAddresses =
+        _secondaryAddressControllers.values
+            .map(
+              (address) => CustomerCreateAddressInput(
+                addressNumber: address.addressNumber,
+                addr1: address.addr1.text.trim(),
+                addr2: address.addr2.text.trim(),
+                addr3: address.addr3.text.trim(),
+                suburb: address.suburb.text.trim(),
+                state: address.state.text.trim(),
+                postcode: address.postcode.text.trim(),
+                country: address.country.text.trim(),
+                phone: address.phone.text.trim(),
+                mobile: address.mobile.text.trim(),
+                email: address.email.text.trim(),
+              ),
+            )
+            .toList();
 
-    try {
-      final shopfront = AppGlobals.instance.shopfront ?? "";
-      final nextCustomerId = await LocalDbDAO.instance.getNextCustomerId(
-        shopfront,
-      );
+    final form = CustomerCreateFormInput(
+      barcode: _barcodeController.text.trim(),
+      surname: _surnameController.text.trim(),
+      givenNames: _givenNamesController.text.trim(),
+      grade: _parseInt(_gradeController.text, 0),
+      company: _companyController.text.trim(),
+      position: _positionController.text.trim(),
+      salutation: _salutationController.text.trim(),
+      status: _statusValue,
+      inactive: _inactiveValue,
+      account: _accountValue,
+      overseas: _overseasValue,
+      fromEom: _fromEomValue,
+      abn: _abnDigitsOnly(),
+      notes: _notesController.text.trim(),
+      comments: _commentsController.text.trim(),
+      custom1: _custom1Controller.text.trim(),
+      custom2: _custom2Controller.text.trim(),
+      addr1: _addr1Controller.text.trim(),
+      addr2: _addr2Controller.text.trim(),
+      addr3: _addr3Controller.text.trim(),
+      suburb: _suburbController.text.trim(),
+      state: _stateController.text.trim(),
+      postcode: _postcodeController.text.trim(),
+      country: _countryController.text.trim(),
+      phone: _phoneController.text.trim(),
+      fax: _faxController.text.trim(),
+      mobile: _mobileController.text.trim(),
+      email: _emailController.text.trim(),
+      openedStaffId: _openedStaffId,
+      ownerStaffId: _ownerStaffId,
+      days: _parseInt(_daysController.text, 0),
+      limit: double.tryParse(_limitController.text.trim()) ?? 0.0,
+      defaultDeliveryAddress: _parseInt(
+        _defaultDeliveryAddressController.text,
+        1,
+      ),
+      documentDeliveryType: _parseInt(
+        _documentDeliveryTypeController.text,
+        0,
+      ),
+      secondaryAddresses: secondaryAddresses,
+    );
 
-      final nextAddressId = await LocalDbDAO.instance.getNextCustomerAddressId(
-        shopfront,
-      );
-      final List<Map<String, dynamic>> addresses = [
-        {
-          'addressId': nextAddressId,
-          'customerId': nextCustomerId,
-          'addressNumber': 1,
-          'addr1': _addr1Controller.text.trim(),
-          'addr2': _addr2Controller.text.trim(),
-          'addr3': _addr3Controller.text.trim(),
-          'suburb': _suburbController.text.trim(),
-          'state': _stateController.text.trim(),
-          'postcode': _postcodeController.text.trim(),
-          'country': _countryController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'fax': _faxController.text.trim(),
-          'mobile': _mobileController.text.trim(),
-          'email': _emailController.text.trim(),
-        },
-      ];
-
-      addresses.addAll(
-        _buildSecondaryAddresses(
-          customerId: nextCustomerId,
-          startAddressId: nextAddressId + 1,
-        ),
-      );
-
-      final customerData = {
-        "items": [
-          {
-            "customerId": nextCustomerId,
-            "barcode": _barcodeController.text.trim(),
-            "surname": _surnameController.text.trim(),
-            "givenNames": _givenNamesController.text.trim(),
-            "grade": _parseInt(_gradeController.text, 0),
-            "company": _companyController.text.trim(),
-            "position": _positionController.text.trim(),
-            "salutation": _salutationController.text.trim(),
-            "status": _statusValue,
-            "abn": _abnDigitsOnly(),
-            "notes": _notesController.text.trim(),
-            "comments": _commentsController.text.trim(),
-            "custom1": _custom1Controller.text.trim(),
-            "custom2": _custom2Controller.text.trim(),
-            "inactive": _inactiveValue,
-            "addr1": _addr1Controller.text.trim(),
-            "addr2": _addr2Controller.text.trim(),
-            "addr3": _addr3Controller.text.trim(),
-            "suburb": _suburbController.text.trim(),
-            "state": _stateController.text.trim(),
-            "postcode": _postcodeController.text.trim(),
-            "country": _countryController.text.trim(),
-            "phone": _phoneController.text.trim(),
-            "fax": _faxController.text.trim(),
-            "mobile": _mobileController.text.trim(),
-            "email": _emailController.text.trim(),
-            "account": _accountValue,
-            "openedId": _openedStaffId ?? 0,
-            "opened_id": _openedStaffId ?? 0,
-            "ownerId": _ownerStaffId ?? 0,
-            "owner_id": _ownerStaffId ?? 0,
-            "fromEOM": _fromEomValue,
-            "days": _parseInt(_daysController.text, 0),
-            "limit": double.tryParse(_limitController.text.trim()) ?? 0.0,
-            "overseas": _overseasValue,
-            "defaultDeliveryAddress": _parseInt(
-              _defaultDeliveryAddressController.text,
-              1,
-            ),
-            "documentDeliveryType": _parseInt(
-              _documentDeliveryTypeController.text,
-              0,
-            ),
-            if (addresses.isNotEmpty) "addresses": addresses,
-          },
-        ],
-      };
-
-      context.read<CustomerCreateBloc>().add(CreateCustomerEvent(customerData));
-    } catch (e) {
-      setState(() {
-        _isSubmitting = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
-    }
+    context.read<CustomerCreateBloc>().add(
+      SubmitCustomerCreateFormEvent(form),
+    );
   }
 
   // --- UI Styling Components matching Details Screen ---
@@ -945,41 +871,67 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<CustomerCreateBloc, CustomerCreateState>(
-      listener: (context, state) {
-        if (state is CustomerCreateSuccess) {
-          setState(() {
-            _isSubmitting = false;
-          });
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
-          context.read<FetchCustomerBloc>().add(
-            StartCustomerSyncEvent(
-              ipAddress: AppGlobals.instance.currentHostIp ?? "",
-            ),
-          );
-          Navigator.of(context).pop(true);
-        } else if (state is CustomerCreateError) {
-          setState(() {
-            _isSubmitting = false;
-          });
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.error)));
-        } else if (state is BarcodeValidationState) {
-          setState(() {
-            _barcodeValidationMessage = state.message;
-            _isBarcodeValid = state.isValid;
-          });
-        } else if (state is BarcodeGeneratedState) {
-          setState(() {
-            _barcodeController.text = state.barcode;
-            _isBarcodeValid = true;
-            _barcodeValidationMessage = "Barcode generated successfully";
-          });
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<CustomerCreateBloc, CustomerCreateState>(
+          listener: (context, state) {
+            if (state is CustomerCreateLoading) {
+              setState(() {
+                _isSubmitting = true;
+              });
+            } else if (state is CustomerCreateSuccess) {
+              setState(() {
+                _isSubmitting = false;
+              });
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.message)));
+              context.read<FetchCustomerBloc>().add(
+                StartCustomerSyncEvent(ipAddress: ""),
+              );
+              Navigator.of(context).pop(true);
+            } else if (state is CustomerCreateError) {
+              setState(() {
+                _isSubmitting = false;
+              });
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.error)));
+            } else if (state is BarcodeValidationState) {
+              setState(() {
+                _barcodeValidationMessage = state.message;
+                _isBarcodeValid = state.isValid;
+              });
+            } else if (state is BarcodeGeneratedState) {
+              setState(() {
+                _barcodeController.text = state.barcode;
+                _isBarcodeValid = true;
+                _barcodeValidationMessage = "Barcode generated successfully";
+              });
+            }
+          },
+        ),
+        BlocListener<StaffBarcodeLookupBloc, StaffBarcodeLookupState>(
+          listener: (context, state) {
+            if (!mounted) return;
+            if (state.target == StaffBarcodeTarget.openedBy) {
+              setState(() {
+                _openedStaffLookupLoading = state.isLoading;
+                _openedStaffLookupValid = state.isValid;
+                _openedStaffLookupMessage = state.message;
+                _openedStaffId = state.staffId;
+              });
+            } else {
+              setState(() {
+                _ownerStaffLookupLoading = state.isLoading;
+                _ownerStaffLookupValid = state.isValid;
+                _ownerStaffLookupMessage = state.message;
+                _ownerStaffId = state.staffId;
+              });
+            }
+          },
+        ),
+      ],
       child: Scaffold(
         backgroundColor: const Color(0xFFF3EFE8), // Matching background
         body: Stack(

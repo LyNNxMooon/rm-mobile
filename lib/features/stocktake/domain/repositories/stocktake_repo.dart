@@ -6,7 +6,8 @@ import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/models/stocktake_model.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_paged_result.dart';
 
 abstract class StocktakeRepo {
   Future<StockSearchResult> fetchStockDetails(String barcode, String shopfront);
@@ -55,6 +56,15 @@ abstract class StocktakeRepo {
   });
 
   Future<List<CountedStockVO>> getAllStocktakeList(String shopfront);
+
+  Future<bool> hasUnsyncedStocktakes(String shopfront);
+
+  Future<void> deleteStocktakeItem({
+    required int stockId,
+    required String shopfront,
+  });
+
+  Future<void> deleteAllStocktake();
 
   Stream<AuditSyncStatus> fetchStocktakeAuditReport({
     required String ipAddress,

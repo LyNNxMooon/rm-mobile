@@ -32,4 +32,17 @@ abstract class CustomerLookupRepo {
   Future<CustomerCreateResponse> createCustomer(
     Map<String, dynamic> body,
   );
+
+  Future<bool> checkBarcodeExists({
+    required String shopfront,
+    required String barcode,
+  });
+
+  Future<String> getNextNumericBarcode({required String shopfront});
+
+  Future<int> getNextCustomerId({required String shopfront});
+
+  Future<int> getNextCustomerAddressId({required String shopfront});
+
+  Future<String?> getHostIpAddress();
 }

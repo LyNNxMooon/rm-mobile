@@ -148,15 +148,10 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                     child: InkWell(
                       onTap: () {
                         context.read<FetchStockBloc>().add(
-                          StartSyncEvent(
-                            ipAddress: AppGlobals.instance.currentHostIp ?? "",
-                          ),
+                          StartSyncEvent(ipAddress: ""),
                         );
                         context.read<FetchCustomerBloc>().add(
-                          StartCustomerSyncEvent(
-                            ipAddress:
-                                AppGlobals.instance.currentHostIp ?? "",
-                          ),
+                          StartCustomerSyncEvent(ipAddress: ""),
                         );
                       },
                       borderRadius: BorderRadius.circular(12),

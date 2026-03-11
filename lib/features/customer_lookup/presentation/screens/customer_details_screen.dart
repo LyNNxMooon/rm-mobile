@@ -12,11 +12,10 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_transactions_screen.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_staff_by_barcode.dart';
 import 'package:rmstock_scanner/utils/enums.dart';
-import 'package:rmstock_scanner/utils/dependency_injection_utils.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import '../../../../constants/colors.dart';
 
 // Assuming you have this gradient defined in your constants
@@ -394,6 +393,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         _openedByStaffLookupLoading = false;
         _openedByStaffId = null;
       });
+      context.read<StaffBarcodeLookupBloc>().add(
+        StaffBarcodeLookupEvent(
+          barcode: "",
+          target: StaffBarcodeTarget.openedBy,
+        ),
+      );
       return;
     }
 
@@ -403,26 +408,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
     _openedByStaffLookupDebounce = Timer(
       const Duration(milliseconds: 400),
-      () async {
-        try {
-          final response = await sl<GetStaffByBarcode>().call(trimmed);
-          final staff = response.staff;
-          if (!mounted) return;
-          setState(() {
-            _openedByStaffLookupValid = staff != null;
-            _openedByStaffLookupMessage = _formatStaffLookupMessage(staff);
-            _openedByStaffId = staff?.staffId;
-            _openedByStaffLookupLoading = false;
-          });
-        } catch (_) {
-          if (!mounted) return;
-          setState(() {
-            _openedByStaffLookupValid = false;
-            _openedByStaffLookupMessage = "Staff not found";
-            _openedByStaffId = null;
-            _openedByStaffLookupLoading = false;
-          });
-        }
+      () {
+        context.read<StaffBarcodeLookupBloc>().add(
+          StaffBarcodeLookupEvent(
+            barcode: trimmed,
+            target: StaffBarcodeTarget.openedBy,
+          ),
+        );
       },
     );
   }
@@ -439,6 +431,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         _ownerStaffLookupLoading = false;
         _ownerStaffId = null;
       });
+      context.read<StaffBarcodeLookupBloc>().add(
+        StaffBarcodeLookupEvent(
+          barcode: "",
+          target: StaffBarcodeTarget.owner,
+        ),
+      );
       return;
     }
 
@@ -448,26 +446,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
     _ownerStaffLookupDebounce = Timer(
       const Duration(milliseconds: 400),
-      () async {
-        try {
-          final response = await sl<GetStaffByBarcode>().call(trimmed);
-          final staff = response.staff;
-          if (!mounted) return;
-          setState(() {
-            _ownerStaffLookupValid = staff != null;
-            _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
-            _ownerStaffId = staff?.staffId;
-            _ownerStaffLookupLoading = false;
-          });
-        } catch (_) {
-          if (!mounted) return;
-          setState(() {
-            _ownerStaffLookupValid = false;
-            _ownerStaffLookupMessage = "Staff not found";
-            _ownerStaffId = null;
-            _ownerStaffLookupLoading = false;
-          });
-        }
+      () {
+        context.read<StaffBarcodeLookupBloc>().add(
+          StaffBarcodeLookupEvent(
+            barcode: trimmed,
+            target: StaffBarcodeTarget.owner,
+          ),
+        );
       },
     );
   }
@@ -533,7 +518,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     if (!_shouldSyncOnExit) return;
     context.read<FetchCustomerBloc>().add(
       StartCustomerSyncEvent(
-        ipAddress: AppGlobals.instance.currentHostIp ?? "",
+        ipAddress: "",
       ),
     );
     _shouldSyncOnExit = false;
@@ -1436,6 +1421,26 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   }
                 }
               }
+            }
+          },
+        ),
+        BlocListener<StaffBarcodeLookupBloc, StaffBarcodeLookupState>(
+          listener: (context, state) {
+            if (!mounted) return;
+            if (state.target == StaffBarcodeTarget.openedBy) {
+              setState(() {
+                _openedByStaffLookupLoading = state.isLoading;
+                _openedByStaffLookupValid = state.isValid;
+                _openedByStaffLookupMessage = state.message;
+                _openedByStaffId = state.staffId;
+              });
+            } else {
+              setState(() {
+                _ownerStaffLookupLoading = state.isLoading;
+                _ownerStaffLookupValid = state.isValid;
+                _ownerStaffLookupMessage = state.message;
+                _ownerStaffId = state.staffId;
+              });
             }
           },
         ),

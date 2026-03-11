@@ -556,6 +556,25 @@ class HomeScreenModels implements HomeRepo {
       return Future.error(error);
     }
   }
+
+  @override
+  Future<SavedConnectionInfo> loadSavedConnectionInfo() async {
+    try {
+      final String? portRaw = await LocalDbDAO.instance.getHostPort();
+      final String? apiKey = await LocalDbDAO.instance.getApiKey();
+      final String? shopfrontId = await LocalDbDAO.instance.getShopfrontId();
+      final String? shopfrontName = await LocalDbDAO.instance.getShopfrontName();
+
+      return SavedConnectionInfo(
+        port: int.tryParse((portRaw ?? "").trim()),
+        apiKey: (apiKey ?? "").trim(),
+        shopfrontId: (shopfrontId ?? "").trim(),
+        shopfrontName: (shopfrontName ?? "").trim(),
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
 }
 
 class _StockRequestJsonBuilder {

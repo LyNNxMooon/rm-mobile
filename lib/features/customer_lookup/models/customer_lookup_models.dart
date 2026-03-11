@@ -361,4 +361,52 @@ class CustomerLookupModels implements CustomerLookupRepo {
       return Future.error(error);
     }
   }
+
+  @override
+  Future<bool> checkBarcodeExists({
+    required String shopfront,
+    required String barcode,
+  }) async {
+    try {
+      return LocalDbDAO.instance.checkBarcodeExists(barcode, shopfront);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<String> getNextNumericBarcode({required String shopfront}) async {
+    try {
+      return LocalDbDAO.instance.getNextNumericBarcode(shopfront);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<int> getNextCustomerId({required String shopfront}) async {
+    try {
+      return LocalDbDAO.instance.getNextCustomerId(shopfront);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<int> getNextCustomerAddressId({required String shopfront}) async {
+    try {
+      return LocalDbDAO.instance.getNextCustomerAddressId(shopfront);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<String?> getHostIpAddress() async {
+    try {
+      return LocalDbDAO.instance.getHostIpAddress();
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
 }

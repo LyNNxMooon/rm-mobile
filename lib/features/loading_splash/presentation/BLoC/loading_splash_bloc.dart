@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/use_cases/check_path_connection.dart';
+import '../../domain/use_cases/delete_saved_path.dart';
 import '../../domain/use_cases/fetch_saved_paths.dart';
 import 'loading_splash_events.dart';
 import 'loading_splash_states.dart';
@@ -9,13 +10,16 @@ class NetworkSavedPathValidationBloc
     extends Bloc<LoadingSplashEvents, LoadingSplashStates> {
   final FetchSavedPaths fetchSavedPaths;
   final CheckPathConnection checkPathConnection;
+  final DeleteSavedPath deleteSavedPath;
 
   NetworkSavedPathValidationBloc({
     required this.fetchSavedPaths,
     required this.checkPathConnection,
+    required this.deleteSavedPath,
   }) : super(LoadingSplashInitial()) {
     on<FetchSavedPathsEvent>(_onFetchSavedPathEvent);
     on<ConnectionCheckingEvent>(_onConnectionCheckingEvent);
+    on<DeleteSavedPathEvent>(_onDeleteSavedPathEvent);
   }
 
   Future<void> _onFetchSavedPathEvent(
@@ -59,6 +63,18 @@ class NetworkSavedPathValidationBloc
       }
     } catch (error) {
       emit(ErrorCheckingConnection("Error checking connection: $error"));
+    }
+  }
+
+  Future<void> _onDeleteSavedPathEvent(
+    DeleteSavedPathEvent event,
+    Emitter<LoadingSplashStates> emit,
+  ) async {
+    try {
+      await deleteSavedPath(event.path);
+      add(FetchSavedPathsEvent());
+    } catch (error) {
+      emit(ErrorFetchingSavedPaths("Error deleting saved path: $error"));
     }
   }
 }

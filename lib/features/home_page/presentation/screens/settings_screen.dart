@@ -16,7 +16,6 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_bloc.dart';
@@ -374,6 +373,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return MultiBlocListener(
       listeners: [
+        BlocListener<SettingsBloc, SettingsState>(
+          listener: (context, state) {
+            if (state is SettingsStocktakeDeleted) {
+              context.read<FetchingStocktakeListBloc>().add(
+                FetchStocktakeListEvent(),
+              );
+              AlertInfo.show(
+                context: context,
+                text: state.message,
+                typeInfo: TypeInfo.success,
+                backgroundColor: kSecondaryColor,
+                iconColor: kPrimaryColor,
+                textColor: kThirdColor,
+                position: MessagePosition.top,
+                padding: 70,
+              );
+            }
+          },
+        ),
         BlocListener<DiscoverHostBloc, DiscoverHostStates>(
           listener: (context, state) {
             if (!_isManualConnectionFlow) return;
@@ -1010,23 +1028,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => StocktakeDeleteConfirmationDialog(
         onConfirm: () async {
-          await Future.delayed(Duration(seconds: 2), () {
-            LocalDbDAO.instance.deleteAllStocktake();
-            context.read<FetchingStocktakeListBloc>().add(
-              FetchStocktakeListEvent(),
-            );
-          });
-
-          AlertInfo.show(
-            context: context,
-            text: "All your Stocktake data has been deleted!",
-            typeInfo: TypeInfo.success,
-            backgroundColor: kSecondaryColor,
-            iconColor: kPrimaryColor,
-            textColor: kThirdColor,
-            position: MessagePosition.top,
-            padding: 70,
-          );
+          context.read<SettingsBloc>().add(DeleteAllStocktakeEvent());
         },
       ),
     );

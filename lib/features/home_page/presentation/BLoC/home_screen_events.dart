@@ -106,6 +106,8 @@ class CheckAutoBackupNowEvent extends SettingsEvent {
   CheckAutoBackupNowEvent({this.force = false});
 }
 
+class DeleteAllStocktakeEvent extends SettingsEvent {}
+
 abstract class DiscoverHostEvents {}
 
 class DiscoverHostEvent extends DiscoverHostEvents {
@@ -191,5 +193,7 @@ class AuthenticateStaffEvent extends StaffAuthEvents {
 }
 
 class LoadSavedStaffSessionEvent extends StaffAuthEvents {}
+
+class LoadConnectionInfoEvent extends StaffAuthEvents {}
 
 class SignOutStaffEvent extends StaffAuthEvents {}

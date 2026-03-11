@@ -194,6 +194,12 @@ class AutoBackupRunDone extends SettingsState {
   });
 }
 
+class SettingsStocktakeDeleted extends SettingsState {
+  final String message;
+
+  SettingsStocktakeDeleted(this.message);
+}
+
 abstract class DiscoverHostStates {}
 
 class DiscoverHostInitial extends DiscoverHostStates {}
@@ -272,4 +278,24 @@ class StaffAuthError extends StaffAuthStates {
   final String message;
 
   StaffAuthError(this.message);
+}
+
+class StaffConnectionInfoLoaded extends StaffAuthStates {
+  final int? port;
+  final String apiKey;
+  final String shopfrontId;
+  final String shopfrontName;
+
+  StaffConnectionInfoLoaded({
+    required this.port,
+    required this.apiKey,
+    required this.shopfrontId,
+    required this.shopfrontName,
+  });
+}
+
+class StaffConnectionInfoError extends StaffAuthStates {
+  final String message;
+
+  StaffConnectionInfoError(this.message);
 }

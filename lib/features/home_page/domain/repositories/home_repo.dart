@@ -106,4 +106,20 @@ abstract class HomeRepo {
   Future<bool> loadSavedStaffSession();
 
   Future<void> signOutStaff();
+
+  Future<SavedConnectionInfo> loadSavedConnectionInfo();
+}
+
+class SavedConnectionInfo {
+  final int? port;
+  final String apiKey;
+  final String shopfrontId;
+  final String shopfrontName;
+
+  SavedConnectionInfo({
+    required this.port,
+    required this.apiKey,
+    required this.shopfrontId,
+    required this.shopfrontName,
+  });
 }

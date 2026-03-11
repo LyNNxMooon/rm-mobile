@@ -66,4 +66,13 @@ class LoadingSplashModels implements LoadingSplashRepo {
       return Future.error(error);
     }
   }
+
+  @override
+  Future<void> deleteSavedPath(String path) async {
+    try {
+      await LocalDbDAO.instance.deleteNetworkPath(path);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
 }

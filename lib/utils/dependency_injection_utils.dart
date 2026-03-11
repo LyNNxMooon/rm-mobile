@@ -5,6 +5,7 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_hos
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/authenticate_staff.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_session.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_connection_info.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/pair_device.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/run_auto_backup_if_due.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_auto_backup_enabled.dart';
@@ -23,6 +24,9 @@ import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_sessti
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_audit_report.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_limit.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/fetch_stocktake_page.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/has_unsynced_stocktakes.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/delete_stocktake_item.dart';
+import 'package:rmstock_scanner/features/stocktake/domain/use_cases/delete_all_stocktake.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/load_backup_sessions.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/restore_backup_session.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
@@ -41,6 +45,7 @@ import '../features/home_page/domain/use_cases/get_pair_codes.dart';
 import '../features/home_page/models/home_screen_models.dart';
 import '../features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import '../features/loading_splash/domain/use_cases/check_path_connection.dart';
+import '../features/loading_splash/domain/use_cases/delete_saved_path.dart';
 import '../features/loading_splash/domain/use_cases/fetch_saved_paths.dart';
 import '../features/loading_splash/models/loading_splash_models.dart';
 import '../features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
@@ -53,18 +58,31 @@ import '../features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import '../features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
 import '../features/customer_lookup/domain/use_cases/fetch_customer_data.dart';
 import '../features/customer_lookup/domain/use_cases/get_customer_filter_options.dart';
+import '../features/customer_lookup/domain/use_cases/get_host_ip_address.dart';
+import '../features/customer_lookup/domain/use_cases/get_next_customer_address_id.dart';
+import '../features/customer_lookup/domain/use_cases/get_next_customer_id.dart';
+import '../features/customer_lookup/domain/use_cases/get_next_numeric_barcode.dart';
+import '../features/customer_lookup/domain/use_cases/check_barcode_exists.dart';
+import '../features/customer_lookup/domain/use_cases/create_customer.dart';
 import '../features/customer_lookup/domain/use_cases/get_paginated_customers.dart';
 import '../features/customer_lookup/domain/use_cases/get_staff_by_barcode.dart';
 import '../features/customer_lookup/domain/use_cases/get_staff_detail.dart';
 import '../features/customer_lookup/domain/use_cases/update_customer_details.dart';
 import '../features/customer_lookup/models/customer_lookup_models.dart';
 import '../features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import '../features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
+import '../features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import '../features/stocktake/domain/use_cases/commit_stocktake.dart';
 import '../features/stocktake/domain/use_cases/count_and_save_to_localdb.dart';
 //import '../features/stocktake/domain/use_cases/fetch_all_stocktake_list.dart';
 import '../features/stocktake/domain/use_cases/fetch_counting_stock.dart';
 import '../features/stocktake/models/stocktake_model.dart';
 import '../features/stocktake/presentation/BLoC/stocktake_bloc.dart';
+import '../features/onboarding/domain/repositories/onboarding_repo.dart';
+import '../features/onboarding/models/onboarding_models.dart';
+import '../features/onboarding/domain/use_cases/get_terms_accepted.dart';
+import '../features/onboarding/domain/use_cases/set_terms_accepted.dart';
+import '../features/onboarding/presentation/BLoC/onboarding_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -89,10 +107,16 @@ Future<void> init() async {
     () => NetworkSavedPathValidationBloc(
       fetchSavedPaths: sl(),
       checkPathConnection: sl(),
+      deleteSavedPath: sl(),
     ),
   );
   sl.registerFactory(() => FetchingStocktakeListBloc(fetchStocktakePage: sl()));
-  sl.registerFactory(() => CommittingStocktakeBloc(commitStocktake: sl()));
+  sl.registerFactory(
+    () => CommittingStocktakeBloc(
+      commitStocktake: sl(),
+      hasUnsyncedStocktakes: sl(),
+    ),
+  );
   sl.registerFactory(() => StocktakeLimitBloc(fetchStocktakeLimit: sl()));
   sl.registerFactory(
     () => AutoConnectionBloc(autoConnectToDefaultFolder: sl()),
@@ -105,6 +129,16 @@ Future<void> init() async {
   sl.registerFactory(() => CustomerFilterOptionsBloc(getCustomerFilterOptions: sl()));
   sl.registerFactory(() => StaffDetailBloc(getStaffDetail: sl()));
   sl.registerFactory(() => CustomerUpdateBloc(updateCustomerDetails: sl()));
+  sl.registerFactory(
+    () => CustomerCreateBloc(
+      createCustomer: sl(),
+      checkBarcodeExists: sl(),
+      getNextNumericBarcode: sl(),
+      getNextCustomerId: sl(),
+      getNextCustomerAddressId: sl(),
+    ),
+  );
+  sl.registerFactory(() => StaffBarcodeLookupBloc(getStaffByBarcode: sl()));
   sl.registerFactory(() => ScannerBloc(fetchCountingStock: sl()));
   sl.registerFactory(
     () => StocktakeValidationBloc(fetchStocktakeAuditReport: sl()),
@@ -125,6 +159,7 @@ Future<void> init() async {
       loadAutoBackupEnabled: sl(),
       updateAutoBackupEnabled: sl(),
       runAutoBackupIfDue: sl(),
+      deleteAllStocktake: sl(),
     ),
   );
   sl.registerFactory(() => DiscoverHostBloc(discoverHost: sl()));
@@ -134,6 +169,7 @@ Future<void> init() async {
     () => StaffAuthBloc(
       authenticateStaff: sl(),
       loadSavedStaffSession: sl(),
+      loadSavedConnectionInfo: sl(),
       signOutStaff: sl(),
     ),
   );
@@ -145,6 +181,13 @@ Future<void> init() async {
     () => BackupRestoreBloc(loadSessions: sl(), restoreSession: sl()),
   );
   sl.registerFactory(() => StockUpdateBloc(updateSingleStock: sl()));
+  sl.registerFactory(() => StocktakeDeleteBloc(deleteStocktakeItem: sl()));
+  sl.registerFactory(
+    () => OnboardingBloc(
+      getTermsAccepted: sl(),
+      setTermsAccepted: sl(),
+    ),
+  );
 
   //Repos
   sl.registerLazySingleton<HomeRepo>(() => HomeScreenModels());
@@ -152,6 +195,7 @@ Future<void> init() async {
   sl.registerLazySingleton<StocktakeRepo>(() => StocktakeModel());
   sl.registerLazySingleton<LoadingSplashRepo>(() => LoadingSplashModels());
   sl.registerLazySingleton<StockLookupRepo>(() => StockLookupModels());
+  sl.registerLazySingleton<OnboardingRepo>(() => OnboardingModels());
 
   //Use cases
   sl.registerLazySingleton(() => CountAndSaveToLocaldb(sl()));
@@ -164,15 +208,25 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ConnectToShopfrontApi(sl()));
   sl.registerLazySingleton(() => FetchSavedPaths(sl()));
   sl.registerLazySingleton(() => CheckPathConnection(sl()));
+  sl.registerLazySingleton(() => DeleteSavedPath(sl()));
   //sl.registerLazySingleton(() => FetchAllStocktakeList(sl()));
   sl.registerLazySingleton(() => CommitStocktake(sl()));
+  sl.registerLazySingleton(() => HasUnsyncedStocktakes(sl()));
+  sl.registerLazySingleton(() => DeleteStocktakeItem(sl()));
+  sl.registerLazySingleton(() => DeleteAllStocktake(sl()));
   sl.registerLazySingleton(() => AutoConnectToDefaultFolder(sl()));
   sl.registerLazySingleton(() => CheckIfShopfrontFileExists(sl()));
   sl.registerLazySingleton(() => FetchStockData(sl()));
   sl.registerLazySingleton(() => GetPaginatedStock(sl()));
   sl.registerLazySingleton(() => FetchCustomerData(sl()));
+  sl.registerLazySingleton(() => CreateCustomer(sl()));
   sl.registerLazySingleton(() => GetPaginatedCustomers(sl()));
   sl.registerLazySingleton(() => GetCustomerFilterOptions(sl()));
+  sl.registerLazySingleton(() => GetHostIpAddress(sl()));
+  sl.registerLazySingleton(() => CheckBarcodeExists(sl()));
+  sl.registerLazySingleton(() => GetNextNumericBarcode(sl()));
+  sl.registerLazySingleton(() => GetNextCustomerId(sl()));
+  sl.registerLazySingleton(() => GetNextCustomerAddressId(sl()));
   sl.registerLazySingleton(() => GetStaffByBarcode(sl()));
   sl.registerLazySingleton(() => GetStaffDetail(sl()));
   sl.registerLazySingleton(() => UpdateCustomerDetails(sl()));
@@ -197,6 +251,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetPairCodes(sl()));
   sl.registerLazySingleton(() => PairDevice(sl()));
   sl.registerLazySingleton(() => AuthenticateStaff(sl()));
+  sl.registerLazySingleton(() => LoadSavedConnectionInfo(sl()));
   sl.registerLazySingleton(() => LoadSavedStaffSession(sl()));
   sl.registerLazySingleton(() => SignOutStaff(sl()));
   sl.registerLazySingleton(() => FetchCountedStockById(sl()));
@@ -207,4 +262,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LoadBackupSessions(sl()));
   sl.registerLazySingleton(() => RestoreBackupSession(sl()));
   sl.registerLazySingleton(() => UpdateSingleStock(sl()));
+  sl.registerLazySingleton(() => GetTermsAccepted(sl()));
+  sl.registerLazySingleton(() => SetTermsAccepted(sl()));
 }

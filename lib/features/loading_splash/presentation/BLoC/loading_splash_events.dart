@@ -7,3 +7,9 @@ class ConnectionCheckingEvent extends LoadingSplashEvents {
 
   ConnectionCheckingEvent(this.path);
 }
+
+class DeleteSavedPathEvent extends LoadingSplashEvents {
+  final String path;
+
+  DeleteSavedPathEvent(this.path);
+}

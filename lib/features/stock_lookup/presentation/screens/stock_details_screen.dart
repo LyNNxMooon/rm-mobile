@@ -324,11 +324,11 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   void _triggerSyncIfNeeded() {
     if (!_shouldSyncOnExit) return;
     context.read<FetchStockBloc>().add(
-      StartSyncEvent(ipAddress: AppGlobals.instance.currentHostIp ?? ""),
+      StartSyncEvent(ipAddress: ""),
     );
     context.read<FetchCustomerBloc>().add(
       StartCustomerSyncEvent(
-        ipAddress: AppGlobals.instance.currentHostIp ?? "",
+        ipAddress: "",
       ),
     );
     _shouldSyncOnExit = false;

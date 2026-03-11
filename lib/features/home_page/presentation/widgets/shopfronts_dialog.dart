@@ -10,7 +10,6 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
@@ -48,6 +47,15 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
   final _staffPwdController = TextEditingController();
 
   String? _expandedShop;
+  int? _savedPort;
+  String _savedApiKey = "";
+  String _savedShopfrontId = "";
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<StaffAuthBloc>().add(LoadConnectionInfoEvent());
+  }
 
   @override
   void dispose() {
@@ -98,15 +106,11 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
             if (state is StaffAuthenticated) {
               if (widget.isPairedFlow) {
                 context.read<FetchStockBloc>().add(
-                  StartSyncEvent(
-                    ipAddress: AppGlobals.instance.currentHostIp ?? "",
-                  ),
+                  StartSyncEvent(ipAddress: ""),
                 );
-                  context.read<FetchCustomerBloc>().add(
-                    StartCustomerSyncEvent(
-                      ipAddress: AppGlobals.instance.currentHostIp ?? "",
-                    ),
-                  );
+                context.read<FetchCustomerBloc>().add(
+                  StartCustomerSyncEvent(ipAddress: ""),
+                );
 
                 showTopSnackBar(
                   Overlay.of(context),
@@ -125,6 +129,14 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                   );
                 }
               }
+            }
+
+            if (state is StaffConnectionInfoLoaded) {
+              setState(() {
+                _savedPort = state.port;
+                _savedApiKey = state.apiKey;
+                _savedShopfrontId = state.shopfrontId;
+              });
             }
 
             if (state is StaffUnauthenticated) {
@@ -537,14 +549,11 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
       return;
     }
 
-    final apiKey =
-        widget.apiKey ?? (await LocalDbDAO.instance.getApiKey() ?? "").trim();
-    final int? port =
-        widget.port ??
-        int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim());
+    final apiKey = widget.apiKey ?? _savedApiKey;
+    final int? port = widget.port ?? _savedPort;
     final shopfrontId =
-        AppGlobals.instance.pairedShopfrontIdsByName[shopName] ??
-        (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+      AppGlobals.instance.pairedShopfrontIdsByName[shopName] ??
+      _savedShopfrontId;
 
     if (apiKey.isEmpty || port == null || shopfrontId.isEmpty) {
       showTopSnackBar(
