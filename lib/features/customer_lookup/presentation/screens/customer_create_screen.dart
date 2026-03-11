@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
@@ -19,6 +20,33 @@ class CustomerCreateScreen extends StatefulWidget {
 
   @override
   State<CustomerCreateScreen> createState() => _CustomerCreateScreenState();
+}
+
+class _AbnInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final clipped = digitsOnly.length > 11
+        ? digitsOnly.substring(0, 11)
+        : digitsOnly;
+
+    final buffer = StringBuffer();
+    for (var i = 0; i < clipped.length; i++) {
+      if (i == 2 || i == 5 || i == 8) {
+        buffer.write('-');
+      }
+      buffer.write(clipped[i]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
 }
 
 class _AddressControllers {
@@ -269,6 +297,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     return parsed ?? fallback;
   }
 
+  String _abnDigitsOnly() {
+    return _abnController.text.replaceAll(RegExp(r'\D'), '');
+  }
+
   void _setOverseasValue(bool value) {
     if (value && _abnController.text.trim().isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -502,7 +534,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
             "position": _positionController.text.trim(),
             "salutation": _salutationController.text.trim(),
             "status": _statusValue,
-            "abn": _abnController.text.trim(),
+            "abn": _abnDigitsOnly(),
             "notes": _notesController.text.trim(),
             "comments": _commentsController.text.trim(),
             "custom1": _custom1Controller.text.trim(),
@@ -630,6 +662,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     int maxLines = 1,
     String? Function(String?)? validator,
     String? hintText,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     final double baseSize = _font(context, 14);
     return Padding(
@@ -657,6 +690,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               style: TextStyle(fontSize: baseSize),
               decoration: _minimalInputDecoration(hintText: hintText),
               validator: validator,
+              inputFormatters: inputFormatters,
               onEditingComplete: () {
                 final trimmedValue = controller.text.trim();
                 if (controller.text != trimmedValue) {
@@ -1247,7 +1281,12 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                   isValid: _ownerStaffLookupValid,
                                   isLoading: _ownerStaffLookupLoading,
                                 ),
-                                _buildEditRow("ABN", _abnController),
+                                _buildEditRow(
+                                  "ABN",
+                                  _abnController,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [_AbnInputFormatter()],
+                                ),
                                 _buildSwitchRow("Overseas", _overseasValue, (
                                   val,
                                 ) {

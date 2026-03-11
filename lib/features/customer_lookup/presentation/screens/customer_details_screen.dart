@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 import 'package:rmstock_scanner/entities/vos/customer_address_vo.dart';
@@ -37,6 +38,7 @@ class _AddressControllers {
     required this.postcode,
     required this.country,
     required this.phone,
+    required this.fax,
     required this.mobile,
     required this.email,
   });
@@ -51,6 +53,7 @@ class _AddressControllers {
   final TextEditingController postcode;
   final TextEditingController country;
   final TextEditingController phone;
+  final TextEditingController fax;
   final TextEditingController mobile;
   final TextEditingController email;
 
@@ -69,6 +72,7 @@ class _AddressControllers {
       postcode: TextEditingController(text: address?.postcode ?? ""),
       country: TextEditingController(text: address?.country ?? ""),
       phone: TextEditingController(text: address?.phone ?? ""),
+      fax: TextEditingController(text: address?.fax ?? ""),
       mobile: TextEditingController(text: address?.mobile ?? ""),
       email: TextEditingController(text: address?.email ?? ""),
     );
@@ -83,6 +87,7 @@ class _AddressControllers {
         postcode.text.trim().isNotEmpty ||
         country.text.trim().isNotEmpty ||
         phone.text.trim().isNotEmpty ||
+        fax.text.trim().isNotEmpty ||
         mobile.text.trim().isNotEmpty ||
         email.text.trim().isNotEmpty;
   }
@@ -100,6 +105,7 @@ class _AddressControllers {
       'postcode': postcode.text.trim(),
       'country': country.text.trim(),
       'phone': phone.text.trim(),
+      'fax': fax.text.trim(),
       'mobile': mobile.text.trim(),
       'email': email.text.trim(),
     };
@@ -114,6 +120,7 @@ class _AddressControllers {
     postcode.dispose();
     country.dispose();
     phone.dispose();
+    fax.dispose();
     mobile.dispose();
     email.dispose();
   }
@@ -126,6 +133,33 @@ class CustomerDetailsScreen extends StatefulWidget {
 
   @override
   State<CustomerDetailsScreen> createState() => _CustomerDetailsScreenState();
+}
+
+class _AbnInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final clipped = digitsOnly.length > 11
+        ? digitsOnly.substring(0, 11)
+        : digitsOnly;
+
+    final buffer = StringBuffer();
+    for (var i = 0; i < clipped.length; i++) {
+      if (i == 2 || i == 5 || i == 8) {
+        buffer.write('-');
+      }
+      buffer.write(clipped[i]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
 }
 
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
@@ -195,11 +229,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<StaffDetailBloc>().add(
-            LoadStaffDetailsEvent(
-              openedId: widget.customer.openedId,
-              ownerId: widget.customer.ownerId,
-            ),
-          );
+        LoadStaffDetailsEvent(
+          openedId: widget.customer.openedId,
+          ownerId: widget.customer.ownerId,
+        ),
+      );
     });
   }
 
@@ -250,23 +284,24 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   double _uiScale(BuildContext context) {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    return isTablet
-        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
-        : 1.0;
+    return isTablet ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2) : 1.0;
   }
 
   double _font(BuildContext context, double size) => size * _uiScale(context);
 
   void _initControllers() {
     _surnameController = TextEditingController(text: widget.customer.surname);
-    _givenNamesController =
-        TextEditingController(text: widget.customer.givenNames);
+    _givenNamesController = TextEditingController(
+      text: widget.customer.givenNames,
+    );
     _companyController = TextEditingController(text: widget.customer.company);
     _positionController = TextEditingController(text: widget.customer.position);
-    _salutationController =
-        TextEditingController(text: widget.customer.salutation);
-    _gradeController =
-        TextEditingController(text: widget.customer.grade.toString());
+    _salutationController = TextEditingController(
+      text: widget.customer.salutation,
+    );
+    _gradeController = TextEditingController(
+      text: widget.customer.grade.toString(),
+    );
 
     _phoneController = TextEditingController(text: widget.customer.phone);
     _faxController = TextEditingController(text: widget.customer.fax);
@@ -281,20 +316,23 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     _postcodeController = TextEditingController(text: widget.customer.postcode);
     _countryController = TextEditingController(text: widget.customer.country);
 
-    _limitController =
-        TextEditingController(text: widget.customer.limit.toString());
-    _daysController =
-        TextEditingController(text: widget.customer.days.toString());
+    _limitController = TextEditingController(
+      text: widget.customer.limit.toString(),
+    );
+    _daysController = TextEditingController(
+      text: widget.customer.days.toString(),
+    );
     _fromEomValue = widget.customer.fromEOM;
-    _openedByController =
-      TextEditingController();
-    _ownerAccountController =
-      TextEditingController();
+    _openedByController = TextEditingController();
+    _ownerAccountController = TextEditingController();
 
     _abnController = TextEditingController(text: widget.customer.abn);
     _defaultDeliveryAddressController = TextEditingController(
       text: widget.customer.defaultDeliveryAddress.toString(),
     );
+    if (_defaultDeliveryAddressController.text.trim() == '0') {
+      _defaultDeliveryAddressController.text = '1';
+    }
     _documentDeliveryTypeController = TextEditingController(
       text: widget.customer.documentDeliveryType.toString(),
     );
@@ -317,18 +355,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     _commentsController = TextEditingController(text: widget.customer.comments);
 
     _secondaryAddressControllers = <int, _AddressControllers>{
-      2: _AddressControllers.fromCustomerAddress(
-        _findSecondaryAddress(2),
-        2,
-      ),
-      3: _AddressControllers.fromCustomerAddress(
-        _findSecondaryAddress(3),
-        3,
-      ),
+      2: _AddressControllers.fromCustomerAddress(_findAddress(2), 2),
+      3: _AddressControllers.fromCustomerAddress(_findAddress(3), 3),
     };
   }
 
-  CustomerAddressVO? _findSecondaryAddress(int addressNumber) {
+  CustomerAddressVO? _findAddress(int addressNumber) {
     for (final address in widget.customer.addresses) {
       if (address.addressNumber == addressNumber) {
         return address;
@@ -369,28 +401,30 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       _openedByStaffLookupLoading = true;
     });
 
-    _openedByStaffLookupDebounce = Timer(const Duration(milliseconds: 400),
-        () async {
-      try {
-        final response = await sl<GetStaffByBarcode>().call(trimmed);
-        final staff = response.staff;
-        if (!mounted) return;
-        setState(() {
-          _openedByStaffLookupValid = staff != null;
-          _openedByStaffLookupMessage = _formatStaffLookupMessage(staff);
-          _openedByStaffId = staff?.staffId;
-          _openedByStaffLookupLoading = false;
-        });
-      } catch (_) {
-        if (!mounted) return;
-        setState(() {
-          _openedByStaffLookupValid = false;
-          _openedByStaffLookupMessage = "Staff not found";
-          _openedByStaffId = null;
-          _openedByStaffLookupLoading = false;
-        });
-      }
-    });
+    _openedByStaffLookupDebounce = Timer(
+      const Duration(milliseconds: 400),
+      () async {
+        try {
+          final response = await sl<GetStaffByBarcode>().call(trimmed);
+          final staff = response.staff;
+          if (!mounted) return;
+          setState(() {
+            _openedByStaffLookupValid = staff != null;
+            _openedByStaffLookupMessage = _formatStaffLookupMessage(staff);
+            _openedByStaffId = staff?.staffId;
+            _openedByStaffLookupLoading = false;
+          });
+        } catch (_) {
+          if (!mounted) return;
+          setState(() {
+            _openedByStaffLookupValid = false;
+            _openedByStaffLookupMessage = "Staff not found";
+            _openedByStaffId = null;
+            _openedByStaffLookupLoading = false;
+          });
+        }
+      },
+    );
   }
 
   void _onOwnerStaffBarcodeChanged(String raw) {
@@ -412,30 +446,31 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       _ownerStaffLookupLoading = true;
     });
 
-    _ownerStaffLookupDebounce = Timer(const Duration(milliseconds: 400),
-        () async {
-      try {
-        final response = await sl<GetStaffByBarcode>().call(trimmed);
-        final staff = response.staff;
-        if (!mounted) return;
-        setState(() {
-          _ownerStaffLookupValid = staff != null;
-          _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
-          _ownerStaffId = staff?.staffId;
-          _ownerStaffLookupLoading = false;
-        });
-      } catch (_) {
-        if (!mounted) return;
-        setState(() {
-          _ownerStaffLookupValid = false;
-          _ownerStaffLookupMessage = "Staff not found";
-          _ownerStaffId = null;
-          _ownerStaffLookupLoading = false;
-        });
-      }
-    });
+    _ownerStaffLookupDebounce = Timer(
+      const Duration(milliseconds: 400),
+      () async {
+        try {
+          final response = await sl<GetStaffByBarcode>().call(trimmed);
+          final staff = response.staff;
+          if (!mounted) return;
+          setState(() {
+            _ownerStaffLookupValid = staff != null;
+            _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
+            _ownerStaffId = staff?.staffId;
+            _ownerStaffLookupLoading = false;
+          });
+        } catch (_) {
+          if (!mounted) return;
+          setState(() {
+            _ownerStaffLookupValid = false;
+            _ownerStaffLookupMessage = "Staff not found";
+            _ownerStaffId = null;
+            _ownerStaffLookupLoading = false;
+          });
+        }
+      },
+    );
   }
-
 
   int _parseInt(String raw, int fallback) {
     final parsed = int.tryParse(raw.trim());
@@ -445,6 +480,37 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   num _parseNum(String raw, num fallback) {
     final parsed = num.tryParse(raw.trim());
     return parsed ?? fallback;
+  }
+
+  String _abnDigitsOnly() {
+    return _abnController.text.replaceAll(RegExp(r'\D'), '');
+  }
+
+  String _formatAbnForDisplay(String raw) {
+    final digitsOnly = raw.replaceAll(RegExp(r'\D'), '');
+    final clipped = digitsOnly.length > 11
+        ? digitsOnly.substring(0, 11)
+        : digitsOnly;
+
+    if (clipped.isEmpty) return "";
+
+    final buffer = StringBuffer();
+    for (var i = 0; i < clipped.length; i++) {
+      if (i == 2 || i == 5 || i == 8) {
+        buffer.write('-');
+      }
+      buffer.write(clipped[i]);
+    }
+
+    return buffer.toString();
+  }
+
+  int _normalizedDefaultDeliveryAddress() {
+    final parsed = _parseInt(
+      _defaultDeliveryAddressController.text,
+      widget.customer.defaultDeliveryAddress,
+    );
+    return parsed == 0 ? 1 : parsed;
   }
 
   void _setOverseasValue(bool value) {
@@ -475,9 +541,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   Map<String, dynamic> _buildUpdateBody({bool includeAddresses = false}) {
     final int resolvedOpenedId =
-      _openedByStaffId ?? _parseInt(_openedByController.text, widget.customer.openedId);
+        _openedByStaffId ??
+        _parseInt(_openedByController.text, widget.customer.openedId);
     final int resolvedOwnerId =
-      _ownerStaffId ?? _parseInt(_ownerAccountController.text, widget.customer.ownerId);
+        _ownerStaffId ??
+        _parseInt(_ownerAccountController.text, widget.customer.ownerId);
     final Map<String, dynamic> item = <String, dynamic>{
       'customerId': widget.customer.customerId,
       'surname': _surnameController.text.trim(),
@@ -490,7 +558,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       'inactive': _inactiveValue,
       'account': _accountValue,
       'overseas': _overseasValue,
-      'abn': _abnController.text.trim(),
+      'abn': _abnDigitsOnly(),
       'addr1': _addr1Controller.text.trim(),
       'addr2': _addr2Controller.text.trim(),
       'addr3': _addr3Controller.text.trim(),
@@ -509,10 +577,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       'fromEOM': _fromEomValue,
       'days': _parseInt(_daysController.text, widget.customer.days),
       'limit': _parseNum(_limitController.text, widget.customer.limit),
-      'defaultDeliveryAddress': _parseInt(
-        _defaultDeliveryAddressController.text,
-        widget.customer.defaultDeliveryAddress,
-      ),
+      'defaultDeliveryAddress': _normalizedDefaultDeliveryAddress(),
       'documentDeliveryType': _parseInt(
         _documentDeliveryTypeController.text,
         widget.customer.documentDeliveryType,
@@ -525,6 +590,25 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
     if (includeAddresses) {
       final List<Map<String, dynamic>> secondaryAddresses = [];
+      final addressOne = _findAddress(1);
+      if (addressOne != null) {
+        secondaryAddresses.add({
+          'addressId': addressOne.addressId,
+          'customerId': widget.customer.customerId,
+          'addressNumber': 1,
+          'addr1': _addr1Controller.text.trim(),
+          'addr2': _addr2Controller.text.trim(),
+          'addr3': _addr3Controller.text.trim(),
+          'suburb': _suburbController.text.trim(),
+          'state': _stateController.text.trim(),
+          'postcode': _postcodeController.text.trim(),
+          'country': _countryController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'fax': _faxController.text.trim(),
+          'mobile': _mobileController.text.trim(),
+          'email': _emailController.text.trim(),
+        });
+      }
       for (final address in _secondaryAddressControllers.values) {
         if (address.hasAnyValue) {
           secondaryAddresses.add(
@@ -537,7 +621,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       }
     }
 
-    return <String, dynamic>{'items': [item]};
+    return <String, dynamic>{
+      'items': [item],
+    };
   }
 
   Future<void> _toggleEditSection(CustomerEditSection section) async {
@@ -562,7 +648,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       final openedByBarcode = _openedByController.text.trim();
       if (openedByBarcode.isNotEmpty && !_openedByStaffLookupValid) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please enter a valid Opened By staff barcode")),
+          const SnackBar(
+            content: Text("Please enter a valid Opened By staff barcode"),
+          ),
         );
         setState(() {
           _savingSection = null;
@@ -573,7 +661,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       final ownerBarcode = _ownerAccountController.text.trim();
       if (ownerBarcode.isNotEmpty && !_ownerStaffLookupValid) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please enter a valid owner staff barcode")),
+          const SnackBar(
+            content: Text("Please enter a valid owner staff barcode"),
+          ),
         );
         setState(() {
           _savingSection = null;
@@ -582,13 +672,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       }
     }
 
-
     final body = _buildUpdateBody(
       includeAddresses: section == CustomerEditSection.address,
     );
-    context
-        .read<CustomerUpdateBloc>()
-        .add(SubmitCustomerUpdateEvent(body: body, section: section));
+    context.read<CustomerUpdateBloc>().add(
+      SubmitCustomerUpdateEvent(body: body, section: section),
+    );
   }
 
   InputDecoration _minimalInputDecoration() {
@@ -619,6 +708,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     String? message,
     bool isValid = false,
     bool isLoading = false,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
@@ -647,12 +737,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   style: TextStyle(fontSize: baseSize),
                   decoration: _minimalInputDecoration(),
                   onChanged: onChanged,
+                  inputFormatters: inputFormatters,
                   onEditingComplete: () {
                     final trimmedValue = controller.text.trim();
                     if (controller.text != trimmedValue) {
                       controller.value = controller.value.copyWith(
                         text: trimmedValue,
-                        selection: TextSelection.collapsed(offset: trimmedValue.length),
+                        selection: TextSelection.collapsed(
+                          offset: trimmedValue.length,
+                        ),
                       );
                     }
                   },
@@ -713,7 +806,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 if (controller.text != trimmedValue) {
                   controller.value = controller.value.copyWith(
                     text: trimmedValue,
-                    selection: TextSelection.collapsed(offset: trimmedValue.length),
+                    selection: TextSelection.collapsed(
+                      offset: trimmedValue.length,
+                    ),
                   );
                 }
               },
@@ -844,7 +939,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     return widgets;
   }
 
-  
   String _getInitials(String name) {
     final trimmedName = name.trim();
     if (trimmedName.isEmpty) return "";
@@ -853,7 +947,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
     if (nameParts.length == 1) {
       String word = nameParts[0];
-      return word.length >= 2 ? word.substring(0, 2).toUpperCase() : word.toUpperCase();
+      return word.length >= 2
+          ? word.substring(0, 2).toUpperCase()
+          : word.toUpperCase();
     } else {
       String firstLetter = nameParts.first[0];
       String lastLetter = nameParts.last[0];
@@ -873,8 +969,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   String _formatStaffDisplay(StaffDetailInfo? staff) {
     if (staff == null) return "-";
-    final String fullName =
-        "${staff.givenNames} ${staff.surname}".trim();
+    final String fullName = "${staff.givenNames} ${staff.surname}".trim();
     final String barcode = staff.staffNo.trim();
 
     if (barcode.isEmpty && fullName.isEmpty) return "-";
@@ -885,9 +980,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   void _showLaunchError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _dialNumber(String number) async {
@@ -961,224 +1056,303 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   void _showSecondaryAddressesDialog() {
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(16),
-  ),
-  elevation: 10,
-  backgroundColor: Colors.white, // Or a slightly off-white like Color(0xFFF9FAFB) if you prefer
-  child: Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      // Dialog Header
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF3F4F6), // Matches the scaffold background of the details screen
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(16),
-            topRight: Radius.circular(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          border: Border(
-            bottom: BorderSide(color: Colors.grey.shade200, width: 1.5),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.location_on_outlined, size: 20, color: kPrimaryColor),
-                const SizedBox(width: 8),
-                Text(
-                  "Secondary Addresses",
-                  style: TextStyle(
-                    fontSize: _font(context, 16),
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+          elevation: 10,
+          backgroundColor: Colors
+              .white, // Or a slightly off-white like Color(0xFFF9FAFB) if you prefer
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Dialog Header
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(
+                    0xFFF3F4F6,
+                  ), // Matches the scaffold background of the details screen
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade200, width: 1.5),
                   ),
                 ),
-              ],
-            ),
-            // Close Button in header instead of actions
-            InkWell(
-              onTap: () => Navigator.pop(context),
-              borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Icon(Icons.close, size: 20, color: Colors.grey[600]),
-              ),
-            ),
-          ],
-        ),
-      ),
-      
-      // Dialog Content (Scrollable list of addresses)
-      Flexible(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: List.generate(widget.customer.addresses.length, (index) {
-              final address = widget.customer.addresses[index];
-              final List<String> addressParts = [
-                address.addr1,
-                address.addr2,
-                address.addr3,
-                "${address.suburb} ${address.state} ${address.postcode}".trim(),
-                address.country,
-              ].where((s) => s.isNotEmpty).toList();
-              final String addressQuery = addressParts.join(', ');
-              final bool showMapIcon =
-                  address.addressNumber == 2 || address.addressNumber == 3;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200, width: 1.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Address Number Badge + Map Icon
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: kPrimaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            "Address ${address.addressNumber}",
-                            style: TextStyle(
-                              fontSize: _font(context, 12),
-                              fontWeight: FontWeight.bold,
-                              color: kPrimaryColor,
-                            ),
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 20,
+                          color: kPrimaryColor,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Secondary Addresses",
+                          style: TextStyle(
+                            fontSize: _font(context, 16),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
                           ),
                         ),
-                        if (showMapIcon)
-                          InkWell(
-                            onTap: () => _openMapForAddress(addressQuery),
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              width: 46,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset("assets/images/map.png", fit: BoxFit.fill),
-                      ),
-                            ),
-                          ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    
-                    // Address Lines
-                    if (address.addr1.isNotEmpty) ...[
-                      Text(address.addr1, style: TextStyle(fontSize: baseSize, color: Colors.black87)),
-                    ],
-                    if (address.addr2.isNotEmpty) ...[
-                      Text(address.addr2, style: TextStyle(fontSize: baseSize, color: Colors.black87)),
-                    ],
-                    if (address.addr3.isNotEmpty) ...[
-                      Text(address.addr3, style: TextStyle(fontSize: baseSize, color: Colors.black87)),
-                    ],
-                    if (address.suburb.isNotEmpty || address.state.isNotEmpty || address.postcode.isNotEmpty) ...[
-                      Text(
-                        "${address.suburb} ${address.state} ${address.postcode}".trim(),
-                        style: TextStyle(fontSize: baseSize, color: Colors.black87),
+                    // Close Button in header instead of actions
+                    InkWell(
+                      onTap: () => Navigator.pop(context),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(
+                          Icons.close,
+                          size: 20,
+                          color: Colors.grey[600],
+                        ),
                       ),
-                    ],
-                    if (address.country.isNotEmpty) ...[
-                      Text(address.country, style: TextStyle(fontSize: baseSize, color: Colors.black87)),
-                    ],
-                    
-                    const SizedBox(height: 12),
-                    const Divider(height: 1),
-                    const SizedBox(height: 12),
-                    
-                    // Contact Info within this address
-                    if (address.phone.isNotEmpty) ...[
-                      _buildDialogContactRow(Icons.phone_outlined, address.phone, smallSize),
-                    ],
-                    if (address.mobile.isNotEmpty) ...[
-                      _buildDialogContactRow(Icons.phone_iphone_outlined, address.mobile, smallSize),
-                    ],
-                    if (address.email.isNotEmpty) ...[
-                      _buildDialogContactRow(Icons.email_outlined, address.email, smallSize),
-                    ],
-                    
-                    // Show a message if no contact info exists for this address to avoid empty space
-                    if (address.phone.isEmpty && address.mobile.isEmpty && address.email.isEmpty) ...[
-                       Text("No contact details for this address.", style: TextStyle(fontSize: smallSize, color: Colors.grey[500], fontStyle: FontStyle.italic)),
-                    ]
+                    ),
                   ],
                 ),
-              );
-            }),
+              ),
+
+              // Dialog Content (Scrollable list of addresses)
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: List.generate(widget.customer.addresses.length, (
+                      index,
+                    ) {
+                      final address = widget.customer.addresses[index];
+                      final List<String> addressParts = [
+                        address.addr1,
+                        address.addr2,
+                        address.addr3,
+                        "${address.suburb} ${address.state} ${address.postcode}"
+                            .trim(),
+                        address.country,
+                      ].where((s) => s.isNotEmpty).toList();
+                      final String addressQuery = addressParts.join(', ');
+                      final bool showMapIcon =
+                          address.addressNumber == 2 ||
+                          address.addressNumber == 3;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.grey.shade200,
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Address Number Badge + Map Icon
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: kPrimaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    "Address ${address.addressNumber}",
+                                    style: TextStyle(
+                                      fontSize: _font(context, 12),
+                                      fontWeight: FontWeight.bold,
+                                      color: kPrimaryColor,
+                                    ),
+                                  ),
+                                ),
+                                if (showMapIcon)
+                                  InkWell(
+                                    onTap: () =>
+                                        _openMapForAddress(addressQuery),
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      width: 46,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.asset(
+                                          "assets/images/map.png",
+                                          fit: BoxFit.fill,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Address Lines
+                            if (address.addr1.isNotEmpty) ...[
+                              Text(
+                                address.addr1,
+                                style: TextStyle(
+                                  fontSize: baseSize,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                            if (address.addr2.isNotEmpty) ...[
+                              Text(
+                                address.addr2,
+                                style: TextStyle(
+                                  fontSize: baseSize,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                            if (address.addr3.isNotEmpty) ...[
+                              Text(
+                                address.addr3,
+                                style: TextStyle(
+                                  fontSize: baseSize,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                            if (address.suburb.isNotEmpty ||
+                                address.state.isNotEmpty ||
+                                address.postcode.isNotEmpty) ...[
+                              Text(
+                                "${address.suburb} ${address.state} ${address.postcode}"
+                                    .trim(),
+                                style: TextStyle(
+                                  fontSize: baseSize,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                            if (address.country.isNotEmpty) ...[
+                              Text(
+                                address.country,
+                                style: TextStyle(
+                                  fontSize: baseSize,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+
+                            const SizedBox(height: 12),
+                            const Divider(height: 1),
+                            const SizedBox(height: 12),
+
+                            // Contact Info within this address
+                            if (address.phone.isNotEmpty) ...[
+                              _buildDialogContactRow(
+                                Icons.phone_outlined,
+                                address.phone,
+                                smallSize,
+                              ),
+                            ],
+                            if (address.mobile.isNotEmpty) ...[
+                              _buildDialogContactRow(
+                                Icons.phone_iphone_outlined,
+                                address.mobile,
+                                smallSize,
+                              ),
+                            ],
+                            if (address.email.isNotEmpty) ...[
+                              _buildDialogContactRow(
+                                Icons.email_outlined,
+                                address.email,
+                                smallSize,
+                              ),
+                            ],
+
+                            // Show a message if no contact info exists for this address to avoid empty space
+                            if (address.phone.isEmpty &&
+                                address.mobile.isEmpty &&
+                                address.email.isEmpty) ...[
+                              Text(
+                                "No contact details for this address.",
+                                style: TextStyle(
+                                  fontSize: smallSize,
+                                  color: Colors.grey[500],
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-      ),
-    ],
-  ),
-);
+        );
       },
     );
   }
 
   String _getGradeLabel(int grade) {
     switch (grade) {
-      case 0: return "Grade (Default)";
-      case 1: return "Grade (A)";
-      case 2: return "Grade (B)";
-      case 3: return "Grade (C)";
-      case 4: return "Grade (D)";
-      default: return "Grade ($grade)";
+      case 0:
+        return "Grade (Default)";
+      case 1:
+        return "Grade (A)";
+      case 2:
+        return "Grade (B)";
+      case 3:
+        return "Grade (C)";
+      case 4:
+        return "Grade (D)";
+      default:
+        return "Grade ($grade)";
     }
   }
 
   Widget _buildDialogContactRow(IconData icon, String text, double fontSize) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 6),
-    child: Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey[500]),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: fontSize,
-              color: Colors.grey[700],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.grey[500]),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: fontSize, color: Colors.grey[700]),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1192,10 +1366,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               });
             } else if (state is CustomerUpdateSuccess) {
               _shouldSyncOnExit = true;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
-              
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.message)));
+
               // Refresh staff details after successful update
               setState(() {
                 _savingSection = null;
@@ -1204,7 +1378,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 _openedByStaffEdited = false;
                 _ownerStaffEdited = false;
               });
-              
+
               // Re-fetch staff details with updated IDs
               context.read<StaffDetailBloc>().add(
                 LoadStaffDetailsEvent(
@@ -1213,9 +1387,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 ),
               );
             } else if (state is CustomerUpdateFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.message)));
               setState(() {
                 _savingSection = null;
               });
@@ -1235,13 +1409,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       _openedByController.text = staffNo;
                       _openedByStaffId = openedByStaff.staffId;
                       _openedByStaffLookupValid = true;
-                      _openedByStaffLookupMessage = _formatStaffLookupMessage(openedByStaff);
+                      _openedByStaffLookupMessage = _formatStaffLookupMessage(
+                        openedByStaff,
+                      );
                       _openedByStaffLookupLoading = false;
                     });
                   }
                 }
               }
-              
+
               // Handle owner account staff
               if (!_ownerStaffEdited) {
                 final staff = state.ownerAccount;
@@ -1252,7 +1428,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       _ownerAccountController.text = staffNo;
                       _ownerStaffId = staff.staffId;
                       _ownerStaffLookupValid = true;
-                      _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
+                      _ownerStaffLookupMessage = _formatStaffLookupMessage(
+                        staff,
+                      );
                       _ownerStaffLookupLoading = false;
                     });
                   }
@@ -1269,7 +1447,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         },
         child: Scaffold(
           // A slightly deeper grey helps the white cards pop and look solid
-          backgroundColor: const Color(0xFFF3EFE8), 
+          backgroundColor: const Color(0xFFF3EFE8),
           body: Stack(
             children: [
               // Background Gradient Container (Top Half)
@@ -1277,13 +1455,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 height: MediaQuery.of(context).size.height * 0.4,
                 decoration: const BoxDecoration(gradient: kGColor),
               ),
-              
+
               // Custom App Bar Elements (Overlay)
               SafeArea(
                 child: Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0,
+                        vertical: 8.0,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -1292,22 +1473,35 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                               _triggerSyncIfNeeded();
                               Navigator.pop(context);
                             },
-                            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
-                            label: const Text(
-                              "Customers", 
-                              style: TextStyle(color: Colors.white, fontSize: 16)
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new,
+                              color: Colors.white,
+                              size: 18,
                             ),
-                            style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                            label: const Text(
+                              "Customers",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                            ),
                           ),
                           const Text(
                             "Profile",
-                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          const SizedBox(width: 80), 
+                          const SizedBox(width: 80),
                         ],
                       ),
                     ),
-                    
+
                     // Scrollable Content
                     Expanded(
                       child: SingleChildScrollView(
@@ -1325,7 +1519,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             _buildPersonalCard(),
                             const SizedBox(height: 12),
                             _buildAdditionalInfoCard(),
-                            if (_notesController.text.isNotEmpty || _commentsController.text.isNotEmpty) ...[
+                            if (_notesController.text.isNotEmpty ||
+                                _commentsController.text.isNotEmpty) ...[
                               const SizedBox(height: 12),
                               _buildNotesCard(),
                             ],
@@ -1347,12 +1542,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   // --- Card Builders ---
 
-    String get _customerCustom1Label =>
-      AppGlobals.instance.customerCustom1Label;
-    String get _customerCustom2Label =>
-      AppGlobals.instance.customerCustom2Label;
-    String get _customerStatusLabel =>
-      AppGlobals.instance.customerStatusLabel;
+  String get _customerCustom1Label => AppGlobals.instance.customerCustom1Label;
+  String get _customerCustom2Label => AppGlobals.instance.customerCustom2Label;
+  String get _customerStatusLabel => AppGlobals.instance.customerStatusLabel;
 
   Widget _buildHeaderCard() {
     final double baseSize = _font(context, 14);
@@ -1361,17 +1553,21 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final double avatarSize = _font(context, 24);
     final String displayName = _currentDisplayName();
     final String companyName = _companyController.text.trim();
-    final int gradeValue = _parseInt(_gradeController.text, widget.customer.grade);
+    final int gradeValue = _parseInt(
+      _gradeController.text,
+      widget.customer.grade,
+    );
     final bool statusValue = _statusValue;
     final bool inactiveValue = _inactiveValue;
     final bool accountValue = _accountValue;
     final bool overseasValue = _overseasValue;
     final bool isEditing = _editingSection == CustomerEditSection.header;
     final String statusLabel =
-      "${_customerStatusLabel}: ${statusValue ? 'True' : 'False'}";
+        "${_customerStatusLabel}: ${statusValue ? 'True' : 'False'}";
     return _buildBaseCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // <--- ADDED THIS to align chips & content to the left
+        crossAxisAlignment: CrossAxisAlignment
+            .start, // <--- ADDED THIS to align chips & content to the left
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1399,7 +1595,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Name and Details
               Expanded(
                 child: Column(
@@ -1410,23 +1606,36 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                              displayName.isEmpty ? widget.customer.displayName : displayName,
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                            displayName.isEmpty
+                                ? widget.customer.displayName
+                                : displayName,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         // Active/Inactive Badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: inactiveValue ? Colors.red[50] : Colors.green[50],
+                            color: inactiveValue
+                                ? Colors.red[50]
+                                : Colors.green[50],
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             inactiveValue ? 'Inactive' : 'Active',
                             style: TextStyle(
-                              color: inactiveValue ? Colors.red[700] : Colors.green[700],
+                              color: inactiveValue
+                                  ? Colors.red[700]
+                                  : Colors.green[700],
                               fontSize: badgeSize,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1437,8 +1646,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     if (widget.customer.company.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
-                        companyName.isNotEmpty ? companyName : widget.customer.company,
-                        style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+                        companyName.isNotEmpty
+                            ? companyName
+                            : widget.customer.company,
+                        style: TextStyle(
+                          fontSize: baseSize,
+                          color: Colors.grey[600],
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1446,7 +1660,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       "Customer ID: ${widget.customer.barcode}",
-                      style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: smallSize,
+                        color: Colors.grey[500],
+                      ),
                     ),
                   ],
                 ),
@@ -1454,7 +1671,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Permanent Chips Row (Uses Wrap so it doesn't overflow)
           Wrap(
             alignment: WrapAlignment.start,
@@ -1464,18 +1681,18 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             runSpacing: 6,
             children: [
               _buildPillBadge(
-                accountValue ? "Account" : "Cash", 
-                Colors.green, 
+                accountValue ? "Account" : "Cash",
+                Colors.green,
                 accountValue,
               ),
               _buildPillBadge(
                 _getGradeLabel(gradeValue),
-                Colors.blue, 
-                true // Always active for visibility
+                Colors.blue,
+                true, // Always active for visibility
               ),
               _buildPillBadge(
-                overseasValue ? "Overseas" : "Local", 
-                Colors.orange, 
+                overseasValue ? "Overseas" : "Local",
+                Colors.orange,
                 overseasValue,
               ),
               _buildPillBadge(
@@ -1485,7 +1702,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
           const Divider(height: 1, color: Color(0xFFEEEEEE)),
           const SizedBox(height: 12),
@@ -1516,15 +1733,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               !_inactiveValue,
               (value) => setState(() => _inactiveValue = !value),
             ),
-            _buildSwitchRow(
-              "Account",
-              _accountValue,
-              (value) {
-                if (!value) return;
-                setState(() => _accountValue = true);
-              },
-              enabled: !_accountValue,
-            ),
+            _buildSwitchRow("Account", _accountValue, (value) {
+              if (!value) return;
+              setState(() => _accountValue = true);
+            }, enabled: !_accountValue),
             _buildSwitchRow(
               "Overseas",
               _overseasValue,
@@ -1537,13 +1749,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             ),
             const SizedBox(height: 4),
           ],
-          
+
           // Quick Action Buttons Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildActionButton(Icons.phone_outlined, "Call", () {
-                final String resolvedNumber = widget.customer.phone.trim().isNotEmpty
+                final String resolvedNumber =
+                    widget.customer.phone.trim().isNotEmpty
                     ? widget.customer.phone
                     : widget.customer.mobile;
                 _dialNumber(resolvedNumber);
@@ -1565,9 +1778,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CustomerTransactionsScreen(
-                    customer: widget.customer,
-                  ),
+                  builder: (_) =>
+                      CustomerTransactionsScreen(customer: widget.customer),
                 ),
               );
             },
@@ -1615,7 +1827,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             Icon(icon, size: 18, color: Colors.grey[800]),
             const SizedBox(width: 8),
             Text(
-              label, 
+              label,
               style: TextStyle(
                 fontSize: baseSize,
                 color: Colors.grey[800],
@@ -1628,7 +1840,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     );
   }
 
-  Widget _buildLongActionButton({required String label, required VoidCallback onTap}) {
+  Widget _buildLongActionButton({
+    required String label,
+    required VoidCallback onTap,
+  }) {
     final double baseSize = _font(context, 14);
     return SizedBox(
       width: double.infinity,
@@ -1644,10 +1859,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: baseSize,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: baseSize, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -1719,14 +1931,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       _addr1Controller.text,
       _addr2Controller.text,
       _addr3Controller.text,
-      "${_suburbController.text} ${_stateController.text} ${_postcodeController.text}".trim(),
+      "${_suburbController.text} ${_stateController.text} ${_postcodeController.text}"
+          .trim(),
       _countryController.text,
     ].where((s) => s.trim().isNotEmpty).toList();
 
     String primaryAddressStr = primaryAddressParts.join('\n');
     final String primaryAddressQuery = primaryAddressParts.join(', ');
 
-    if (primaryAddressStr.isEmpty) primaryAddressStr = "No primary address provided.";
+    if (primaryAddressStr.isEmpty)
+      primaryAddressStr = "No primary address provided.";
 
     return _buildSectionCard(
       title: "Addresses",
@@ -1761,7 +1975,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.business_outlined, size: 18, color: Colors.grey[700]),
+                  Icon(
+                    Icons.business_outlined,
+                    size: 18,
+                    color: Colors.grey[700],
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -1785,7 +2003,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.asset("assets/images/map.png", fit: BoxFit.fill),
+                        child: Image.asset(
+                          "assets/images/map.png",
+                          fit: BoxFit.fill,
+                        ),
                       ),
                     ),
                   ),
@@ -1828,7 +2049,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     ],
                   ),
                 ),
-              ]
+              ],
             ],
     );
   }
@@ -1837,8 +2058,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
     final bool isEditing = _editingSection == CustomerEditSection.financial;
-    
-    
+
     return _buildSectionCard(
       title: "Financial & Account",
       isEditing: isEditing,
@@ -1871,7 +2091,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   children: [
                     Text(
                       "Credit Limit",
-                      style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: smallSize,
+                        color: Colors.grey[500],
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -1890,7 +2113,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   children: [
                     Text(
                       "Payment Terms",
-                      style: TextStyle(fontSize: smallSize, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: smallSize,
+                        color: Colors.grey[500],
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -1947,12 +2173,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                               decoration: _minimalInputDecoration(),
                               onChanged: _onOpenedByStaffBarcodeChanged,
                               onEditingComplete: () {
-                                final trimmedValue = _openedByController.text.trim();
+                                final trimmedValue = _openedByController.text
+                                    .trim();
                                 if (_openedByController.text != trimmedValue) {
-                                  _openedByController.value = _openedByController.value.copyWith(
-                                    text: trimmedValue,
-                                    selection: TextSelection.collapsed(offset: trimmedValue.length),
-                                  );
+                                  _openedByController.value =
+                                      _openedByController.value.copyWith(
+                                        text: trimmedValue,
+                                        selection: TextSelection.collapsed(
+                                          offset: trimmedValue.length,
+                                        ),
+                                      );
                                 }
                               },
                             ),
@@ -1968,8 +2198,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                   color: _openedByStaffLookupLoading
                                       ? Colors.grey[600]
                                       : (_openedByStaffLookupValid
-                                          ? Colors.green[700]
-                                          : Colors.red[700]),
+                                            ? Colors.green[700]
+                                            : Colors.red[700]),
                                 ),
                               ),
                             ],
@@ -2009,12 +2239,18 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                               decoration: _minimalInputDecoration(),
                               onChanged: _onOwnerStaffBarcodeChanged,
                               onEditingComplete: () {
-                                final trimmedValue = _ownerAccountController.text.trim();
-                                if (_ownerAccountController.text != trimmedValue) {
-                                  _ownerAccountController.value = _ownerAccountController.value.copyWith(
-                                    text: trimmedValue,
-                                    selection: TextSelection.collapsed(offset: trimmedValue.length),
-                                  );
+                                final trimmedValue = _ownerAccountController
+                                    .text
+                                    .trim();
+                                if (_ownerAccountController.text !=
+                                    trimmedValue) {
+                                  _ownerAccountController.value =
+                                      _ownerAccountController.value.copyWith(
+                                        text: trimmedValue,
+                                        selection: TextSelection.collapsed(
+                                          offset: trimmedValue.length,
+                                        ),
+                                      );
                                 }
                               },
                             ),
@@ -2030,8 +2266,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                   color: _ownerStaffLookupLoading
                                       ? Colors.grey[600]
                                       : (_ownerStaffLookupValid
-                                          ? Colors.green[700]
-                                          : Colors.red[700]),
+                                            ? Colors.green[700]
+                                            : Colors.red[700]),
                                 ),
                               ),
                             ],
@@ -2056,7 +2292,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         // _buildLongActionButton(
         //   label: "Print/Email Statement",
         //   onTap: () {
-        //     // TODO: wire statement action
+        //     //wire statement action
         //   },
         // ),
       ],
@@ -2087,11 +2323,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   String _defaultDeliveryAddressLabel() {
-    final int defaultId = _parseInt(
-      _defaultDeliveryAddressController.text,
-      widget.customer.defaultDeliveryAddress,
-    );
-    if (defaultId == 0 || defaultId == 1) return 'Addr1';
+    final int defaultId = _normalizedDefaultDeliveryAddress();
+    if (defaultId == 1) return 'Addr1';
     if (defaultId == 2) return 'Addr2';
     if (defaultId == 3) return 'Addr3';
     return '-';
@@ -2113,7 +2346,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         return '-';
     }
   }
-  
+
   Widget _buildAdditionalInfoCard() {
     final bool isEditing = _editingSection == CustomerEditSection.additional;
     final String custom1Label = _customerCustom1Label;
@@ -2125,15 +2358,17 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       onEditTap: () => _toggleEditSection(CustomerEditSection.additional),
       children: isEditing
           ? [
-              if (!_overseasValue) _buildEditRow("ABN", _abnController),
+              if (!_overseasValue)
+                _buildEditRow(
+                  "ABN",
+                  _abnController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [_AbnInputFormatter()],
+                ),
               _buildDropdownRow<int>(
                 label: "Default Delivery",
-                value: _parseInt(
-                  _defaultDeliveryAddressController.text,
-                  widget.customer.defaultDeliveryAddress,
-                ),
+                value: _normalizedDefaultDeliveryAddress(),
                 items: const [
-                  DropdownMenuItem(value: 0, child: Text("Addr1")),
                   DropdownMenuItem(value: 1, child: Text("Addr1")),
                   DropdownMenuItem(value: 2, child: Text("Addr2")),
                   DropdownMenuItem(value: 3, child: Text("Addr3")),
@@ -2184,7 +2419,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   if (_notesController.text != trimmedValue) {
                     _notesController.value = _notesController.value.copyWith(
                       text: trimmedValue,
-                      selection: TextSelection.collapsed(offset: trimmedValue.length),
+                      selection: TextSelection.collapsed(
+                        offset: trimmedValue.length,
+                      ),
                     );
                   }
                 },
@@ -2207,10 +2444,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 onEditingComplete: () {
                   final trimmedValue = _commentsController.text.trim();
                   if (_commentsController.text != trimmedValue) {
-                    _commentsController.value = _commentsController.value.copyWith(
-                      text: trimmedValue,
-                      selection: TextSelection.collapsed(offset: trimmedValue.length),
-                    );
+                    _commentsController.value = _commentsController.value
+                        .copyWith(
+                          text: trimmedValue,
+                          selection: TextSelection.collapsed(
+                            offset: trimmedValue.length,
+                          ),
+                        );
                   }
                 },
               ),
@@ -2219,7 +2459,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               if (!_overseasValue)
                 _buildDataRow(
                   "ABN",
-                  _abnController.text.isEmpty ? "-" : _abnController.text,
+                  _abnController.text.isEmpty
+                      ? "-"
+                      : _formatAbnForDisplay(_abnController.text),
                 ),
               _buildDataRow("Default Delivery", _defaultDeliveryAddressLabel()),
               _buildDataRow("Documents", _documentDeliveryLabel()),
@@ -2298,7 +2540,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const SizedBox(height: 22), 
+              const SizedBox(height: 22),
               Text(
                 "Modified: ${_formatDate(widget.customer.dateModified)}",
                 style: TextStyle(fontSize: smallSize, color: Colors.grey[600]),
@@ -2371,7 +2613,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         color: const Color(0xFFFBF7F0),
         borderRadius: BorderRadius.circular(12),
         // Adding a subtle stroke to give that "solid card" look from modern UI
-        border: Border.all(color: const Color(0xFFC9B9A6), width: 0.57), 
+        border: Border.all(color: const Color(0xFFC9B9A6), width: 0.57),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF2B2012).withOpacity(0.07),
@@ -2410,37 +2652,37 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               value,
               style: TextStyle(fontSize: baseSize, color: Colors.blue),
               textAlign: TextAlign.right,
-            ), 
+            ),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildDataRow(String label, String value) {
-     if (value.isEmpty) return const SizedBox.shrink();
-      final double baseSize = _font(context, 14);
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 2,
-              child: Text(
-                label,
-                style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
-              ),
+    if (value.isEmpty) return const SizedBox.shrink();
+    final double baseSize = _font(context, 14);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
             ),
-            Expanded(
-              flex: 4,
-              child: Text(
-                value,
-                style: TextStyle(fontSize: baseSize, color: Colors.black87),
-              ),
+          ),
+          Expanded(
+            flex: 4,
+            child: Text(
+              value,
+              style: TextStyle(fontSize: baseSize, color: Colors.black87),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 }
