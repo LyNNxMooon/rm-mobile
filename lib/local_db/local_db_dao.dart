@@ -91,11 +91,16 @@ abstract class LocalDbDAO {
     FilterCriteria? filters,
   });
 
-  Future<List<String>> getDistinctCustomerValues(String columnName, String shopfront);
+  Future<List<String>> getDistinctCustomerValues(
+    String columnName,
+    String shopfront,
+  );
 
   Future<CustomerVO?> getCustomerById(int customerId, String shopfront);
 
   Future<int> getNextCustomerId(String shopfront);
+
+  Future<int> getNextCustomerAddressId(String shopfront);
 
   Future<String> getNextNumericBarcode(String shopfront);
 

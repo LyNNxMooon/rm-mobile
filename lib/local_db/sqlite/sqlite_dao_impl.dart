@@ -387,7 +387,12 @@ class SQLiteDAOImpl extends LocalDbDAO {
       // Search priority is always:
       // Barcode -> Description -> Custom1 -> Custom2
       // Chips are used for sorting only.
-      final searchPriority = <String>['Barcode', 'description', 'custom1', 'custom2'];
+      final searchPriority = <String>[
+        'Barcode',
+        'description',
+        'custom1',
+        'custom2',
+      ];
 
       for (final column in searchPriority) {
         final whereClause = '$baseWhere AND $column LIKE ?';
@@ -1298,10 +1303,13 @@ class SQLiteDAOImpl extends LocalDbDAO {
   // Customer Methods
 
   @override
-  Future<void> insertCustomers(List<CustomerVO> customers, String shopfront) async {
+  Future<void> insertCustomers(
+    List<CustomerVO> customers,
+    String shopfront,
+  ) async {
     try {
       final db = _database!;
-      
+
       await db.transaction((txn) async {
         final batch = txn.batch();
 
@@ -1314,32 +1322,30 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
           // Insert addresses
           for (var address in customer.addresses) {
-            batch.insert(
-              'CustomerAddresses',
-              {
-                'address_id': address.addressId,
-                'customer_id': address.customerId,
-                'shopfront': shopfront,
-                'address_number': address.addressNumber,
-                'addr1': address.addr1,
-                'addr2': address.addr2,
-                'addr3': address.addr3,
-                'suburb': address.suburb,
-                'state': address.state,
-                'postcode': address.postcode,
-                'country': address.country,
-                'phone': address.phone,
-                'fax': address.fax,
-                'mobile': address.mobile,
-                'email': address.email,
-              },
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
+            batch.insert('CustomerAddresses', {
+              'address_id': address.addressId,
+              'customer_id': address.customerId,
+              'shopfront': shopfront,
+              'address_number': address.addressNumber,
+              'addr1': address.addr1,
+              'addr2': address.addr2,
+              'addr3': address.addr3,
+              'suburb': address.suburb,
+              'state': address.state,
+              'postcode': address.postcode,
+              'country': address.country,
+              'phone': address.phone,
+              'fax': address.fax,
+              'mobile': address.mobile,
+              'email': address.email,
+            }, conflictAlgorithm: ConflictAlgorithm.replace);
           }
         }
         await batch.commit(noResult: true);
       });
-      logger.d('Successfully saved ${customers.length} customers for $shopfront');
+      logger.d(
+        'Successfully saved ${customers.length} customers for $shopfront',
+      );
     } catch (error) {
       logger.e('Error saving customers for $shopfront: $error');
       return Future.error("Error saving customers: $error");
@@ -1439,7 +1445,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
         final List<CustomerVO> customers = [];
         for (final row in rows) {
           final customerId = row['customer_id'] as int;
-          final addresses = await _getCustomerAddresses(db, customerId, shopfront);
+          final addresses = await _getCustomerAddresses(
+            db,
+            customerId,
+            shopfront,
+          );
           customers.add(_customerFromRow(row, addresses));
         }
 
@@ -1463,8 +1473,14 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return runQuery(whereClause: baseWhere, args: baseArgs);
       }
 
-      // Search priority: barcode -> surname -> company -> given_names -> email 
-      final searchPriority = <String>['barcode', 'surname', 'company', 'given_names', 'email'];
+      // Search priority: barcode -> surname -> company -> given_names -> email
+      final searchPriority = <String>[
+        'barcode',
+        'surname',
+        'company',
+        'given_names',
+        'email',
+      ];
 
       for (final column in searchPriority) {
         final whereClause = '$baseWhere AND $column LIKE ?';
@@ -1495,25 +1511,32 @@ class SQLiteDAOImpl extends LocalDbDAO {
       whereArgs: [customerId, shopfront],
     );
 
-    return rows.map((row) => CustomerAddressVO(
-      addressId: row['address_id'] as int,
-      customerId: row['customer_id'] as int,
-      addressNumber: row['address_number'] as int,
-      addr1: row['addr1'] as String? ?? '',
-      addr2: row['addr2'] as String? ?? '',
-      addr3: row['addr3'] as String? ?? '',
-      suburb: row['suburb'] as String? ?? '',
-      state: row['state'] as String? ?? '',
-      postcode: row['postcode'] as String? ?? '',
-      country: row['country'] as String? ?? '',
-      phone: row['phone'] as String? ?? '',
-      fax: row['fax'] as String? ?? '',
-      mobile: row['mobile'] as String? ?? '',
-      email: row['email'] as String? ?? '',
-    )).toList();
+    return rows
+        .map(
+          (row) => CustomerAddressVO(
+            addressId: row['address_id'] as int,
+            customerId: row['customer_id'] as int,
+            addressNumber: row['address_number'] as int,
+            addr1: row['addr1'] as String? ?? '',
+            addr2: row['addr2'] as String? ?? '',
+            addr3: row['addr3'] as String? ?? '',
+            suburb: row['suburb'] as String? ?? '',
+            state: row['state'] as String? ?? '',
+            postcode: row['postcode'] as String? ?? '',
+            country: row['country'] as String? ?? '',
+            phone: row['phone'] as String? ?? '',
+            fax: row['fax'] as String? ?? '',
+            mobile: row['mobile'] as String? ?? '',
+            email: row['email'] as String? ?? '',
+          ),
+        )
+        .toList();
   }
 
-  CustomerVO _customerFromRow(Map<String, dynamic> row, List<CustomerAddressVO> addresses) {
+  CustomerVO _customerFromRow(
+    Map<String, dynamic> row,
+    List<CustomerAddressVO> addresses,
+  ) {
     return CustomerVO(
       customerId: row['customer_id'] as int,
       barcode: row['barcode'] as String? ?? '',
@@ -1581,7 +1604,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       return result.map((row) => row[columnName] as String).toList();
     } catch (error) {
-      logger.e('Error fetching distinct $columnName for customers in $shopfront: $error');
+      logger.e(
+        'Error fetching distinct $columnName for customers in $shopfront: $error',
+      );
       return [];
     }
   }
@@ -1626,6 +1651,27 @@ class SQLiteDAOImpl extends LocalDbDAO {
       return (maxId as int) + 1;
     } catch (error) {
       logger.e('Error getting next customer ID: $error');
+      return 1;
+    }
+  }
+
+  @override
+  Future<int> getNextCustomerAddressId(String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.rawQuery(
+        'SELECT MAX(address_id) as max_id FROM CustomerAddresses WHERE shopfront = ?',
+        [shopfront],
+      );
+
+      final maxId = result.first['max_id'];
+      if (maxId == null) {
+        return 1; // Start from 1 if no addresses exist
+      }
+
+      return (maxId as int) + 1;
+    } catch (error) {
+      logger.e('Error getting next customer address ID: $error');
       return 1;
     }
   }
@@ -1688,8 +1734,16 @@ class SQLiteDAOImpl extends LocalDbDAO {
     try {
       final db = _database!;
       await db.transaction((txn) async {
-        await txn.delete('CustomerAddresses', where: 'shopfront = ?', whereArgs: [shopfront]);
-        await txn.delete('Customers', where: 'shopfront = ?', whereArgs: [shopfront]);
+        await txn.delete(
+          'CustomerAddresses',
+          where: 'shopfront = ?',
+          whereArgs: [shopfront],
+        );
+        await txn.delete(
+          'Customers',
+          where: 'shopfront = ?',
+          whereArgs: [shopfront],
+        );
       });
       logger.d('Cleared customers for $shopfront');
     } catch (error) {

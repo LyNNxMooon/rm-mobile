@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -15,7 +14,6 @@ import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_st
 import 'package:rmstock_scanner/utils/dependency_injection_utils.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
-
 class CustomerCreateScreen extends StatefulWidget {
   const CustomerCreateScreen({super.key});
 
@@ -25,16 +23,16 @@ class CustomerCreateScreen extends StatefulWidget {
 
 class _AddressControllers {
   _AddressControllers({required this.addressNumber})
-      : addr1 = TextEditingController(),
-        addr2 = TextEditingController(),
-        addr3 = TextEditingController(),
-        suburb = TextEditingController(),
-        state = TextEditingController(),
-        postcode = TextEditingController(),
-        country = TextEditingController(),
-        phone = TextEditingController(),
-        mobile = TextEditingController(),
-        email = TextEditingController();
+    : addr1 = TextEditingController(),
+      addr2 = TextEditingController(),
+      addr3 = TextEditingController(),
+      suburb = TextEditingController(),
+      state = TextEditingController(),
+      postcode = TextEditingController(),
+      country = TextEditingController(),
+      phone = TextEditingController(),
+      mobile = TextEditingController(),
+      email = TextEditingController();
 
   final int addressNumber;
   final TextEditingController addr1;
@@ -61,8 +59,13 @@ class _AddressControllers {
         email.text.trim().isNotEmpty;
   }
 
-  Map<String, dynamic> toCreateMap() {
+  Map<String, dynamic> toCreateMap({
+    required int addressId,
+    required int customerId,
+  }) {
     return <String, dynamic>{
+      'addressId': addressId,
+      'customerId': customerId,
       'addressNumber': addressNumber,
       'addr1': addr1.text.trim(),
       'addr2': addr2.text.trim(),
@@ -93,7 +96,7 @@ class _AddressControllers {
 
 class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController _barcodeController;
   late TextEditingController _surnameController;
   late TextEditingController _givenNamesController;
@@ -101,12 +104,12 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   late TextEditingController _positionController;
   late TextEditingController _salutationController;
   late TextEditingController _gradeController;
-  
+
   late TextEditingController _phoneController;
   late TextEditingController _faxController;
   late TextEditingController _mobileController;
   late TextEditingController _emailController;
-  
+
   late TextEditingController _addr1Controller;
   late TextEditingController _addr2Controller;
   late TextEditingController _addr3Controller;
@@ -114,7 +117,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   late TextEditingController _stateController;
   late TextEditingController _postcodeController;
   late TextEditingController _countryController;
-  
+
   late TextEditingController _limitController;
   late TextEditingController _daysController;
   late TextEditingController _abnController;
@@ -128,7 +131,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   late TextEditingController _documentDeliveryTypeController;
 
   late Map<int, _AddressControllers> _secondaryAddressControllers;
-  
+
   bool _fromEomValue = false;
   bool _statusValue = false;
   bool _inactiveValue = false;
@@ -145,17 +148,14 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   bool _ownerStaffLookupLoading = false;
   int? _openedStaffId;
   int? _ownerStaffId;
-  
+
   String? _barcodeValidationMessage;
   bool _isBarcodeValid = false;
   bool _isSubmitting = false;
 
-    String get _customerCustom1Label =>
-      AppGlobals.instance.customerCustom1Label;
-    String get _customerCustom2Label =>
-      AppGlobals.instance.customerCustom2Label;
-    String get _customerStatusLabel =>
-      AppGlobals.instance.customerStatusLabel;
+  String get _customerCustom1Label => AppGlobals.instance.customerCustom1Label;
+  String get _customerCustom2Label => AppGlobals.instance.customerCustom2Label;
+  String get _customerStatusLabel => AppGlobals.instance.customerStatusLabel;
 
   @override
   void initState() {
@@ -171,12 +171,12 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     _positionController = TextEditingController();
     _salutationController = TextEditingController();
     _gradeController = TextEditingController(text: '0');
-    
+
     _phoneController = TextEditingController();
     _faxController = TextEditingController();
     _mobileController = TextEditingController();
     _emailController = TextEditingController();
-    
+
     _addr1Controller = TextEditingController();
     _addr2Controller = TextEditingController();
     _addr3Controller = TextEditingController();
@@ -184,7 +184,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     _stateController = TextEditingController();
     _postcodeController = TextEditingController();
     _countryController = TextEditingController();
-    
+
     _limitController = TextEditingController(text: '0');
     _daysController = TextEditingController(text: '0');
     _abnController = TextEditingController();
@@ -220,12 +220,12 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     _positionController.dispose();
     _salutationController.dispose();
     _gradeController.dispose();
-    
+
     _phoneController.dispose();
     _faxController.dispose();
     _mobileController.dispose();
     _emailController.dispose();
-    
+
     _addr1Controller.dispose();
     _addr2Controller.dispose();
     _addr3Controller.dispose();
@@ -233,7 +233,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     _stateController.dispose();
     _postcodeController.dispose();
     _countryController.dispose();
-    
+
     _limitController.dispose();
     _daysController.dispose();
     _abnController.dispose();
@@ -252,16 +252,14 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     for (final address in _secondaryAddressControllers.values) {
       address.dispose();
     }
-    
+
     super.dispose();
   }
 
   double _uiScale(BuildContext context) {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    return isTablet
-        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
-        : 1.0;
+    return isTablet ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2) : 1.0;
   }
 
   double _font(BuildContext context, double size) => size * _uiScale(context);
@@ -286,12 +284,17 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     });
   }
 
-  List<Map<String, dynamic>> _buildSecondaryAddresses() {
+  List<Map<String, dynamic>> _buildSecondaryAddresses({
+    required int customerId,
+    required int startAddressId,
+  }) {
     final List<Map<String, dynamic>> secondary = [];
+    var nextAddressId = startAddressId;
     for (final address in _secondaryAddressControllers.values) {
-      if (address.hasAnyValue) {
-        secondary.add(address.toCreateMap());
-      }
+      secondary.add(
+        address.toCreateMap(addressId: nextAddressId, customerId: customerId),
+      );
+      nextAddressId += 1;
     }
     return secondary;
   }
@@ -302,7 +305,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
 
   void _validateBarcode(String barcode) {
     if (barcode.trim().isNotEmpty) {
-      context.read<CustomerCreateBloc>().add(ValidateBarcodeEvent(barcode.trim()));
+      context.read<CustomerCreateBloc>().add(
+        ValidateBarcodeEvent(barcode.trim()),
+      );
     } else {
       setState(() {
         _barcodeValidationMessage = null;
@@ -338,28 +343,30 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
       _openedStaffLookupLoading = true;
     });
 
-    _openedStaffLookupDebounce = Timer(const Duration(milliseconds: 400),
-        () async {
-      try {
-        final response = await sl<GetStaffByBarcode>().call(trimmed);
-        final staff = response.staff;
-        if (!mounted) return;
-        setState(() {
-          _openedStaffLookupValid = staff != null;
-          _openedStaffLookupMessage = _formatStaffLookupMessage(staff);
-          _openedStaffId = staff?.staffId;
-          _openedStaffLookupLoading = false;
-        });
-      } catch (_) {
-        if (!mounted) return;
-        setState(() {
-          _openedStaffLookupValid = false;
-          _openedStaffLookupMessage = "Staff not found";
-          _openedStaffId = null;
-          _openedStaffLookupLoading = false;
-        });
-      }
-    });
+    _openedStaffLookupDebounce = Timer(
+      const Duration(milliseconds: 400),
+      () async {
+        try {
+          final response = await sl<GetStaffByBarcode>().call(trimmed);
+          final staff = response.staff;
+          if (!mounted) return;
+          setState(() {
+            _openedStaffLookupValid = staff != null;
+            _openedStaffLookupMessage = _formatStaffLookupMessage(staff);
+            _openedStaffId = staff?.staffId;
+            _openedStaffLookupLoading = false;
+          });
+        } catch (_) {
+          if (!mounted) return;
+          setState(() {
+            _openedStaffLookupValid = false;
+            _openedStaffLookupMessage = "Staff not found";
+            _openedStaffId = null;
+            _openedStaffLookupLoading = false;
+          });
+        }
+      },
+    );
   }
 
   void _onOwnerStaffBarcodeChanged(String raw) {
@@ -379,28 +386,30 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
       _ownerStaffLookupLoading = true;
     });
 
-    _ownerStaffLookupDebounce = Timer(const Duration(milliseconds: 400),
-        () async {
-      try {
-        final response = await sl<GetStaffByBarcode>().call(trimmed);
-        final staff = response.staff;
-        if (!mounted) return;
-        setState(() {
-          _ownerStaffLookupValid = staff != null;
-          _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
-          _ownerStaffId = staff?.staffId;
-          _ownerStaffLookupLoading = false;
-        });
-      } catch (_) {
-        if (!mounted) return;
-        setState(() {
-          _ownerStaffLookupValid = false;
-          _ownerStaffLookupMessage = "Staff not found";
-          _ownerStaffId = null;
-          _ownerStaffLookupLoading = false;
-        });
-      }
-    });
+    _ownerStaffLookupDebounce = Timer(
+      const Duration(milliseconds: 400),
+      () async {
+        try {
+          final response = await sl<GetStaffByBarcode>().call(trimmed);
+          final staff = response.staff;
+          if (!mounted) return;
+          setState(() {
+            _ownerStaffLookupValid = staff != null;
+            _ownerStaffLookupMessage = _formatStaffLookupMessage(staff);
+            _ownerStaffId = staff?.staffId;
+            _ownerStaffLookupLoading = false;
+          });
+        } catch (_) {
+          if (!mounted) return;
+          setState(() {
+            _ownerStaffLookupValid = false;
+            _ownerStaffLookupMessage = "Staff not found";
+            _ownerStaffId = null;
+            _ownerStaffLookupLoading = false;
+          });
+        }
+      },
+    );
   }
 
   Future<void> _submitCustomer() async {
@@ -425,7 +434,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     final openedBarcode = _openedIdController.text.trim();
     if (openedBarcode.isNotEmpty && !_openedStaffLookupValid) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid opened by staff barcode')),
+        const SnackBar(
+          content: Text('Please enter a valid opened by staff barcode'),
+        ),
       );
       return;
     }
@@ -433,7 +444,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     final ownerBarcode = _ownerIdController.text.trim();
     if (ownerBarcode.isNotEmpty && !_ownerStaffLookupValid) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid owner staff barcode')),
+        const SnackBar(
+          content: Text('Please enter a valid owner staff barcode'),
+        ),
       );
       return;
     }
@@ -444,7 +457,38 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
 
     try {
       final shopfront = AppGlobals.instance.shopfront ?? "";
-      final nextCustomerId = await LocalDbDAO.instance.getNextCustomerId(shopfront);
+      final nextCustomerId = await LocalDbDAO.instance.getNextCustomerId(
+        shopfront,
+      );
+
+      final nextAddressId = await LocalDbDAO.instance.getNextCustomerAddressId(
+        shopfront,
+      );
+      final List<Map<String, dynamic>> addresses = [
+        {
+          'addressId': nextAddressId,
+          'customerId': nextCustomerId,
+          'addressNumber': 1,
+          'addr1': _addr1Controller.text.trim(),
+          'addr2': _addr2Controller.text.trim(),
+          'addr3': _addr3Controller.text.trim(),
+          'suburb': _suburbController.text.trim(),
+          'state': _stateController.text.trim(),
+          'postcode': _postcodeController.text.trim(),
+          'country': _countryController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'fax': _faxController.text.trim(),
+          'mobile': _mobileController.text.trim(),
+          'email': _emailController.text.trim(),
+        },
+      ];
+
+      addresses.addAll(
+        _buildSecondaryAddresses(
+          customerId: nextCustomerId,
+          startAddressId: nextAddressId + 1,
+        ),
+      );
 
       final customerData = {
         "items": [
@@ -492,9 +536,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               _documentDeliveryTypeController.text,
               0,
             ),
-            "addresses": _buildSecondaryAddresses(),
-          }
-        ]
+            if (addresses.isNotEmpty) "addresses": addresses,
+          },
+        ],
       };
 
       context.read<CustomerCreateBloc>().add(CreateCustomerEvent(customerData));
@@ -502,9 +546,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
       setState(() {
         _isSubmitting = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -539,7 +583,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
         color: const Color(0xFFFBF7F0),
         borderRadius: BorderRadius.circular(12),
         // Adding a subtle stroke to give that "solid card" look from modern UI
-        border: Border.all(color: const Color(0xFFC9B9A6), width: 0.57), 
+        border: Border.all(color: const Color(0xFFC9B9A6), width: 0.57),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF2B2012).withOpacity(0.07),
@@ -618,7 +662,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                 if (controller.text != trimmedValue) {
                   controller.value = controller.value.copyWith(
                     text: trimmedValue,
-                    selection: TextSelection.collapsed(offset: trimmedValue.length),
+                    selection: TextSelection.collapsed(
+                      offset: trimmedValue.length,
+                    ),
                   );
                 }
               },
@@ -632,9 +678,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   Widget _buildSwitchRow(
     String label,
     bool value,
-    ValueChanged<bool> onChanged,
-    {bool enabled = true}
-  ) {
+    ValueChanged<bool> onChanged, {
+    bool enabled = true,
+  }) {
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -717,7 +763,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
                     label,
-                    style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: baseSize,
+                      color: Colors.grey[600],
+                    ),
                   ),
                 ),
               ),
@@ -735,7 +784,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                     if (controller.text != trimmedValue) {
                       controller.value = controller.value.copyWith(
                         text: trimmedValue,
-                        selection: TextSelection.collapsed(offset: trimmedValue.length),
+                        selection: TextSelection.collapsed(
+                          offset: trimmedValue.length,
+                        ),
                       );
                     }
                   },
@@ -821,7 +872,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     return widgets;
   }
 
-  Widget _buildLongActionButton({required String label, required VoidCallback? onTap}) {
+  Widget _buildLongActionButton({
+    required String label,
+    required VoidCallback? onTap,
+  }) {
     final double baseSize = _font(context, 14);
     return SizedBox(
       width: double.infinity,
@@ -835,7 +889,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        child: _isSubmitting 
+        child: _isSubmitting
             ? const SizedBox(
                 height: 20,
                 width: 20,
@@ -863,9 +917,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
           setState(() {
             _isSubmitting = false;
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
           context.read<FetchCustomerBloc>().add(
             StartCustomerSyncEvent(
               ipAddress: AppGlobals.instance.currentHostIp ?? "",
@@ -876,9 +930,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
           setState(() {
             _isSubmitting = false;
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.error)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.error)));
         } else if (state is BarcodeValidationState) {
           setState(() {
             _barcodeValidationMessage = state.message;
@@ -901,34 +955,45 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               height: MediaQuery.of(context).size.height * 0.4,
               decoration: const BoxDecoration(gradient: kGColor),
             ),
-            
+
             // Custom App Bar Elements (Overlay)
             SafeArea(
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                      vertical: 8.0,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         TextButton.icon(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                           label: const Text(
-                            "Back", 
-                            style: TextStyle(color: Colors.white, fontSize: 16)
+                            "Back",
+                            style: TextStyle(color: Colors.white, fontSize: 16),
                           ),
                           style: TextButton.styleFrom(padding: EdgeInsets.zero),
                         ),
                         const Text(
                           "Create Customer",
-                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        const SizedBox(width: 80), 
+                        const SizedBox(width: 80),
                       ],
                     ),
                   ),
-                  
+
                   // Scrollable Form Content
                   Expanded(
                     child: Form(
@@ -946,22 +1011,34 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                     Expanded(
                                       child: TextFormField(
                                         controller: _barcodeController,
-                                        style: TextStyle(fontSize: _font(context, 14)),
+                                        style: TextStyle(
+                                          fontSize: _font(context, 14),
+                                        ),
                                         decoration: _minimalInputDecoration(
                                           hintText: 'Enter or generate barcode',
                                         ),
                                         onChanged: _validateBarcode,
                                         onEditingComplete: () {
-                                          final trimmedValue = _barcodeController.text.trim();
-                                          if (_barcodeController.text != trimmedValue) {
-                                            _barcodeController.value = _barcodeController.value.copyWith(
-                                              text: trimmedValue,
-                                              selection: TextSelection.collapsed(offset: trimmedValue.length),
-                                            );
+                                          final trimmedValue =
+                                              _barcodeController.text.trim();
+                                          if (_barcodeController.text !=
+                                              trimmedValue) {
+                                            _barcodeController
+                                                .value = _barcodeController
+                                                .value
+                                                .copyWith(
+                                                  text: trimmedValue,
+                                                  selection:
+                                                      TextSelection.collapsed(
+                                                        offset:
+                                                            trimmedValue.length,
+                                                      ),
+                                                );
                                           }
                                         },
                                         validator: (value) {
-                                          if (value == null || value.trim().isEmpty) {
+                                          if (value == null ||
+                                              value.trim().isEmpty) {
                                             return 'Barcode is required';
                                           }
                                           return null;
@@ -974,14 +1051,22 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: kPrimaryColor,
                                         foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 14,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                       ),
                                       child: Text(
                                         'Generate',
-                                        style: TextStyle(fontSize: _font(context, 13), fontWeight: FontWeight.w600),
+                                        style: TextStyle(
+                                          fontSize: _font(context, 13),
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -991,7 +1076,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                   Text(
                                     _barcodeValidationMessage!,
                                     style: TextStyle(
-                                      color: _isBarcodeValid ? Colors.green : Colors.red,
+                                      color: _isBarcodeValid
+                                          ? Colors.green
+                                          : Colors.red,
                                       fontSize: _font(context, 12),
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -999,14 +1086,20 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                 ],
                               ],
                             ),
-                            
+
                             _buildSectionCard(
                               title: "Personal Details",
                               children: [
-                                _buildEditRow("Salutation", _salutationController),
-                                _buildEditRow("Given Names", _givenNamesController),
                                 _buildEditRow(
-                                  "Surname *", 
+                                  "Salutation",
+                                  _salutationController,
+                                ),
+                                _buildEditRow(
+                                  "Given Names",
+                                  _givenNamesController,
+                                ),
+                                _buildEditRow(
+                                  "Surname *",
                                   _surnameController,
                                   validator: (value) {
                                     if (value == null || value.trim().isEmpty) {
@@ -1021,11 +1114,26 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                   label: "Grade",
                                   value: _parseInt(_gradeController.text, 0),
                                   items: const [
-                                    DropdownMenuItem(value: 0, child: Text("Default")),
-                                    DropdownMenuItem(value: 1, child: Text("A")),
-                                    DropdownMenuItem(value: 2, child: Text("B")),
-                                    DropdownMenuItem(value: 3, child: Text("C")),
-                                    DropdownMenuItem(value: 4, child: Text("D")),
+                                    DropdownMenuItem(
+                                      value: 0,
+                                      child: Text("Default"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 1,
+                                      child: Text("A"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 2,
+                                      child: Text("B"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 3,
+                                      child: Text("C"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 4,
+                                      child: Text("D"),
+                                    ),
                                   ],
                                   onChanged: (value) {
                                     if (value == null) return;
@@ -1040,10 +1148,26 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                             _buildSectionCard(
                               title: "Contact Information",
                               children: [
-                                _buildEditRow("Phone", _phoneController, keyboardType: TextInputType.phone),
-                                _buildEditRow("Fax", _faxController, keyboardType: TextInputType.phone),
-                                _buildEditRow("Mobile", _mobileController, keyboardType: TextInputType.phone),
-                                _buildEditRow("Email", _emailController, keyboardType: TextInputType.emailAddress),
+                                _buildEditRow(
+                                  "Phone",
+                                  _phoneController,
+                                  keyboardType: TextInputType.phone,
+                                ),
+                                _buildEditRow(
+                                  "Fax",
+                                  _faxController,
+                                  keyboardType: TextInputType.phone,
+                                ),
+                                _buildEditRow(
+                                  "Mobile",
+                                  _mobileController,
+                                  keyboardType: TextInputType.phone,
+                                ),
+                                _buildEditRow(
+                                  "Email",
+                                  _emailController,
+                                  keyboardType: TextInputType.emailAddress,
+                                ),
                               ],
                             ),
 
@@ -1055,10 +1179,17 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                 _buildEditRow("Address 3", _addr3Controller),
                                 _buildEditRow("Suburb", _suburbController),
                                 _buildEditRow("State", _stateController),
-                                _buildEditRow("Postcode", _postcodeController, keyboardType: TextInputType.number),
+                                _buildEditRow(
+                                  "Postcode",
+                                  _postcodeController,
+                                  keyboardType: TextInputType.number,
+                                ),
                                 _buildEditRow("Country", _countryController),
                                 const SizedBox(height: 8),
-                                const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                                const Divider(
+                                  height: 1,
+                                  color: Color(0xFFEEEEEE),
+                                ),
                                 const SizedBox(height: 12),
                                 Text(
                                   "Secondary Addresses",
@@ -1076,15 +1207,30 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                             _buildSectionCard(
                               title: "Account Details",
                               children: [
-                                _buildSwitchRow("Account", _accountValue, (val) {
+                                _buildSwitchRow("Account", _accountValue, (
+                                  val,
+                                ) {
                                   setState(() => _accountValue = val);
                                 }),
-                                _buildSwitchRow("From EOM", _fromEomValue, (val) {
+                                _buildSwitchRow("From EOM", _fromEomValue, (
+                                  val,
+                                ) {
                                   setState(() => _fromEomValue = val);
                                 }),
                                 const SizedBox(height: 8),
-                                _buildEditRow("Days", _daysController, keyboardType: TextInputType.number),
-                                _buildEditRow("Limit", _limitController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                                _buildEditRow(
+                                  "Days",
+                                  _daysController,
+                                  keyboardType: TextInputType.number,
+                                ),
+                                _buildEditRow(
+                                  "Limit",
+                                  _limitController,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                ),
                                 _buildStaffLookupRow(
                                   label: "Opened By (Staff No)",
                                   controller: _openedIdController,
@@ -1102,7 +1248,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                   isLoading: _ownerStaffLookupLoading,
                                 ),
                                 _buildEditRow("ABN", _abnController),
-                                _buildSwitchRow("Overseas", _overseasValue, (val) {
+                                _buildSwitchRow("Overseas", _overseasValue, (
+                                  val,
+                                ) {
                                   _setOverseasValue(val);
                                 }),
                               ],
@@ -1111,50 +1259,96 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                             _buildSectionCard(
                               title: "Additional Information",
                               children: [
-                                _buildSwitchRow(_customerStatusLabel, _statusValue, (val) {
-                                  setState(() => _statusValue = val);
-                                }),
-                                _buildSwitchRow("Inactive", _inactiveValue, (val) {
+                                _buildSwitchRow(
+                                  _customerStatusLabel,
+                                  _statusValue,
+                                  (val) {
+                                    setState(() => _statusValue = val);
+                                  },
+                                ),
+                                _buildSwitchRow("Inactive", _inactiveValue, (
+                                  val,
+                                ) {
                                   setState(() => _inactiveValue = val);
                                 }),
                                 const SizedBox(height: 8),
                                 _buildDropdownRow<int>(
                                   label: "Default Delivery",
-                                  value: _parseInt(_defaultDeliveryAddressController.text, 1),
+                                  value: _parseInt(
+                                    _defaultDeliveryAddressController.text,
+                                    1,
+                                  ),
                                   items: const [
-                                    DropdownMenuItem(value: 1, child: Text("Addr1")),
-                                    DropdownMenuItem(value: 2, child: Text("Addr2")),
-                                    DropdownMenuItem(value: 3, child: Text("Addr3")),
+                                    DropdownMenuItem(
+                                      value: 1,
+                                      child: Text("Addr1"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 2,
+                                      child: Text("Addr2"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 3,
+                                      child: Text("Addr3"),
+                                    ),
                                   ],
                                   onChanged: (value) {
                                     if (value == null) return;
                                     setState(() {
-                                      _defaultDeliveryAddressController.text = value.toString();
+                                      _defaultDeliveryAddressController.text =
+                                          value.toString();
                                     });
                                   },
                                 ),
                                 _buildDropdownRow<int>(
                                   label: "Documents",
-                                  value: _parseInt(_documentDeliveryTypeController.text, 0),
+                                  value: _parseInt(
+                                    _documentDeliveryTypeController.text,
+                                    0,
+                                  ),
                                   items: const [
-                                    DropdownMenuItem(value: 0, child: Text("Print")),
-                                    DropdownMenuItem(value: 1, child: Text("Email")),
-                                    DropdownMenuItem(value: 2, child: Text("Print & Email")),
+                                    DropdownMenuItem(
+                                      value: 0,
+                                      child: Text("Print"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 1,
+                                      child: Text("Email"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 2,
+                                      child: Text("Print & Email"),
+                                    ),
                                   ],
                                   onChanged: (value) {
                                     if (value == null) return;
                                     setState(() {
-                                      _documentDeliveryTypeController.text = value.toString();
+                                      _documentDeliveryTypeController.text =
+                                          value.toString();
                                     });
                                   },
                                 ),
-                                _buildEditRow("Notes", _notesController, maxLines: 3),
-                                _buildEditRow("Comments", _commentsController, maxLines: 3),
-                                _buildEditRow(_customerCustom1Label, _custom1Controller),
-                                _buildEditRow(_customerCustom2Label, _custom2Controller),
+                                _buildEditRow(
+                                  "Notes",
+                                  _notesController,
+                                  maxLines: 3,
+                                ),
+                                _buildEditRow(
+                                  "Comments",
+                                  _commentsController,
+                                  maxLines: 3,
+                                ),
+                                _buildEditRow(
+                                  _customerCustom1Label,
+                                  _custom1Controller,
+                                ),
+                                _buildEditRow(
+                                  _customerCustom2Label,
+                                  _custom2Controller,
+                                ),
                               ],
                             ),
-                            
+
                             const SizedBox(height: 12),
                             _buildLongActionButton(
                               label: "Create Customer",
