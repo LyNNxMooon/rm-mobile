@@ -46,6 +46,7 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
           ascending: isAscending,
           page: 1,
           filters: criteria,
+          searchMode: event.searchMode,
         );
 
         emit(
@@ -59,6 +60,7 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
             currentFilterCol: event.filterColumn,
             isAscending: isAscending,
             activeFilters: criteria,
+            searchMode: event.searchMode,
           ),
         );
       } catch (e) {
@@ -83,6 +85,7 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
             ascending: curr.isAscending,
             page: nextPage,
             filters: curr.activeFilters,
+            searchMode: curr.searchMode,
           );
 
           emit(

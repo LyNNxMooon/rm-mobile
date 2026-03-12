@@ -3,6 +3,7 @@ import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
+import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 
 import '../entities/response/paginated_stock_response.dart';
@@ -43,6 +44,7 @@ abstract class LocalDbDAO {
     required int limit,
     required int offset,
     FilterCriteria? filters,
+    SearchMode searchMode = SearchMode.partial,
   });
   Future<List<String>> getDistinctValues(String columnName, String shopfront);
   Future<String?> getAppConfig(String key);

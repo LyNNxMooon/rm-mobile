@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_address_vo.dart';
+import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/local_db/sqlite/sqlite_constants.dart';
@@ -275,6 +276,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
     required int limit,
     required int offset,
     FilterCriteria? filters,
+    SearchMode searchMode = SearchMode.partial,
   }) async {
     try {
       final db = _database!;
@@ -384,6 +386,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return runQuery(whereClause: baseWhere, args: baseArgs);
       }
 
+      // Determine search pattern based on search mode
+      final String searchPattern = searchMode == SearchMode.prefix
+          ? '$q%'  // Prefix search: matches start of string
+          : '%$q%'; // Partial search: matches anywhere in string
+
       // Search priority is always:
       // Barcode -> Description -> Custom1 -> Custom2
       // Chips are used for sorting only.
@@ -396,7 +403,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       for (final column in searchPriority) {
         final whereClause = '$baseWhere AND $column LIKE ?';
-        final args = [...baseArgs, '%$q%'];
+        final args = [...baseArgs, searchPattern];
         if (await exists(whereClause, args)) {
           return runQuery(whereClause: whereClause, args: args);
         }
@@ -404,7 +411,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       // No match in any prioritized column.
       final fallbackWhere = '$baseWhere AND Barcode LIKE ?';
-      final fallbackArgs = [...baseArgs, '%$q%'];
+      final fallbackArgs = [...baseArgs, searchPattern];
       return runQuery(whereClause: fallbackWhere, args: fallbackArgs);
     } catch (error) {
       logger.e('Error searching stocks: $error');

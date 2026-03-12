@@ -1,5 +1,6 @@
 import '../../../../entities/response/paginated_stock_response.dart';
 import '../../../../entities/vos/filter_criteria.dart';
+import '../../../../entities/vos/search_mode.dart';
 import '../repositories/stock_lookup_repo.dart';
 
 class GetPaginatedStock {
@@ -15,6 +16,7 @@ class GetPaginatedStock {
     bool ascending = true,
     required int page,
     FilterCriteria? filters,
+    SearchMode searchMode = SearchMode.partial,
   }) async {
     try {
       return repository.fetchStocksDynamic(
@@ -24,7 +26,8 @@ class GetPaginatedStock {
         sortColumn: sortCol,
         ascending: ascending,
         page: page,
-        filters: filters
+        filters: filters,
+        searchMode: searchMode,
       );
     } catch (e) {
       return Future.error("Failed to load stocks $page: $e");

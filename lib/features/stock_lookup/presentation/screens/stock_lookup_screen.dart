@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:intl/intl.dart';
+import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
@@ -57,6 +58,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   String _dbFilterCol = "description"; // DB Column Name
   String _searchQuery = "";
   static const String _searchColumn = "description";
+  SearchMode _searchMode = SearchMode.partial; // Default search mode
 
   final AudioPlayer _audioPlayer = AudioPlayer()
     ..setReleaseMode(ReleaseMode.stop);
@@ -187,6 +189,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                       sortColumn: _dbFilterCol,
                                       filters: currentFilters,
                                       shouldToggleSort: true,
+                                      searchMode: _searchMode,
                                     ),
                                   );
                                 },
@@ -279,8 +282,8 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
                     Padding(
                       padding: const EdgeInsets.only(
-                        left: 20,
-                        right: 20,
+                        left: 15,
+                        right: 15,
                         bottom: 42,
                       ),
                       child: _buildGlassSearchBar(),
@@ -347,6 +350,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                         sortColumn: _dbFilterCol,
                         filters: currentFilters,
                         shouldToggleSort: false,
+                        searchMode: _searchMode,
                       ),
                     );
                   }
@@ -383,6 +387,32 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
             ],
           ),
           child: SearchFilterBar(
+            searchMode: _searchMode,
+            onSearchModeChanged: (newMode) {
+              setState(() {
+                _searchMode = newMode;
+              });
+              
+              // Re-trigger search with new mode if there's an active query
+              if (_searchQuery.isNotEmpty) {
+                final currentState = context.read<StockListBloc>().state;
+                FilterCriteria? currentFilters;
+                if (currentState is StockListLoaded) {
+                  currentFilters = currentState.activeFilters;
+                }
+
+                context.read<StockListBloc>().add(
+                  FetchFirstPageEvent(
+                    query: _searchQuery,
+                    filterColumn: _searchColumn,
+                    sortColumn: _dbFilterCol,
+                    filters: currentFilters,
+                    shouldToggleSort: false,
+                    searchMode: _searchMode,
+                  ),
+                );
+              }
+            },
             onChanged: (value) {
               _searchQuery = value;
               _debouncer.run(() {
@@ -399,6 +429,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     sortColumn: _dbFilterCol,
                     filters: currentFilters,
                     shouldToggleSort: false,
+                    searchMode: _searchMode,
                   ),
                 );
               });
@@ -440,6 +471,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     sortColumn: _dbFilterCol,
                     filters: currentFilters,
                     shouldToggleSort: false,
+                    searchMode: _searchMode,
                   ),
                 );
               }

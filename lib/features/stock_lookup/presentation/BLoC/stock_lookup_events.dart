@@ -1,4 +1,5 @@
 import '../../../../entities/vos/filter_criteria.dart';
+import '../../../../entities/vos/search_mode.dart';
 
 abstract class StockListEvent {}
 
@@ -8,6 +9,7 @@ class FetchFirstPageEvent extends StockListEvent {
   final String sortColumn;
   final FilterCriteria? filters;
   final bool shouldToggleSort;
+  final SearchMode searchMode;
 
   FetchFirstPageEvent({
     this.query = "",
@@ -15,6 +17,7 @@ class FetchFirstPageEvent extends StockListEvent {
     this.sortColumn = "description",
     this.filters,
     this.shouldToggleSort = false,
+    this.searchMode = SearchMode.partial,
   });
 }
 

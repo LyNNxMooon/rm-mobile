@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
+import '../../../../entities/vos/search_mode.dart';
+import 'search_mode_selector.dart';
 
 class SearchFilterBar extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onFilterTap;
   final VoidCallback? onScannerTap;
+  final SearchMode searchMode;
+  final ValueChanged<SearchMode>? onSearchModeChanged;
 
   const SearchFilterBar({
     super.key,
     this.onChanged,
     this.onFilterTap,
     this.onScannerTap,
+    this.searchMode = SearchMode.partial,
+    this.onSearchModeChanged,
   });
 
   @override
@@ -23,7 +29,14 @@ class SearchFilterBar extends StatelessWidget {
 
     return Row(
       children: [
-        SizedBox(width: (isTablet ? 18 : 16) * uiScale),
+        SizedBox(width: (isTablet ? 12 : 10) * uiScale),
+        // Search Mode Selector Icon
+        if (onSearchModeChanged != null)
+          SearchModeSelector(
+            currentMode: searchMode,
+            onModeChanged: onSearchModeChanged!,
+          ),
+        SizedBox(width: (isTablet ? 8 : 6) * uiScale),
         Expanded(
           child: TextField(
             onChanged: onChanged,

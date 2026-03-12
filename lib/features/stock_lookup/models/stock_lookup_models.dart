@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
 import 'package:rmstock_scanner/entities/response/picture_upload_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
+import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
@@ -173,6 +174,7 @@ class StockLookupModels implements StockLookupRepo {
     required int page,
     FilterCriteria? filters,
     int pageSize = 100,
+    SearchMode searchMode = SearchMode.partial,
   }) async {
     try {
       final int offset = (page - 1) * pageSize;
@@ -185,6 +187,7 @@ class StockLookupModels implements StockLookupRepo {
         limit: pageSize,
         offset: offset,
         filters: filters,
+        searchMode: searchMode,
       );
     } on Exception catch (error) {
       return Future.error(error);

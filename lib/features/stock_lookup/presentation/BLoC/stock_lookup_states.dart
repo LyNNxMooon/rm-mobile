@@ -1,4 +1,5 @@
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
+import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 
 import '../../../../entities/vos/stock_vo.dart';
 
@@ -20,6 +21,7 @@ class StockListLoaded extends StockListState {
   final String currentFilterCol;
   final bool isAscending;
   final FilterCriteria? activeFilters;
+  final SearchMode searchMode;
 
   StockListLoaded({
     required this.stocks,
@@ -31,6 +33,7 @@ class StockListLoaded extends StockListState {
     required this.currentFilterCol,
     required this.isAscending,
     this.activeFilters,
+    this.searchMode = SearchMode.partial,
   });
 
   StockListLoaded copyWith({
@@ -43,6 +46,7 @@ class StockListLoaded extends StockListState {
     String? currentFilterCol,
     bool? isAscending,
     FilterCriteria? activeFilters,
+    SearchMode? searchMode,
   }) {
     return StockListLoaded(
       stocks: stocks ?? this.stocks,
@@ -54,6 +58,7 @@ class StockListLoaded extends StockListState {
       currentFilterCol: currentFilterCol ?? this.currentFilterCol,
       isAscending: isAscending ?? this.isAscending,
       activeFilters: activeFilters ?? this.activeFilters,
+      searchMode: searchMode ?? this.searchMode,
     );
   }
 }
