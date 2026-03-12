@@ -409,13 +409,27 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     }
 
     if (_barcodeController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter or generate a barcode')),
+      context.read<CustomerCreateBloc>().add(GenerateBarcodeEvent());
+      final state = await context.read<CustomerCreateBloc>().stream.firstWhere(
+        (state) =>
+            state is BarcodeGeneratedState || state is CustomerCreateError,
       );
-      return;
+      if (!mounted) return;
+      if (state is BarcodeGeneratedState) {
+        setState(() {
+          _barcodeController.text = state.barcode;
+          _isBarcodeValid = true;
+          _barcodeValidationMessage = "Barcode generated successfully";
+        });
+      } else if (state is CustomerCreateError) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(state.error)));
+        return;
+      }
     }
 
-    if (!_isBarcodeValid) {
+    if (_barcodeController.text.trim().isNotEmpty && !_isBarcodeValid) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please use a valid barcode')),
       );
@@ -1001,7 +1015,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                           fontSize: _font(context, 14),
                                         ),
                                         decoration: _minimalInputDecoration(
-                                          hintText: 'Enter or generate barcode',
+                                          hintText: 'Enter a barcode (Optional)',
                                         ),
                                         onChanged: _validateBarcode,
                                         onEditingComplete: () {
@@ -1022,37 +1036,6 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                                 );
                                           }
                                         },
-                                        validator: (value) {
-                                          if (value == null ||
-                                              value.trim().isEmpty) {
-                                            return 'Barcode is required';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    ElevatedButton(
-                                      onPressed: _generateBarcode,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: kPrimaryColor,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 14,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Generate',
-                                        style: TextStyle(
-                                          fontSize: _font(context, 13),
-                                          fontWeight: FontWeight.w600,
-                                        ),
                                       ),
                                     ),
                                   ],
