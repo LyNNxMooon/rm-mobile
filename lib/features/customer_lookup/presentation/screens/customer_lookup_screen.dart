@@ -23,6 +23,7 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/cu
 import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_thumbnail_tile.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/breathing_stock_loader.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmstock_scanner/utils/text_highlight_utils.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_create_screen.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
 
@@ -532,7 +533,14 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                       ),
                     );
                   }
-                  return _buildCustomerTile(state.customers[index], index);
+                  final customer = state.customers[index];
+                  final matchedField = state.matchedFields[customer.customerId];
+                  return _buildCustomerTile(
+                    customer,
+                    index,
+                    query: state.currentQuery,
+                    matchedField: matchedField,
+                  );
                 },
               ),
             );
@@ -621,7 +629,12 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     );
   }
 
-  Widget _buildCustomerTile(CustomerVO customer, int index) {
+  Widget _buildCustomerTile(
+    CustomerVO customer,
+    int index, {
+    required String query,
+    String? matchedField,
+  }) {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -630,6 +643,13 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
     final double tileVerticalPadding = (isTablet ? 10 : 8) * uiScale;
     final double tileHorizontalPadding = (isTablet ? 16 : 15) * uiScale;
+
+    // Determine which non-default fields to show (only if matched)
+    final bool showCompany = matchedField == 'company' && customer.company.isNotEmpty;
+    final bool showPhone = matchedField == 'phone' && customer.phone.isNotEmpty;
+    final bool showFax = matchedField == 'fax' && customer.fax.isNotEmpty;
+    final bool showMobile = matchedField == 'mobile' && customer.mobile.isNotEmpty;
+    final bool showEmail = matchedField == 'email' && customer.email.isNotEmpty;
 
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(
@@ -694,14 +714,15 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Display name with highlighting
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                Text(
-                                  customer.displayName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                HighlightedText(
+                                  text: customer.displayName,
+                                  query: query,
+                                  highlightColor: kPrimaryColor.withOpacity(0.2),
                                   style: getSmartTitle(
                                     color: kThirdColor,
                                     fontSize: 14,
@@ -711,10 +732,11 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                             ),
                           ),
                           SizedBox(height: isTablet ? 4 : 3),
-                          Text(
-                            _barcodeLine(customer),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          // Barcode with highlighting
+                          HighlightedText(
+                            text: _barcodeLine(customer),
+                            query: query,
+                            highlightColor: kPrimaryColor.withOpacity(0.2),
                             style: const TextStyle(
                               fontFamily: 'monospace',
                               fontSize: 13,
@@ -722,6 +744,136 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                          // Company (only if matched)
+                          if (showCompany) ...[
+                            SizedBox(height: isTablet ? 4 : 3),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.business,
+                                  size: 12,
+                                  color: kThirdColor.withOpacity(0.6),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: HighlightedText(
+                                    text: customer.company,
+                                    query: query,
+                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: kThirdColor.withOpacity(0.7),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          // Phone (only if matched)
+                          if (showPhone) ...[
+                            SizedBox(height: isTablet ? 4 : 3),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.phone,
+                                  size: 12,
+                                  color: kThirdColor.withOpacity(0.6),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: HighlightedText(
+                                    text: customer.phone,
+                                    query: query,
+                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: kThirdColor.withOpacity(0.7),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          // Fax (only if matched)
+                          if (showFax) ...[
+                            SizedBox(height: isTablet ? 4 : 3),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.print,
+                                  size: 12,
+                                  color: kThirdColor.withOpacity(0.6),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: HighlightedText(
+                                    text: customer.fax,
+                                    query: query,
+                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: kThirdColor.withOpacity(0.7),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          // Mobile (only if matched)
+                          if (showMobile) ...[
+                            SizedBox(height: isTablet ? 4 : 3),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.phone_android,
+                                  size: 12,
+                                  color: kThirdColor.withOpacity(0.6),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: HighlightedText(
+                                    text: customer.mobile,
+                                    query: query,
+                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: kThirdColor.withOpacity(0.7),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          // Email (only if matched)
+                          if (showEmail) ...[
+                            SizedBox(height: isTablet ? 4 : 3),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.email,
+                                  size: 12,
+                                  color: kThirdColor.withOpacity(0.6),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: HighlightedText(
+                                    text: customer.email,
+                                    query: query,
+                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: kThirdColor.withOpacity(0.7),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),

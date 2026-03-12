@@ -23,6 +23,7 @@ class CustomerListLoaded extends CustomerListState {
   final bool isAscending;
   final FilterCriteria? activeFilters;
   final SearchMode searchMode;
+  final Map<int, String> matchedFields; // customerId -> matched column
 
   CustomerListLoaded({
     required this.customers,
@@ -35,7 +36,8 @@ class CustomerListLoaded extends CustomerListState {
     required this.isAscending,
     this.activeFilters,
     this.searchMode = SearchMode.partial,
-  });
+    Map<int, String>? matchedFields,
+  }) : matchedFields = matchedFields ?? {};
 
   CustomerListLoaded copyWith({
     List<CustomerVO>? customers,
@@ -48,6 +50,7 @@ class CustomerListLoaded extends CustomerListState {
     bool? isAscending,
     FilterCriteria? activeFilters,
     SearchMode? searchMode,
+    Map<int, String>? matchedFields,
   }) {
     return CustomerListLoaded(
       customers: customers ?? this.customers,
@@ -60,6 +63,7 @@ class CustomerListLoaded extends CustomerListState {
       isAscending: isAscending ?? this.isAscending,
       activeFilters: activeFilters ?? this.activeFilters,
       searchMode: searchMode ?? this.searchMode,
+      matchedFields: matchedFields ?? this.matchedFields,
     );
   }
 }

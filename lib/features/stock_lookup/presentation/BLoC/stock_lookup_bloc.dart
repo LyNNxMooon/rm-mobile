@@ -61,6 +61,7 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
             isAscending: isAscending,
             activeFilters: criteria,
             searchMode: event.searchMode,
+            matchedFields: result.matchedFields,
           ),
         );
       } catch (e) {
@@ -95,6 +96,7 @@ class StockListBloc extends Bloc<StockListEvent, StockListState> {
                     stocks: List.of(curr.stocks)..addAll(result.items),
                     currentPage: nextPage,
                     hasReachedMax: result.items.length < 100,
+                    matchedFields: {...curr.matchedFields, ...result.matchedFields},
                   ),
           );
         } catch (e) {

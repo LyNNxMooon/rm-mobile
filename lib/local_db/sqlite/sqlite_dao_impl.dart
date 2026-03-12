@@ -345,6 +345,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
       Future<PaginatedStockResult> runQuery({
         required String whereClause,
         required List<dynamic> args,
+        String? matchedColumn,
       }) async {
         final countFuture = db.rawQuery(
           'SELECT COUNT(*) as count FROM Stocks WHERE $whereClause',
@@ -370,7 +371,15 @@ class SQLiteDAOImpl extends LocalDbDAO {
             Sqflite.firstIntValue(results[1] as List<Map<String, dynamic>>) ??
             0;
 
-        return PaginatedStockResult(items, count);
+        // Build matched fields map
+        final Map<int, String> matchedFields = {};
+        if (matchedColumn != null && q.isNotEmpty) {
+          for (var item in items) {
+            matchedFields[item.stockID.toInt()] = matchedColumn;
+          }
+        }
+
+        return PaginatedStockResult(items, count, matchedFields: matchedFields);
       }
 
       // Fast existence check
@@ -383,7 +392,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
       }
 
       if (q.isEmpty) {
-        return runQuery(whereClause: baseWhere, args: baseArgs);
+        return runQuery(whereClause: baseWhere, args: baseArgs, matchedColumn: null);
       }
 
       // Determine search pattern based on search mode
@@ -405,14 +414,14 @@ class SQLiteDAOImpl extends LocalDbDAO {
         final whereClause = '$baseWhere AND $column LIKE ?';
         final args = [...baseArgs, searchPattern];
         if (await exists(whereClause, args)) {
-          return runQuery(whereClause: whereClause, args: args);
+          return runQuery(whereClause: whereClause, args: args, matchedColumn: column);
         }
       }
 
       // No match in any prioritized column.
       final fallbackWhere = '$baseWhere AND Barcode LIKE ?';
       final fallbackArgs = [...baseArgs, searchPattern];
-      return runQuery(whereClause: fallbackWhere, args: fallbackArgs);
+      return runQuery(whereClause: fallbackWhere, args: fallbackArgs, matchedColumn: 'Barcode');
     } catch (error) {
       logger.e('Error searching stocks: $error');
       return Future.error(error);
@@ -1427,6 +1436,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
       Future<PaginatedCustomerResult> runQuery({
         required String whereClause,
         required List<dynamic> args,
+        String? matchedColumn,
       }) async {
         final countFuture = db.rawQuery(
           'SELECT COUNT(*) as count FROM Customers WHERE $whereClause',
@@ -1461,10 +1471,19 @@ class SQLiteDAOImpl extends LocalDbDAO {
           customers.add(_customerFromRow(row, addresses));
         }
 
+        // Build matched fields map
+        final Map<int, String> matchedFields = {};
+        if (matchedColumn != null && q.isNotEmpty) {
+          for (var customer in customers) {
+            matchedFields[customer.customerId] = matchedColumn;
+          }
+        }
+
         return PaginatedCustomerResult(
           customers: customers,
           totalCount: count,
           hasMore: offset + customers.length < count,
+          matchedFields: matchedFields,
         );
       }
 
@@ -1478,7 +1497,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
       }
 
       if (q.isEmpty) {
-        return runQuery(whereClause: baseWhere, args: baseArgs);
+        return runQuery(whereClause: baseWhere, args: baseArgs, matchedColumn: null);
       }
 
       // Determine search pattern based on search mode
@@ -1502,14 +1521,14 @@ class SQLiteDAOImpl extends LocalDbDAO {
         final whereClause = '$baseWhere AND $column LIKE ?';
         final args = [...baseArgs, searchPattern];
         if (await exists(whereClause, args)) {
-          return runQuery(whereClause: whereClause, args: args);
+          return runQuery(whereClause: whereClause, args: args, matchedColumn: column);
         }
       }
 
       // No match in any prioritized column.
       final fallbackWhere = '$baseWhere AND barcode LIKE ?';
       final fallbackArgs = [...baseArgs, searchPattern];
-      return runQuery(whereClause: fallbackWhere, args: fallbackArgs);
+      return runQuery(whereClause: fallbackWhere, args: fallbackArgs, matchedColumn: 'barcode');
     } catch (error) {
       logger.e('Error searching customers: $error');
       return Future.error(error);

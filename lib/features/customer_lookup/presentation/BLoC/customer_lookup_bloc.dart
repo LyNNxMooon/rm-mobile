@@ -57,6 +57,7 @@ class CustomerListBloc extends Bloc<CustomerListEvent, CustomerListState> {
             isAscending: isAscending,
             activeFilters: criteria,
             searchMode: event.searchMode,
+            matchedFields: result.matchedFields,
           ),
         );
       } catch (e) {
@@ -90,6 +91,7 @@ class CustomerListBloc extends Bloc<CustomerListEvent, CustomerListState> {
                     customers: List.of(curr.customers)..addAll(result.customers),
                     currentPage: nextPage,
                     hasReachedMax: result.customers.length < 100,
+                    matchedFields: {...curr.matchedFields, ...result.matchedFields},
                   ),
           );
         } catch (e) {

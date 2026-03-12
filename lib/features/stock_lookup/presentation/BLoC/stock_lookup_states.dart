@@ -22,6 +22,7 @@ class StockListLoaded extends StockListState {
   final bool isAscending;
   final FilterCriteria? activeFilters;
   final SearchMode searchMode;
+  final Map<int, String> matchedFields; // stockId -> matched column
 
   StockListLoaded({
     required this.stocks,
@@ -34,7 +35,8 @@ class StockListLoaded extends StockListState {
     required this.isAscending,
     this.activeFilters,
     this.searchMode = SearchMode.partial,
-  });
+    Map<int, String>? matchedFields,
+  }) : matchedFields = matchedFields ?? {};
 
   StockListLoaded copyWith({
     List<StockVO>? stocks,
@@ -47,6 +49,7 @@ class StockListLoaded extends StockListState {
     bool? isAscending,
     FilterCriteria? activeFilters,
     SearchMode? searchMode,
+    Map<int, String>? matchedFields,
   }) {
     return StockListLoaded(
       stocks: stocks ?? this.stocks,
@@ -59,6 +62,7 @@ class StockListLoaded extends StockListState {
       isAscending: isAscending ?? this.isAscending,
       activeFilters: activeFilters ?? this.activeFilters,
       searchMode: searchMode ?? this.searchMode,
+      matchedFields: matchedFields ?? this.matchedFields,
     );
   }
 }

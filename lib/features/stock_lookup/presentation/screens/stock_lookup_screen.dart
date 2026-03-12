@@ -17,6 +17,7 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/stock
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/breathing_stock_loader.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/stock_thumbnail_tile.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmstock_scanner/utils/text_highlight_utils.dart';
 import '../../../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
@@ -517,7 +518,14 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                       ),
                     );
                   }
-                  return itemTile(state.stocks[index], index);
+                  final stock = state.stocks[index];
+                  final matchedField = state.matchedFields[stock.stockID.toInt()];
+                  return itemTile(
+                    stock, 
+                    index, 
+                    query: state.currentQuery,
+                    matchedField: matchedField,
+                  );
                 },
               ),
             );
@@ -573,7 +581,12 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     );
   }
 
-  Widget itemTile(StockVO stock, int index) {
+  Widget itemTile(
+    StockVO stock, 
+    int index, {
+    required String query,
+    String? matchedField,
+  }) {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -582,6 +595,10 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
     final double tileVerticalPadding = (isTablet ? 10 : 8) * uiScale;
     final double tileHorizontalPadding = (isTablet ? 16 : 15) * uiScale;
+
+    // Check if we should show custom fields
+    final bool showCustom1 = matchedField == 'custom1' && stock.custom1 != null && stock.custom1!.isNotEmpty;
+    final bool showCustom2 = matchedField == 'custom2' && stock.custom2 != null && stock.custom2!.isNotEmpty;
 
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(
@@ -640,16 +657,15 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Allow horizontal scrolling if text is extremely long,
-                          // but constrained within the Expanded width.
+                          // Description with highlighting
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                Text(
-                                  stock.description,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                HighlightedText(
+                                  text: stock.description,
+                                  query: query,
+                                  highlightColor: kPrimaryColor.withOpacity(0.2),
                                   style: getSmartTitle(
                                     color: kThirdColor,
                                     fontSize: 14,
@@ -659,10 +675,11 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             ),
                           ),
                           SizedBox(height: isTablet ? 4 : 3),
-                          Text(
-                            stock.barcode,
-                            maxLines: 1, // Ensure no wrapping vertically
-                            overflow: TextOverflow.ellipsis,
+                          // Barcode with highlighting
+                          HighlightedText(
+                            text: stock.barcode,
+                            query: query,
+                            highlightColor: kPrimaryColor.withOpacity(0.2),
                             style: const TextStyle(
                               fontFamily: 'monospace',
                               fontSize: 13,
@@ -670,6 +687,62 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                          // Custom1 field (only if matched)
+                          if (showCustom1) ...[
+                            SizedBox(height: isTablet ? 4 : 3),
+                            Row(
+                              children: [
+                                Text(
+                                  'Custom 1: ',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: kThirdColor.withOpacity(0.6),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: HighlightedText(
+                                    text: stock.custom1!,
+                                    query: query,
+                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: kThirdColor.withOpacity(0.7),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          // Custom2 field (only if matched)
+                          if (showCustom2) ...[
+                            SizedBox(height: isTablet ? 4 : 3),
+                            Row(
+                              children: [
+                                Text(
+                                  'Custom 2: ',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: kThirdColor.withOpacity(0.6),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: HighlightedText(
+                                    text: stock.custom2!,
+                                    query: query,
+                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: kThirdColor.withOpacity(0.7),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
