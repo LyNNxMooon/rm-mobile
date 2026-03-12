@@ -567,6 +567,9 @@ class StaffAuthBloc extends Bloc<StaffAuthEvents, StaffAuthStates> {
     AuthenticateStaffEvent event,
     Emitter<StaffAuthStates> emit,
   ) async {
+    logger.d(
+      "StaffAuthBloc AuthenticateStaffEvent: ip=${event.ip} shopfront=${event.shopfrontId} staffNo=${event.staffNo}",
+    );
     emit(StaffAuthenticating());
     try {
       final response = await authenticateStaff(

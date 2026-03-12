@@ -123,6 +123,7 @@ const String kDeviceIdKey = "device_id";
 const String kSecurityEnabledKey = "security_enabled";
 const String kStaffIdKey = "staff_id";
 const String kStaffNoKey = "staff_no";
+const String kStaffPasswordKey = "staff_password";
 const String kStaffNameKey = "staff_name";
 const String kStaffGroupIdsKey = "staff_group_ids_json";
 const String kStaffGroupNamesKey = "staff_group_names_json";

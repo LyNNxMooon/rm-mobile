@@ -418,6 +418,10 @@ class HomeScreenModels implements HomeRepo {
         response.staff!.staffId.toString(),
       );
       await LocalDbDAO.instance.saveAppConfig(
+        kStaffPasswordKey,
+        password,
+      );
+      await LocalDbDAO.instance.saveAppConfig(
         kStaffNoKey,
         response.staff!.staffNo,
       );
@@ -539,6 +543,7 @@ class HomeScreenModels implements HomeRepo {
   Future<void> signOutStaff() async {
     try {
       await LocalDbDAO.instance.saveAppConfig(kStaffIdKey, "");
+      await LocalDbDAO.instance.saveAppConfig(kStaffPasswordKey, "");
       await LocalDbDAO.instance.saveAppConfig(kStaffNoKey, "");
       await LocalDbDAO.instance.saveAppConfig(kStaffNameKey, "");
       await LocalDbDAO.instance.saveAppConfig(kStaffGroupIdsKey, "[]");

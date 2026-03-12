@@ -4,7 +4,14 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/screens/staff_login_screen.dart';
 import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
+import 'package:rmstock_scanner/local_db/local_db_dao.dart';
+import 'package:rmstock_scanner/local_db/sqlite/sqlite_constants.dart';
+import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmstock_scanner/utils/log_utils.dart';
+import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
@@ -22,6 +29,124 @@ class LoadingScreen extends StatefulWidget {
 }
 
 class _LoadingScreenState extends State<LoadingScreen> {
+  String _loadingMessage = "Checking Connection...";
+  String? _savedStaffNo;
+  String? _savedPassword;
+  int? _port;
+  String _apiKey = "";
+  String _shopfrontId = "";
+  String _shopfrontName = "";
+  bool _authAttempted = false;
+  bool _autoConnectAttempted = false;
+  bool _loginPrompted = false;
+
+  Future<void> _loadConnectionInfo() async {
+    final portStr = await LocalDbDAO.instance.getHostPort();
+    final apiKey = await LocalDbDAO.instance.getApiKey();
+    final shopfrontId = await LocalDbDAO.instance.getShopfrontId();
+    final shopfrontName = await LocalDbDAO.instance.getShopfrontName();
+    final staffNo = await LocalDbDAO.instance.getAppConfig(kStaffNoKey);
+    final staffPassword =
+        await LocalDbDAO.instance.getAppConfig(kStaffPasswordKey);
+
+    if (!mounted) return;
+    setState(() {
+      _port = int.tryParse(portStr ?? "");
+      _apiKey = apiKey ?? "";
+      _shopfrontId = shopfrontId ?? "";
+      _shopfrontName = shopfrontName ?? "";
+      _savedStaffNo = (staffNo ?? "").trim();
+      _savedPassword = (staffPassword ?? "").trim();
+    });
+  }
+
+  void _attemptAutoAuth() {
+    if (_authAttempted || !mounted) return;
+    if (context.read<ShopFrontConnectionBloc>().state
+        is! ConnectedToShopfront) {
+      logger.d("Splash auto-auth skipped: shopfront not connected yet.");
+      return;
+    }
+    _authAttempted = true;
+
+    final ip = (AppGlobals.instance.currentHostIp ?? "").trim();
+    if (_savedStaffNo == null || _savedStaffNo!.isEmpty) {
+      logger.d("Splash auto-auth skipped: missing saved staff number.");
+      _navigateToStaffLogin();
+      return;
+    }
+
+    if (ip.isEmpty ||
+        _port == null ||
+        _apiKey.isEmpty ||
+        _shopfrontId.isEmpty ||
+        _shopfrontName.isEmpty) {
+      logger.d("Splash auto-auth skipped: missing connection/shopfront info.");
+      _navigateToStaffLogin();
+      return;
+    }
+
+    logger.d("Splash auto-auth dispatching AuthenticateStaffEvent.");
+    context.read<StaffAuthBloc>().add(
+      AuthenticateStaffEvent(
+        ip: ip,
+        port: _port!,
+        apiKey: _apiKey,
+        shopfrontId: _shopfrontId,
+        shopfrontName: _shopfrontName,
+        staffNo: _savedStaffNo!,
+        password: _savedPassword!,
+      ),
+    );
+  }
+
+  Future<void> _attemptAutoShopfrontConnect() async {
+    if (_autoConnectAttempted || !mounted) return;
+    if (context.read<ShopFrontConnectionBloc>().state
+        is ConnectedToShopfront) {
+      return;
+    }
+
+    final ip = (AppGlobals.instance.currentHostIp ?? "").trim();
+    if (ip.isEmpty ||
+        _port == null ||
+        _apiKey.isEmpty ||
+        _shopfrontId.isEmpty ||
+        _shopfrontName.isEmpty) {
+      logger.d("Splash auto-connect skipped: missing connection/shopfront info.");
+      return;
+    }
+
+    _autoConnectAttempted = true;
+    logger.d("Splash auto-connecting shopfront via API.");
+    context.read<ShopFrontConnectionBloc>().add(
+      ConnectToShopfrontApiEvent(
+        ip: ip,
+        port: _port!,
+        apiKey: _apiKey,
+        shopfrontId: _shopfrontId,
+        shopfrontName: _shopfrontName,
+      ),
+    );
+  }
+
+  void _navigateToStaffLogin() {
+    if (_loginPrompted || !mounted) return;
+    _loginPrompted = true;
+    context.navigateToNext(const StaffLoginScreen());
+  }
+
+  void _startDataSync(BuildContext context) {
+    // Start syncs in background - don't wait for them
+    context.read<FetchStockBloc>().add(
+      StartSyncEvent(ipAddress: ""),
+    );
+    context.read<FetchCustomerBloc>().add(
+      StartCustomerSyncEvent(ipAddress: ""),
+    );
+    // Navigation will happen automatically via IndexScreen state change
+  }
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -30,52 +155,68 @@ class _LoadingScreenState extends State<LoadingScreen> {
     final double logoHeight = isTablet ? 188 : 120;
     final double loadingWidth = isTablet ? 280 : 220;
 
-    return BlocListener<NetworkSavedPathValidationBloc, LoadingSplashStates>(
-      listener: (context, state) {
-        if (state is SavedPathFetchingCompleted) {
-          context.read<NetworkSavedPathValidationBloc>().add(
-            ConnectionCheckingEvent(state.paths.first['path']?.toString() ?? ""),
-          );
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<NetworkSavedPathValidationBloc, LoadingSplashStates>(
+          listener: (context, state) {
+            if (state is SavedPathFetchingCompleted) {
+              context.read<NetworkSavedPathValidationBloc>().add(
+                ConnectionCheckingEvent(state.paths.first['path']?.toString() ?? ""),
+              );
+            }
 
-          // Old setup disabled:
-          // showDialog(
-          //   barrierDismissible: false,
-          //   context: context,
-          //   builder: (context) => NetworkPathDialog(paths: state.paths),
-          // );
-        }
+            if (state is ConnectionValid) {
+              // After connection is valid, load connection info and prompt for authentication
+              if (mounted) {
+                setState(() {
+                  _loadingMessage = "Loading...";
+                });
+              }
+              _loadConnectionInfo().then((_) {
+                if (!mounted) return;
+                _attemptAutoShopfrontConnect();
+              });
+            }
+            
+            if (state is ErrorCheckingConnection || state is ErrorFetchingSavedPaths) {
+              // Connection errors - allow HomeScreen to prompt for network setup
+              if (mounted) {
+                setState(() {
+                  _loadingMessage = "Waiting for setup...";
+                });
+              }
+            }
+          },
+        ),
+        BlocListener<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
+          listener: (context, state) {
+            if (state is ConnectedToShopfront && !_authAttempted) {
+              if (mounted) {
+                setState(() {
+                  _loadingMessage = "Authenticating...";
+                });
+              }
+              _loadConnectionInfo().then((_) {
+                _attemptAutoAuth();
+              });
+            }
+          },
+        ),
+        BlocListener<StaffAuthBloc, StaffAuthStates>(
+          listener: (context, state) {
+            if (state is StaffAuthenticated) {
+              setState(() {
+                _loadingMessage = "Syncing Data...";
+              });
+              _startDataSync(context);
+            }
 
-        if (state is ConnectionValid) {
-          // Start syncs in background - don't wait for them
-          context.read<FetchStockBloc>().add(
-            StartSyncEvent(ipAddress: ""),
-          );
-          context.read<FetchCustomerBloc>().add(
-            StartCustomerSyncEvent(ipAddress: ""),
-          );
-          // Navigation will happen automatically via IndexScreen state change
-        }
-        
-        if (state is ErrorCheckingConnection || state is ErrorFetchingSavedPaths) {
-          // Show error message but allow navigation to home screen
-          // final String errorMessage;
-          // if (state is ErrorCheckingConnection) {
-          //   errorMessage = state.message;
-          // } else if (state is ErrorFetchingSavedPaths) {
-          //   errorMessage = state.message;
-          // } else {
-          //   errorMessage = 'An error occurred';
-          // }
-          
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   SnackBar(
-          //     content: Text(errorMessage),
-          //     duration: const Duration(seconds: 4),
-          //     backgroundColor: Colors.orange,
-          //   ),
-          // );
-        }
-      },
+            if (state is StaffUnauthenticated || state is StaffAuthError) {
+              _navigateToStaffLogin();
+            }
+          },
+        ),
+      ],
       child: Scaffold(
         body: Container(
           decoration: BoxDecoration(gradient: kGColor),
@@ -110,7 +251,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  "Checking Connection...",
+                  _loadingMessage,
                   style: TextStyle(
                     color: kSecondaryColor.withOpacity(0.8),
                     fontWeight: FontWeight.w400,

@@ -5,6 +5,8 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
+import '../../../../local_db/local_db_dao.dart';
+import '../../../../local_db/sqlite/sqlite_constants.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
@@ -30,6 +32,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _autoAuthAttempted = false;
+  bool _autoConnectAttempted = false;
+
   _DrawerSizes _resolveDrawerSizes(MediaQueryData media) {
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isPortrait = media.orientation == Orientation.portrait;
@@ -71,7 +76,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
 
     context.read<SettingsBloc>().add(RunHistoryCleanupEvent());
-    context.read<StaffAuthBloc>().add(LoadSavedStaffSessionEvent());
 
     final currentParamState = context
         .read<NetworkSavedPathValidationBloc>()
@@ -89,7 +93,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _promptStaffLoginIfNeeded();
+      if (currentParamState is ConnectionValid) {
+        _attemptAutoShopfrontConnect();
+      } else {
+        _promptStaffLoginIfNeeded();
+      }
     });
 
     // Old setup disabled:
@@ -105,17 +113,111 @@ class _HomeScreenState extends State<HomeScreen> {
     // }
   }
 
-  Future<void> _promptStaffLoginIfNeeded() async {
+  Future<void> _promptStaffLoginIfNeeded({bool force = false}) async {
     final hasShopfront = (AppGlobals.instance.shopfront ?? "")
         .trim()
         .isNotEmpty;
-    if (!hasShopfront) return;
+    if (!force && !hasShopfront) return;
 
-    if (!AppGlobals.instance.isStaffSignedIn) {
+    if (!AppGlobals.instance.isStaffSignedIn || force) {
       await context.navigateToNext(const StaffLoginScreen());
       if (!mounted) return;
       setState(() {});
     }
+  }
+
+  Future<void> _attemptAutoAuthIfPossible() async {
+    if (_autoAuthAttempted || !mounted) return;
+
+    if (context.read<ShopFrontConnectionBloc>().state
+        is! ConnectedToShopfront) {
+      logger.d("Auto-auth skipped: shopfront not connected yet.");
+      return;
+    }
+
+    final ip = (AppGlobals.instance.currentHostIp ?? "").trim();
+    final portStr = await LocalDbDAO.instance.getHostPort();
+    final apiKey = await LocalDbDAO.instance.getApiKey();
+    final shopfrontId = await LocalDbDAO.instance.getShopfrontId();
+    final shopfrontName = await LocalDbDAO.instance.getShopfrontName();
+    final staffNo =
+        (await LocalDbDAO.instance.getAppConfig(kStaffNoKey) ?? "").trim();
+    final staffPassword =
+        (await LocalDbDAO.instance.getAppConfig(kStaffPasswordKey) ?? "")
+            .trim();
+
+    final int? port = int.tryParse(portStr ?? "");
+    final bool missingConnection =
+        ip.isEmpty || port == null || apiKey == null || apiKey.isEmpty;
+    final bool missingShopfront =
+        (shopfrontId ?? "").trim().isEmpty ||
+        (shopfrontName ?? "").trim().isEmpty;
+
+    if (missingConnection || missingShopfront) {
+      logger.d(
+        "Auto-auth skipped: missing connection/shopfront info.",
+      );
+      _promptStaffLoginIfNeeded();
+      return;
+    }
+
+    if (staffNo.isEmpty) {
+      logger.d("Auto-auth skipped: missing saved staff number.");
+      _promptStaffLoginIfNeeded();
+      return;
+    }
+
+    _autoAuthAttempted = true;
+    logger.d("Auto-auth dispatching AuthenticateStaffEvent.");
+    context.read<StaffAuthBloc>().add(
+      AuthenticateStaffEvent(
+        ip: ip,
+        port: port,
+        apiKey: apiKey,
+        shopfrontId: shopfrontId!.trim(),
+        shopfrontName: shopfrontName!.trim(),
+        staffNo: staffNo,
+        password: staffPassword,
+      ),
+    );
+  }
+
+  Future<void> _attemptAutoShopfrontConnect() async {
+    if (_autoConnectAttempted || !mounted) return;
+    if (context.read<ShopFrontConnectionBloc>().state
+        is ConnectedToShopfront) {
+      return;
+    }
+
+    final savedIp = (AppGlobals.instance.currentHostIp ?? "").trim();
+    final portStr = await LocalDbDAO.instance.getHostPort();
+    final apiKey = await LocalDbDAO.instance.getApiKey();
+    final shopfrontId = await LocalDbDAO.instance.getShopfrontId();
+    final shopfrontName = await LocalDbDAO.instance.getShopfrontName();
+
+    final int? port = int.tryParse(portStr ?? "");
+    final bool missingConnection =
+        savedIp.isEmpty || port == null || apiKey == null || apiKey.isEmpty;
+    final bool missingShopfront =
+        (shopfrontId ?? "").trim().isEmpty ||
+        (shopfrontName ?? "").trim().isEmpty;
+
+    if (missingConnection || missingShopfront) {
+      logger.d("Auto-connect skipped: missing connection/shopfront info.");
+      return;
+    }
+
+    _autoConnectAttempted = true;
+    logger.d("Auto-connecting shopfront via API.");
+    context.read<ShopFrontConnectionBloc>().add(
+      ConnectToShopfrontApiEvent(
+        ip: savedIp,
+        port: port,
+        apiKey: apiKey,
+        shopfrontId: shopfrontId!.trim(),
+        shopfrontName: shopfrontName!.trim(),
+      ),
+    );
   }
 
   void _showNetworkDialog() {
@@ -167,6 +269,9 @@ class _HomeScreenState extends State<HomeScreen> {
       listeners: [
         BlocListener<NetworkSavedPathValidationBloc, LoadingSplashStates>(
           listener: (context, state) {
+            if (state is ConnectionValid) {
+              _attemptAutoShopfrontConnect();
+            }
             if (state is ErrorFetchingSavedPaths ||
                 state is ErrorCheckingConnection) {
               final hasSavedShopfront =
@@ -177,10 +282,19 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           },
         ),
+        BlocListener<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
+          listener: (context, state) {
+            if (state is ConnectedToShopfront) {
+              _attemptAutoAuthIfPossible();
+            }
+          },
+        ),
         BlocListener<StaffAuthBloc, StaffAuthStates>(
           listener: (context, state) {
-            if (state is StaffSignedOut || state is StaffUnauthenticated) {
-              _promptStaffLoginIfNeeded();
+            if (state is StaffSignedOut ||
+                state is StaffUnauthenticated ||
+                state is StaffAuthError) {
+              _promptStaffLoginIfNeeded(force: true);
             }
           },
         ),

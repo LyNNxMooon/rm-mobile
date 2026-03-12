@@ -499,6 +499,7 @@ class DataAgentImpl implements DataAgent {
     String apiKey,
     Map<String, dynamic> body,
   ) async {
+    logger.d('Authenticating staff with body: $body');
     try {
       final apiService = _createApiService(ip, port);
       return await _callWithReconnect(
