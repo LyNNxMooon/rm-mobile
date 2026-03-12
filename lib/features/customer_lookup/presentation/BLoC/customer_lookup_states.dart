@@ -1,5 +1,6 @@
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
+import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/utils/enums.dart';
 
 import '../../../../entities/vos/customer_vo.dart';
@@ -21,6 +22,7 @@ class CustomerListLoaded extends CustomerListState {
   final String currentFilterCol;
   final bool isAscending;
   final FilterCriteria? activeFilters;
+  final SearchMode searchMode;
 
   CustomerListLoaded({
     required this.customers,
@@ -32,6 +34,7 @@ class CustomerListLoaded extends CustomerListState {
     required this.currentFilterCol,
     required this.isAscending,
     this.activeFilters,
+    this.searchMode = SearchMode.partial,
   });
 
   CustomerListLoaded copyWith({
@@ -44,6 +47,7 @@ class CustomerListLoaded extends CustomerListState {
     String? currentFilterCol,
     bool? isAscending,
     FilterCriteria? activeFilters,
+    SearchMode? searchMode,
   }) {
     return CustomerListLoaded(
       customers: customers ?? this.customers,
@@ -55,6 +59,7 @@ class CustomerListLoaded extends CustomerListState {
       currentFilterCol: currentFilterCol ?? this.currentFilterCol,
       isAscending: isAscending ?? this.isAscending,
       activeFilters: activeFilters ?? this.activeFilters,
+      searchMode: searchMode ?? this.searchMode,
     );
   }
 }

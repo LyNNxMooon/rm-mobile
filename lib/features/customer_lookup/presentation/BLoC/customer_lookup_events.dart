@@ -1,4 +1,5 @@
 import '../../../../entities/vos/filter_criteria.dart';
+import '../../../../entities/vos/search_mode.dart';
 import '../../../../utils/enums.dart';
 
 abstract class CustomerListEvent {}
@@ -9,6 +10,7 @@ class FetchFirstCustomerPageEvent extends CustomerListEvent {
   final String sortColumn;
   final FilterCriteria? filters;
   final bool shouldToggleSort;
+  final SearchMode searchMode;
 
   FetchFirstCustomerPageEvent({
     this.query = "",
@@ -16,6 +18,7 @@ class FetchFirstCustomerPageEvent extends CustomerListEvent {
     this.sortColumn = "surname",
     this.filters,
     this.shouldToggleSort = false,
+    this.searchMode = SearchMode.partial,
   });
 }
 

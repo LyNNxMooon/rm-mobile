@@ -1,5 +1,6 @@
 import '../../../../entities/response/paginated_customer_response.dart';
 import '../../../../entities/vos/filter_criteria.dart';
+import '../../../../entities/vos/search_mode.dart';
 import '../repositories/customer_lookup_repo.dart';
 
 class GetPaginatedCustomers {
@@ -15,6 +16,7 @@ class GetPaginatedCustomers {
     bool ascending = true,
     required int page,
     FilterCriteria? filters,
+    SearchMode searchMode = SearchMode.partial,
   }) async {
     try {
       return repository.fetchCustomersDynamic(
@@ -24,7 +26,8 @@ class GetPaginatedCustomers {
         sortColumn: sortCol,
         ascending: ascending,
         page: page,
-        filters: filters
+        filters: filters,
+        searchMode: searchMode,
       );
     } catch (e) {
       return Future.error("Failed to load customers $page: $e");

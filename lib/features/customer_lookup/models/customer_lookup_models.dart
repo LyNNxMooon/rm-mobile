@@ -3,6 +3,7 @@ import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
 import 'package:rmstock_scanner/entities/response/customer_update_response.dart';
 import 'package:rmstock_scanner/entities/response/customer_create_response.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/entities/customer_sync_status.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
@@ -180,6 +181,7 @@ class CustomerLookupModels implements CustomerLookupRepo {
     required int page,
     FilterCriteria? filters,
     int pageSize = 100,
+    SearchMode searchMode = SearchMode.partial,
   }) async {
     try {
       final int offset = (page - 1) * pageSize;
@@ -192,6 +194,7 @@ class CustomerLookupModels implements CustomerLookupRepo {
         limit: pageSize,
         offset: offset,
         filters: filters,
+        searchMode: searchMode,
       );
     } on Exception catch (error) {
       return Future.error(error);

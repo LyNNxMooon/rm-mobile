@@ -1369,6 +1369,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
     required int limit,
     required int offset,
     FilterCriteria? filters,
+    SearchMode searchMode = SearchMode.partial,
   }) async {
     try {
       final db = _database!;
@@ -1480,18 +1481,26 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return runQuery(whereClause: baseWhere, args: baseArgs);
       }
 
-      // Search priority: barcode -> surname -> company -> given_names -> email
+      // Determine search pattern based on search mode
+      final String searchPattern = searchMode == SearchMode.prefix
+          ? '$q%'  // Prefix search: matches start of string
+          : '%$q%'; // Partial search: matches anywhere in string
+
+      // Search priority: barcode → given_names → surname → company → phone → fax → mobile → email
       final searchPriority = <String>[
         'barcode',
+        'given_names',
         'surname',
         'company',
-        'given_names',
+        'phone',
+        'fax',
+        'mobile',
         'email',
       ];
 
       for (final column in searchPriority) {
         final whereClause = '$baseWhere AND $column LIKE ?';
-        final args = [...baseArgs, '%$q%'];
+        final args = [...baseArgs, searchPattern];
         if (await exists(whereClause, args)) {
           return runQuery(whereClause: whereClause, args: args);
         }
@@ -1499,7 +1508,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       // No match in any prioritized column.
       final fallbackWhere = '$baseWhere AND barcode LIKE ?';
-      final fallbackArgs = [...baseArgs, '%$q%'];
+      final fallbackArgs = [...baseArgs, searchPattern];
       return runQuery(whereClause: fallbackWhere, args: fallbackArgs);
     } catch (error) {
       logger.e('Error searching customers: $error');

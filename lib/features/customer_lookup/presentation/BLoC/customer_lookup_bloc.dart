@@ -42,6 +42,7 @@ class CustomerListBloc extends Bloc<CustomerListEvent, CustomerListState> {
           ascending: isAscending,
           page: 1,
           filters: criteria,
+          searchMode: event.searchMode,
         );
 
         emit(
@@ -55,6 +56,7 @@ class CustomerListBloc extends Bloc<CustomerListEvent, CustomerListState> {
             currentFilterCol: event.filterColumn,
             isAscending: isAscending,
             activeFilters: criteria,
+            searchMode: event.searchMode,
           ),
         );
       } catch (e) {
@@ -78,6 +80,7 @@ class CustomerListBloc extends Bloc<CustomerListEvent, CustomerListState> {
             ascending: curr.isAscending,
             page: nextPage,
             filters: curr.activeFilters,
+            searchMode: curr.searchMode,
           );
 
           emit(

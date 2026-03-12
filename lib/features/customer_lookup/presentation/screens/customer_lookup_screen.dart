@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:intl/intl.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
@@ -57,6 +58,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
   String _dbFilterCol = "surname";
   String _searchQuery = "";
   static const String _searchColumn = "surname";
+  SearchMode _searchMode = SearchMode.partial; // Default search mode
 
   bool isScanner = false;
 
@@ -174,6 +176,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                       sortColumn: _dbFilterCol,
                                       filters: currentFilters,
                                       shouldToggleSort: true,
+                                      searchMode: _searchMode,
                                     ),
                                   );
                                 },
@@ -322,6 +325,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                         sortColumn: _dbFilterCol,
                         filters: currentFilters,
                         shouldToggleSort: false,
+                        searchMode: _searchMode,
                       ),
                     );
                   }
@@ -358,6 +362,32 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
             ],
           ),
             child: CustomerSearchFilterBar(
+              searchMode: _searchMode,
+              onSearchModeChanged: (newMode) {
+                setState(() {
+                  _searchMode = newMode;
+                });
+                
+                // Re-trigger search with new mode if there's an active query
+                if (_searchQuery.isNotEmpty) {
+                  final currentState = context.read<CustomerListBloc>().state;
+                  FilterCriteria? currentFilters;
+                  if (currentState is CustomerListLoaded) {
+                    currentFilters = currentState.activeFilters;
+                  }
+
+                  context.read<CustomerListBloc>().add(
+                    FetchFirstCustomerPageEvent(
+                      query: _searchQuery,
+                      filterColumn: _searchColumn,
+                      sortColumn: _dbFilterCol,
+                      filters: currentFilters,
+                      shouldToggleSort: false,
+                      searchMode: _searchMode,
+                    ),
+                  );
+                }
+              },
               onChanged: (value) {
                 _searchQuery = value;
                 _debouncer.run(() {
@@ -374,6 +404,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                       sortColumn: _dbFilterCol,
                       filters: currentFilters,
                       shouldToggleSort: false,
+                      searchMode: _searchMode,
                     ),
                   );
                 });
@@ -414,6 +445,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                       filterColumn: _searchColumn,
                       sortColumn: _dbFilterCol,
                       shouldToggleSort: false,
+                      searchMode: _searchMode,
                     ),
                   );
                 }
@@ -455,6 +487,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                       sortColumn: _dbFilterCol,
                       filters: currentFilters,
                       shouldToggleSort: false,
+                      searchMode: _searchMode,
                     ),
                   );
                 }

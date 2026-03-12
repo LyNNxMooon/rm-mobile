@@ -3,6 +3,7 @@ import '../../../../entities/response/staff_detail_response.dart';
 import '../../../../entities/response/customer_update_response.dart';
 import '../../../../entities/response/customer_create_response.dart';
 import '../../../../entities/vos/filter_criteria.dart';
+import '../../../../entities/vos/search_mode.dart';
 import '../entities/customer_sync_status.dart';
 
 abstract class CustomerLookupRepo {
@@ -17,6 +18,7 @@ abstract class CustomerLookupRepo {
     required int page,
     FilterCriteria? filters,
     int pageSize,
+    SearchMode searchMode,
   });
 
   Future<Map<String, List<String>>> getFilterOptions(String shopfront);

@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../entities/vos/search_mode.dart';
+import '../../../stock_lookup/presentation/widgets/search_mode_selector.dart';
 
 class CustomerSearchFilterBar extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onFilterTap;
   final VoidCallback? onScannerTap;
   final VoidCallback? onAddTap;
+  final SearchMode searchMode;
+  final ValueChanged<SearchMode>? onSearchModeChanged;
 
   const CustomerSearchFilterBar({
     super.key,
@@ -14,6 +18,8 @@ class CustomerSearchFilterBar extends StatelessWidget {
     this.onFilterTap,
     this.onScannerTap,
     this.onAddTap,
+    this.searchMode = SearchMode.partial,
+    this.onSearchModeChanged,
   });
 
   @override
@@ -43,6 +49,13 @@ class CustomerSearchFilterBar extends StatelessWidget {
             ),
           ),
         ),
+        // Search Mode Selector next to add icon
+        if (onSearchModeChanged != null)
+          SearchModeSelector(
+            currentMode: searchMode,
+            onModeChanged: onSearchModeChanged!,
+          ),
+        SizedBox(width: (isTablet ? 4 : 2) * uiScale),
         if (onAddTap != null)
           IconButton(
             onPressed: onAddTap,

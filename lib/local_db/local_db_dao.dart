@@ -91,6 +91,7 @@ abstract class LocalDbDAO {
     required int limit,
     required int offset,
     FilterCriteria? filters,
+    SearchMode searchMode = SearchMode.partial,
   });
 
   Future<List<String>> getDistinctCustomerValues(
