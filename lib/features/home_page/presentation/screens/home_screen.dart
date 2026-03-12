@@ -1,4 +1,4 @@
-import 'package:alert_info/alert_info.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
@@ -510,16 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
 
-          AlertInfo.show(
-            context: context,
-            text: "Stock requested!",
-            typeInfo: TypeInfo.success,
-            backgroundColor: kSecondaryColor,
-            iconColor: kPrimaryColor,
-            textColor: kThirdColor,
-            position: MessagePosition.top,
-            padding: 70,
-          );
+         
         }
 
         if (state is ShopfrontConnectionError) {
