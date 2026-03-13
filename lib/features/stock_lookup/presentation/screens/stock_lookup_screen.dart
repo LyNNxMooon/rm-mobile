@@ -30,6 +30,7 @@ import '../widgets/stock_lookup_appbar.dart';
 import '../widgets/stock_lookup_scanner.dart';
 import '../widgets/stocklookup_filter_dialog.dart';
 import '../widgets/sync_info_widget.dart';
+import '../widgets/pending_stock_updates_tile.dart';
 
 class Debouncer {
   final int milliseconds;
@@ -88,6 +89,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     // Initial Load
     context.read<StockListBloc>().add(FetchFirstPageEvent());
     context.read<FilterOptionsBloc>().add(LoadFilterOptionsEvent());
+    context.read<PendingStockUpdatesBloc>().add(
+      LoadPendingStockUpdatesCountEvent(),
+    );
   }
 
   void _onScroll() {
@@ -141,7 +145,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               children: [
                 const SizedBox(height: 25),
                 const StockLookupAppbar(), // Added const
-                const SizedBox(height: 10),
+                const SizedBox(height: 5),
+                const PendingStockUpdatesTile(),
+                //const SizedBox(height: 10),
                 const Divider(
                   indent: 15,
                   endIndent: 15,

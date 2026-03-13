@@ -900,6 +900,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text(state.message)));
+              context.read<PendingCustomerUpdatesBloc>().add(
+                LoadPendingCustomerUpdatesCountEvent(),
+              );
               context.read<FetchCustomerBloc>().add(
                 StartCustomerSyncEvent(ipAddress: ""),
               );

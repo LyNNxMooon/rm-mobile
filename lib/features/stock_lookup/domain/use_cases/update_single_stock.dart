@@ -18,9 +18,43 @@ class UpdateSingleStock {
   }) async {
     try {
       final ip = (await LocalDbDAO.instance.getHostIpAddress() ?? "").trim();
-      final port = int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim());
+      final port =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim());
       final apiKey = (await LocalDbDAO.instance.getApiKey() ?? "").trim();
-      final shopfrontId = (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+      final shopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+      final shopfrontName =
+          (await LocalDbDAO.instance.getShopfrontName() ?? "").trim();
+
+      if (shopfrontName.isEmpty) {
+        return Future.error(
+          "Missing shopfront setup. Please reconnect to a host and shopfront.",
+        );
+      }
+
+      await LocalDbDAO.instance.updateStockDetails(
+        stockId: stockId,
+        shopfront: shopfrontName,
+        description: description,
+        sell: sell,
+        custom1: custom1,
+        custom2: custom2,
+      );
+
+      final payload = <String, dynamic>{
+        'stock_id': stockId,
+        'description': description,
+        'sell': sell,
+        if (custom1 != null) 'custom1': custom1,
+        if (custom2 != null) 'custom2': custom2,
+        'date_modified': DateTime.now().toIso8601String(),
+      };
+
+      final pendingId = await LocalDbDAO.instance.addPendingStockUpdate(
+        shopfront: shopfrontName,
+        stockId: stockId,
+        payload: payload,
+      );
 
       if (await InternetConnectionUtils.instance.checkInternetConnection()) {
         if (ip.isEmpty || port == null || apiKey.isEmpty || shopfrontId.isEmpty) {
@@ -34,7 +68,7 @@ class UpdateSingleStock {
         // - local file write to outgoing stock update folder
         // await repository.sendSingleStockUpdate(...);
 
-        return await repository.updateStockDetailsFromApi(
+        final response = await repository.updateStockDetailsFromApi(
           ip: ip,
           port: port,
           apiKey: apiKey,
@@ -45,8 +79,18 @@ class UpdateSingleStock {
           custom1: custom1,
           custom2: custom2,
         );
+        if (response.success) {
+          await LocalDbDAO.instance.deletePendingStockUpdates([pendingId]);
+        }
+        return response;
       } else {
-        return Future.error("Please connect to a network!");
+        return StockUpdateResponse(
+          success: true,
+          message: "Saved locally. Will send when online.",
+          updated: 1,
+          missing: 0,
+          skipped: 0,
+        );
       }
     } catch (error) {
       return Future.error(error);

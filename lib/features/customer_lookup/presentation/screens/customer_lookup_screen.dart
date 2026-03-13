@@ -21,6 +21,7 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/cu
 import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_search_filter.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_sync_info_widget.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_thumbnail_tile.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/pending_customer_updates_tile.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/breathing_stock_loader.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/utils/text_highlight_utils.dart';
@@ -84,6 +85,9 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     context
         .read<CustomerFilterOptionsBloc>()
         .add(LoadCustomerFilterOptionsEvent());
+    context.read<PendingCustomerUpdatesBloc>().add(
+      LoadPendingCustomerUpdatesCountEvent(),
+    );
   }
 
   void _onScroll() {
@@ -130,7 +134,9 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
               children: [
                 const SizedBox(height: 25),
                 const CustomerLookupAppbar(),
-                const SizedBox(height: 10),
+                 const SizedBox(height: 5),
+                const PendingCustomerUpdatesTile(),
+               
                 const Divider(
                   indent: 15,
                   endIndent: 15,

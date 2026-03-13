@@ -435,6 +435,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                 Overlay.of(context),
                 CustomSnackBar.success(message: state.message),
               );
+              context.read<PendingStockUpdatesBloc>().add(
+                LoadPendingStockUpdatesCountEvent(),
+              );
             }
 
             if (state is StockUpdateError) {

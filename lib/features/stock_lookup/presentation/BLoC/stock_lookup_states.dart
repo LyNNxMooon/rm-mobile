@@ -2,6 +2,7 @@ import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 
 import '../../../../entities/vos/stock_vo.dart';
+import '../../../../entities/vos/pending_stock_update_vo.dart';
 
 abstract class StockListState {}
 
@@ -184,4 +185,31 @@ class StockUpdateSuccess extends StockUpdateState {
 class StockUpdateError extends StockUpdateState {
   final String message;
   StockUpdateError(this.message);
+}
+
+// Pending stock updates
+abstract class PendingStockUpdatesState {}
+
+class PendingStockUpdatesInitial extends PendingStockUpdatesState {}
+
+class PendingStockUpdatesLoading extends PendingStockUpdatesState {}
+
+class PendingStockUpdatesCountLoaded extends PendingStockUpdatesState {
+  final int count;
+  PendingStockUpdatesCountLoaded(this.count);
+}
+
+class PendingStockUpdatesLoaded extends PendingStockUpdatesState {
+  final List<PendingStockUpdateVO> updates;
+  PendingStockUpdatesLoaded(this.updates);
+}
+
+class PendingStockUpdatesSent extends PendingStockUpdatesState {
+  final String message;
+  PendingStockUpdatesSent(this.message);
+}
+
+class PendingStockUpdatesError extends PendingStockUpdatesState {
+  final String message;
+  PendingStockUpdatesError(this.message);
 }

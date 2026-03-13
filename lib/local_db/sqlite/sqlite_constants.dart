@@ -200,3 +200,27 @@ const customerAddressesTableCreationQuery = '''
     PRIMARY KEY (address_id, customer_id, shopfront)
   )
 ''';
+
+const pendingStockUpdatesTableCreationQuery = '''
+  CREATE TABLE PendingStockUpdates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shopfront TEXT NOT NULL,
+    stock_id INTEGER NOT NULL,
+    payload_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    status INTEGER NOT NULL DEFAULT 0
+  )
+''';
+
+const pendingCustomerUpdatesTableCreationQuery = '''
+  CREATE TABLE PendingCustomerUpdates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shopfront TEXT NOT NULL,
+    customer_id INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    status INTEGER NOT NULL DEFAULT 0,
+    has_conflict INTEGER NOT NULL DEFAULT 0
+  )
+''';

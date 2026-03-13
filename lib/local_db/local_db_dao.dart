@@ -2,6 +2,8 @@ import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pending_stock_update_vo.dart';
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
@@ -161,6 +163,46 @@ abstract class LocalDbDAO {
     required String shopfront,
     required num newQuantity,
   });
+
+  Future<void> updateStockDetails({
+    required int stockId,
+    required String shopfront,
+    required String description,
+    required double sell,
+    String? custom1,
+    String? custom2,
+  });
+
+  Future<int> addPendingStockUpdate({
+    required String shopfront,
+    required int stockId,
+    required Map<String, dynamic> payload,
+  });
+  Future<int> getPendingStockUpdatesCount(String shopfront);
+  Future<List<PendingStockUpdateVO>> getPendingStockUpdates(String shopfront);
+  Future<void> deletePendingStockUpdates(List<int> ids);
+  Future<void> applyPendingStockUpdates(String shopfront);
+
+  Future<int> addPendingCustomerUpdate({
+    required String shopfront,
+    required int customerId,
+    required String action,
+    required Map<String, dynamic> payload,
+  });
+  Future<int> getPendingCustomerUpdatesCount(String shopfront);
+  Future<List<PendingCustomerUpdateVO>> getPendingCustomerUpdates(
+    String shopfront, {
+    String? action,
+    bool? conflictOnly,
+  });
+  Future<void> deletePendingCustomerUpdates(List<int> ids);
+  Future<void> setPendingCustomerConflict(List<int> ids, bool hasConflict);
+  Future<void> updatePendingCustomerPayload({
+    required int id,
+    required int customerId,
+    required Map<String, dynamic> payload,
+  });
+  Future<void> applyPendingCustomerUpdates(String shopfront);
 
   //Removing data
   Future<void> removeNetworkCredential({required String ip});

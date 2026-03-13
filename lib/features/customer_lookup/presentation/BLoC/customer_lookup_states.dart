@@ -1,5 +1,6 @@
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
+import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
 import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/utils/enums.dart';
 
@@ -165,4 +166,32 @@ class CustomerUpdateFailure extends CustomerUpdateState {
   final String message;
 
   CustomerUpdateFailure({required this.section, required this.message});
+}
+
+// Pending customer updates
+abstract class PendingCustomerUpdatesState {}
+
+class PendingCustomerUpdatesInitial extends PendingCustomerUpdatesState {}
+
+class PendingCustomerUpdatesLoading extends PendingCustomerUpdatesState {}
+
+class PendingCustomerUpdatesCountLoaded extends PendingCustomerUpdatesState {
+  final int count;
+  PendingCustomerUpdatesCountLoaded(this.count);
+}
+
+class PendingCustomerUpdatesLoaded extends PendingCustomerUpdatesState {
+  final List<PendingCustomerUpdateVO> updates;
+  PendingCustomerUpdatesLoaded(this.updates);
+}
+
+class PendingCustomerUpdatesSent extends PendingCustomerUpdatesState {
+  final String message;
+  final bool hasConflicts;
+  PendingCustomerUpdatesSent({required this.message, required this.hasConflicts});
+}
+
+class PendingCustomerUpdatesError extends PendingCustomerUpdatesState {
+  final String message;
+  PendingCustomerUpdatesError(this.message);
 }

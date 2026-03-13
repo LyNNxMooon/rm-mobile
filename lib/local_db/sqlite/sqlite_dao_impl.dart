@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:path/path.dart';
 import 'package:rmstock_scanner/entities/response/paginated_customer_response.dart';
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pending_stock_update_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_address_vo.dart';
 import 'package:rmstock_scanner/entities/vos/search_mode.dart';
@@ -25,7 +29,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       _database = await openDatabase(
         path,
-        version: 3,
+        version: 4,
         onConfigure: (db) async {
           await db.rawQuery('PRAGMA journal_mode=WAL');
           await db.rawQuery('PRAGMA foreign_keys=ON');
@@ -41,6 +45,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
           await db.execute(stocktakeHistoryItemsCreationQuery);
           await db.execute(customersTableCreationQuery);
           await db.execute(customerAddressesTableCreationQuery);
+          await db.execute(pendingStockUpdatesTableCreationQuery);
+          await db.execute(pendingCustomerUpdatesTableCreationQuery);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
           if (oldVersion < 2) {
@@ -54,6 +60,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
           if (oldVersion < 3) {
             await db.execute(customersTableCreationQuery);
             await db.execute(customerAddressesTableCreationQuery);
+          }
+          if (oldVersion < 4) {
+            await db.execute(pendingStockUpdatesTableCreationQuery);
+            await db.execute(pendingCustomerUpdatesTableCreationQuery);
           }
         },
       );
@@ -1314,6 +1324,452 @@ class SQLiteDAOImpl extends LocalDbDAO {
       logger.e('Error updating stock quantity in local db: $error');
       return Future.error("Error updating stock quantity: $error");
     }
+  }
+
+  @override
+  Future<void> updateStockDetails({
+    required int stockId,
+    required String shopfront,
+    required String description,
+    required double sell,
+    String? custom1,
+    String? custom2,
+  }) async {
+    try {
+      final db = _database!;
+      final Map<String, dynamic> valuesToUpdate = {
+        'description': description,
+        'sell': sell,
+        'date_modified': DateTime.now().toIso8601String(),
+      };
+
+      if (custom1 != null) {
+        valuesToUpdate['custom1'] = custom1;
+      }
+      if (custom2 != null) {
+        valuesToUpdate['custom2'] = custom2;
+      }
+
+      await db.update(
+        'Stocks',
+        valuesToUpdate,
+        where: 'stock_id = ? AND shopfront = ?',
+        whereArgs: [stockId, shopfront],
+      );
+    } catch (error) {
+      logger.e('Error updating stock details in local db: $error');
+      return Future.error("Error updating stock details: $error");
+    }
+  }
+
+  @override
+  Future<int> addPendingStockUpdate({
+    required String shopfront,
+    required int stockId,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.insert('PendingStockUpdates', {
+        'shopfront': shopfront,
+        'stock_id': stockId,
+        'payload_json': jsonEncode(payload),
+        'created_at': DateTime.now().toIso8601String(),
+        'status': 0,
+      });
+    } catch (error) {
+      logger.e('Error saving pending stock update: $error');
+      return Future.error("Error saving pending stock update: $error");
+    }
+  }
+
+  @override
+  Future<int> getPendingStockUpdatesCount(String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) as cnt FROM PendingStockUpdates WHERE shopfront = ? AND status = 0',
+        [shopfront],
+      );
+      return (result.first['cnt'] as int?) ?? 0;
+    } catch (error) {
+      logger.e('Error getting pending stock update count: $error');
+      return Future.error("Error getting pending stock update count: $error");
+    }
+  }
+
+  @override
+  Future<List<PendingStockUpdateVO>> getPendingStockUpdates(
+    String shopfront,
+  ) async {
+    try {
+      final db = _database!;
+      final rows = await db.query(
+        'PendingStockUpdates',
+        where: 'shopfront = ? AND status = 0',
+        whereArgs: [shopfront],
+        orderBy: 'created_at DESC',
+      );
+
+      return rows.map((row) {
+        final payload = jsonDecode(row['payload_json'] as String);
+        return PendingStockUpdateVO(
+          id: row['id'] as int,
+          shopfront: row['shopfront'] as String,
+          stockId: row['stock_id'] as int,
+          payload: Map<String, dynamic>.from(payload as Map),
+          createdAt: row['created_at'] as String,
+        );
+      }).toList();
+    } catch (error) {
+      logger.e('Error loading pending stock updates: $error');
+      return Future.error("Error loading pending stock updates: $error");
+    }
+  }
+
+  @override
+  Future<void> deletePendingStockUpdates(List<int> ids) async {
+    try {
+      if (ids.isEmpty) return;
+      final db = _database!;
+      final placeholders = List.filled(ids.length, '?').join(',');
+      await db.delete(
+        'PendingStockUpdates',
+        where: 'id IN ($placeholders)',
+        whereArgs: ids,
+      );
+    } catch (error) {
+      logger.e('Error deleting pending stock updates: $error');
+      return Future.error("Error deleting pending stock updates: $error");
+    }
+  }
+
+  @override
+  Future<void> applyPendingStockUpdates(String shopfront) async {
+    try {
+      final pending = await getPendingStockUpdates(shopfront);
+      if (pending.isEmpty) return;
+
+      for (final entry in pending) {
+        final payload = entry.payload;
+        final int stockId = (payload['stock_id'] as num?)?.toInt() ??
+            (payload['stockId'] as num?)?.toInt() ??
+            entry.stockId;
+        final String description = (payload['description'] as String?) ?? '';
+        final double sell = (payload['sell'] as num?)?.toDouble() ?? 0.0;
+        final String? custom1 = payload['custom1'] as String?;
+        final String? custom2 = payload['custom2'] as String?;
+
+        await updateStockDetails(
+          stockId: stockId,
+          shopfront: shopfront,
+          description: description,
+          sell: sell,
+          custom1: custom1,
+          custom2: custom2,
+        );
+      }
+    } catch (error) {
+      logger.e('Error applying pending stock updates: $error');
+      return Future.error("Error applying pending stock updates: $error");
+    }
+  }
+
+  @override
+  Future<int> addPendingCustomerUpdate({
+    required String shopfront,
+    required int customerId,
+    required String action,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.insert('PendingCustomerUpdates', {
+        'shopfront': shopfront,
+        'customer_id': customerId,
+        'action': action,
+        'payload_json': jsonEncode(payload),
+        'created_at': DateTime.now().toIso8601String(),
+        'status': 0,
+        'has_conflict': 0,
+      });
+    } catch (error) {
+      logger.e('Error saving pending customer update: $error');
+      return Future.error("Error saving pending customer update: $error");
+    }
+  }
+
+  @override
+  Future<int> getPendingCustomerUpdatesCount(String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) as cnt FROM PendingCustomerUpdates WHERE shopfront = ? AND status = 0',
+        [shopfront],
+      );
+      return (result.first['cnt'] as int?) ?? 0;
+    } catch (error) {
+      logger.e('Error getting pending customer update count: $error');
+      return Future.error(
+        "Error getting pending customer update count: $error",
+      );
+    }
+  }
+
+  @override
+  Future<List<PendingCustomerUpdateVO>> getPendingCustomerUpdates(
+    String shopfront, {
+    String? action,
+    bool? conflictOnly,
+  }) async {
+    try {
+      final db = _database!;
+      final where = <String>['shopfront = ?', 'status = 0'];
+      final args = <dynamic>[shopfront];
+
+      if (action != null && action.isNotEmpty) {
+        where.add('action = ?');
+        args.add(action);
+      }
+      if (conflictOnly != null) {
+        where.add('has_conflict = ?');
+        args.add(conflictOnly ? 1 : 0);
+      }
+
+      final rows = await db.query(
+        'PendingCustomerUpdates',
+        where: where.join(' AND '),
+        whereArgs: args,
+        orderBy: 'created_at DESC',
+      );
+
+      return rows.map((row) {
+        final payload = jsonDecode(row['payload_json'] as String);
+        return PendingCustomerUpdateVO(
+          id: row['id'] as int,
+          shopfront: row['shopfront'] as String,
+          customerId: row['customer_id'] as int,
+          action: row['action'] as String,
+          payload: Map<String, dynamic>.from(payload as Map),
+          createdAt: row['created_at'] as String,
+          hasConflict: (row['has_conflict'] as int? ?? 0) == 1,
+        );
+      }).toList();
+    } catch (error) {
+      logger.e('Error loading pending customer updates: $error');
+      return Future.error("Error loading pending customer updates: $error");
+    }
+  }
+
+  @override
+  Future<void> deletePendingCustomerUpdates(List<int> ids) async {
+    try {
+      if (ids.isEmpty) return;
+      final db = _database!;
+      final placeholders = List.filled(ids.length, '?').join(',');
+      await db.delete(
+        'PendingCustomerUpdates',
+        where: 'id IN ($placeholders)',
+        whereArgs: ids,
+      );
+    } catch (error) {
+      logger.e('Error deleting pending customer updates: $error');
+      return Future.error("Error deleting pending customer updates: $error");
+    }
+  }
+
+  @override
+  Future<void> setPendingCustomerConflict(
+    List<int> ids,
+    bool hasConflict,
+  ) async {
+    try {
+      if (ids.isEmpty) return;
+      final db = _database!;
+      final placeholders = List.filled(ids.length, '?').join(',');
+      await db.update(
+        'PendingCustomerUpdates',
+        {'has_conflict': hasConflict ? 1 : 0},
+        where: 'id IN ($placeholders)',
+        whereArgs: ids,
+      );
+    } catch (error) {
+      logger.e('Error updating pending customer conflict flag: $error');
+      return Future.error(
+        "Error updating pending customer conflict flag: $error",
+      );
+    }
+  }
+
+  @override
+  Future<void> updatePendingCustomerPayload({
+    required int id,
+    required int customerId,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      final db = _database!;
+      await db.update(
+        'PendingCustomerUpdates',
+        {
+          'customer_id': customerId,
+          'payload_json': jsonEncode(payload),
+          'has_conflict': 0,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (error) {
+      logger.e('Error updating pending customer payload: $error');
+      return Future.error("Error updating pending customer payload: $error");
+    }
+  }
+
+  @override
+  Future<void> applyPendingCustomerUpdates(String shopfront) async {
+    try {
+      final pending = await getPendingCustomerUpdates(shopfront);
+      if (pending.isEmpty) return;
+
+      final conflictIds = <int>[];
+
+      for (final entry in pending) {
+        final payload = entry.payload;
+        final items = payload['items'];
+        if (items is! List || items.isEmpty) continue;
+        final item = Map<String, dynamic>.from(items.first as Map);
+        final int customerId = (item['customerId'] as num?)?.toInt() ??
+            (item['customer_id'] as num?)?.toInt() ??
+            entry.customerId;
+
+        if (entry.action == 'create') {
+          final existing = await getCustomerById(customerId, shopfront);
+          if (existing != null) {
+            conflictIds.add(entry.id);
+            continue;
+          }
+          await _insertCustomerFromPayload(item, shopfront);
+        } else {
+          await _updateCustomerFromPayload(item, shopfront);
+        }
+      }
+
+      if (conflictIds.isNotEmpty) {
+        await setPendingCustomerConflict(conflictIds, true);
+      }
+    } catch (error) {
+      logger.e('Error applying pending customer updates: $error');
+      return Future.error("Error applying pending customer updates: $error");
+    }
+  }
+
+  Future<void> _insertCustomerFromPayload(
+    Map<String, dynamic> item,
+    String shopfront,
+  ) async {
+    final customer = CustomerVO.fromApiItem(item);
+    await insertCustomers([customer], shopfront);
+  }
+
+  Future<void> _updateCustomerFromPayload(
+    Map<String, dynamic> item,
+    String shopfront,
+  ) async {
+    final int customerId = (item['customerId'] as num?)?.toInt() ??
+        (item['customer_id'] as num?)?.toInt() ??
+        0;
+
+    final existing = await getCustomerById(customerId, shopfront);
+    if (existing == null) {
+      final customer = CustomerVO.fromApiItem(item);
+      await insertCustomers([customer], shopfront);
+      return;
+    }
+
+    final Map<String, dynamic> updateData = {
+      'surname': item['surname'] ?? existing.surname,
+      'given_names': item['givenNames'] ?? item['given_names'] ?? existing.givenNames,
+      'grade': item['grade'] ?? existing.grade,
+      'company': item['company'] ?? existing.company,
+      'position': item['position'] ?? existing.position,
+      'salutation': item['salutation'] ?? existing.salutation,
+      'status': _asDbBool(item['status'] ?? existing.status),
+      'inactive': _asDbBool(item['inactive'] ?? existing.inactive),
+      'account': _asDbBool(item['account'] ?? existing.account),
+      'overseas': _asDbBool(item['overseas'] ?? existing.overseas),
+      'abn': item['abn'] ?? existing.abn,
+      'addr1': item['addr1'] ?? existing.addr1,
+      'addr2': item['addr2'] ?? existing.addr2,
+      'addr3': item['addr3'] ?? existing.addr3,
+      'suburb': item['suburb'] ?? existing.suburb,
+      'state': item['state'] ?? existing.state,
+      'postcode': item['postcode'] ?? existing.postcode,
+      'country': item['country'] ?? existing.country,
+      'phone': item['phone'] ?? existing.phone,
+      'fax': item['fax'] ?? existing.fax,
+      'mobile': item['mobile'] ?? existing.mobile,
+      'email': item['email'] ?? existing.email,
+      'opened_id': item['openedId'] ?? item['opened_id'] ?? existing.openedId,
+      'owner_id': item['ownerId'] ?? item['owner_id'] ?? existing.ownerId,
+      'from_eom': _asDbBool(item['fromEOM'] ?? item['from_eom'] ?? existing.fromEOM),
+      'days': item['days'] ?? existing.days,
+      'limit': item['limit'] ?? existing.limit,
+      'default_delivery_address':
+          item['defaultDeliveryAddress'] ?? existing.defaultDeliveryAddress,
+      'document_delivery_type':
+          item['documentDeliveryType'] ?? existing.documentDeliveryType,
+      'custom1': item['custom1'] ?? existing.custom1,
+      'custom2': item['custom2'] ?? existing.custom2,
+      'notes': item['notes'] ?? existing.notes,
+      'comments': item['comments'] ?? existing.comments,
+      'date_modified': DateTime.now().toIso8601String(),
+    };
+
+    final db = _database!;
+    await db.update(
+      'Customers',
+      updateData,
+      where: 'customer_id = ? AND shopfront = ?',
+      whereArgs: [customerId, shopfront],
+    );
+
+    if (item['addresses'] is List) {
+      final addresses = item['addresses'] as List;
+      for (final raw in addresses) {
+        final map = Map<String, dynamic>.from(raw as Map);
+        await db.insert(
+          'CustomerAddresses',
+          {
+            'address_id': map['addressId'] ?? 0,
+            'customer_id': map['customerId'] ?? customerId,
+            'shopfront': shopfront,
+            'address_number': map['addressNumber'] ?? 0,
+            'addr1': map['addr1'] ?? '',
+            'addr2': map['addr2'] ?? '',
+            'addr3': map['addr3'] ?? '',
+            'suburb': map['suburb'] ?? '',
+            'state': map['state'] ?? '',
+            'postcode': map['postcode'] ?? '',
+            'country': map['country'] ?? '',
+            'phone': map['phone'] ?? '',
+            'fax': map['fax'] ?? '',
+            'mobile': map['mobile'] ?? '',
+            'email': map['email'] ?? '',
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    }
+  }
+
+  int _asDbBool(dynamic value) {
+    if (value is bool) return value ? 1 : 0;
+    if (value is num) return value != 0 ? 1 : 0;
+    if (value is String) {
+      final lower = value.toLowerCase();
+      return (lower == 'true' || lower == '1') ? 1 : 0;
+    }
+    return 0;
   }
 
   // Customer Methods

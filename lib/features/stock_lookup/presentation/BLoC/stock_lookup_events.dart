@@ -77,3 +77,12 @@ class SubmitStockUpdateEvent extends StockUpdateEvent {
     this.custom2,
   });
 }
+
+// Pending stock updates
+abstract class PendingStockUpdatesEvent {}
+
+class LoadPendingStockUpdatesCountEvent extends PendingStockUpdatesEvent {}
+
+class LoadPendingStockUpdatesEvent extends PendingStockUpdatesEvent {}
+
+class SendPendingStockUpdatesEvent extends PendingStockUpdatesEvent {}

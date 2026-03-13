@@ -9,8 +9,12 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lo
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 
 import '../../../../utils/global_var_utils.dart';
+import '../../../../local_db/local_db_dao.dart';
 import '../../domain/use_cases/get_filter_options.dart';
 import '../../domain/use_cases/get_paginated_stock.dart';
+import '../../domain/use_cases/get_pending_stock_updates.dart';
+import '../../domain/use_cases/get_pending_stock_updates_count.dart';
+import '../../domain/use_cases/send_pending_stock_updates.dart';
 import '../../domain/use_cases/update_single_stock.dart';
 
 class StockListBloc extends Bloc<StockListEvent, StockListState> {
@@ -353,6 +357,82 @@ class StockUpdateBloc extends Bloc<StockUpdateEvent, StockUpdateState> {
       }
     } catch (error) {
       emit(StockUpdateError("Failed to send update: $error"));
+    }
+  }
+}
+
+class PendingStockUpdatesBloc
+    extends Bloc<PendingStockUpdatesEvent, PendingStockUpdatesState> {
+  final GetPendingStockUpdatesCount getPendingStockUpdatesCount;
+  final GetPendingStockUpdates getPendingStockUpdates;
+  final SendPendingStockUpdates sendPendingStockUpdates;
+
+  PendingStockUpdatesBloc({
+    required this.getPendingStockUpdatesCount,
+    required this.getPendingStockUpdates,
+    required this.sendPendingStockUpdates,
+  }) : super(PendingStockUpdatesInitial()) {
+    on<LoadPendingStockUpdatesCountEvent>(_onLoadCount);
+    on<LoadPendingStockUpdatesEvent>(_onLoadList);
+    on<SendPendingStockUpdatesEvent>(_onSend);
+  }
+
+  Future<String> _resolveShopfront() async {
+    final fromGlobals = AppGlobals.instance.shopfront ?? "";
+    if (fromGlobals.trim().isNotEmpty) return fromGlobals.trim();
+    return (await LocalDbDAO.instance.getShopfrontName() ?? "").trim();
+  }
+
+  Future<void> _onLoadCount(
+    LoadPendingStockUpdatesCountEvent event,
+    Emitter<PendingStockUpdatesState> emit,
+  ) async {
+    try {
+      final shopfront = await _resolveShopfront();
+      if (shopfront.isEmpty) {
+        emit(PendingStockUpdatesCountLoaded(0));
+        return;
+      }
+      final count = await getPendingStockUpdatesCount(shopfront);
+      emit(PendingStockUpdatesCountLoaded(count));
+    } catch (e) {
+      emit(PendingStockUpdatesError(e.toString()));
+    }
+  }
+
+  Future<void> _onLoadList(
+    LoadPendingStockUpdatesEvent event,
+    Emitter<PendingStockUpdatesState> emit,
+  ) async {
+    emit(PendingStockUpdatesLoading());
+    try {
+      final shopfront = await _resolveShopfront();
+      if (shopfront.isEmpty) {
+        emit(PendingStockUpdatesLoaded([]));
+        return;
+      }
+      final updates = await getPendingStockUpdates(shopfront);
+      emit(PendingStockUpdatesLoaded(updates));
+    } catch (e) {
+      emit(PendingStockUpdatesError(e.toString()));
+    }
+  }
+
+  Future<void> _onSend(
+    SendPendingStockUpdatesEvent event,
+    Emitter<PendingStockUpdatesState> emit,
+  ) async {
+    emit(PendingStockUpdatesLoading());
+    try {
+      final shopfront = await _resolveShopfront();
+      if (shopfront.isEmpty) {
+        emit(PendingStockUpdatesError("Missing shopfront setup."));
+        return;
+      }
+      final response = await sendPendingStockUpdates(shopfront);
+      emit(PendingStockUpdatesSent(response.message));
+    } catch (e) {
+      emit(PendingStockUpdatesError(e.toString()));
     }
   }
 }

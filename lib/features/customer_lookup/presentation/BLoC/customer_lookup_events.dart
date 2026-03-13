@@ -53,3 +53,17 @@ class SubmitCustomerUpdateEvent extends CustomerUpdateEvent {
 
   SubmitCustomerUpdateEvent({required this.body, required this.section});
 }
+
+// Pending customer updates
+abstract class PendingCustomerUpdatesEvent {}
+
+class LoadPendingCustomerUpdatesCountEvent extends PendingCustomerUpdatesEvent {}
+
+class LoadPendingCustomerUpdatesEvent extends PendingCustomerUpdatesEvent {}
+
+class SendPendingCustomerUpdatesEvent extends PendingCustomerUpdatesEvent {}
+
+class ResolveCustomerCreateConflictsEvent extends PendingCustomerUpdatesEvent {
+  final bool duplicate;
+  ResolveCustomerCreateConflictsEvent({required this.duplicate});
+}

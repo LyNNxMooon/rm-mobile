@@ -1371,6 +1371,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   ownerId: _ownerStaffId ?? 0,
                 ),
               );
+              context.read<PendingCustomerUpdatesBloc>().add(
+                LoadPendingCustomerUpdatesCountEvent(),
+              );
             } else if (state is CustomerUpdateFailure) {
               ScaffoldMessenger.of(
                 context,
@@ -1568,7 +1571,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final bool overseasValue = _overseasValue;
     final bool isEditing = _editingSection == CustomerEditSection.header;
     final String statusLabel =
-        "${_customerStatusLabel}: ${statusValue ? 'True' : 'False'}";
+        "$_customerStatusLabel: ${statusValue ? 'True' : 'False'}";
     return _buildBaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment
@@ -1944,8 +1947,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     String primaryAddressStr = primaryAddressParts.join('\n');
     final String primaryAddressQuery = primaryAddressParts.join(', ');
 
-    if (primaryAddressStr.isEmpty)
+    if (primaryAddressStr.isEmpty) {
       primaryAddressStr = "No primary address provided.";
+    }
 
     return _buildSectionCard(
       title: "Addresses",

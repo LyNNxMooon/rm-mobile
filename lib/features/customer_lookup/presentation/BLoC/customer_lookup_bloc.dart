@@ -6,10 +6,15 @@ import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_cu
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_paginated_customers.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_staff_detail.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/update_customer_details.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_pending_customer_updates.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_pending_customer_updates_count.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/send_pending_customer_updates.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/resolve_customer_create_conflicts.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 
 import '../../../../utils/global_var_utils.dart';
+import '../../../../local_db/local_db_dao.dart';
 
 class CustomerListBloc extends Bloc<CustomerListEvent, CustomerListState> {
   final GetPaginatedCustomers getPaginatedCustomers;
@@ -259,6 +264,119 @@ class CustomerUpdateBloc extends Bloc<CustomerUpdateEvent, CustomerUpdateState> 
           message: e.toString(),
         ),
       );
+    }
+  }
+}
+
+class PendingCustomerUpdatesBloc
+    extends Bloc<PendingCustomerUpdatesEvent, PendingCustomerUpdatesState> {
+  final GetPendingCustomerUpdatesCount getPendingCustomerUpdatesCount;
+  final GetPendingCustomerUpdates getPendingCustomerUpdates;
+  final SendPendingCustomerUpdates sendPendingCustomerUpdates;
+  final ResolveCustomerCreateConflicts resolveCustomerCreateConflicts;
+
+  PendingCustomerUpdatesBloc({
+    required this.getPendingCustomerUpdatesCount,
+    required this.getPendingCustomerUpdates,
+    required this.sendPendingCustomerUpdates,
+    required this.resolveCustomerCreateConflicts,
+  }) : super(PendingCustomerUpdatesInitial()) {
+    on<LoadPendingCustomerUpdatesCountEvent>(_onLoadCount);
+    on<LoadPendingCustomerUpdatesEvent>(_onLoadList);
+    on<SendPendingCustomerUpdatesEvent>(_onSend);
+    on<ResolveCustomerCreateConflictsEvent>(_onResolveConflicts);
+  }
+
+  Future<String> _resolveShopfront() async {
+    final fromGlobals = AppGlobals.instance.shopfront ?? "";
+    if (fromGlobals.trim().isNotEmpty) return fromGlobals.trim();
+    return (await LocalDbDAO.instance.getShopfrontName() ?? "").trim();
+  }
+
+  Future<void> _onLoadCount(
+    LoadPendingCustomerUpdatesCountEvent event,
+    Emitter<PendingCustomerUpdatesState> emit,
+  ) async {
+    try {
+      final shopfront = await _resolveShopfront();
+      if (shopfront.isEmpty) {
+        emit(PendingCustomerUpdatesCountLoaded(0));
+        return;
+      }
+      final count = await getPendingCustomerUpdatesCount(shopfront);
+      emit(PendingCustomerUpdatesCountLoaded(count));
+    } catch (e) {
+      emit(PendingCustomerUpdatesError(e.toString()));
+    }
+  }
+
+  Future<void> _onLoadList(
+    LoadPendingCustomerUpdatesEvent event,
+    Emitter<PendingCustomerUpdatesState> emit,
+  ) async {
+    emit(PendingCustomerUpdatesLoading());
+    try {
+      final shopfront = await _resolveShopfront();
+      if (shopfront.isEmpty) {
+        emit(PendingCustomerUpdatesLoaded([]));
+        return;
+      }
+      final updates = await getPendingCustomerUpdates(shopfront);
+      emit(PendingCustomerUpdatesLoaded(updates));
+    } catch (e) {
+      emit(PendingCustomerUpdatesError(e.toString()));
+    }
+  }
+
+  Future<void> _onSend(
+    SendPendingCustomerUpdatesEvent event,
+    Emitter<PendingCustomerUpdatesState> emit,
+  ) async {
+    emit(PendingCustomerUpdatesLoading());
+    try {
+      final shopfront = await _resolveShopfront();
+      if (shopfront.isEmpty) {
+        emit(PendingCustomerUpdatesError("Missing shopfront setup."));
+        return;
+      }
+      final result = await sendPendingCustomerUpdates(shopfront);
+      final bool hasConflicts = result['hasConflicts'] == true;
+      final String message = result['message']?.toString() ??
+          (hasConflicts
+              ? 'Customer create conflicts need review.'
+              : 'Pending customer updates sent.');
+
+      emit(
+        PendingCustomerUpdatesSent(
+          message: message,
+          hasConflicts: hasConflicts,
+        ),
+      );
+    } catch (e) {
+      emit(PendingCustomerUpdatesError(e.toString()));
+    }
+  }
+
+  Future<void> _onResolveConflicts(
+    ResolveCustomerCreateConflictsEvent event,
+    Emitter<PendingCustomerUpdatesState> emit,
+  ) async {
+    emit(PendingCustomerUpdatesLoading());
+    try {
+      final shopfront = await _resolveShopfront();
+      if (shopfront.isEmpty) {
+        emit(PendingCustomerUpdatesError("Missing shopfront setup."));
+        return;
+      }
+      await resolveCustomerCreateConflicts(
+        shopfront: shopfront,
+        duplicate: event.duplicate,
+      );
+
+      final updates = await getPendingCustomerUpdates(shopfront);
+      emit(PendingCustomerUpdatesLoaded(updates));
+    } catch (e) {
+      emit(PendingCustomerUpdatesError(e.toString()));
     }
   }
 }

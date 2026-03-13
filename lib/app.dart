@@ -178,6 +178,12 @@ class _MyAppState extends State<MyApp> {
         ),
         BlocProvider<BackupRestoreBloc>(create: (_) => sl<BackupRestoreBloc>()),
         BlocProvider<StockUpdateBloc>(create: (_) => sl<StockUpdateBloc>()),
+        BlocProvider<PendingStockUpdatesBloc>(
+          create: (_) => sl<PendingStockUpdatesBloc>(),
+        ),
+        BlocProvider<PendingCustomerUpdatesBloc>(
+          create: (_) => sl<PendingCustomerUpdatesBloc>(),
+        ),
 
         //Local web server changes
         BlocProvider<DiscoverHostBloc>(create: (_) => sl<DiscoverHostBloc>()),
