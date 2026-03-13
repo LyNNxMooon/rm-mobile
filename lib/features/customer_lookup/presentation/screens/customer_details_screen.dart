@@ -14,6 +14,7 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_transactions_screen.dart';
 import 'package:rmstock_scanner/utils/enums.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmstock_scanner/utils/internet_connection_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import '../../../../constants/colors.dart';
@@ -514,8 +515,40 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     });
   }
 
-  void _triggerSyncIfNeeded() {
+  Future<void> _triggerSyncIfNeeded() async {
     if (!_shouldSyncOnExit) return;
+
+    final isOnline =
+        await InternetConnectionUtils.instance.checkInternetConnection();
+
+    if (!isOnline) {
+      final customerState = context.read<CustomerListBloc>().state;
+      if (customerState is CustomerListLoaded) {
+        context.read<CustomerListBloc>().add(
+          FetchFirstCustomerPageEvent(
+            query: customerState.currentQuery,
+            filterColumn: customerState.currentFilterCol,
+            sortColumn: customerState.currentSortCol,
+            filters: customerState.activeFilters,
+            shouldToggleSort: false,
+            searchMode: customerState.searchMode,
+          ),
+        );
+      } else {
+        context.read<CustomerListBloc>().add(
+          FetchFirstCustomerPageEvent(shouldToggleSort: false),
+        );
+      }
+      context.read<CustomerFilterOptionsBloc>().add(
+        LoadCustomerFilterOptionsEvent(),
+      );
+      context.read<PendingCustomerUpdatesBloc>().add(
+        LoadPendingCustomerUpdatesCountEvent(),
+      );
+      _shouldSyncOnExit = false;
+      return;
+    }
+
     context.read<FetchCustomerBloc>().add(
       StartCustomerSyncEvent(
         ipAddress: "",
@@ -1450,7 +1483,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       ],
       child: WillPopScope(
         onWillPop: () async {
-          _triggerSyncIfNeeded();
+          await _triggerSyncIfNeeded();
           return true;
         },
         child: Scaffold(

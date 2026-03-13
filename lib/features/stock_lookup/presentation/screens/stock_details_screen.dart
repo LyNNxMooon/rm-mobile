@@ -24,6 +24,7 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
+import 'package:rmstock_scanner/utils/internet_connection_utils.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
@@ -321,8 +322,37 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     setState(() {});
   }
 
-  void _triggerSyncIfNeeded() {
+  Future<void> _triggerSyncIfNeeded() async {
     if (!_shouldSyncOnExit) return;
+
+    final isOnline =
+        await InternetConnectionUtils.instance.checkInternetConnection();
+
+    if (!isOnline) {
+      final stockState = context.read<StockListBloc>().state;
+      if (stockState is StockListLoaded) {
+        context.read<StockListBloc>().add(
+          FetchFirstPageEvent(
+            query: stockState.currentQuery,
+            filterColumn: stockState.currentFilterCol,
+            sortColumn: stockState.currentSortCol,
+            filters: stockState.activeFilters,
+            shouldToggleSort: false,
+          ),
+        );
+      } else {
+        context.read<StockListBloc>().add(
+          FetchFirstPageEvent(shouldToggleSort: false),
+        );
+      }
+      context.read<FilterOptionsBloc>().add(LoadFilterOptionsEvent());
+      context.read<PendingStockUpdatesBloc>().add(
+        LoadPendingStockUpdatesCountEvent(),
+      );
+      _shouldSyncOnExit = false;
+      return;
+    }
+
     context.read<FetchStockBloc>().add(
       StartSyncEvent(ipAddress: ""),
     );
@@ -451,7 +481,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
       ],
       child: WillPopScope(
         onWillPop: () async {
-          _triggerSyncIfNeeded();
+          await _triggerSyncIfNeeded();
           return true;
         },
         child: Scaffold(

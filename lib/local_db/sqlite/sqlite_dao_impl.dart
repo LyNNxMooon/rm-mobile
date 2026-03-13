@@ -1370,10 +1370,45 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }) async {
     try {
       final db = _database!;
+      final existing = await db.query(
+        'PendingStockUpdates',
+        where: 'shopfront = ? AND stock_id = ? AND status = 0',
+        whereArgs: [shopfront, stockId],
+        limit: 1,
+      );
+
+      final Map<String, dynamic> mergedPayload = Map<String, dynamic>.from(
+        payload,
+      );
+
+      if (existing.isNotEmpty) {
+        final row = existing.first;
+        final int id = row['id'] as int;
+        final Map<String, dynamic> current = Map<String, dynamic>.from(
+          jsonDecode(row['payload_json'] as String) as Map,
+        );
+        final Map<String, dynamic> combined = {
+          ...current,
+          ...mergedPayload,
+        };
+
+        await db.update(
+          'PendingStockUpdates',
+          {
+            'payload_json': jsonEncode(combined),
+            'created_at': DateTime.now().toIso8601String(),
+            'status': 0,
+          },
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+        return id;
+      }
+
       return await db.insert('PendingStockUpdates', {
         'shopfront': shopfront,
         'stock_id': stockId,
-        'payload_json': jsonEncode(payload),
+        'payload_json': jsonEncode(mergedPayload),
         'created_at': DateTime.now().toIso8601String(),
         'status': 0,
       });
@@ -1484,11 +1519,73 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }) async {
     try {
       final db = _database!;
+      final existing = await db.query(
+        'PendingCustomerUpdates',
+        where: 'shopfront = ? AND customer_id = ? AND action = ? AND status = 0',
+        whereArgs: [shopfront, customerId, action],
+        limit: 1,
+      );
+
+      final Map<String, dynamic> mergedPayload = Map<String, dynamic>.from(
+        payload,
+      );
+
+      if (existing.isNotEmpty) {
+        final row = existing.first;
+        final int id = row['id'] as int;
+        final Map<String, dynamic> current = Map<String, dynamic>.from(
+          jsonDecode(row['payload_json'] as String) as Map,
+        );
+
+        final List<dynamic> currentItems = current['items'] is List
+            ? List<dynamic>.from(current['items'] as List)
+            : <dynamic>[];
+        final List<dynamic> newItems = mergedPayload['items'] is List
+            ? List<dynamic>.from(mergedPayload['items'] as List)
+            : <dynamic>[];
+
+        final Map<String, dynamic> currentItem = currentItems.isNotEmpty
+            ? Map<String, dynamic>.from(currentItems.first as Map)
+            : <String, dynamic>{};
+        final Map<String, dynamic> newItem = newItems.isNotEmpty
+            ? Map<String, dynamic>.from(newItems.first as Map)
+            : <String, dynamic>{};
+
+        final Map<String, dynamic> combinedItem = {
+          ...currentItem,
+          ...newItem,
+        };
+
+        if (!newItem.containsKey('addresses') &&
+            currentItem.containsKey('addresses')) {
+          combinedItem['addresses'] = currentItem['addresses'];
+        }
+
+        final Map<String, dynamic> combinedPayload = {
+          ...current,
+          ...mergedPayload,
+          'items': [combinedItem],
+        };
+
+        await db.update(
+          'PendingCustomerUpdates',
+          {
+            'payload_json': jsonEncode(combinedPayload),
+            'created_at': DateTime.now().toIso8601String(),
+            'status': 0,
+            'has_conflict': 0,
+          },
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+        return id;
+      }
+
       return await db.insert('PendingCustomerUpdates', {
         'shopfront': shopfront,
         'customer_id': customerId,
         'action': action,
-        'payload_json': jsonEncode(payload),
+        'payload_json': jsonEncode(mergedPayload),
         'created_at': DateTime.now().toIso8601String(),
         'status': 0,
         'has_conflict': 0,
