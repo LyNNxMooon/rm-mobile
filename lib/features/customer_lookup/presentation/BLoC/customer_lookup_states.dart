@@ -182,7 +182,9 @@ class PendingCustomerUpdatesCountLoaded extends PendingCustomerUpdatesState {
 
 class PendingCustomerUpdatesLoaded extends PendingCustomerUpdatesState {
   final List<PendingCustomerUpdateVO> updates;
-  PendingCustomerUpdatesLoaded(this.updates);
+  final bool showDialog;
+
+  PendingCustomerUpdatesLoaded(this.updates, {this.showDialog = true});
 }
 
 class PendingCustomerUpdatesSent extends PendingCustomerUpdatesState {

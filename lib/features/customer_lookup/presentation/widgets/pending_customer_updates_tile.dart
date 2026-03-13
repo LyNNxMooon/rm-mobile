@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
@@ -37,10 +38,15 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
           setState(() {
             _count = state.updates.length;
           });
-          await _showPendingDialog(context, state.updates);
+          if (state.showDialog) {
+            await _showPendingDialog(context, state.updates);
+          }
         }
       },
       builder: (context, state) {
+        if (state is PendingCustomerUpdatesLoading) {
+          return _buildLoadingTile();
+        }
         if (_count <= 0) return const SizedBox.shrink();
 
         return Padding(
@@ -67,7 +73,7 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "$_count customer updates not sent to RetailManager",
+                      "$_count customer update(s) not sent to RetailManager",
                       style: TextStyle(
                         color: Colors.orange.shade800,
                         fontSize: 13,
@@ -91,214 +97,53 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
     BuildContext context,
     List<PendingCustomerUpdateVO> updates,
   ) async {
-    if (updates.isEmpty) return;
-
-    final shopfront =
-        (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
-    final entries = <_PendingCustomerEntry>[];
-    for (final update in updates) {
-      final customer =
-          await LocalDbDAO.instance.getCustomerById(update.customerId, shopfront);
-      entries.add(_PendingCustomerEntry(update: update, customer: customer));
-    }
-
-    if (!context.mounted) return;
-
-    await showDialog(
+    await showPendingCustomerUpdatesDialog(
       context: context,
-      builder: (dialogContext) {
-        final dialogEntries = List<_PendingCustomerEntry>.from(entries);
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return Dialog(
-              insetPadding: dialogInsetPadding(dialogContext),
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              backgroundColor: kBgColor,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: kPrimaryColor.withOpacity(0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.sync_problem,
-                            color: kPrimaryColor,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            "Pending Customer Updates",
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: kThirdColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      "${dialogEntries.length} item(s) are queued and not sent yet.",
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: kThirdColor.withOpacity(0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 380),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: kSecondaryColor,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: kGreyColor.withOpacity(0.2)),
-                      ),
-                      child: dialogEntries.isEmpty
-                          ? const Text("No pending customer updates found.")
-                          : ListView.separated(
-                              shrinkWrap: true,
-                              itemCount: dialogEntries.length,
-                              separatorBuilder: (context, index) =>
-                                  const SizedBox(height: 8),
-                              itemBuilder: (context, index) {
-                                final entry = dialogEntries[index];
-                                return Dismissible(
-                                  key: ValueKey('pending_customer_${entry.update.id}'),
-                                  direction: DismissDirection.endToStart,
-                                  background: Container(
-                                    alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.shade400,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(
-                                      Icons.delete,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  onDismissed: (direction) async {
-                                    await LocalDbDAO.instance
-                                        .deletePendingCustomerUpdates(
-                                      [entry.update.id],
-                                    );
-                                    setDialogState(() {
-                                      dialogEntries.removeWhere(
-                                        (item) => item.update.id == entry.update.id,
-                                      );
-                                    });
-                                    if (!dialogContext.mounted) return;
-                                    dialogContext
-                                        .read<PendingCustomerUpdatesBloc>()
-                                        .add(LoadPendingCustomerUpdatesCountEvent());
-                                    if (dialogEntries.isEmpty) {
-                                      Navigator.of(dialogContext).pop();
-                                    }
-                                  },
-                                  child: _PendingCustomerTile(
-                                    update: entry.update,
-                                    customer: entry.customer,
-                                    onTap: entry.customer == null
-                                        ? null
-                                        : () async {
-                                            Navigator.of(dialogContext).pop();
-                                            await context.navigateToNext(
-                                              CustomerDetailsScreen(
-                                                customer: entry.customer!,
-                                              ),
-                                            );
-                                            if (!context.mounted) return;
-                                            context
-                                                .read<PendingCustomerUpdatesBloc>()
-                                                .add(
-                                                  LoadPendingCustomerUpdatesCountEvent(),
-                                                );
-                                          },
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: dialogEntries.isEmpty
-                                ? null
-                                : () async {
-                                    final ids = dialogEntries
-                                        .map((entry) => entry.update.id)
-                                        .toList();
-                                    await LocalDbDAO.instance
-                                        .deletePendingCustomerUpdates(ids);
-                                    if (!dialogContext.mounted) return;
-                                    dialogContext
-                                        .read<PendingCustomerUpdatesBloc>()
-                                        .add(LoadPendingCustomerUpdatesCountEvent());
-                                    Navigator.of(dialogContext).pop();
-                                  },
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: kErrorColor.withOpacity(0.6),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text(
-                              "Delete All",
-                              style: TextStyle(color: kErrorColor),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(dialogContext).pop(),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: kPrimaryColor.withOpacity(0.4),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text(
-                              "Close",
-                              style: TextStyle(color: kPrimaryColor),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+      updates: updates,
+      showSendButton: false,
     );
 
     if (!context.mounted) return;
     context.read<PendingCustomerUpdatesBloc>().add(
       LoadPendingCustomerUpdatesCountEvent(),
+    );
+  }
+
+  Widget _buildLoadingTile() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+      child: Container(
+        margin: const EdgeInsets.only(top: 5, bottom: 8),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        decoration: BoxDecoration(
+          color: kSecondaryColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: kGreyColor.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: const [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CupertinoActivityIndicator(
+                color: kPrimaryColor,
+                radius: 10,
+              ),
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                "Processing pending customer updates...",
+                style: TextStyle(
+                  color: kThirdColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -460,4 +305,260 @@ class _PendingCustomerTile extends StatelessWidget {
       child: tile,
     );
   }
+}
+
+Future<void> showPendingCustomerUpdatesDialog({
+  required BuildContext context,
+  required List<PendingCustomerUpdateVO> updates,
+  required bool showSendButton,
+  String? warningMessage,
+  Future<void> Function()? onSend,
+}) async {
+  if (updates.isEmpty) return;
+
+  final shopfront =
+      (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
+  final entries = <_PendingCustomerEntry>[];
+  for (final update in updates) {
+    CustomerVO? customer;
+    if (update.action != 'create') {
+      customer =
+          await LocalDbDAO.instance.getCustomerById(update.customerId, shopfront);
+    }
+    entries.add(_PendingCustomerEntry(update: update, customer: customer));
+  }
+
+  if (!context.mounted) return;
+
+  await showDialog(
+    context: context,
+    builder: (dialogContext) {
+      final dialogEntries = List<_PendingCustomerEntry>.from(entries);
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return Dialog(
+            insetPadding: dialogInsetPadding(dialogContext),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: kBgColor,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: kPrimaryColor.withOpacity(0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.sync_problem,
+                          color: kPrimaryColor,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pending Customer Updates",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: kThirdColor,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        icon: const Icon(Icons.close, color: kThirdColor),
+                        tooltip: 'Close',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "${dialogEntries.length} item(s) are queued and not sent yet.",
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: kThirdColor.withOpacity(0.7),
+                    ),
+                  ),
+                  if (warningMessage != null && warningMessage.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        warningMessage,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: kErrorColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 14),
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 380),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: kSecondaryColor,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: kGreyColor.withOpacity(0.2)),
+                    ),
+                    child: dialogEntries.isEmpty
+                        ? const Text("No pending customer updates found.")
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: dialogEntries.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final entry = dialogEntries[index];
+                              return Dismissible(
+                                key: ValueKey('pending_customer_${entry.update.id}'),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade400,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                onDismissed: (direction) async {
+                                  await LocalDbDAO.instance
+                                      .deletePendingCustomerUpdates(
+                                    [entry.update.id],
+                                  );
+                                  setDialogState(() {
+                                    dialogEntries.removeWhere(
+                                      (item) => item.update.id == entry.update.id,
+                                    );
+                                  });
+                                  if (!dialogContext.mounted) return;
+                                  dialogContext
+                                      .read<PendingCustomerUpdatesBloc>()
+                                      .add(LoadPendingCustomerUpdatesCountEvent());
+                                  if (dialogEntries.isEmpty) {
+                                    Navigator.of(dialogContext).pop();
+                                  }
+                                },
+                                child: _PendingCustomerTile(
+                                  update: entry.update,
+                                  customer: entry.customer,
+                                  onTap: entry.customer == null
+                                      ? null
+                                      : () async {
+                                          Navigator.of(dialogContext).pop();
+                                          await context.navigateToNext(
+                                            CustomerDetailsScreen(
+                                              customer: entry.customer!,
+                                            ),
+                                          );
+                                          if (!context.mounted) return;
+                                          context
+                                              .read<PendingCustomerUpdatesBloc>()
+                                              .add(
+                                                LoadPendingCustomerUpdatesCountEvent(),
+                                              );
+                                        },
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: dialogEntries.isEmpty
+                              ? null
+                              : () async {
+                                  final ids = dialogEntries
+                                      .map((entry) => entry.update.id)
+                                      .toList();
+                                  await LocalDbDAO.instance
+                                      .deletePendingCustomerUpdates(ids);
+                                  if (!dialogContext.mounted) return;
+                                  dialogContext
+                                      .read<PendingCustomerUpdatesBloc>()
+                                      .add(LoadPendingCustomerUpdatesCountEvent());
+                                  Navigator.of(dialogContext).pop();
+                                },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: kErrorColor.withOpacity(0.6),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            "Delete All",
+                            style: TextStyle(color: kErrorColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: showSendButton
+                            ? ElevatedButton(
+                                onPressed: dialogEntries.isEmpty
+                                    ? null
+                                    : () async {
+                                        Navigator.of(dialogContext).pop();
+                                        if (onSend != null) {
+                                          await onSend();
+                                        }
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: kPrimaryColor,
+                                  foregroundColor: kSecondaryColor,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: const Text("Send"),
+                              )
+                            : OutlinedButton(
+                                onPressed: () => Navigator.of(dialogContext).pop(),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: kPrimaryColor.withOpacity(0.4),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Close",
+                                  style: TextStyle(color: kPrimaryColor),
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+
+  if (!context.mounted) return;
+  context.read<PendingCustomerUpdatesBloc>().add(
+    LoadPendingCustomerUpdatesCountEvent(),
+  );
 }

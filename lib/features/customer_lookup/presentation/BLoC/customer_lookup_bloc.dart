@@ -274,6 +274,7 @@ class PendingCustomerUpdatesBloc
   final GetPendingCustomerUpdates getPendingCustomerUpdates;
   final SendPendingCustomerUpdates sendPendingCustomerUpdates;
   final ResolveCustomerCreateConflicts resolveCustomerCreateConflicts;
+  bool _isSending = false;
 
   PendingCustomerUpdatesBloc({
     required this.getPendingCustomerUpdatesCount,
@@ -298,6 +299,7 @@ class PendingCustomerUpdatesBloc
     Emitter<PendingCustomerUpdatesState> emit,
   ) async {
     try {
+      if (_isSending) return;
       final shopfront = await _resolveShopfront();
       if (shopfront.isEmpty) {
         emit(PendingCustomerUpdatesCountLoaded(0));
@@ -314,6 +316,7 @@ class PendingCustomerUpdatesBloc
     LoadPendingCustomerUpdatesEvent event,
     Emitter<PendingCustomerUpdatesState> emit,
   ) async {
+    if (_isSending) return;
     emit(PendingCustomerUpdatesLoading());
     try {
       final shopfront = await _resolveShopfront();
@@ -332,10 +335,12 @@ class PendingCustomerUpdatesBloc
     SendPendingCustomerUpdatesEvent event,
     Emitter<PendingCustomerUpdatesState> emit,
   ) async {
+    _isSending = true;
     emit(PendingCustomerUpdatesLoading());
     try {
       final shopfront = await _resolveShopfront();
       if (shopfront.isEmpty) {
+        _isSending = false;
         emit(PendingCustomerUpdatesError("Missing shopfront setup."));
         return;
       }
@@ -352,7 +357,9 @@ class PendingCustomerUpdatesBloc
           hasConflicts: hasConflicts,
         ),
       );
+      _isSending = false;
     } catch (e) {
+      _isSending = false;
       emit(PendingCustomerUpdatesError(e.toString()));
     }
   }
@@ -374,7 +381,7 @@ class PendingCustomerUpdatesBloc
       );
 
       final updates = await getPendingCustomerUpdates(shopfront);
-      emit(PendingCustomerUpdatesLoaded(updates));
+      emit(PendingCustomerUpdatesLoaded(updates, showDialog: false));
     } catch (e) {
       emit(PendingCustomerUpdatesError(e.toString()));
     }

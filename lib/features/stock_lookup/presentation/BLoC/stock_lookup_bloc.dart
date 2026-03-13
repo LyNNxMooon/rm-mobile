@@ -366,6 +366,7 @@ class PendingStockUpdatesBloc
   final GetPendingStockUpdatesCount getPendingStockUpdatesCount;
   final GetPendingStockUpdates getPendingStockUpdates;
   final SendPendingStockUpdates sendPendingStockUpdates;
+  bool _isSending = false;
 
   PendingStockUpdatesBloc({
     required this.getPendingStockUpdatesCount,
@@ -388,6 +389,7 @@ class PendingStockUpdatesBloc
     Emitter<PendingStockUpdatesState> emit,
   ) async {
     try {
+      if (_isSending) return;
       final shopfront = await _resolveShopfront();
       if (shopfront.isEmpty) {
         emit(PendingStockUpdatesCountLoaded(0));
@@ -404,6 +406,7 @@ class PendingStockUpdatesBloc
     LoadPendingStockUpdatesEvent event,
     Emitter<PendingStockUpdatesState> emit,
   ) async {
+    if (_isSending) return;
     emit(PendingStockUpdatesLoading());
     try {
       final shopfront = await _resolveShopfront();
@@ -422,16 +425,22 @@ class PendingStockUpdatesBloc
     SendPendingStockUpdatesEvent event,
     Emitter<PendingStockUpdatesState> emit,
   ) async {
+    _isSending = true;
     emit(PendingStockUpdatesLoading());
     try {
       final shopfront = await _resolveShopfront();
       if (shopfront.isEmpty) {
+        _isSending = false;
         emit(PendingStockUpdatesError("Missing shopfront setup."));
         return;
       }
       final response = await sendPendingStockUpdates(shopfront);
       emit(PendingStockUpdatesSent(response.message));
+      final updates = await getPendingStockUpdates(shopfront);
+      emit(PendingStockUpdatesLoaded(updates, showDialog: false));
+      _isSending = false;
     } catch (e) {
+      _isSending = false;
       emit(PendingStockUpdatesError(e.toString()));
     }
   }

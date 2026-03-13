@@ -201,7 +201,9 @@ class PendingStockUpdatesCountLoaded extends PendingStockUpdatesState {
 
 class PendingStockUpdatesLoaded extends PendingStockUpdatesState {
   final List<PendingStockUpdateVO> updates;
-  PendingStockUpdatesLoaded(this.updates);
+  final bool showDialog;
+
+  PendingStockUpdatesLoaded(this.updates, {this.showDialog = true});
 }
 
 class PendingStockUpdatesSent extends PendingStockUpdatesState {
