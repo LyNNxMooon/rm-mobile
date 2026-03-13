@@ -219,45 +219,49 @@ class _LoadingScreenState extends State<LoadingScreen> {
       ],
       child: Scaffold(
         body: Container(
+          width: double.infinity,
+          height: double.infinity,
           decoration: BoxDecoration(gradient: kGColor),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: logoWidth,
-                  height: logoHeight,
-                  child: Image.asset(appLogo, fit: BoxFit.fill),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  "RetailManager Mobile",
-                  style: getSmartTitle(color: kSecondaryColor, fontSize: 24),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  "AAAPOS Pty Ltd",
-                  style: TextStyle(
-                    color: kSecondaryColor.withOpacity(0.8),
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16,
+          child: SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: logoWidth,
+                    height: logoHeight,
+                    child: Image.asset(appLogo, fit: BoxFit.fill),
                   ),
-                ),
+                  const SizedBox(height: 20),
+                  Text(
+                    "RetailManager Mobile",
+                    style: getSmartTitle(color: kSecondaryColor, fontSize: 24),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    "AAAPOS Pty Ltd",
+                    style: TextStyle(
+                      color: kSecondaryColor.withOpacity(0.8),
+                      fontWeight: FontWeight.w400,
+                      fontSize: 16,
+                    ),
+                  ),
 
-                const SizedBox(height: 25),
-                SizedBox(
-                  width: loadingWidth,
-                  child: ModernLoadingBar(),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _loadingMessage,
-                  style: TextStyle(
-                    color: kSecondaryColor.withOpacity(0.8),
-                    fontWeight: FontWeight.w400,
+                  const SizedBox(height: 25),
+                  SizedBox(
+                    width: loadingWidth,
+                    child: const ModernLoadingBar(),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  Text(
+                    _loadingMessage,
+                    style: TextStyle(
+                      color: kSecondaryColor.withOpacity(0.8),
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
