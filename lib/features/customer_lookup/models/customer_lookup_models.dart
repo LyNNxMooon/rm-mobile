@@ -11,6 +11,7 @@ import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
 import '../../../entities/vos/filter_criteria.dart';
 import '../../../local_db/local_db_dao.dart';
+import '../../../local_db/sqlite/sqlite_constants.dart';
 
 class CustomerLookupModels implements CustomerLookupRepo {
   @override
@@ -69,6 +70,7 @@ class CustomerLookupModels implements CustomerLookupRepo {
         int total = 1;
         int? afterCustomerId;
         bool hasMore = true;
+        int maxRemoteCustomerId = 0;
 
         while (hasMore) {
           final Map<String, dynamic> body = {"pageSize": 10000};
@@ -100,6 +102,10 @@ class CustomerLookupModels implements CustomerLookupRepo {
             response.syncTimestamp,
             latestSyncTimestamp,
           );
+          if (response.lastCustomerId != null &&
+              response.lastCustomerId! > maxRemoteCustomerId) {
+            maxRemoteCustomerId = response.lastCustomerId!;
+          }
           total = response.totalItems > 0 ? response.totalItems : total;
 
           if (response.items.isNotEmpty) {
@@ -120,6 +126,13 @@ class CustomerLookupModels implements CustomerLookupRepo {
           if (hasMore && (afterCustomerId == null || afterCustomerId <= 0)) {
             hasMore = false;
           }
+        }
+
+        if (maxRemoteCustomerId > 0) {
+          await LocalDbDAO.instance.saveAppConfig(
+            '$kCustomerMaxIdPrefix$resolvedShopfrontName',
+            maxRemoteCustomerId.toString(),
+          );
         }
       } else {
         yield CustomerSyncStatus(0, 1, "Checking for customer updates...");
@@ -148,6 +161,13 @@ class CustomerLookupModels implements CustomerLookupRepo {
           response.syncTimestamp,
           latestSyncTimestamp,
         );
+
+        if (response.lastCustomerId != null && response.lastCustomerId! > 0) {
+          await LocalDbDAO.instance.saveAppConfig(
+            '$kCustomerMaxIdPrefix$resolvedShopfrontName',
+            response.lastCustomerId.toString(),
+          );
+        }
 
         if (response.items.isNotEmpty) {
           final customers = response.items.map(CustomerVO.fromApiItem).toList();

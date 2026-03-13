@@ -1743,12 +1743,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
           final existing = await getCustomerById(customerId, shopfront);
           if (existing != null) {
             conflictIds.add(entry.id);
-            continue;
           }
-          await _insertCustomerFromPayload(item, shopfront);
-        } else {
-          await _updateCustomerFromPayload(item, shopfront);
+          continue;
         }
+
+        await _updateCustomerFromPayload(item, shopfront);
       }
 
       if (conflictIds.isNotEmpty) {
@@ -2231,12 +2230,27 @@ class SQLiteDAOImpl extends LocalDbDAO {
         [shopfront],
       );
 
-      final maxId = result.first['max_id'];
-      if (maxId == null) {
-        return 1; // Start from 1 if no customers exist
+      final maxCustomerId = (result.first['max_id'] as int?) ?? 0;
+      final pendingResult = await db.rawQuery(
+        'SELECT MAX(customer_id) as max_id FROM PendingCustomerUpdates '
+        'WHERE shopfront = ? AND action = ? AND status = 0',
+        [shopfront, 'create'],
+      );
+      final maxPendingId = (pendingResult.first['max_id'] as int?) ?? 0;
+      final String? maxRemoteValue = await getAppConfig(
+        '$kCustomerMaxIdPrefix$shopfront',
+      );
+      final int maxRemoteId = int.tryParse(maxRemoteValue ?? '') ?? 0;
+
+      int maxId = maxCustomerId;
+      if (maxPendingId > maxId) {
+        maxId = maxPendingId;
+      }
+      if (maxRemoteId > maxId) {
+        maxId = maxRemoteId;
       }
 
-      return (maxId as int) + 1;
+      return maxId <= 0 ? 1 : maxId + 1;
     } catch (error) {
       logger.e('Error getting next customer ID: $error');
       return 1;
@@ -2274,8 +2288,28 @@ class SQLiteDAOImpl extends LocalDbDAO {
         [shopfront],
       );
 
+      final pendingResult = await db.rawQuery(
+        'SELECT payload_json FROM PendingCustomerUpdates '
+        'WHERE shopfront = ? AND action = ? AND status = 0',
+        [shopfront, 'create'],
+      );
+
       if (result.isEmpty) {
-        return '1'; // Start with 1 if no barcodes exist
+        int maxPendingValue = 0;
+        for (final row in pendingResult) {
+          final payload = jsonDecode(row['payload_json'] as String);
+          if (payload is! Map) continue;
+          final items = payload['items'];
+          if (items is! List || items.isEmpty) continue;
+          final item = Map<String, dynamic>.from(items.first as Map);
+          final barcode = item['barcode'] as String?;
+          if (barcode == null || barcode.trim().isEmpty) continue;
+          final numValue = int.tryParse(barcode.trim());
+          if (numValue != null && numValue > maxPendingValue) {
+            maxPendingValue = numValue;
+          }
+        }
+        return (maxPendingValue + 1).toString();
       }
 
       int maxNumericValue = 0;
@@ -2287,6 +2321,20 @@ class SQLiteDAOImpl extends LocalDbDAO {
           if (numValue != null && numValue > maxNumericValue) {
             maxNumericValue = numValue;
           }
+        }
+      }
+
+      for (final row in pendingResult) {
+        final payload = jsonDecode(row['payload_json'] as String);
+        if (payload is! Map) continue;
+        final items = payload['items'];
+        if (items is! List || items.isEmpty) continue;
+        final item = Map<String, dynamic>.from(items.first as Map);
+        final barcode = item['barcode'] as String?;
+        if (barcode == null || barcode.trim().isEmpty) continue;
+        final numValue = int.tryParse(barcode.trim());
+        if (numValue != null && numValue > maxNumericValue) {
+          maxNumericValue = numValue;
         }
       }
 
@@ -2309,8 +2357,30 @@ class SQLiteDAOImpl extends LocalDbDAO {
         whereArgs: [barcode, shopfront],
         limit: 1,
       );
+      if (result.isNotEmpty) return true;
 
-      return result.isNotEmpty;
+      final pending = await db.rawQuery(
+        'SELECT payload_json FROM PendingCustomerUpdates '
+        'WHERE shopfront = ? AND action = ? AND status = 0',
+        [shopfront, 'create'],
+      );
+
+      final needle = barcode.trim();
+      if (needle.isEmpty) return false;
+
+      for (final row in pending) {
+        final payload = jsonDecode(row['payload_json'] as String);
+        if (payload is! Map) continue;
+        final items = payload['items'];
+        if (items is! List || items.isEmpty) continue;
+        final item = Map<String, dynamic>.from(items.first as Map);
+        final pendingBarcode = item['barcode'] as String?;
+        if (pendingBarcode != null && pendingBarcode.trim() == needle) {
+          return true;
+        }
+      }
+
+      return false;
     } catch (error) {
       logger.e('Error checking barcode existence: $error');
       return false;

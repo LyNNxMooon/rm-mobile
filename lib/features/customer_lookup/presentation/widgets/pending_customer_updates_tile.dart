@@ -95,14 +95,11 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
 
     final shopfront =
         (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
-    final ids = updates.map((e) => e.customerId).toList();
-    final customers = <CustomerVO>[];
-
-    for (final id in ids) {
-      final customer = await LocalDbDAO.instance.getCustomerById(id, shopfront);
-      if (customer != null) {
-        customers.add(customer);
-      }
+    final entries = <_PendingCustomerEntry>[];
+    for (final update in updates) {
+      final customer =
+          await LocalDbDAO.instance.getCustomerById(update.customerId, shopfront);
+      entries.add(_PendingCustomerEntry(update: update, customer: customer));
     }
 
     if (!context.mounted) return;
@@ -110,108 +107,191 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
     await showDialog(
       context: context,
       builder: (dialogContext) {
-        return Dialog(
-          insetPadding: dialogInsetPadding(dialogContext),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          backgroundColor: kBgColor,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        final dialogEntries = List<_PendingCustomerEntry>.from(entries);
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              insetPadding: dialogInsetPadding(dialogContext),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              backgroundColor: kBgColor,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: kPrimaryColor.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.sync_problem,
+                            color: kPrimaryColor,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            "Pending Customer Updates",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: kThirdColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      "${dialogEntries.length} item(s) are queued and not sent yet.",
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: kThirdColor.withOpacity(0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
                     Container(
-                      width: 36,
-                      height: 36,
+                      constraints: const BoxConstraints(maxHeight: 380),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: kPrimaryColor.withOpacity(0.12),
-                        shape: BoxShape.circle,
+                        color: kSecondaryColor,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: kGreyColor.withOpacity(0.2)),
                       ),
-                      child: const Icon(
-                        Icons.sync_problem,
-                        color: kPrimaryColor,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Pending Customer Updates",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: kThirdColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  "${customers.length} item(s) are saved locally and not sent yet.",
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: kThirdColor.withOpacity(0.7),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  constraints: const BoxConstraints(maxHeight: 380),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: kSecondaryColor,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: kGreyColor.withOpacity(0.2)),
-                  ),
-                  child: customers.isEmpty
-                      ? const Text("No pending customer updates found.")
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: customers.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final customer = customers[index];
-                            return _PendingCustomerTile(
-                              customer: customer,
-                              onTap: () async {
-                                Navigator.of(dialogContext).pop();
-                                await context.navigateToNext(
-                                  CustomerDetailsScreen(customer: customer),
+                      child: dialogEntries.isEmpty
+                          ? const Text("No pending customer updates found.")
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: dialogEntries.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                final entry = dialogEntries[index];
+                                return Dismissible(
+                                  key: ValueKey('pending_customer_${entry.update.id}'),
+                                  direction: DismissDirection.endToStart,
+                                  background: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade400,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(
+                                      Icons.delete,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  onDismissed: (direction) async {
+                                    await LocalDbDAO.instance
+                                        .deletePendingCustomerUpdates(
+                                      [entry.update.id],
+                                    );
+                                    setDialogState(() {
+                                      dialogEntries.removeWhere(
+                                        (item) => item.update.id == entry.update.id,
+                                      );
+                                    });
+                                    if (!dialogContext.mounted) return;
+                                    dialogContext
+                                        .read<PendingCustomerUpdatesBloc>()
+                                        .add(LoadPendingCustomerUpdatesCountEvent());
+                                    if (dialogEntries.isEmpty) {
+                                      Navigator.of(dialogContext).pop();
+                                    }
+                                  },
+                                  child: _PendingCustomerTile(
+                                    update: entry.update,
+                                    customer: entry.customer,
+                                    onTap: entry.customer == null
+                                        ? null
+                                        : () async {
+                                            Navigator.of(dialogContext).pop();
+                                            await context.navigateToNext(
+                                              CustomerDetailsScreen(
+                                                customer: entry.customer!,
+                                              ),
+                                            );
+                                            if (!context.mounted) return;
+                                            context
+                                                .read<PendingCustomerUpdatesBloc>()
+                                                .add(
+                                                  LoadPendingCustomerUpdatesCountEvent(),
+                                                );
+                                          },
+                                  ),
                                 );
-                                if (!context.mounted) return;
-                                context
-                                    .read<PendingCustomerUpdatesBloc>()
-                                    .add(LoadPendingCustomerUpdatesCountEvent());
                               },
-                            );
-                          },
-                        ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(dialogContext).pop(),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: kPrimaryColor.withOpacity(0.4),
+                            ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: dialogEntries.isEmpty
+                                ? null
+                                : () async {
+                                    final ids = dialogEntries
+                                        .map((entry) => entry.update.id)
+                                        .toList();
+                                    await LocalDbDAO.instance
+                                        .deletePendingCustomerUpdates(ids);
+                                    if (!dialogContext.mounted) return;
+                                    dialogContext
+                                        .read<PendingCustomerUpdatesBloc>()
+                                        .add(LoadPendingCustomerUpdatesCountEvent());
+                                    Navigator.of(dialogContext).pop();
+                                  },
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: kErrorColor.withOpacity(0.6),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text(
+                              "Delete All",
+                              style: TextStyle(color: kErrorColor),
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: kPrimaryColor.withOpacity(0.4),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text(
+                              "Close",
+                              style: TextStyle(color: kPrimaryColor),
+                            ),
                           ),
                         ),
-                        child: const Text("Close", style: TextStyle(color: kPrimaryColor)),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -223,11 +303,66 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
   }
 }
 
-class _PendingCustomerTile extends StatelessWidget {
-  final CustomerVO customer;
-  final VoidCallback onTap;
+class _PendingCustomerEntry {
+  final PendingCustomerUpdateVO update;
+  final CustomerVO? customer;
 
-  const _PendingCustomerTile({required this.customer, required this.onTap});
+  const _PendingCustomerEntry({required this.update, required this.customer});
+}
+
+Map<String, dynamic> _firstCustomerPayloadItem(Map<String, dynamic> payload) {
+  final items = payload['items'];
+  if (items is List && items.isNotEmpty) {
+    final raw = items.first;
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+  }
+  return <String, dynamic>{};
+}
+
+String _payloadString(Map<String, dynamic> item, String key) {
+  final value = item[key];
+  return value is String ? value.trim() : '';
+}
+
+String _pendingCustomerName(PendingCustomerUpdateVO update) {
+  final item = _firstCustomerPayloadItem(update.payload);
+  final given = _payloadString(item, 'givenNames').isNotEmpty
+      ? _payloadString(item, 'givenNames')
+      : _payloadString(item, 'given_names');
+  final surname = _payloadString(item, 'surname');
+  final company = _payloadString(item, 'company');
+  final baseName = [given, surname].where((s) => s.isNotEmpty).join(' ');
+  final name = baseName.isNotEmpty
+      ? baseName
+      : (update.customerId > 0 ? 'Customer #${update.customerId}' : 'New customer');
+  return company.isNotEmpty ? '$name ($company)' : name;
+}
+
+String _pendingCustomerBarcode(PendingCustomerUpdateVO update) {
+  final item = _firstCustomerPayloadItem(update.payload);
+  final barcode = _payloadString(item, 'barcode');
+  return barcode.isNotEmpty ? barcode : 'Pending create';
+}
+
+String _initialsFromName(String name) {
+  final parts = name.split(' ').where((part) => part.trim().isNotEmpty).toList();
+  if (parts.isEmpty) return 'C';
+  if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+  return (parts.first.substring(0, 1) + parts[1].substring(0, 1))
+      .toUpperCase();
+}
+
+class _PendingCustomerTile extends StatelessWidget {
+  final PendingCustomerUpdateVO update;
+  final CustomerVO? customer;
+  final VoidCallback? onTap;
+
+  const _PendingCustomerTile({
+    required this.update,
+    required this.customer,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -238,68 +373,91 @@ class _PendingCustomerTile extends StatelessWidget {
         : 1.0;
     final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
 
+    final String title =
+        customer?.displayName ?? _pendingCustomerName(update);
+    final String barcode =
+        customer?.barcode ?? _pendingCustomerBarcode(update);
+    final bool canNavigate = onTap != null;
+
+    final tile = Container(
+      decoration: BoxDecoration(
+        color: kSecondaryColor,
+        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        boxShadow: [
+          BoxShadow(
+            color: kThirdColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: thumbnailSize,
+            height: thumbnailSize,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+            ),
+            child: ClipOval(
+              child: customer == null
+                  ? Container(
+                      color: kPrimaryColor.withOpacity(0.1),
+                      alignment: Alignment.center,
+                      child: Text(
+                        _initialsFromName(title),
+                        style: TextStyle(
+                          color: kPrimaryColor.withOpacity(0.9),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    )
+                  : CustomerThumbnailTile(
+                      customer: customer!,
+                      size: thumbnailSize,
+                    ),
+            ),
+          ),
+          SizedBox(width: (isTablet ? 17 : 15) * uiScale),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: kThirdColor,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  barcode,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    color: kPrimaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (canNavigate)
+            const Icon(Icons.chevron_right, color: kGreyColor, size: 20),
+        ],
+      ),
+    );
+
+    if (!canNavigate) return tile;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: kSecondaryColor,
-          borderRadius: const BorderRadius.all(Radius.circular(10)),
-          boxShadow: [
-            BoxShadow(
-              color: kThirdColor.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-              spreadRadius: 0,
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: thumbnailSize,
-              height: thumbnailSize,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
-              ),
-              child: ClipOval(
-                child: CustomerThumbnailTile(
-                  customer: customer,
-                  size: thumbnailSize,
-                ),
-              ),
-            ),
-            SizedBox(width: (isTablet ? 17 : 15) * uiScale),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    customer.displayName,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: kThirdColor,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    customer.barcode,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                      color: kPrimaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: kGreyColor, size: 20),
-          ],
-        ),
-      ),
+      child: tile,
     );
   }
 }

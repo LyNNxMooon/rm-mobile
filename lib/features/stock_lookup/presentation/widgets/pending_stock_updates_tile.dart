@@ -100,9 +100,13 @@ class _PendingStockUpdatesTileState extends State<PendingStockUpdatesTile> {
       shopfront: shopfront,
       stockIds: ids,
     );
-    final stocks = ids
-        .map((id) => stockMap[id])
-        .whereType<StockVO>()
+    final entries = updates
+        .map(
+          (update) => _PendingStockEntry(
+            update: update,
+            stock: stockMap[update.stockId],
+          ),
+        )
         .toList();
 
     if (!context.mounted) return;
@@ -110,108 +114,190 @@ class _PendingStockUpdatesTileState extends State<PendingStockUpdatesTile> {
     await showDialog(
       context: context,
       builder: (dialogContext) {
-        return Dialog(
-          insetPadding: dialogInsetPadding(dialogContext),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          backgroundColor: kBgColor,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        final dialogEntries = List<_PendingStockEntry>.from(entries);
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              insetPadding: dialogInsetPadding(dialogContext),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              backgroundColor: kBgColor,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: kPrimaryColor.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.sync_problem,
+                            color: kPrimaryColor,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            "Pending Stock Updates",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: kThirdColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      "${dialogEntries.length} item(s) are saved locally and not sent yet.",
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: kThirdColor.withOpacity(0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
                     Container(
-                      width: 36,
-                      height: 36,
+                      constraints: const BoxConstraints(maxHeight: 380),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: kPrimaryColor.withOpacity(0.12),
-                        shape: BoxShape.circle,
+                        color: kSecondaryColor,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: kGreyColor.withOpacity(0.2)),
                       ),
-                      child: const Icon(
-                        Icons.sync_problem,
-                        color: kPrimaryColor,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Pending Stock Updates",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: kThirdColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  "${stocks.length} item(s) are saved locally and not sent yet.",
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: kThirdColor.withOpacity(0.7),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  constraints: const BoxConstraints(maxHeight: 380),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: kSecondaryColor,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: kGreyColor.withOpacity(0.2)),
-                  ),
-                  child: stocks.isEmpty
-                      ? const Text("No pending stock updates found.")
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: stocks.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final stock = stocks[index];
-                            return _PendingStockTile(
-                              stock: stock,
-                              onTap: () async {
-                                Navigator.of(dialogContext).pop();
-                                await context.navigateToNext(
-                                  StockDetailsScreen(stock: stock),
+                      child: dialogEntries.isEmpty
+                          ? const Text("No pending stock updates found.")
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: dialogEntries.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                final entry = dialogEntries[index];
+                                return Dismissible(
+                                  key: ValueKey('pending_stock_${entry.update.id}'),
+                                  direction: DismissDirection.endToStart,
+                                  background: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade400,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(
+                                      Icons.delete,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  onDismissed: (direction) async {
+                                    await LocalDbDAO.instance.deletePendingStockUpdates(
+                                      [entry.update.id],
+                                    );
+                                    setDialogState(() {
+                                      dialogEntries.removeWhere(
+                                        (item) => item.update.id == entry.update.id,
+                                      );
+                                    });
+                                    if (!dialogContext.mounted) return;
+                                    dialogContext
+                                        .read<PendingStockUpdatesBloc>()
+                                        .add(LoadPendingStockUpdatesCountEvent());
+                                    if (dialogEntries.isEmpty) {
+                                      Navigator.of(dialogContext).pop();
+                                    }
+                                  },
+                                  child: _PendingStockTile(
+                                    update: entry.update,
+                                    stock: entry.stock,
+                                    onTap: entry.stock == null
+                                        ? null
+                                        : () async {
+                                            Navigator.of(dialogContext).pop();
+                                            await context.navigateToNext(
+                                              StockDetailsScreen(
+                                                stock: entry.stock!,
+                                              ),
+                                            );
+                                            if (!context.mounted) return;
+                                            context
+                                                .read<PendingStockUpdatesBloc>()
+                                                .add(
+                                                  LoadPendingStockUpdatesCountEvent(),
+                                                );
+                                          },
+                                  ),
                                 );
-                                if (!context.mounted) return;
-                                context
-                                    .read<PendingStockUpdatesBloc>()
-                                    .add(LoadPendingStockUpdatesCountEvent());
                               },
-                            );
-                          },
-                        ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(dialogContext).pop(),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: kPrimaryColor.withOpacity(0.4),
+                            ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: dialogEntries.isEmpty
+                                ? null
+                                : () async {
+                                    final ids = dialogEntries
+                                        .map((entry) => entry.update.id)
+                                        .toList();
+                                    await LocalDbDAO.instance
+                                        .deletePendingStockUpdates(ids);
+                                    if (!dialogContext.mounted) return;
+                                    dialogContext
+                                        .read<PendingStockUpdatesBloc>()
+                                        .add(LoadPendingStockUpdatesCountEvent());
+                                    Navigator.of(dialogContext).pop();
+                                  },
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: kErrorColor.withOpacity(0.6),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text(
+                              "Delete All",
+                              style: TextStyle(color: kErrorColor),
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: kPrimaryColor.withOpacity(0.4),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text(
+                              "Close",
+                              style: TextStyle(color: kPrimaryColor),
+                            ),
                           ),
                         ),
-                        child: const Text("Close", style: TextStyle(color: kPrimaryColor)),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -223,11 +309,23 @@ class _PendingStockUpdatesTileState extends State<PendingStockUpdatesTile> {
   }
 }
 
-class _PendingStockTile extends StatelessWidget {
-  final StockVO stock;
-  final VoidCallback onTap;
+class _PendingStockEntry {
+  final PendingStockUpdateVO update;
+  final StockVO? stock;
 
-  const _PendingStockTile({required this.stock, required this.onTap});
+  const _PendingStockEntry({required this.update, required this.stock});
+}
+
+class _PendingStockTile extends StatelessWidget {
+  final PendingStockUpdateVO update;
+  final StockVO? stock;
+  final VoidCallback? onTap;
+
+  const _PendingStockTile({
+    required this.update,
+    required this.stock,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -238,69 +336,88 @@ class _PendingStockTile extends StatelessWidget {
         : 1.0;
     final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
 
+    final String title = stock?.description ?? 'Stock #${update.stockId}';
+    final String barcode = stock?.barcode ?? 'Pending update';
+    final bool canNavigate = onTap != null;
+
+    final tile = Container(
+      decoration: BoxDecoration(
+        color: kSecondaryColor,
+        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        boxShadow: [
+          BoxShadow(
+            color: kThirdColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: thumbnailSize,
+            height: thumbnailSize,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+              child: stock == null
+                  ? Container(
+                      color: kPrimaryColor.withOpacity(0.1),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.inventory_2_outlined,
+                        color: kPrimaryColor.withOpacity(0.8),
+                        size: 18,
+                      ),
+                    )
+                  : Hero(
+                      tag: 'pending_stock_${stock!.stockID}',
+                      child: StockThumbnailTile(stock: stock!),
+                    ),
+            ),
+          ),
+          SizedBox(width: (isTablet ? 17 : 15) * uiScale),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: kThirdColor,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  barcode,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    color: kPrimaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (canNavigate)
+            const Icon(Icons.chevron_right, color: kGreyColor, size: 20),
+        ],
+      ),
+    );
+
+    if (!canNavigate) return tile;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: kSecondaryColor,
-          borderRadius: const BorderRadius.all(Radius.circular(10)),
-          boxShadow: [
-            BoxShadow(
-              color: kThirdColor.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-              spreadRadius: 0,
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: thumbnailSize,
-              height: thumbnailSize,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
-                child: Hero(
-                  tag: 'pending_stock_${stock.stockID}',
-                  child: StockThumbnailTile(stock: stock),
-                ),
-              ),
-            ),
-            SizedBox(width: (isTablet ? 17 : 15) * uiScale),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    stock.description,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: kThirdColor,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    stock.barcode,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                      color: kPrimaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: kGreyColor, size: 20),
-          ],
-        ),
-      ),
+      child: tile,
     );
   }
 }

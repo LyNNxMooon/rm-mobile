@@ -118,6 +118,7 @@ const String kHostPortKey = "host_port";
 const String kApiKey = "api_key";
 const String kHostNameKey = "host_name";
 const String kShopfrontIdKey = "shopfront_id";
+const String kCustomerMaxIdPrefix = "customer_max_id_";
 const String kShopfrontNameKey = "shopfront_name";
 const String kDeviceIdKey = "device_id";
 const String kSecurityEnabledKey = "security_enabled";

@@ -28,11 +28,14 @@ class ResolveCustomerCreateConflicts {
         final item = Map<String, dynamic>.from(items.first as Map);
         final int newCustomerId =
             await LocalDbDAO.instance.getNextCustomerId(shopfront);
+        final String newBarcode =
+          await LocalDbDAO.instance.getNextNumericBarcode(shopfront);
         int nextAddressId =
             await LocalDbDAO.instance.getNextCustomerAddressId(shopfront);
 
         item['customerId'] = newCustomerId;
         item['customer_id'] = newCustomerId;
+        item['barcode'] = newBarcode;
 
         if (item['addresses'] is List) {
           final addresses = item['addresses'] as List;
@@ -55,7 +58,6 @@ class ResolveCustomerCreateConflicts {
         );
       }
 
-      await LocalDbDAO.instance.applyPendingCustomerUpdates(shopfront);
     } catch (e) {
       return Future.error("Failed to resolve customer conflicts: $e");
     }

@@ -34,7 +34,6 @@ class CreateCustomer {
         action: 'create',
         payload: body,
       );
-      await LocalDbDAO.instance.applyPendingCustomerUpdates(shopfront);
 
       if (await InternetConnectionUtils.instance.checkInternetConnection()) {
         final response = await repository.createCustomer(body);
