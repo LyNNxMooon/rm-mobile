@@ -377,6 +377,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     return company.isNotEmpty ? "$name ($company)" : name;
   }
 
+  String _currentInitialsName() {
+    final String given = _givenNamesController.text.trim();
+    final String surname = _surnameController.text.trim();
+    return [given, surname].where((s) => s.isNotEmpty).join(' ');
+  }
+
   String _formatStaffLookupMessage(StaffDetailInfo? staff) {
     if (staff == null) return "Staff not found";
     return "Found: ${_formatStaffDisplay(staff)}";
@@ -1627,7 +1633,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  _getInitials(widget.customer.displayName),
+                  _getInitials(
+                    _currentInitialsName().isEmpty
+                        ? widget.customer.displayName
+                        : _currentInitialsName(),
+                  ),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: avatarSize,
