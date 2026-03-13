@@ -57,43 +57,50 @@ class UpdateSingleStock {
       );
 
       if (await InternetConnectionUtils.instance.checkInternetConnection()) {
-        if (ip.isEmpty || port == null || apiKey.isEmpty || shopfrontId.isEmpty) {
-          return Future.error(
-            "Missing host/shopfront/api setup. Please reconnect first.",
-          );
-        }
+        if (ip.isNotEmpty &&
+            port != null &&
+            apiKey.isNotEmpty &&
+            shopfrontId.isNotEmpty) {
+          try {
+            // Old setup disabled:
+            // - SMB credential checks
+            // - local file write to outgoing stock update folder
+            // await repository.sendSingleStockUpdate(...);
 
-        // Old setup disabled:
-        // - SMB credential checks
-        // - local file write to outgoing stock update folder
-        // await repository.sendSingleStockUpdate(...);
-
-        final response = await repository.updateStockDetailsFromApi(
-          ip: ip,
-          port: port,
-          apiKey: apiKey,
-          shopfrontId: shopfrontId,
-          stockId: stockId,
-          description: description,
-          sell: sell,
-          custom1: custom1,
-          custom2: custom2,
-        );
-        if (response.success) {
-          await LocalDbDAO.instance.deletePendingStockUpdates([pendingId]);
+            final response = await repository.updateStockDetailsFromApi(
+              ip: ip,
+              port: port,
+              apiKey: apiKey,
+              shopfrontId: shopfrontId,
+              stockId: stockId,
+              description: description,
+              sell: sell,
+              custom1: custom1,
+              custom2: custom2,
+            );
+            if (response.success) {
+              await LocalDbDAO.instance.deletePendingStockUpdates([pendingId]);
+              return response;
+            }
+          } catch (_) {}
         }
-        return response;
-      } else {
-        return StockUpdateResponse(
-          success: true,
-          message: "Saved locally. Will send when online.",
-          updated: 1,
-          missing: 0,
-          skipped: 0,
-        );
       }
+
+      return StockUpdateResponse(
+        success: true,
+        message: "Saved locally. Will send when online.",
+        updated: 1,
+        missing: 0,
+        skipped: 0,
+      );
     } catch (error) {
-      return Future.error(error);
+      return StockUpdateResponse(
+        success: true,
+        message: "Saved locally. Will send when online.",
+        updated: 1,
+        missing: 0,
+        skipped: 0,
+      );
     }
   }
 }

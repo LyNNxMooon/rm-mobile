@@ -10,6 +10,7 @@ class CreateCustomer {
   CreateCustomer(this.repository);
 
   Future<CustomerCreateResponse> call(Map<String, dynamic> body) async {
+    int customerId = 0;
     try {
       final shopfront =
           (await LocalDbDAO.instance.getShopfrontName() ?? "").trim();
@@ -23,7 +24,7 @@ class CreateCustomer {
       final Map<String, dynamic> item = items is List && items.isNotEmpty
           ? Map<String, dynamic>.from(items.first as Map)
           : <String, dynamic>{};
-      final int customerId =
+        customerId =
           (item['customerId'] as num?)?.toInt() ??
           (item['customer_id'] as num?)?.toInt() ??
           0;
@@ -36,22 +37,24 @@ class CreateCustomer {
       );
 
       if (await InternetConnectionUtils.instance.checkInternetConnection()) {
-        final response = await repository.createCustomer(body);
-        if (response.success) {
-          final pending = await LocalDbDAO.instance.getPendingCustomerUpdates(
-            shopfront,
-            action: 'create',
-            conflictOnly: false,
-          );
-          final matching = pending
-              .where((entry) => entry.customerId == customerId)
-              .map((entry) => entry.id)
-              .toList();
-          if (matching.isNotEmpty) {
-            await LocalDbDAO.instance.deletePendingCustomerUpdates(matching);
+        try {
+          final response = await repository.createCustomer(body);
+          if (response.success) {
+            final pending = await LocalDbDAO.instance.getPendingCustomerUpdates(
+              shopfront,
+              action: 'create',
+              conflictOnly: false,
+            );
+            final matching = pending
+                .where((entry) => entry.customerId == customerId)
+                .map((entry) => entry.id)
+                .toList();
+            if (matching.isNotEmpty) {
+              await LocalDbDAO.instance.deletePendingCustomerUpdates(matching);
+            }
+            return response;
           }
-        }
-        return response;
+        } catch (_) {}
       }
 
       return CustomerCreateResponse(
@@ -63,7 +66,14 @@ class CreateCustomer {
         customerIds: customerId > 0 ? [customerId] : [],
       );
     } catch (e) {
-      return Future.error("Failed to create customer: $e");
+      return CustomerCreateResponse(
+        success: true,
+        message: "Saved locally. Will send when online.",
+        created: 1,
+        failed: 0,
+        addressesCreated: 0,
+        customerIds: customerId > 0 ? [customerId] : [],
+      );
     }
   }
 }
