@@ -56,7 +56,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final verticalPadding = (isLargeTablet ? 48.0 : 32.0) * scale;
     final logoWidth = (isTablet ? 140.0 : 100.0) * scale;
     final logoHeight = (isTablet ? 60.0 : 45.0) * scale;
-    final headlineFontSize = (isLargeTablet ? 50.0 : isTablet ? 46.0 : 42.0) * scale;
+    final headlineFontSize = (isLargeTablet ? 50.0 : isTablet ? 40.0 : 42.0) * scale;
     final bodyFontSize = (isLargeTablet ? 18.0 : 16.0) * scale;
     const buttonHeight = 56.0;
     const buttonFontSize = 18.0;
@@ -105,83 +105,94 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 alignment: Alignment.centerLeft,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: contentMaxWidth),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: logoWidth,
-                        height: logoHeight,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8 * scale,
-                          vertical: 4 * scale,
-                        ),
-                        child: Image.asset(
-                          'assets/images/aaapos.png',
-                          fit: BoxFit.fill,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        "Smart inventory management, \nRight in your pocket.",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: headlineFontSize,
-                          fontWeight: FontWeight.w700,
-                          height: 1.1,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      SizedBox(height: 16 * scale),
-                      Text(
-                        "The complete Point of Sale solution for your mobile device.",
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.85),
-                          fontSize: bodyFontSize,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      SizedBox(height: 48 * scale),
-                      SizedBox(
-                        width: double.infinity,
-                        height: buttonHeight,
-                        child: ElevatedButton(
-                          onPressed: widget.onContinue,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kPrimaryColor,
-                            foregroundColor: kSecondaryColor,
-                            minimumSize: const Size(double.infinity, buttonHeight),
-                            padding: EdgeInsets.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            textStyle: const TextStyle(
-                              fontSize: buttonFontSize,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          child: IntrinsicHeight(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: logoWidth,
+                                  height: logoHeight,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8 * scale,
+                                    vertical: 4 * scale,
+                                  ),
+                                  child: Image.asset(
+                                    'assets/images/aaapos.png',
+                                    fit: BoxFit.fill,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  "Smart inventory management, \nRight in your pocket.",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: headlineFontSize,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.1,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                SizedBox(height: 16 * scale),
+                                Text(
+                                  "The complete Point of Sale solution for your mobile device.",
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.85),
+                                    fontSize: bodyFontSize,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                                SizedBox(height: 40 * scale),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: buttonHeight,
+                                  child: ElevatedButton(
+                                    onPressed: widget.onContinue,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: kPrimaryColor,
+                                      foregroundColor: kSecondaryColor,
+                                      minimumSize: const Size(double.infinity, buttonHeight),
+                                      padding: EdgeInsets.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      textStyle: const TextStyle(
+                                        fontSize: buttonFontSize,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        "Continue",
+                                        textScaler: TextScaler.noScaling,
+                                        maxLines: 1,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: kSecondaryColor,
+                                          fontSize: buttonFontSize,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 20 * scale),
+                              ],
                             ),
                           ),
-                          child: const Center(
-                            child: Text(
-                              "Continue",
-                              textScaler: TextScaler.noScaling,
-                              maxLines: 1,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: kSecondaryColor,
-                                fontSize: buttonFontSize,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
                         ),
-                      ),
-                      SizedBox(height: 20 * scale),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ),
