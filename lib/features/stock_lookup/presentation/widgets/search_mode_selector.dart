@@ -63,6 +63,11 @@ class SearchModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final shortestSide = MediaQuery.of(context).size.shortestSide;
+    final isTablet = shortestSide >= 600;
+    final isLargeTablet = shortestSide >= 900;
+    final double iconSize = isLargeTablet ? 32 : isTablet ? 28 : 22;
+
     return GestureDetector(
       onTap: () => _showModeMenu(context),
       child: Container(
@@ -70,7 +75,7 @@ class SearchModeSelector extends StatelessWidget {
         child: Icon(
           Icons.keyboard_arrow_up_rounded,
           color: kPrimaryColor,
-          size: 20,
+          size: iconSize,
         ),
       ),
     );

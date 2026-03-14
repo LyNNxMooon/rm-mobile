@@ -28,6 +28,12 @@ class AppBarSession extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final shortestSide = MediaQuery.of(context).size.shortestSide;
+    final isTablet = shortestSide >= 600;
+    final isLargeTablet = shortestSide >= 900;
+    final double networkIconSize = isLargeTablet ? 52 : isTablet ? 44 : 30;
+    final double settingsIconSize = isLargeTablet ? 40 : isTablet ? 34 : 26;
+
     return Padding(
       padding: const EdgeInsets.only(right: 15, left: 30),
       child: Row(
@@ -112,15 +118,15 @@ class AppBarSession extends StatelessWidget {
                   );
                 },
                 child: SizedBox(
-                  width: 30,
-                  height: 30,
+                  width: networkIconSize,
+                  height: networkIconSize,
                   child: Image.asset("assets/images/wifi.png"),
                 ),
               ),
               const SizedBox(width: 10),
 
               IconButton(
-                iconSize: 26,
+                iconSize: settingsIconSize,
                 onPressed: () {
                   context.navigateToNext(const SettingsScreen());
                 },

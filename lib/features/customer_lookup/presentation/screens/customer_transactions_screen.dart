@@ -97,13 +97,19 @@ class CustomerTransactionsScreen extends StatelessWidget {
             ),
           ],
         ),
-        // Horizontally scrollable area for data tables
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: child,
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: child,
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

@@ -289,6 +289,20 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   double _font(BuildContext context, double size) => size * _uiScale(context);
 
+  double _iconSize(BuildContext context, double size) {
+    final double shortestSide = MediaQuery.of(context).size.shortestSide;
+    if (shortestSide >= 900) return size * 1.6;
+    if (shortestSide >= 600) return size * 1.35;
+    return size;
+  }
+
+  double _editIconSize(BuildContext context, double size) {
+    final double shortestSide = MediaQuery.of(context).size.shortestSide;
+    if (shortestSide >= 900) return size * 1.9;
+    if (shortestSide >= 600) return size * 1.5;
+    return size;
+  }
+
   void _initControllers() {
     _surnameController = TextEditingController(text: widget.customer.surname);
     _givenNamesController = TextEditingController(
@@ -805,7 +819,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.grey[700]),
+          Icon(icon, size: _iconSize(context, 18), color: Colors.grey[700]),
           const SizedBox(width: 12),
           Expanded(
             flex: 2,
@@ -1084,6 +1098,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        final double shortestSide = MediaQuery.of(context).size.shortestSide;
+        final bool isTablet = shortestSide >= 600;
+        final bool isLargeTablet = shortestSide >= 900;
+        final double mapWidth = isLargeTablet ? 110 : isTablet ? 96 : 46;
+        final double mapHeight = isLargeTablet ? 85 : isTablet ? 74 : 40;
+        final double mapRadius = isLargeTablet ? 14 : isTablet ? 12 : 8;
+
         return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -1119,7 +1140,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       children: [
                         Icon(
                           Icons.location_on_outlined,
-                          size: 20,
+                          size: _iconSize(context, 20),
                           color: kPrimaryColor,
                         ),
                         const SizedBox(width: 8),
@@ -1141,7 +1162,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         padding: const EdgeInsets.all(4.0),
                         child: Icon(
                           Icons.close,
-                          size: 20,
+                          size: _iconSize(context, 20),
                           color: Colors.grey[600],
                         ),
                       ),
@@ -1218,16 +1239,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                   InkWell(
                                     onTap: () =>
                                         _openMapForAddress(addressQuery),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(mapRadius),
                                     child: Container(
-                                      width: 46,
-                                      height: 40,
+                                      width: mapWidth,
+                                      height: mapHeight,
                                       decoration: BoxDecoration(
                                         color: Colors.grey[200],
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(mapRadius),
                                       ),
                                       child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(mapRadius),
                                         child: Image.asset(
                                           "assets/images/map.png",
                                           fit: BoxFit.fill,
@@ -1365,7 +1386,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.grey[500]),
+          Icon(icon, size: _iconSize(context, 16), color: Colors.grey[500]),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -1594,10 +1615,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   String get _customerStatusLabel => AppGlobals.instance.customerStatusLabel;
 
   Widget _buildHeaderCard() {
+    final double shortestSide = MediaQuery.of(context).size.shortestSide;
+    final bool isTablet = shortestSide >= 600;
+    final bool isLargeTablet = shortestSide >= 900;
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
     final double badgeSize = _font(context, 12);
-    final double avatarSize = _font(context, 24);
+    final double avatarDiameter = isLargeTablet ? 80 : isTablet ? 72 : 60;
+    final double avatarTextSize = isLargeTablet ? 22 : isTablet ? 20 : _font(context, 24);
     final String displayName = _currentDisplayName();
     final String companyName = _companyController.text.trim();
     final int gradeValue = _parseInt(
@@ -1621,8 +1646,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             children: [
               // Avatar
               Container(
-                width: 60,
-                height: 60,
+                width: avatarDiameter,
+                height: avatarDiameter,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
@@ -1640,7 +1665,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   ),
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: avatarSize,
+                    fontSize: avatarTextSize,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -1875,7 +1900,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: Colors.grey[800]),
+            Icon(icon, size: _iconSize(context, 18), color: Colors.grey[800]),
             const SizedBox(width: 8),
             Text(
               label,
@@ -2636,14 +2661,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(4.0),
                     child: isSaving
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CupertinoActivityIndicator(),
+                        ? SizedBox(
+                            width: _editIconSize(context, 16),
+                            height: _editIconSize(context, 16),
+                            child: const CupertinoActivityIndicator(),
                           )
                         : Icon(
                             isEditing ? Icons.save_rounded : Icons.edit,
-                            size: 18,
+                            size: _editIconSize(context, 18),
                             color: isEditing ? Colors.green : kPrimaryColor,
                           ),
                   ),
@@ -2685,7 +2710,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.grey[700]),
+          Icon(icon, size: _iconSize(context, 18), color: Colors.grey[700]),
           const SizedBox(width: 12),
           Expanded(
             flex: 2,

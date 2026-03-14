@@ -151,17 +151,27 @@ class LottieLoadingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return 
-      // This ensures the edges of the Lottie animation are rounded
+    final media = MediaQuery.of(context);
+    final shortestSide = media.size.shortestSide;
+    final isTablet = shortestSide >= 600;
+    final isLargeTablet = shortestSide >= 900;
 
-         Lottie.asset(
-          'assets/animations/Loading bar.json',
-          // BoxFit.cover is the magic fix here. It forces the Lottie to 
-          // fill the entire 6px height and screen width, cropping out the empty space.
-          //fit: BoxFit.fill, 
-          //height: 20
-        );
-      
-    
+    final lottie = Lottie.asset(
+      'assets/animations/Loading bar.json',
+      fit: BoxFit.fill,
+    );
+
+    if (!isTablet) {
+      return lottie;
+    }
+
+    final double height = isLargeTablet ? 80 : 70;
+    final double width = isLargeTablet ? 700 : 560;
+
+    return SizedBox(
+      height: height,
+      width: width,
+      child: lottie,
+    );
   }
 }

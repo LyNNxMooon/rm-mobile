@@ -641,14 +641,18 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     required String query,
     String? matchedField,
   }) {
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double shortestSide = MediaQuery.of(context).size.shortestSide;
+    final bool isTablet = shortestSide >= 600;
+    final bool isLargeTablet = shortestSide >= 900;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
+    final double thumbnailSize = (isLargeTablet ? 52 : isTablet ? 44 : 36) * uiScale;
     final double tileVerticalPadding = (isTablet ? 10 : 8) * uiScale;
     final double tileHorizontalPadding = (isTablet ? 16 : 15) * uiScale;
+    final double accountIconSize = (isLargeTablet ? 22 : isTablet ? 19 : 16) * uiScale;
+    final double accountIconPadding = (isLargeTablet ? 9 : isTablet ? 7 : 6) * uiScale;
 
     // Determine which non-default fields to show (only if matched)
     final bool showCompany = matchedField == 'company' && customer.company.isNotEmpty;
@@ -885,18 +889,18 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: EdgeInsets.all(accountIconPadding),
                       decoration: BoxDecoration(
                         color: (customer.account
                                 ? Colors.green
                                 : kGreyColor)
                             .withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
                       ),
                       child: Icon(
                         Icons.person,
                         color: customer.account ? Colors.green : kGreyColor,
-                        size: 16,
+                        size: accountIconSize,
                       ),
                     ),
                   ],

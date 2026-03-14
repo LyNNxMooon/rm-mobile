@@ -250,7 +250,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
                     child: Image.asset(
                       appLogo,
                       fit: BoxFit.fill,
-                      gaplessPlayback: true,
+                      //gaplessPlayback: true,
                     ),
                   ),
                   const SizedBox(height: 20),

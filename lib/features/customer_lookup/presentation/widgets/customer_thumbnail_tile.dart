@@ -38,11 +38,14 @@ class CustomerThumbnailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double shortestSide = MediaQuery.of(context).size.shortestSide;
+    final bool isTablet = shortestSide >= 600;
+    //final bool isLargeTablet = shortestSide >= 900;
     final String nameForInitials =
       "${customer.givenNames} ${customer.surname}".trim();
     final String initials =
       _getInitials(nameForInitials.isEmpty ? customer.displayName : nameForInitials);
-    final double fontSize = (size * 0.47).clamp(14.0, 32.0);
+    final double fontSize = isTablet ? 14.0 : (size * 0.47).clamp(12.0, 30.0);
     return Container(
       alignment: Alignment.center,
       color: Colors.transparent,
