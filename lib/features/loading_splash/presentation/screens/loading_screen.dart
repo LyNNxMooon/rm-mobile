@@ -20,7 +20,6 @@ import '../../../../constants/txt_styles.dart';
 import '../BLoC/loading_splash_events.dart';
 import '../BLoC/loading_splash_states.dart';
 
-
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
 
@@ -39,6 +38,21 @@ class _LoadingScreenState extends State<LoadingScreen> {
   bool _authAttempted = false;
   bool _autoConnectAttempted = false;
   bool _loginPrompted = false;
+  bool _logoPrecached = false;
+  bool _logoReady = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_logoPrecached) return;
+    _logoPrecached = true;
+    precacheImage(AssetImage(appLogo), context).then((_) {
+      if (!mounted) return;
+      setState(() {
+        _logoReady = true;
+      });
+    });
+  }
 
   Future<void> _loadConnectionInfo() async {
     final portStr = await LocalDbDAO.instance.getHostPort();
@@ -46,8 +60,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
     final shopfrontId = await LocalDbDAO.instance.getShopfrontId();
     final shopfrontName = await LocalDbDAO.instance.getShopfrontName();
     final staffNo = await LocalDbDAO.instance.getAppConfig(kStaffNoKey);
-    final staffPassword =
-        await LocalDbDAO.instance.getAppConfig(kStaffPasswordKey);
+    final staffPassword = await LocalDbDAO.instance.getAppConfig(
+      kStaffPasswordKey,
+    );
 
     if (!mounted) return;
     setState(() {
@@ -102,8 +117,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
   Future<void> _attemptAutoShopfrontConnect() async {
     if (_autoConnectAttempted || !mounted) return;
-    if (context.read<ShopFrontConnectionBloc>().state
-        is ConnectedToShopfront) {
+    if (context.read<ShopFrontConnectionBloc>().state is ConnectedToShopfront) {
       return;
     }
 
@@ -113,7 +127,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
         _apiKey.isEmpty ||
         _shopfrontId.isEmpty ||
         _shopfrontName.isEmpty) {
-      logger.d("Splash auto-connect skipped: missing connection/shopfront info.");
+      logger.d(
+        "Splash auto-connect skipped: missing connection/shopfront info.",
+      );
       return;
     }
 
@@ -138,9 +154,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
   void _startDataSync(BuildContext context) {
     // Start syncs in background - don't wait for them
-    context.read<FetchStockBloc>().add(
-      StartSyncEvent(ipAddress: ""),
-    );
+    context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
     context.read<FetchCustomerBloc>().add(
       StartCustomerSyncEvent(ipAddress: ""),
     );
@@ -153,7 +167,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
     final bool isTablet = media.size.shortestSide >= 600;
     final double logoWidth = isTablet ? 260 : 160;
     final double logoHeight = isTablet ? 188 : 120;
-    final double loadingWidth = isTablet ? 280 : 220;
+    //final double loadingWidth = isTablet ? 280 : 220;
 
     return MultiBlocListener(
       listeners: [
@@ -161,7 +175,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
           listener: (context, state) {
             if (state is SavedPathFetchingCompleted) {
               context.read<NetworkSavedPathValidationBloc>().add(
-                ConnectionCheckingEvent(state.paths.first['path']?.toString() ?? ""),
+                ConnectionCheckingEvent(
+                  state.paths.first['path']?.toString() ?? "",
+                ),
               );
             }
 
@@ -177,8 +193,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
                 _attemptAutoShopfrontConnect();
               });
             }
-            
-            if (state is ErrorCheckingConnection || state is ErrorFetchingSavedPaths) {
+
+            if (state is ErrorCheckingConnection ||
+                state is ErrorFetchingSavedPaths) {
               // Connection errors - allow HomeScreen to prompt for network setup
               if (mounted) {
                 setState(() {
@@ -230,34 +247,47 @@ class _LoadingScreenState extends State<LoadingScreen> {
                   SizedBox(
                     width: logoWidth,
                     height: logoHeight,
-                    child: Image.asset(appLogo, fit: BoxFit.fill),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    "RetailManager Mobile",
-                    style: getSmartTitle(color: kSecondaryColor, fontSize: 24),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    "AAAPOS Pty Ltd",
-                    style: TextStyle(
-                      color: kSecondaryColor.withOpacity(0.8),
-                      fontWeight: FontWeight.w400,
-                      fontSize: 16,
+                    child: Image.asset(
+                      appLogo,
+                      fit: BoxFit.fill,
+                      gaplessPlayback: true,
                     ),
                   ),
+                  const SizedBox(height: 20),
+                  AnimatedOpacity(
+                    opacity: _logoReady ? 1 : 0,
+                    duration: const Duration(milliseconds: 150),
+                    child: Column(
+                      children: [
+                        Text(
+                          "RetailManager Mobile",
+                          style: getSmartTitle(
+                            color: kSecondaryColor,
+                            fontSize: 24,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          "AAAPOS Pty Ltd",
+                          style: TextStyle(
+                            color: kSecondaryColor.withOpacity(0.8),
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
+                          ),
+                        ),
 
-                  const SizedBox(height: 25),
-                  SizedBox(
-                    width: loadingWidth,
-                    child: const ModernLoadingBar(),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    _loadingMessage,
-                    style: TextStyle(
-                      color: kSecondaryColor.withOpacity(0.8),
-                      fontWeight: FontWeight.w400,
+                   
+                        LottieLoadingBar(),
+                       
+                        Text(
+                          _loadingMessage,
+                          style: TextStyle(
+                            color: kSecondaryColor.withOpacity(0.8),
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

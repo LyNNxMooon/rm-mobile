@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 
 import 'colors.dart';
 
@@ -142,5 +143,25 @@ class ModernLoadingBar extends StatelessWidget {
         color: kGreyColor,
       ),
     );
+  }
+}
+
+class LottieLoadingBar extends StatelessWidget {
+  const LottieLoadingBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return 
+      // This ensures the edges of the Lottie animation are rounded
+
+         Lottie.asset(
+          'assets/animations/Loading bar.json',
+          // BoxFit.cover is the magic fix here. It forces the Lottie to 
+          // fill the entire 6px height and screen width, cropping out the empty space.
+          //fit: BoxFit.fill, 
+          //height: 20
+        );
+      
+    
   }
 }
