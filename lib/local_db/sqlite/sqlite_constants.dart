@@ -225,3 +225,18 @@ const pendingCustomerUpdatesTableCreationQuery = '''
     has_conflict INTEGER NOT NULL DEFAULT 0
   )
 ''';
+
+
+// ---------------------------------------------------------------------------
+// DB INDEXES (For drastically faster search performance)
+// ---------------------------------------------------------------------------
+
+// Stock Indexes
+const createIdxStocksBarcode = 'CREATE INDEX IF NOT EXISTS idx_stocks_barcode ON Stocks(shopfront, Barcode)';
+const createIdxStocksDesc = 'CREATE INDEX IF NOT EXISTS idx_stocks_desc ON Stocks(shopfront, description)';
+
+// Customer Indexes
+const createIdxCustBarcode = 'CREATE INDEX IF NOT EXISTS idx_cust_barcode ON Customers(shopfront, barcode)';
+const createIdxCustSurname = 'CREATE INDEX IF NOT EXISTS idx_cust_surname ON Customers(shopfront, surname)';
+const createIdxCustGivenNames = 'CREATE INDEX IF NOT EXISTS idx_cust_given_names ON Customers(shopfront, given_names)';
+const createIdxCustCompany = 'CREATE INDEX IF NOT EXISTS idx_cust_company ON Customers(shopfront, company)';

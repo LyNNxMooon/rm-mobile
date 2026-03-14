@@ -34,6 +34,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           await db.rawQuery('PRAGMA journal_mode=WAL');
           await db.rawQuery('PRAGMA foreign_keys=ON');
           await db.rawQuery('PRAGMA busy_timeout=5000');
+          await db.rawQuery('PRAGMA case_sensitive_like=OFF');
         },
         onCreate: (db, version) async {
           await db.execute(stocktakeTableCreationQuery);
@@ -47,6 +48,14 @@ class SQLiteDAOImpl extends LocalDbDAO {
           await db.execute(customerAddressesTableCreationQuery);
           await db.execute(pendingStockUpdatesTableCreationQuery);
           await db.execute(pendingCustomerUpdatesTableCreationQuery);
+
+          // 2. Create Indexes for fast searching
+          await db.execute(createIdxStocksBarcode);
+          await db.execute(createIdxStocksDesc);
+          await db.execute(createIdxCustBarcode);
+          await db.execute(createIdxCustSurname);
+          await db.execute(createIdxCustGivenNames);
+          await db.execute(createIdxCustCompany);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
           if (oldVersion < 2) {
