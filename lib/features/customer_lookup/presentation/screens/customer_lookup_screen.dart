@@ -347,8 +347,8 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
-        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
-        : 1.0;
+      ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+      : 1.0;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
@@ -649,7 +649,6 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
     final double thumbnailSize = (isLargeTablet ? 52 : isTablet ? 44 : 36) * uiScale;
-    final double tileVerticalPadding = (isTablet ? 10 : 8) * uiScale;
     final double tileHorizontalPadding = (isTablet ? 16 : 15) * uiScale;
     final double accountIconSize = (isLargeTablet ? 22 : isTablet ? 19 : 16) * uiScale;
     final double accountIconPadding = (isLargeTablet ? 9 : isTablet ? 7 : 6) * uiScale;
@@ -660,6 +659,11 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     final bool showFax = matchedField == 'fax' && customer.fax.isNotEmpty;
     final bool showMobile = matchedField == 'mobile' && customer.mobile.isNotEmpty;
     final bool showEmail = matchedField == 'email' && customer.email.isNotEmpty;
+    final bool showExtraFields = showCompany || showPhone || showFax || showMobile || showEmail;
+    final double textUiScale = isTablet && showExtraFields
+      ? (1.0 + ((textScale - 1.0) * 0.85)).clamp(1.0, 1.65)
+      : 1.0;
+    final double tileVerticalPadding = (isTablet ? (showExtraFields ? 18 : 10) : 8) * uiScale;
 
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(
@@ -735,7 +739,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                   highlightColor: kPrimaryColor.withOpacity(0.2),
                                   style: getSmartTitle(
                                     color: kThirdColor,
-                                    fontSize: 14,
+                                    fontSize: 14 * textUiScale,
                                   ),
                                 ),
                               ],
@@ -747,9 +751,9 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                             text: _barcodeLine(customer),
                             query: query,
                             highlightColor: kPrimaryColor.withOpacity(0.2),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'monospace',
-                              fontSize: 13,
+                              fontSize: 13 * textUiScale,
                               color: kPrimaryColor,
                               fontWeight: FontWeight.w600,
                             ),
@@ -761,7 +765,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                               children: [
                                 Icon(
                                   Icons.business,
-                                  size: 12,
+                                  size: 12 * textUiScale,
                                   color: kThirdColor.withOpacity(0.6),
                                 ),
                                 const SizedBox(width: 4),
@@ -771,7 +775,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     query: query,
                                     highlightColor: kPrimaryColor.withOpacity(0.2),
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
                                       fontStyle: FontStyle.italic,
                                     ),
@@ -787,7 +791,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                               children: [
                                 Icon(
                                   Icons.phone,
-                                  size: 12,
+                                  size: 12 * textUiScale,
                                   color: kThirdColor.withOpacity(0.6),
                                 ),
                                 const SizedBox(width: 4),
@@ -797,7 +801,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     query: query,
                                     highlightColor: kPrimaryColor.withOpacity(0.2),
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
                                       fontStyle: FontStyle.italic,
                                     ),
@@ -813,7 +817,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                               children: [
                                 Icon(
                                   Icons.print,
-                                  size: 12,
+                                  size: 12 * textUiScale,
                                   color: kThirdColor.withOpacity(0.6),
                                 ),
                                 const SizedBox(width: 4),
@@ -823,7 +827,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     query: query,
                                     highlightColor: kPrimaryColor.withOpacity(0.2),
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
                                       fontStyle: FontStyle.italic,
                                     ),
@@ -839,7 +843,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                               children: [
                                 Icon(
                                   Icons.phone_android,
-                                  size: 12,
+                                  size: 12 * textUiScale,
                                   color: kThirdColor.withOpacity(0.6),
                                 ),
                                 const SizedBox(width: 4),
@@ -849,7 +853,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     query: query,
                                     highlightColor: kPrimaryColor.withOpacity(0.2),
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
                                       fontStyle: FontStyle.italic,
                                     ),
@@ -865,7 +869,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                               children: [
                                 Icon(
                                   Icons.email,
-                                  size: 12,
+                                  size: 12 * textUiScale,
                                   color: kThirdColor.withOpacity(0.6),
                                 ),
                                 const SizedBox(width: 4),
@@ -875,7 +879,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     query: query,
                                     highlightColor: kPrimaryColor.withOpacity(0.2),
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
                                       fontStyle: FontStyle.italic,
                                     ),

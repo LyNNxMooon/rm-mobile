@@ -372,8 +372,8 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
-        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
-        : 1.0;
+      ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+      : 1.0;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
@@ -599,12 +599,16 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
     final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
-    final double tileVerticalPadding = (isTablet ? 10 : 8) * uiScale;
     final double tileHorizontalPadding = (isTablet ? 16 : 15) * uiScale;
 
     // Check if we should show custom fields
     final bool showCustom1 = matchedField == 'custom1' && stock.custom1 != null && stock.custom1!.isNotEmpty;
     final bool showCustom2 = matchedField == 'custom2' && stock.custom2 != null && stock.custom2!.isNotEmpty;
+    final bool showExtraFields = showCustom1 || showCustom2;
+    final double textUiScale = isTablet && showExtraFields
+      ? (1.0 + ((textScale - 1.0) * 0.85)).clamp(1.0, 1.65)
+      : 1.0;
+    final double tileVerticalPadding = (isTablet ? (showExtraFields ? 18 : 10) : 8) * uiScale;
 
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(
@@ -674,7 +678,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   highlightColor: kPrimaryColor.withOpacity(0.2),
                                   style: getSmartTitle(
                                     color: kThirdColor,
-                                    fontSize: 14,
+                                    fontSize: 14 * textUiScale,
                                   ),
                                 ),
                               ],
@@ -686,9 +690,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             text: stock.barcode,
                             query: query,
                             highlightColor: kPrimaryColor.withOpacity(0.2),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'monospace',
-                              fontSize: 13,
+                              fontSize: 13 * textUiScale,
                               color: kPrimaryColor,
                               fontWeight: FontWeight.w600,
                             ),
@@ -701,7 +705,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                 Text(
                                   'Custom 1: ',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 12 * textUiScale,
                                     color: kThirdColor.withOpacity(0.6),
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -712,7 +716,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                     query: query,
                                     highlightColor: kPrimaryColor.withOpacity(0.2),
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
                                       fontStyle: FontStyle.italic,
                                     ),
@@ -729,7 +733,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                 Text(
                                   'Custom 2: ',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 12 * textUiScale,
                                     color: kThirdColor.withOpacity(0.6),
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -740,7 +744,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                     query: query,
                                     highlightColor: kPrimaryColor.withOpacity(0.2),
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
                                       fontStyle: FontStyle.italic,
                                     ),

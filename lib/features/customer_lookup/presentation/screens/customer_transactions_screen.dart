@@ -64,15 +64,42 @@ class CustomerTransactionsScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            _buildTabContentContainer(_buildPurchasesData()),
-            _buildTabContentContainer(_buildCreditData()),
-            _buildTabContentContainer(_buildInvoicesData()),
-            _buildTabContentContainer(_buildIVPayData()),
-            _buildTabContentContainer(_buildLaybysData()),
-            _buildTabContentContainer(_buildLBPayData()),
-            _buildTabContentContainer(_buildCSOData()),
-            _buildTabContentContainer(_buildSOQuoteData()),
-            _buildTabContentContainer(_buildSOPayData()),
+            _buildTabContentContainer(
+              note: "Showing 20 last sold items from Non-Archived Data.",
+              child: _buildPurchasesData(),
+            ),
+            _buildTabContentContainer(
+              note: "Showing 10 last credit notes from Non-Archived Data.",
+              child: _buildCreditData(),
+            ),
+            _buildTabContentContainer(
+              note: "Showing 10 last invoices from Non-Archived Data.",
+              child: _buildInvoicesData(),
+            ),
+            _buildTabContentContainer(
+              note: "Showing 10 last invoice payments from Non-Archived Data.",
+              child: _buildIVPayData(),
+            ),
+            _buildTabContentContainer(
+              note: "Showing 10 last lay-bys from Non-Archived Data.",
+              child: _buildLaybysData(),
+            ),
+            _buildTabContentContainer(
+              note: "Showing 10 last lay-by payments from Non-Archived Data.",
+              child: _buildLBPayData(),
+            ),
+            _buildTabContentContainer(
+              note: "Showing 10 last customer special orders from Non-Archived Data.",
+              child: _buildCSOData(),
+            ),
+            _buildTabContentContainer(
+              note: "Showing 10 last sales orders and quotes from Non-Archived Data.",
+              child: _buildSOQuoteData(),
+            ),
+            _buildTabContentContainer(
+              note: "Showing 10 last sales order payments from Non-Archived Data.",
+              child: _buildSOPayData(),
+            ),
           ],
         ),
       ),
@@ -80,7 +107,7 @@ class CustomerTransactionsScreen extends StatelessWidget {
   }
 
   // --- Wrapper for Tab Content ---
-  Widget _buildTabContentContainer(Widget child) {
+  Widget _buildTabContentContainer({required String note, required Widget child}) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Container(
@@ -97,19 +124,38 @@ class CustomerTransactionsScreen extends StatelessWidget {
             ),
           ],
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: child,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+              child: Text(
+                note,
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            );
-          },
+            ),
+            Divider(height: 1, color: Colors.grey.shade200),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: child,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
