@@ -18,6 +18,8 @@ const kEndPointForCustomerLookup = "/shopfronts/{$kPathParamForShopfrontId}/cust
 const kEndPointForCustomerCreate = "/shopfronts/{$kPathParamForShopfrontId}/customers/create";
 const kEndPointForCustomerUpdate =
     "/shopfronts/{$kPathParamForShopfrontId}/customers/update";
+const kEndPointForCustomerTransactions =
+    "/shopfronts/{$kPathParamForShopfrontId}/customers/{$kPathParamForCustomerId}/transactions";
 const kEndPointForPictureUpload =
     "/shopfronts/{$kPathParamForShopfrontId}/pictures/{$kPathParamForStockId}";
 const kEndPointForStocktakeInitCheck =
@@ -47,5 +49,6 @@ const kPathParamForStaffId = "StaffId";
 const kPathParamForStaffBarcode = "StaffBarcode";
 const kPathParamForStockId = "StockId";
 const kPathParamForFileName = "FileName";
+const kPathParamForCustomerId = "CustomerId";
 const kQueryParamKeyForLastStockID = "lastStockId";
 const kQueryParamKeyForPageSize = "pageSize";

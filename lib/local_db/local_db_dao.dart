@@ -111,6 +111,75 @@ abstract class LocalDbDAO {
 
   Future<bool> checkBarcodeExists(String barcode, String shopfront);
 
+  // Customer transactions
+  Future<void> replaceCustomerTransactions({
+    required String shopfront,
+    required int customerId,
+    required List<Map<String, dynamic>> purchases,
+    required List<Map<String, dynamic>> credit,
+    required List<Map<String, dynamic>> invoices,
+    required List<Map<String, dynamic>> ivPay,
+    required List<Map<String, dynamic>> laybys,
+    required List<Map<String, dynamic>> lbPay,
+    required List<Map<String, dynamic>> cso,
+    required List<Map<String, dynamic>> soQuote,
+    required List<Map<String, dynamic>> soPay,
+  });
+
+  Future<List<Map<String, dynamic>>> getCustomerPurchases({
+    required String shopfront,
+    required int customerId,
+    int limit,
+  });
+
+  Future<List<Map<String, dynamic>>> getCustomerCredit({
+    required String shopfront,
+    required int customerId,
+    int limit,
+  });
+
+  Future<List<Map<String, dynamic>>> getCustomerInvoices({
+    required String shopfront,
+    required int customerId,
+    int limit,
+  });
+
+  Future<List<Map<String, dynamic>>> getCustomerIvPay({
+    required String shopfront,
+    required int customerId,
+    int limit,
+  });
+
+  Future<List<Map<String, dynamic>>> getCustomerLaybys({
+    required String shopfront,
+    required int customerId,
+    int limit,
+  });
+
+  Future<List<Map<String, dynamic>>> getCustomerLbPay({
+    required String shopfront,
+    required int customerId,
+    int limit,
+  });
+
+  Future<List<Map<String, dynamic>>> getCustomerCso({
+    required String shopfront,
+    required int customerId,
+    int limit,
+  });
+
+  Future<List<Map<String, dynamic>>> getCustomerSoQuote({
+    required String shopfront,
+    required int customerId,
+    int limit,
+  });
+
+  Future<List<Map<String, dynamic>>> getCustomerSoPay({
+    required String shopfront,
+    required int customerId,
+    int limit,
+  });
+
   // Setters to save data
   Future<void> saveCountedStock(Map<String, dynamic> stockData);
 

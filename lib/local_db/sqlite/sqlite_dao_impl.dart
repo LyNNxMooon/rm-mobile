@@ -29,7 +29,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       _database = await openDatabase(
         path,
-        version: 4,
+        version: 5,
         onConfigure: (db) async {
           await db.rawQuery('PRAGMA journal_mode=WAL');
           await db.rawQuery('PRAGMA foreign_keys=ON');
@@ -48,6 +48,15 @@ class SQLiteDAOImpl extends LocalDbDAO {
           await db.execute(customerAddressesTableCreationQuery);
           await db.execute(pendingStockUpdatesTableCreationQuery);
           await db.execute(pendingCustomerUpdatesTableCreationQuery);
+          await db.execute(customerPurchasesTableCreationQuery);
+          await db.execute(customerCreditTableCreationQuery);
+          await db.execute(customerInvoicesTableCreationQuery);
+          await db.execute(customerIvPayTableCreationQuery);
+          await db.execute(customerLaybysTableCreationQuery);
+          await db.execute(customerLbPayTableCreationQuery);
+          await db.execute(customerCsoTableCreationQuery);
+          await db.execute(customerSoQuoteTableCreationQuery);
+          await db.execute(customerSoPayTableCreationQuery);
 
           // 2. Create Indexes for fast searching
           await db.execute(createIdxStocksBarcode);
@@ -73,6 +82,17 @@ class SQLiteDAOImpl extends LocalDbDAO {
           if (oldVersion < 4) {
             await db.execute(pendingStockUpdatesTableCreationQuery);
             await db.execute(pendingCustomerUpdatesTableCreationQuery);
+          }
+          if (oldVersion < 5) {
+            await db.execute(customerPurchasesTableCreationQuery);
+            await db.execute(customerCreditTableCreationQuery);
+            await db.execute(customerInvoicesTableCreationQuery);
+            await db.execute(customerIvPayTableCreationQuery);
+            await db.execute(customerLaybysTableCreationQuery);
+            await db.execute(customerLbPayTableCreationQuery);
+            await db.execute(customerCsoTableCreationQuery);
+            await db.execute(customerSoQuoteTableCreationQuery);
+            await db.execute(customerSoPayTableCreationQuery);
           }
         },
       );
@@ -2393,6 +2413,295 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error checking barcode existence: $error');
       return false;
+    }
+  }
+
+  @override
+  Future<void> replaceCustomerTransactions({
+    required String shopfront,
+    required int customerId,
+    required List<Map<String, dynamic>> purchases,
+    required List<Map<String, dynamic>> credit,
+    required List<Map<String, dynamic>> invoices,
+    required List<Map<String, dynamic>> ivPay,
+    required List<Map<String, dynamic>> laybys,
+    required List<Map<String, dynamic>> lbPay,
+    required List<Map<String, dynamic>> cso,
+    required List<Map<String, dynamic>> soQuote,
+    required List<Map<String, dynamic>> soPay,
+  }) async {
+    try {
+      final db = _database!;
+      final batch = db.batch();
+      final whereArgs = [shopfront, customerId];
+
+      batch.delete(
+        'CustomerPurchases',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: whereArgs,
+      );
+      batch.delete(
+        'CustomerCredit',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: whereArgs,
+      );
+      batch.delete(
+        'CustomerInvoices',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: whereArgs,
+      );
+      batch.delete(
+        'CustomerIvPay',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: whereArgs,
+      );
+      batch.delete(
+        'CustomerLaybys',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: whereArgs,
+      );
+      batch.delete(
+        'CustomerLbPay',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: whereArgs,
+      );
+      batch.delete(
+        'CustomerCso',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: whereArgs,
+      );
+      batch.delete(
+        'CustomerSoQuote',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: whereArgs,
+      );
+      batch.delete(
+        'CustomerSoPay',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: whereArgs,
+      );
+
+      for (final item in purchases) {
+        batch.insert('CustomerPurchases', item);
+      }
+      for (final item in credit) {
+        batch.insert('CustomerCredit', item);
+      }
+      for (final item in invoices) {
+        batch.insert('CustomerInvoices', item);
+      }
+      for (final item in ivPay) {
+        batch.insert('CustomerIvPay', item);
+      }
+      for (final item in laybys) {
+        batch.insert('CustomerLaybys', item);
+      }
+      for (final item in lbPay) {
+        batch.insert('CustomerLbPay', item);
+      }
+      for (final item in cso) {
+        batch.insert('CustomerCso', item);
+      }
+      for (final item in soQuote) {
+        batch.insert('CustomerSoQuote', item);
+      }
+      for (final item in soPay) {
+        batch.insert('CustomerSoPay', item);
+      }
+
+      await batch.commit(noResult: true);
+    } catch (error) {
+      logger.e('Error replacing customer transactions: $error');
+      return Future.error("Error replacing customer transactions: $error");
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCustomerPurchases({
+    required String shopfront,
+    required int customerId,
+    int limit = 20,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.query(
+        'CustomerPurchases',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: [shopfront, customerId],
+        orderBy: 'date DESC',
+        limit: limit,
+      );
+    } catch (error) {
+      logger.e('Error getting customer purchases: $error');
+      return Future.error("Error getting customer purchases: $error");
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCustomerCredit({
+    required String shopfront,
+    required int customerId,
+    int limit = 10,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.query(
+        'CustomerCredit',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: [shopfront, customerId],
+        orderBy: 'date DESC',
+        limit: limit,
+      );
+    } catch (error) {
+      logger.e('Error getting customer credit: $error');
+      return Future.error("Error getting customer credit: $error");
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCustomerInvoices({
+    required String shopfront,
+    required int customerId,
+    int limit = 10,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.query(
+        'CustomerInvoices',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: [shopfront, customerId],
+        orderBy: 'date DESC',
+        limit: limit,
+      );
+    } catch (error) {
+      logger.e('Error getting customer invoices: $error');
+      return Future.error("Error getting customer invoices: $error");
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCustomerIvPay({
+    required String shopfront,
+    required int customerId,
+    int limit = 10,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.query(
+        'CustomerIvPay',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: [shopfront, customerId],
+        orderBy: 'date DESC',
+        limit: limit,
+      );
+    } catch (error) {
+      logger.e('Error getting customer iv pay: $error');
+      return Future.error("Error getting customer iv pay: $error");
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCustomerLaybys({
+    required String shopfront,
+    required int customerId,
+    int limit = 10,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.query(
+        'CustomerLaybys',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: [shopfront, customerId],
+        orderBy: 'date DESC',
+        limit: limit,
+      );
+    } catch (error) {
+      logger.e('Error getting customer laybys: $error');
+      return Future.error("Error getting customer laybys: $error");
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCustomerLbPay({
+    required String shopfront,
+    required int customerId,
+    int limit = 10,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.query(
+        'CustomerLbPay',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: [shopfront, customerId],
+        orderBy: 'date DESC',
+        limit: limit,
+      );
+    } catch (error) {
+      logger.e('Error getting customer layby payments: $error');
+      return Future.error("Error getting customer layby payments: $error");
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCustomerCso({
+    required String shopfront,
+    required int customerId,
+    int limit = 10,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.query(
+        'CustomerCso',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: [shopfront, customerId],
+        orderBy: 'date DESC',
+        limit: limit,
+      );
+    } catch (error) {
+      logger.e('Error getting customer CSO: $error');
+      return Future.error("Error getting customer CSO: $error");
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCustomerSoQuote({
+    required String shopfront,
+    required int customerId,
+    int limit = 10,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.query(
+        'CustomerSoQuote',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: [shopfront, customerId],
+        orderBy: 'date DESC',
+        limit: limit,
+      );
+    } catch (error) {
+      logger.e('Error getting customer SO/Quote: $error');
+      return Future.error("Error getting customer SO/Quote: $error");
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCustomerSoPay({
+    required String shopfront,
+    required int customerId,
+    int limit = 10,
+  }) async {
+    try {
+      final db = _database!;
+      return await db.query(
+        'CustomerSoPay',
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: [shopfront, customerId],
+        orderBy: 'date DESC',
+        limit: limit,
+      );
+    } catch (error) {
+      logger.e('Error getting customer SO payments: $error');
+      return Future.error("Error getting customer SO payments: $error");
     }
   }
 

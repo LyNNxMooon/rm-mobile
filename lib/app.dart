@@ -9,6 +9,7 @@ import 'package:rmstock_scanner/features/onboarding/presentation/BLoC/onboarding
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 //import 'package:rmstock_scanner/features/stocktake/presentation/screens/scanner_screen.dart';
@@ -150,6 +151,9 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<CustomerFilterOptionsBloc>(create: (_) => sl<CustomerFilterOptionsBloc>()),
         BlocProvider<StaffDetailBloc>(create: (_) => sl<StaffDetailBloc>()),
         BlocProvider<CustomerUpdateBloc>(create: (_) => sl<CustomerUpdateBloc>()),
+        BlocProvider<CustomerTransactionsBloc>(
+          create: (_) => sl<CustomerTransactionsBloc>(),
+        ),
         BlocProvider<CustomerCreateBloc>(create: (_) => sl<CustomerCreateBloc>()),
         BlocProvider<StaffBarcodeLookupBloc>(
           create: (_) => sl<StaffBarcodeLookupBloc>(),

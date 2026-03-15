@@ -60,6 +60,7 @@ import '../features/stock_lookup/models/stock_lookup_models.dart';
 import '../features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import '../features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
 import '../features/customer_lookup/domain/use_cases/fetch_customer_data.dart';
+import '../features/customer_lookup/domain/use_cases/fetch_customer_transactions.dart';
 import '../features/customer_lookup/domain/use_cases/get_customer_filter_options.dart';
 import '../features/customer_lookup/domain/use_cases/get_host_ip_address.dart';
 import '../features/customer_lookup/domain/use_cases/get_next_customer_address_id.dart';
@@ -78,6 +79,7 @@ import '../features/customer_lookup/domain/use_cases/resolve_customer_create_con
 import '../features/customer_lookup/models/customer_lookup_models.dart';
 import '../features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
+import '../features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
 import '../features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import '../features/stocktake/domain/use_cases/commit_stocktake.dart';
 import '../features/stocktake/domain/use_cases/count_and_save_to_localdb.dart';
@@ -90,6 +92,7 @@ import '../features/onboarding/models/onboarding_models.dart';
 import '../features/onboarding/domain/use_cases/get_terms_accepted.dart';
 import '../features/onboarding/domain/use_cases/set_terms_accepted.dart';
 import '../features/onboarding/presentation/BLoC/onboarding_bloc.dart';
+import '../features/customer_lookup/domain/use_cases/get_customer_transactions_local.dart';
 
 final sl = GetIt.instance;
 
@@ -136,6 +139,9 @@ Future<void> init() async {
   sl.registerFactory(() => CustomerFilterOptionsBloc(getCustomerFilterOptions: sl()));
   sl.registerFactory(() => StaffDetailBloc(getStaffDetail: sl()));
   sl.registerFactory(() => CustomerUpdateBloc(updateCustomerDetails: sl()));
+  sl.registerFactory(
+    () => CustomerTransactionsBloc(getCustomerTransactionsLocal: sl()),
+  );
   sl.registerFactory(
     () => CustomerCreateBloc(
       createCustomer: sl(),
@@ -241,6 +247,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => FetchStockData(sl()));
   sl.registerLazySingleton(() => GetPaginatedStock(sl()));
   sl.registerLazySingleton(() => FetchCustomerData(sl()));
+  sl.registerLazySingleton(() => FetchCustomerTransactions(sl()));
+  sl.registerLazySingleton(() => GetCustomerTransactionsLocal(sl()));
   sl.registerLazySingleton(() => CreateCustomer(sl()));
   sl.registerLazySingleton(() => GetPaginatedCustomers(sl()));
   sl.registerLazySingleton(() => GetCustomerFilterOptions(sl()));

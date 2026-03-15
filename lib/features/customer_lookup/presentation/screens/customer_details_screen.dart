@@ -11,10 +11,12 @@ import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/fetch_customer_transactions.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_transactions_screen.dart';
 import 'package:rmstock_scanner/utils/enums.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/internet_connection_utils.dart';
+import 'package:rmstock_scanner/utils/dependency_injection_utils.dart' as di;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import '../../../../constants/colors.dart';
@@ -163,6 +165,32 @@ class _AbnInputFormatter extends TextInputFormatter {
 }
 
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
+    Future<void> _openCustomerTransactions() async {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator(color: kPrimaryColor,)),
+      );
+
+      try {
+        await di.sl<FetchCustomerTransactions>()(widget.customer.customerId);
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).pop();
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CustomerTransactionsScreen(customer: widget.customer),
+          ),
+        );
+      } catch (error) {
+        if (mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error.toString())),
+          );
+        }
+      }
+    }
   bool _shouldSyncOnExit = false;
 
   CustomerEditSection? _editingSection;
@@ -1851,13 +1879,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           _buildLongActionButton(
             label: "View Recent Transactions",
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      CustomerTransactionsScreen(customer: widget.customer),
-                ),
-              );
+              _openCustomerTransactions();
             },
           ),
         ],

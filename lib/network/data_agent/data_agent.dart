@@ -11,6 +11,7 @@ import 'package:rmstock_scanner/entities/response/stock_lookup_api_response.dart
 import 'package:rmstock_scanner/entities/response/customer_lookup_api_response.dart';
 import 'package:rmstock_scanner/entities/response/customer_update_response.dart';
 import 'package:rmstock_scanner/entities/response/customer_create_response.dart';
+import 'package:rmstock_scanner/entities/response/customer_transactions_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_backup_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
@@ -82,6 +83,14 @@ abstract class DataAgent {
     String shopfrontId,
     String apiKey,
     Map<String, dynamic> body,
+  );
+
+  Future<CustomerTransactionsResponse> fetchCustomerTransactions(
+    String ip,
+    int port,
+    String shopfrontId,
+    int customerId,
+    String apiKey,
   );
 
   Future<PictureUploadResponse> uploadShopfrontPicture(

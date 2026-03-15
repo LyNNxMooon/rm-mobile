@@ -5,6 +5,7 @@ import '../../../../entities/response/customer_create_response.dart';
 import '../../../../entities/vos/filter_criteria.dart';
 import '../../../../entities/vos/search_mode.dart';
 import '../entities/customer_sync_status.dart';
+import '../entities/customer_transactions_local_data.dart';
 
 abstract class CustomerLookupRepo {
   Stream<CustomerSyncStatus> fetchAndSaveCustomers(String ipAddress);
@@ -34,6 +35,12 @@ abstract class CustomerLookupRepo {
   Future<CustomerCreateResponse> createCustomer(
     Map<String, dynamic> body,
   );
+
+  Future<void> fetchAndSaveCustomerTransactions({required int customerId});
+
+  Future<CustomerTransactionsLocalData> getCustomerTransactionsLocal({
+    required int customerId,
+  });
 
   Future<bool> checkBarcodeExists({
     required String shopfront,

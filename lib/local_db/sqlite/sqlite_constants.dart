@@ -202,6 +202,123 @@ const customerAddressesTableCreationQuery = '''
   )
 ''';
 
+const customerPurchasesTableCreationQuery = '''
+  CREATE TABLE CustomerPurchases (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    date TEXT,
+    product TEXT,
+    qty REAL,
+    price REAL
+  )
+''';
+
+const customerCreditTableCreationQuery = '''
+  CREATE TABLE CustomerCredit (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    date TEXT,
+    credit_id INTEGER,
+    source INTEGER,
+    credit_type TEXT,
+    amount REAL
+  )
+''';
+
+const customerInvoicesTableCreationQuery = '''
+  CREATE TABLE CustomerInvoices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    date TEXT,
+    invoice_no INTEGER,
+    inv_total REAL,
+    amount_owing REAL
+  )
+''';
+
+const customerIvPayTableCreationQuery = '''
+  CREATE TABLE CustomerIvPay (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    date TEXT,
+    invoice_no INTEGER,
+    payment_no INTEGER,
+    trn TEXT,
+    discount REAL,
+    amount_paid REAL
+  )
+''';
+
+const customerLaybysTableCreationQuery = '''
+  CREATE TABLE CustomerLaybys (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    date TEXT,
+    layby_no INTEGER,
+    last_payment TEXT,
+    total REAL,
+    amount_owing REAL
+  )
+''';
+
+const customerLbPayTableCreationQuery = '''
+  CREATE TABLE CustomerLbPay (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    date TEXT,
+    layby_no INTEGER,
+    payment_no INTEGER,
+    amount_paid REAL,
+    payment_type TEXT
+  )
+''';
+
+const customerCsoTableCreationQuery = '''
+  CREATE TABLE CustomerCso (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    date TEXT,
+    product TEXT,
+    sell REAL,
+    qty REAL,
+    status TEXT
+  )
+''';
+
+const customerSoQuoteTableCreationQuery = '''
+  CREATE TABLE CustomerSoQuote (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    date TEXT,
+    sales_order_no INTEGER,
+    type TEXT,
+    status TEXT,
+    total REAL,
+    owing REAL
+  )
+''';
+
+const customerSoPayTableCreationQuery = '''
+  CREATE TABLE CustomerSoPay (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    date TEXT,
+    sales_order_no INTEGER,
+    payment_no INTEGER,
+    amount_paid REAL,
+    payment_type TEXT
+  )
+''';
+
 const pendingStockUpdatesTableCreationQuery = '''
   CREATE TABLE PendingStockUpdates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
