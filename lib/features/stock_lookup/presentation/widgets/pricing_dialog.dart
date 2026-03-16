@@ -82,36 +82,44 @@ class _PricingDialogState extends State<PricingDialog> {
   Widget build(BuildContext context) {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     
-    // ENLARGED: Font sizes increased for better readability
-    final double headerSize = isTablet ? 16 : 14;
+    final double headerSize = isTablet ? 16 : 13;
     final double textSize = isTablet ? 15 : 13;
-    final double priceSize = isTablet ? 15 : 14;
+    final double priceSize = isTablet ? 15 : 13;
     
-    // ENLARGED: Wider columns to prevent squishing
-    final double gradeColWidth = isTablet ? 90.0 : 75.0;
-    final double amountColWidth = isTablet ? 110.0 : 85.0;
+    // ALIGNMENT FIX: Adjusted widths so "Amount" has room to breathe and "Grade" lines up
+    final double gradeColWidth = isTablet ? 90.0 : 75.0; 
+    final double amountColWidth = isTablet ? 110.0 : 80.0; 
+    final double middleGap = isTablet ? 16.0 : 8.0;
     
-    // ENLARGED: Taller inputs and more space between rows
-    final double inputHeight = isTablet ? 42.0 : 36.0;
-    final double rowSpacing = isTablet ? 18.0 : 14.0;
+    final double inputHeight = isTablet ? 42.0 : 34.0;
+    final double rowSpacing = isTablet ? 18.0 : 10.0;
 
     final bool hasPricingApplied = _hasPricingApplied();
 
+    final EdgeInsets customInsetPadding = isTablet
+        ? dialogInsetPadding(context)
+        : const EdgeInsets.symmetric(horizontal: 12, vertical: 24);
+
     return Dialog(
-      insetPadding: dialogInsetPadding(context),
+      insetPadding: customInsetPadding,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
-      child: Container(
-        // ENLARGED: Increased max width and added max height
+      child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: isTablet ? 760 : 600,
+          maxWidth: isTablet ? 780 : 680, 
           maxHeight: isTablet ? 720 : 600,
         ),
-        // ENLARGED: More outer padding
-        padding: EdgeInsets.fromLTRB(28, 28, 28, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(
+            isTablet ? 24 : 16, 
+            isTablet ? 24 : 16, 
+            isTablet ? 24 : 16, 
+            isTablet ? 20 : 16
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Text(
               "Pricing Grades",
               style: TextStyle(
@@ -129,54 +137,67 @@ class _PricingDialogState extends State<PricingDialog> {
                     children: [
                       // Left Column (Grade, Rule, Amount)
                       Expanded(
-                        flex: 7, // Gave the left side slightly more room relative to the right
+                        flex: 7, 
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // PERFECT ALIGNMENT HEADERS
                             Row(
                               children: [
                                 SizedBox(
                                   width: gradeColWidth,
-                                  child: Text(
-                                    "Grade",
-                                    style: TextStyle(
-                                      fontSize: headerSize,
-                                      color: kThirdColor,
-                                      fontWeight: FontWeight.w600,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 4.0), // Aligns text with the visual center of the Radio button
+                                    child: Text(
+                                      "Grade",
+                                      style: TextStyle(
+                                        fontSize: headerSize,
+                                        color: kThirdColor,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ),
                                 Expanded(
-                                  child: Text(
-                                    "Rule",
-                                    style: TextStyle(
-                                      fontSize: headerSize,
-                                      color: kThirdColor,
-                                      fontWeight: FontWeight.w600,
+                                  child: Container(
+                                    margin: EdgeInsets.only(right: middleGap),
+                                    padding: EdgeInsets.only(left: isTablet ? 12 : 8), // Mirrors the dropdown's internal padding
+                                    child: Text(
+                                      "Rule",
+                                      style: TextStyle(
+                                        fontSize: headerSize,
+                                        color: kThirdColor,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ),
                                 SizedBox(
                                   width: amountColWidth,
-                                  child: Text(
-                                    "Amount",
-                                    style: TextStyle(
-                                      fontSize: headerSize,
-                                      color: kThirdColor,
-                                      fontWeight: FontWeight.w600,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(left: isTablet ? 12 : 8), // Mirrors the TextField's internal padding
+                                    child: Text(
+                                      "Amount",
+                                      style: TextStyle(
+                                        fontSize: headerSize,
+                                        color: kThirdColor,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: isTablet ? 16 : 12),
+                            SizedBox(height: isTablet ? 16 : 10),
                             ..._rows.map((row) => _buildInputRow(
                                 row, 
                                 textSize, 
                                 inputHeight, 
                                 gradeColWidth, 
                                 amountColWidth, 
-                                rowSpacing
+                                middleGap,
+                                rowSpacing,
+                                isTablet
                             )),
                           ],
                         ),
@@ -186,7 +207,7 @@ class _PricingDialogState extends State<PricingDialog> {
                       Container(
                         width: 1,
                         color: Colors.grey.shade300,
-                        margin: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
+                        margin: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 12),
                       ),
         
                       // Right Column (Calculated Stock Prices)
@@ -200,10 +221,10 @@ class _PricingDialogState extends State<PricingDialog> {
                               style: TextStyle(
                                 fontSize: headerSize,
                                 color: kThirdColor,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            SizedBox(height: isTablet ? 16 : 12),
+                            SizedBox(height: isTablet ? 16 : 10),
                             if (!hasPricingApplied)
                               Expanded(
                                 child: Center(
@@ -223,17 +244,21 @@ class _PricingDialogState extends State<PricingDialog> {
                                     height: inputHeight,
                                     margin: EdgeInsets.only(bottom: rowSpacing),
                                     alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      _formatMoney(
-                                        _calculatePrice(
-                                          row.ruleType,
-                                          _parseValue(row.controller.text),
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        _formatMoney(
+                                          _calculatePrice(
+                                            row.ruleType,
+                                            _parseValue(row.controller.text),
+                                          ),
                                         ),
-                                      ),
-                                      style: TextStyle(
-                                        fontSize: priceSize,
-                                        fontWeight: FontWeight.w700,
-                                        color: kPrimaryColor,
+                                        style: TextStyle(
+                                          fontSize: priceSize,
+                                          fontWeight: FontWeight.w700,
+                                          color: kPrimaryColor,
+                                        ),
                                       ),
                                     ),
                                   )),
@@ -268,7 +293,7 @@ class _PricingDialogState extends State<PricingDialog> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _handleUpdate,
@@ -292,18 +317,19 @@ class _PricingDialogState extends State<PricingDialog> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               "This is the pricing grades at Stock Level Only! If you need to view other Depts/Cats & Global level pricing rules, please refer to your RetailManager System.",
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: isTablet ? 12 : 10,
+                fontSize: isTablet ? 11 : 9.5,
                 color: kThirdColor.withOpacity(0.65),
                 fontWeight: FontWeight.w600,
-                height: 1.4,
+                height: 1.3,
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -315,7 +341,9 @@ class _PricingDialogState extends State<PricingDialog> {
       double inputHeight,
       double gradeColWidth,
       double amountColWidth,
-      double rowSpacing) {
+      double middleGap,
+      double rowSpacing,
+      bool isTablet) {
     return Container(
       margin: EdgeInsets.only(bottom: rowSpacing),
       height: inputHeight, 
@@ -328,7 +356,7 @@ class _PricingDialogState extends State<PricingDialog> {
             child: Row(
               children: [
                 SizedBox(
-                  width: 24,
+                  width: isTablet ? 24 : 20,
                   child: Radio<String>(
                     value: row.grade,
                     groupValue: _selectedGrade,
@@ -343,7 +371,7 @@ class _PricingDialogState extends State<PricingDialog> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: isTablet ? 8 : 4),
                 Text(
                   row.grade,
                   style: TextStyle(
@@ -360,8 +388,8 @@ class _PricingDialogState extends State<PricingDialog> {
           Expanded(
             child: Container(
               height: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              margin: const EdgeInsets.only(right: 16),
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 12 : 8),
+              margin: EdgeInsets.only(right: middleGap),
               decoration: BoxDecoration(
                 color: Colors.grey.shade50,
                 border: Border.all(color: Colors.grey.shade300),
@@ -371,7 +399,7 @@ class _PricingDialogState extends State<PricingDialog> {
                 child: DropdownButton<int>(
                   value: row.ruleType,
                   isExpanded: true,
-                  icon: const Icon(Icons.arrow_drop_down, size: 24),
+                  icon: Icon(Icons.arrow_drop_down, size: isTablet ? 22 : 18),
                   style: TextStyle(
                     fontSize: textSize,
                     fontWeight: FontWeight.w500,
@@ -380,7 +408,10 @@ class _PricingDialogState extends State<PricingDialog> {
                   items: _ruleOptions
                       .map((opt) => DropdownMenuItem<int>(
                             value: opt.value,
-                            child: Text(opt.label),
+                            child: Text(
+                              opt.label,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ))
                       .toList(),
                   onChanged: (value) {
@@ -411,7 +442,10 @@ class _PricingDialogState extends State<PricingDialog> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 12 : 8, 
+                  vertical: 0
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
                   borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
@@ -432,7 +466,6 @@ class _PricingDialogState extends State<PricingDialog> {
     );
   }
 
-  // Logic methods remain exactly the same
   void _handleUpdate() {
     widget.onUpdate(
       PricingRules(
