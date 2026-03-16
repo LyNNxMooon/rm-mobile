@@ -148,8 +148,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
         pricingRules: rules,
         sell: widget.sell,
         cost: widget.incCost,
-        onUpdate: () {
-          _submitPricingUpdate(rules);
+        onUpdate: (updatedRules) {
+          _submitPricingUpdate(updatedRules);
           Navigator.pop(context);
         },
         onDelete: () {

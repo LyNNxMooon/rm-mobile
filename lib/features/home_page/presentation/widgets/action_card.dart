@@ -19,6 +19,13 @@ class ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double scale = isTablet
+        ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.85, 1.3)
+        : 1.0;
+    final double titleSize = isTablet ? (16 * scale).clamp(16.0, 19.0) : 16.0;
+    final double subTitleSize = isTablet ? (14 * scale).clamp(12.0, 14.0) : 14.0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25),
       child: Container(
@@ -63,7 +70,7 @@ class ActionCard extends StatelessWidget {
                         Text(
                           title,
                           style: getSmartTitle(
-                            fontSize: 16,
+                            fontSize: titleSize,
                             color: kPrimaryColor,
                           ),
                           maxLines: 1,
@@ -72,7 +79,7 @@ class ActionCard extends StatelessWidget {
                         const SizedBox(height: 6),
                         Text(
                           subtitle,
-                          style: const TextStyle(fontSize: 14, color: kGreyColor),
+                          style: TextStyle(fontSize: subTitleSize, color: kGreyColor),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
