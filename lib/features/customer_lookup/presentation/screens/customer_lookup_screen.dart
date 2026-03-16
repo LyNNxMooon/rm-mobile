@@ -659,11 +659,17 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     final bool showFax = matchedField == 'fax' && customer.fax.isNotEmpty;
     final bool showMobile = matchedField == 'mobile' && customer.mobile.isNotEmpty;
     final bool showEmail = matchedField == 'email' && customer.email.isNotEmpty;
-    final bool showExtraFields = showCompany || showPhone || showFax || showMobile || showEmail;
-    final double textUiScale = isTablet && showExtraFields
+    final bool showExtraFields =
+      showCompany || showPhone || showFax || showMobile || showEmail;
+    final bool shouldScaleUp =
+      isTablet && query.trim().isNotEmpty && matchedField != null;
+    final double textUiScale = shouldScaleUp
       ? (1.0 + ((textScale - 1.0) * 0.85)).clamp(1.0, 1.65)
       : 1.0;
-    final double tileVerticalPadding = (isTablet ? (showExtraFields ? 18 : 10) : 8) * uiScale;
+    final double tileVerticalPadding = (isTablet
+        ? (shouldScaleUp || showExtraFields ? 18 : 10)
+        : 8) *
+      uiScale;
 
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(

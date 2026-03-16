@@ -37,7 +37,7 @@ class CustomerSearchFilterBar extends StatelessWidget {
           child: TextField(
             onChanged: onChanged,
             decoration: InputDecoration(
-              hintText: 'Search customers...',
+              hintText: 'Search by barcode, name, company, phone, fax, email',
               hintStyle: const TextStyle(color: kThirdColor, fontSize: 14),
               border: InputBorder.none,
               isDense: true,

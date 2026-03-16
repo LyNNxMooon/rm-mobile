@@ -605,10 +605,15 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final bool showCustom1 = matchedField == 'custom1' && stock.custom1 != null && stock.custom1!.isNotEmpty;
     final bool showCustom2 = matchedField == 'custom2' && stock.custom2 != null && stock.custom2!.isNotEmpty;
     final bool showExtraFields = showCustom1 || showCustom2;
-    final double textUiScale = isTablet && showExtraFields
+    final bool shouldScaleUp =
+      isTablet && query.trim().isNotEmpty && matchedField != null;
+    final double textUiScale = shouldScaleUp
       ? (1.0 + ((textScale - 1.0) * 0.85)).clamp(1.0, 1.65)
       : 1.0;
-    final double tileVerticalPadding = (isTablet ? (showExtraFields ? 18 : 10) : 8) * uiScale;
+    final double tileVerticalPadding = (isTablet
+        ? (shouldScaleUp || showExtraFields ? 18 : 10)
+        : 8) *
+      uiScale;
 
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(
@@ -705,7 +710,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                 Text(
                                   'Custom 1: ',
                                   style: TextStyle(
-                                    fontSize: 12 * textUiScale,
+                                    fontSize: 12,
                                     color: kThirdColor.withOpacity(0.6),
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -733,7 +738,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                 Text(
                                   'Custom 2: ',
                                   style: TextStyle(
-                                    fontSize: 12 * textUiScale,
+                                    fontSize: 12,
                                     color: kThirdColor.withOpacity(0.6),
                                     fontWeight: FontWeight.w600,
                                   ),

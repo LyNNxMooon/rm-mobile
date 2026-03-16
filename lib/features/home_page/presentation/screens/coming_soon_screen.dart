@@ -110,16 +110,31 @@ class ComingSoonScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
                   foregroundColor: kSecondaryColor,
+                  minimumSize: Size(double.infinity, buttonHeight),
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  elevation: 2,
+                  elevation: 0,
                   textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                child: const Text("Notify Me When Ready"),
+                child: const Center(
+                  child: Text(
+                    "Notify Me When Ready",
+                    textScaler: TextScaler.noScaling,
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: kSecondaryColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -130,15 +145,30 @@ class ComingSoonScreen extends StatelessWidget {
                 onPressed: () => context.navigateBack(),
                 style: TextButton.styleFrom(
                   foregroundColor: kPrimaryColor,
+                  minimumSize: Size(double.infinity, buttonHeight),
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                child: const Text("Go Back"),
+                child: const Center(
+                  child: Text(
+                    "Go Back",
+                    textScaler: TextScaler.noScaling,
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: kPrimaryColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ),
             ),
 

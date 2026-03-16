@@ -41,7 +41,7 @@ class SearchFilterBar extends StatelessWidget {
           child: TextField(
             onChanged: onChanged,
             decoration: const InputDecoration(
-              hintText: 'Search by barcode, description, category...',
+              hintText: 'Search by barcode, description, custom1, or custom2',
               hintStyle: TextStyle(color: kThirdColor, fontSize: 14),
               border: InputBorder.none,
               isDense: true,
