@@ -1,4 +1,5 @@
 import '../../../../entities/response/stock_update_response.dart';
+import '../../../../entities/vos/pricing_rules.dart';
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/internet_connection_utils.dart';
 import '../repositories/stock_lookup_repo.dart';
@@ -52,6 +53,9 @@ class SendPendingStockUpdates {
         final double sell = (payload['sell'] as num?)?.toDouble() ?? 0.0;
         final String? custom1 = payload['custom1'] as String?;
         final String? custom2 = payload['custom2'] as String?;
+        final PricingRules? pricingRules = _parsePricingRules(
+          payload['pricing_rules'],
+        );
 
         final response = await repository.updateStockDetailsFromApi(
           ip: ip,
@@ -63,6 +67,7 @@ class SendPendingStockUpdates {
           sell: sell,
           custom1: custom1,
           custom2: custom2,
+          pricingRules: pricingRules,
         );
 
         if (response.success) {
@@ -89,5 +94,15 @@ class SendPendingStockUpdates {
     } catch (e) {
       return Future.error("Failed to send pending stock updates: $e");
     }
+  }
+
+  PricingRules? _parsePricingRules(dynamic payload) {
+    if (payload is Map<String, dynamic>) {
+      return PricingRules.fromJson(payload);
+    }
+    if (payload is Map) {
+      return PricingRules.fromJson(Map<String, dynamic>.from(payload));
+    }
+    return null;
   }
 }

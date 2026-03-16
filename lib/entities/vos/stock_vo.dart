@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:json_annotation/json_annotation.dart';
+import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 part 'stock_vo.g.dart';
 
 @JsonSerializable()
@@ -61,6 +64,12 @@ class StockVO {
   final bool trackSerial;
   @JsonKey(name: 'last_sale_date')
   final String? lastSaleDate;
+  @JsonKey(
+    name: 'pricing_rules',
+    fromJson: _pricingRulesFromJson,
+    toJson: _pricingRulesToJson,
+  )
+  final PricingRules? pricingRules;
 
   factory StockVO.fromJson(Map<String, dynamic> json) =>
       _$StockVOFromJson(json);
@@ -112,6 +121,7 @@ class StockVO {
       "weighted": _asBool(item["weighted"]),
       "track_serial": _asBool(item["track_serial"]),
       "last_sale_date": _asNullableString(item["last_sale_date"]),
+      "pricing_rules": item["pricing_rules"],
     };
 
     return StockVO.fromJsonNetwork(mapped);
@@ -153,6 +163,7 @@ class StockVO {
     required this.weighted,
     required this.trackSerial,
     required this.lastSaleDate,
+    this.pricingRules,
   });
 
   static String _asString(dynamic value) {
@@ -187,5 +198,35 @@ class StockVO {
       return lower == "true" || lower == "1";
     }
     return false;
+  }
+
+  static PricingRules? _pricingRulesFromJson(Object? value) {
+    if (value == null) return null;
+    if (value is PricingRules) return value;
+    if (value is Map<String, dynamic>) {
+      return PricingRules.fromJson(value);
+    }
+    if (value is Map) {
+      return PricingRules.fromJson(Map<String, dynamic>.from(value));
+    }
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return null;
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is Map<String, dynamic>) {
+          return PricingRules.fromJson(decoded);
+        }
+        if (decoded is Map) {
+          return PricingRules.fromJson(Map<String, dynamic>.from(decoded));
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  static Object? _pricingRulesToJson(PricingRules? rules) {
+    if (rules == null) return null;
+    return jsonEncode(rules.toJson());
   }
 }

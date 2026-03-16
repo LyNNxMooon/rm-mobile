@@ -1,5 +1,6 @@
 import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
+import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/internet_connection_utils.dart';
@@ -15,6 +16,7 @@ class UpdateSingleStock {
     required double sell,
     String? custom1,
     String? custom2,
+    PricingRules? pricingRules,
   }) async {
     try {
       final ip = (await LocalDbDAO.instance.getHostIpAddress() ?? "").trim();
@@ -39,6 +41,7 @@ class UpdateSingleStock {
         sell: sell,
         custom1: custom1,
         custom2: custom2,
+        pricingRules: pricingRules,
       );
 
       final payload = <String, dynamic>{
@@ -47,6 +50,7 @@ class UpdateSingleStock {
         'sell': sell,
         if (custom1 != null) 'custom1': custom1,
         if (custom2 != null) 'custom2': custom2,
+        if (pricingRules != null) 'pricing_rules': pricingRules.toJson(),
         'date_modified': DateTime.now().toIso8601String(),
       };
 
@@ -77,6 +81,7 @@ class UpdateSingleStock {
               sell: sell,
               custom1: custom1,
               custom2: custom2,
+              pricingRules: pricingRules,
             );
             if (response.success) {
               await LocalDbDAO.instance.deletePendingStockUpdates([pendingId]);

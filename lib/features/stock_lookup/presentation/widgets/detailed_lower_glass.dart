@@ -3,8 +3,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:languagetool_textfield/languagetool_textfield.dart';
+import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/price_calculator_dialog.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/pricing_button.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/pricing_dialog.dart';
 import '../../../../constants/colors.dart';
 import '../BLoC/stock_lookup_bloc.dart';
 import '../BLoC/stock_lookup_events.dart';
@@ -22,6 +25,7 @@ class DetailedLowerGlass extends StatefulWidget {
     required this.custom1Controller,
     required this.custom2Controller,
     required this.canUpdateSellPrice,
+    required this.pricingRules,
   });
 
   final double sell;
@@ -34,6 +38,7 @@ class DetailedLowerGlass extends StatefulWidget {
   final TextEditingController custom1Controller;
   final TextEditingController custom2Controller;
   final bool canUpdateSellPrice;
+  final PricingRules? pricingRules;
 
   @override
   State<DetailedLowerGlass> createState() => _DetailedLowerGlassState();
@@ -133,6 +138,51 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
         }
       });
     }
+  }
+
+  void _openPricingDialog() {
+    final rules = widget.pricingRules ?? PricingRules.empty();
+    showDialog<void>(
+      context: context,
+      builder: (_) => PricingDialog(
+        pricingRules: rules,
+        sell: widget.sell,
+        cost: widget.incCost,
+        onUpdate: () {
+          _submitPricingUpdate(rules);
+          Navigator.pop(context);
+        },
+        onDelete: () {
+          _submitPricingUpdate(PricingRules.empty());
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  void _submitPricingUpdate(PricingRules rules) {
+    final sellVal = widget.canUpdateSellPrice
+        ? double.tryParse(_exRrpController.text.trim())
+        : widget.exSell;
+
+    if (sellVal == null) {
+      return;
+    }
+
+    final updatedDescription = widget.descController.text;
+    final updatedCustom1 = widget.custom1Controller.text.trim();
+    final updatedCustom2 = widget.custom2Controller.text.trim();
+
+    context.read<StockUpdateBloc>().add(
+      SubmitStockUpdateEvent(
+        stockId: widget.stockId.toInt(),
+        description: updatedDescription,
+        sell: sellVal,
+        custom1: updatedCustom1.isNotEmpty ? updatedCustom1 : null,
+        custom2: updatedCustom2.isNotEmpty ? updatedCustom2 : null,
+        pricingRules: rules,
+      ),
+    );
   }
 
   @override
@@ -320,6 +370,15 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                           ],
                         ),
                       ),
+                    ),
+                  ),
+
+                  SizedBox(width: buttonGap),
+
+                  Expanded(
+                    child: PricingButton(
+                      onTap: _openPricingDialog,
+                      verticalPadding: buttonVertical,
                     ),
                   ),
 

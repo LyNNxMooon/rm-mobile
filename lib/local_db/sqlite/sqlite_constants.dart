@@ -38,6 +38,7 @@ const stocksTableCreationQuery = '''
     weighted INTEGER,
     track_serial INTEGER,
     last_sale_date TEXT,
+    pricing_rules TEXT,
     PRIMARY KEY (stock_id, shopfront)
   )
 ''';

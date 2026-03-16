@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/entities/response/picture_upload_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
 import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
 import 'package:rmstock_scanner/network/LAN_sharing/lan_network_service_impl.dart';
@@ -395,6 +396,7 @@ class StockLookupModels implements StockLookupRepo {
     required double sell,
     String? custom1,
     String? custom2,
+    PricingRules? pricingRules,
   }) async {
     try {
       final String now = DateTime.now().toIso8601String();
@@ -410,6 +412,9 @@ class StockLookupModels implements StockLookupRepo {
       }
       if (custom2 != null) {
         itemData["custom2"] = custom2;
+      }
+      if (pricingRules != null) {
+        itemData["pricing_rules"] = pricingRules.toJson();
       }
 
       final body = {

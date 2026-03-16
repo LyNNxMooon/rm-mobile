@@ -1,4 +1,5 @@
 import '../../../../entities/vos/filter_criteria.dart';
+import '../../../../entities/vos/pricing_rules.dart';
 import '../../../../entities/vos/search_mode.dart';
 
 abstract class StockListEvent {}
@@ -68,6 +69,7 @@ class SubmitStockUpdateEvent extends StockUpdateEvent {
   final double sell;
   final String? custom1;
   final String? custom2;
+  final PricingRules? pricingRules;
 
   SubmitStockUpdateEvent({
     required this.stockId,
@@ -75,6 +77,7 @@ class SubmitStockUpdateEvent extends StockUpdateEvent {
     required this.sell,
     this.custom1,
     this.custom2,
+    this.pricingRules,
   });
 }
 

@@ -659,6 +659,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           exCost: widget.stock.cost,
                           isGst: (widget.stock.salesTax ?? "") == "GST",
                           canUpdateSellPrice: !lockSellPrice,
+                          pricingRules: widget.stock.pricingRules,
                         ),
                       ),
 

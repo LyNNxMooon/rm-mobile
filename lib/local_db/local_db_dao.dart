@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_stock_update_vo.dart';
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/entities/vos/search_mode.dart';
+import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 
 import '../entities/response/paginated_stock_response.dart';
@@ -240,6 +241,7 @@ abstract class LocalDbDAO {
     required double sell,
     String? custom1,
     String? custom2,
+    PricingRules? pricingRules,
   });
 
   Future<int> addPendingStockUpdate({

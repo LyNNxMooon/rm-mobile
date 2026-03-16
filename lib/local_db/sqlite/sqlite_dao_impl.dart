@@ -8,6 +8,7 @@ import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_stock_update_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_address_vo.dart';
 import 'package:rmstock_scanner/entities/vos/search_mode.dart';
@@ -29,7 +30,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       _database = await openDatabase(
         path,
-        version: 5,
+        version: 6,
         onConfigure: (db) async {
           await db.rawQuery('PRAGMA journal_mode=WAL');
           await db.rawQuery('PRAGMA foreign_keys=ON');
@@ -93,6 +94,14 @@ class SQLiteDAOImpl extends LocalDbDAO {
             await db.execute(customerCsoTableCreationQuery);
             await db.execute(customerSoQuoteTableCreationQuery);
             await db.execute(customerSoPayTableCreationQuery);
+          }
+          if (oldVersion < 6) {
+            await _addColumnIfMissing(
+              db: db,
+              table: 'Stocks',
+              column: 'pricing_rules',
+              definition: 'TEXT',
+            );
           }
         },
       );
@@ -1363,6 +1372,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
     required double sell,
     String? custom1,
     String? custom2,
+    PricingRules? pricingRules,
   }) async {
     try {
       final db = _database!;
@@ -1377,6 +1387,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
       }
       if (custom2 != null) {
         valuesToUpdate['custom2'] = custom2;
+      }
+      if (pricingRules != null) {
+        valuesToUpdate['pricing_rules'] = jsonEncode(pricingRules.toJson());
       }
 
       await db.update(
@@ -1523,6 +1536,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
         final double sell = (payload['sell'] as num?)?.toDouble() ?? 0.0;
         final String? custom1 = payload['custom1'] as String?;
         final String? custom2 = payload['custom2'] as String?;
+        final PricingRules? pricingRules = _parsePricingRules(
+          payload['pricing_rules'],
+        );
 
         await updateStockDetails(
           stockId: stockId,
@@ -1531,12 +1547,36 @@ class SQLiteDAOImpl extends LocalDbDAO {
           sell: sell,
           custom1: custom1,
           custom2: custom2,
+          pricingRules: pricingRules,
         );
       }
     } catch (error) {
       logger.e('Error applying pending stock updates: $error');
       return Future.error("Error applying pending stock updates: $error");
     }
+  }
+
+  PricingRules? _parsePricingRules(dynamic payload) {
+    if (payload is Map<String, dynamic>) {
+      return PricingRules.fromJson(payload);
+    }
+    if (payload is Map) {
+      return PricingRules.fromJson(Map<String, dynamic>.from(payload));
+    }
+    if (payload is String) {
+      final trimmed = payload.trim();
+      if (trimmed.isEmpty) return null;
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is Map<String, dynamic>) {
+          return PricingRules.fromJson(decoded);
+        }
+        if (decoded is Map) {
+          return PricingRules.fromJson(Map<String, dynamic>.from(decoded));
+        }
+      } catch (_) {}
+    }
+    return null;
   }
 
   @override

@@ -42,6 +42,7 @@ StockVO _$StockVOFromJson(Map<String, dynamic> json) => StockVO(
   weighted: json['weighted'] == 1,
   trackSerial: json['track_serial'] == 1,
   lastSaleDate: json['last_sale_date'] as String?,
+  pricingRules: StockVO._pricingRulesFromJson(json['pricing_rules']),
 );
 
 StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
@@ -80,6 +81,7 @@ StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
   weighted: json['weighted'],
   trackSerial: json['track_serial'],
   lastSaleDate: json['last_sale_date'] as String?,
+  pricingRules: StockVO._pricingRulesFromJson(json['pricing_rules']),
 );
 
 Map<String, dynamic> _$StockVOToJson(
@@ -122,4 +124,5 @@ Map<String, dynamic> _$StockVOToJson(
   'weighted': instance.weighted ? 1 : 0,
   'track_serial': instance.trackSerial ? 1 : 0,
   'last_sale_date': instance.lastSaleDate,
+  'pricing_rules': StockVO._pricingRulesToJson(instance.pricingRules),
 };
