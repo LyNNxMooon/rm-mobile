@@ -57,19 +57,22 @@ class AppBarSession extends StatelessWidget {
                           return Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
-                              vertical: 6,
+                              vertical: 7,
                             ),
                             decoration: BoxDecoration(
-                              color: kErrorColor.withOpacity(0.2),
+                              color: Colors.amber.withOpacity(0.55),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: kErrorColor),
+                              border: Border.all(
+                                color: Colors.amber,
+                                width: 2,
+                              ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Offline Mode',
                               style: TextStyle(
-                                fontSize: 14,
-                                color: kErrorColor,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: Colors.grey.shade900,
+                                fontWeight: FontWeight.w800,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

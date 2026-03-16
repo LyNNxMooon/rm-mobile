@@ -7,7 +7,7 @@ enum SearchMode {
       case SearchMode.partial:
         return 'Partial Search';
       case SearchMode.prefix:
-        return 'Prefix Search';
+        return 'Starts-with Search';
     }
   }
 }

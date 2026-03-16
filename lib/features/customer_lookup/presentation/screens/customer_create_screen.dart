@@ -1018,7 +1018,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                           fontSize: _font(context, 14),
                                         ),
                                         decoration: _minimalInputDecoration(
-                                          hintText: 'Enter a barcode (Optional)',
+                                          hintText: 'Enter a barcode (Leave empty to auto-generate)',
                                         ),
                                         onChanged: _validateBarcode,
                                         onEditingComplete: () {

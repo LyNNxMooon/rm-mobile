@@ -172,12 +172,19 @@ class _CustomerTransactionsScreenState
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-              child: Text(
-                note,
-                style: TextStyle(
-                  color: Colors.grey.shade700,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  note,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

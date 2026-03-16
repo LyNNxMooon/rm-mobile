@@ -680,7 +680,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                 HighlightedText(
                                   text: stock.description,
                                   query: query,
-                                  highlightColor: kPrimaryColor.withOpacity(0.2),
+                                  highlightColor: Colors.amber.withOpacity(0.6),
                                   style: getSmartTitle(
                                     color: kThirdColor,
                                     fontSize: 14 * textUiScale,
@@ -694,7 +694,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           HighlightedText(
                             text: stock.barcode,
                             query: query,
-                            highlightColor: kPrimaryColor.withOpacity(0.2),
+                            highlightColor: Colors.amber.withOpacity(0.6),
                             style: TextStyle(
                               fontFamily: 'monospace',
                               fontSize: 13 * textUiScale,
@@ -719,7 +719,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   child: HighlightedText(
                                     text: stock.custom1!,
                                     query: query,
-                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
@@ -747,7 +747,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   child: HighlightedText(
                                     text: stock.custom2!,
                                     query: query,
-                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),

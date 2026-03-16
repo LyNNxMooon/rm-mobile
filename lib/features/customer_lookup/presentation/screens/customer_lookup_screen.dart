@@ -742,7 +742,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                 HighlightedText(
                                   text: customer.displayName,
                                   query: query,
-                                  highlightColor: kPrimaryColor.withOpacity(0.2),
+                                  highlightColor: Colors.amber.withOpacity(0.6),
                                   style: getSmartTitle(
                                     color: kThirdColor,
                                     fontSize: 14 * textUiScale,
@@ -756,7 +756,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                           HighlightedText(
                             text: _barcodeLine(customer),
                             query: query,
-                            highlightColor: kPrimaryColor.withOpacity(0.2),
+                            highlightColor: Colors.amber.withOpacity(0.6),
                             style: TextStyle(
                               fontFamily: 'monospace',
                               fontSize: 13 * textUiScale,
@@ -779,7 +779,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                   child: HighlightedText(
                                     text: customer.company,
                                     query: query,
-                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
@@ -805,7 +805,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                   child: HighlightedText(
                                     text: customer.phone,
                                     query: query,
-                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
@@ -831,7 +831,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                   child: HighlightedText(
                                     text: customer.fax,
                                     query: query,
-                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
@@ -857,7 +857,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                   child: HighlightedText(
                                     text: customer.mobile,
                                     query: query,
-                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
@@ -883,7 +883,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                   child: HighlightedText(
                                     text: customer.email,
                                     query: query,
-                                    highlightColor: kPrimaryColor.withOpacity(0.2),
+                                    highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
                                       color: kThirdColor.withOpacity(0.7),
