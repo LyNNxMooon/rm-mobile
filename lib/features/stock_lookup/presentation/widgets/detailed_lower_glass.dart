@@ -341,111 +341,121 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
               ),
               SizedBox(height: rowGap),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: widget.canUpdateSellPrice ? _openCalculator : null,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(vertical: buttonVertical),
-                        decoration: _buttonDecoration(),
-                        child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.center, // Centered
-                          children: [
-                            Icon(
-                              Icons.calculate,
-                              color: kPrimaryColor,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              "CALCULATOR",
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: kPrimaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(width: buttonGap),
-
-                  Expanded(
-                    child: PricingButton(
-                      onTap: _openPricingDialog,
-                      verticalPadding: buttonVertical,
-                    ),
-                  ),
-
-                  SizedBox(width: buttonGap),
-
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        // If sell price is locked for this staff, keep the original
-                        // sell value and only push description changes.
-                        final sellVal = widget.canUpdateSellPrice
-                            ? double.tryParse(_exRrpController.text.trim())
-                            : widget.exSell;
-
-                        if (sellVal == null) {
-                          return;
-                        }
-
-                        final updatedDescription = widget.descController.text;
-                        final updatedCustom1 = widget.custom1Controller.text.trim();
-                        final updatedCustom2 = widget.custom2Controller.text.trim();
-
-                        context.read<StockUpdateBloc>().add(
-                          SubmitStockUpdateEvent(
-                            stockId: widget.stockId.toInt(),
-                            description: updatedDescription,
-                            sell: sellVal,
-                            custom1: updatedCustom1.isNotEmpty ? updatedCustom1 : null,
-                            custom2: updatedCustom2.isNotEmpty ? updatedCustom2 : null,
+              Builder(
+                builder: (context) {
+                  final calculatorButton = InkWell(
+                    onTap: widget.canUpdateSellPrice ? _openCalculator : null,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: buttonVertical),
+                      decoration: _buttonDecoration(),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.calculate,
+                            color: kPrimaryColor,
+                            size: 20,
                           ),
-                        );
-                      },
-                      child: Container(
-                        padding: EdgeInsets.symmetric(vertical: buttonVertical),
-                        decoration: _buttonDecoration(),
-                        child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.center, // Centered
-                          children: [
-                            BlocBuilder<StockUpdateBloc, StockUpdateState>(
-                              builder: (context, state) {
-                                if (state is StockUpdateLoading) {
-                                  return CupertinoActivityIndicator(radius: 10);
-                                } else {
-                                  return Icon(
-                                    Icons.arrow_circle_up,
-                                    color: kPrimaryColor,
-                                    size: 20,
-                                  );
-                                }
-                              },
+                          const SizedBox(width: 8),
+                          const Text(
+                            "CALCULATOR",
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: kPrimaryColor,
                             ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              "UPDATE",
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: kPrimaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                  );
+
+                  final pricingButton = PricingButton(
+                    onTap: _openPricingDialog,
+                    verticalPadding: buttonVertical,
+                  );
+
+                  final updateButton = InkWell(
+                    onTap: () {
+                      // If sell price is locked for this staff, keep the original
+                      // sell value and only push description changes.
+                      final sellVal = widget.canUpdateSellPrice
+                          ? double.tryParse(_exRrpController.text.trim())
+                          : widget.exSell;
+
+                      if (sellVal == null) {
+                        return;
+                      }
+
+                      final updatedDescription = widget.descController.text;
+                      final updatedCustom1 = widget.custom1Controller.text.trim();
+                      final updatedCustom2 = widget.custom2Controller.text.trim();
+
+                      context.read<StockUpdateBloc>().add(
+                        SubmitStockUpdateEvent(
+                          stockId: widget.stockId.toInt(),
+                          description: updatedDescription,
+                          sell: sellVal,
+                          custom1: updatedCustom1.isNotEmpty ? updatedCustom1 : null,
+                          custom2: updatedCustom2.isNotEmpty ? updatedCustom2 : null,
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: buttonVertical),
+                      decoration: _buttonDecoration(),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          BlocBuilder<StockUpdateBloc, StockUpdateState>(
+                            builder: (context, state) {
+                              if (state is StockUpdateLoading) {
+                                return CupertinoActivityIndicator(radius: 10);
+                              } else {
+                                return Icon(
+                                  Icons.arrow_circle_up,
+                                  color: kPrimaryColor,
+                                  size: 20,
+                                );
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            "UPDATE",
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: kPrimaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+
+                  if (isTablet) {
+                    return Row(
+                      children: [
+                        Expanded(child: calculatorButton),
+                        SizedBox(width: buttonGap),
+                        Expanded(child: pricingButton),
+                        SizedBox(width: buttonGap),
+                        Expanded(child: updateButton),
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      SizedBox(width: double.infinity, child: calculatorButton),
+                      SizedBox(height: buttonGap),
+                      SizedBox(width: double.infinity, child: pricingButton),
+                      SizedBox(height: buttonGap),
+                      SizedBox(width: double.infinity, child: updateButton),
+                    ],
+                  );
+                },
               ),
             ],
           ),

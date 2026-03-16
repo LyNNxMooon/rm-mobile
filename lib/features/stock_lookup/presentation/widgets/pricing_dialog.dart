@@ -93,6 +93,7 @@ class _PricingDialogState extends State<PricingDialog> {
     
     final double inputHeight = isTablet ? 42.0 : 34.0;
     final double rowSpacing = isTablet ? 18.0 : 10.0;
+    final double stockColWidth = isTablet ? 0.0 : 84.0;
 
     final bool hasPricingApplied = _hasPricingApplied();
 
@@ -132,101 +133,158 @@ class _PricingDialogState extends State<PricingDialog> {
             Flexible(
               child: SingleChildScrollView(
                 child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Left Column (Grade, Rule, Amount)
-                      Expanded(
-                        flex: 7, 
-                        child: Column(
+                  child: isTablet
+                      ? Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // PERFECT ALIGNMENT HEADERS
-                            Row(
-                              children: [
-                                SizedBox(
-                                  width: gradeColWidth,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(left: 4.0), // Aligns text with the visual center of the Radio button
-                                    child: Text(
-                                      "Grade",
-                                      style: TextStyle(
-                                        fontSize: headerSize,
-                                        color: kThirdColor,
-                                        fontWeight: FontWeight.w700,
+                            // Left Column (Grade, Rule, Amount)
+                            Expanded(
+                              flex: 7, 
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // PERFECT ALIGNMENT HEADERS
+                                  Row(
+                                    children: [
+                                      SizedBox(
+                                        width: gradeColWidth,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(left: 4.0), // Aligns text with the visual center of the Radio button
+                                          child: Text(
+                                            "Grade",
+                                            style: TextStyle(
+                                              fontSize: headerSize,
+                                              color: kThirdColor,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Container(
-                                    margin: EdgeInsets.only(right: middleGap),
-                                    padding: EdgeInsets.only(left: isTablet ? 12 : 8), // Mirrors the dropdown's internal padding
-                                    child: Text(
-                                      "Rule",
-                                      style: TextStyle(
-                                        fontSize: headerSize,
-                                        color: kThirdColor,
-                                        fontWeight: FontWeight.w700,
+                                      Expanded(
+                                        child: Container(
+                                          margin: EdgeInsets.only(right: middleGap),
+                                          padding: EdgeInsets.only(left: isTablet ? 12 : 8), // Mirrors the dropdown's internal padding
+                                          child: Text(
+                                            "Rule",
+                                            style: TextStyle(
+                                              fontSize: headerSize,
+                                              color: kThirdColor,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: amountColWidth,
-                                  child: Padding(
-                                    padding: EdgeInsets.only(left: isTablet ? 12 : 8), // Mirrors the TextField's internal padding
-                                    child: Text(
-                                      "Amount",
-                                      style: TextStyle(
-                                        fontSize: headerSize,
-                                        color: kThirdColor,
-                                        fontWeight: FontWeight.w700,
+                                      SizedBox(
+                                        width: amountColWidth,
+                                        child: Padding(
+                                          padding: EdgeInsets.only(left: isTablet ? 12 : 8), // Mirrors the TextField's internal padding
+                                          child: Text(
+                                            "Amount",
+                                            style: TextStyle(
+                                              fontSize: headerSize,
+                                              color: kThirdColor,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: isTablet ? 16 : 10),
-                            ..._rows.map((row) => _buildInputRow(
-                                row, 
-                                textSize, 
-                                inputHeight, 
-                                gradeColWidth, 
-                                amountColWidth, 
-                                middleGap,
-                                rowSpacing,
-                                isTablet
-                            )),
-                          ],
-                        ),
-                      ),
-                      
-                      // Vertical Divider
-                      Container(
-                        width: 1,
-                        color: Colors.grey.shade300,
-                        margin: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 12),
-                      ),
-        
-                      // Right Column (Calculated Stock Prices)
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Stock",
-                              style: TextStyle(
-                                fontSize: headerSize,
-                                color: kThirdColor,
-                                fontWeight: FontWeight.w700,
+                                  SizedBox(height: isTablet ? 16 : 10),
+                                  ..._rows.map((row) => _buildInputRow(
+                                      row, 
+                                      textSize, 
+                                      inputHeight, 
+                                      gradeColWidth, 
+                                      amountColWidth, 
+                                      middleGap,
+                                      rowSpacing,
+                                      isTablet
+                                  )),
+                                ],
                               ),
                             ),
-                            SizedBox(height: isTablet ? 16 : 10),
+                            
+                            // Vertical Divider
+                            Container(
+                              width: 1,
+                              color: Colors.grey.shade300,
+                              margin: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 12),
+                            ),
+              
+                            // Right Column (Calculated Stock Prices)
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Stock",
+                                    style: TextStyle(
+                                      fontSize: headerSize,
+                                      color: kThirdColor,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  SizedBox(height: isTablet ? 16 : 10),
+                                  if (!hasPricingApplied)
+                                    Expanded(
+                                      child: Center(
+                                        child: Text(
+                                          "No pricing grade applied.",
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: textSize,
+                                            color: kThirdColor.withOpacity(0.75),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    ..._rows.map((row) => Container(
+                                          height: inputHeight,
+                                          margin: EdgeInsets.only(bottom: rowSpacing),
+                                          alignment: Alignment.centerLeft,
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              _formatMoney(
+                                                _calculatePrice(
+                                                  row.ruleType,
+                                                  _parseValue(row.controller.text),
+                                                ),
+                                              ),
+                                              style: TextStyle(
+                                                fontSize: priceSize,
+                                                fontWeight: FontWeight.w700,
+                                                color: kPrimaryColor,
+                                              ),
+                                            ),
+                                          ),
+                                        )),
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ..._rows.map((row) => _buildMobileInputRow(
+                                  row,
+                                  textSize,
+                                  inputHeight,
+                                  amountColWidth,
+                                  stockColWidth,
+                                  middleGap,
+                                  rowSpacing,
+                                  hasPricingApplied,
+                                )),
                             if (!hasPricingApplied)
-                              Expanded(
+                              Padding(
+                                padding: EdgeInsets.only(top: rowSpacing),
                                 child: Center(
                                   child: Text(
                                     "No pricing grade applied.",
@@ -238,35 +296,9 @@ class _PricingDialogState extends State<PricingDialog> {
                                     ),
                                   ),
                                 ),
-                              )
-                            else
-                              ..._rows.map((row) => Container(
-                                    height: inputHeight,
-                                    margin: EdgeInsets.only(bottom: rowSpacing),
-                                    alignment: Alignment.centerLeft,
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        _formatMoney(
-                                          _calculatePrice(
-                                            row.ruleType,
-                                            _parseValue(row.controller.text),
-                                          ),
-                                        ),
-                                        style: TextStyle(
-                                          fontSize: priceSize,
-                                          fontWeight: FontWeight.w700,
-                                          color: kPrimaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                  )),
+                              ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ),
@@ -460,6 +492,165 @@ class _PricingDialogState extends State<PricingDialog> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileInputRow(
+      _EditablePricingRow row,
+      double textSize,
+      double inputHeight,
+      double amountColWidth,
+      double stockColWidth,
+      double middleGap,
+      double rowSpacing,
+      bool hasPricingApplied) {
+    return Container(
+      margin: EdgeInsets.only(bottom: rowSpacing),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 20,
+                child: Radio<String>(
+                  value: row.grade,
+                  groupValue: _selectedGrade,
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedGrade = val);
+                  },
+                  activeColor: kPrimaryColor,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: const VisualDensity(
+                    horizontal: VisualDensity.minimumDensity,
+                    vertical: VisualDensity.minimumDensity,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                row.grade,
+                style: TextStyle(
+                  fontSize: textSize,
+                  fontWeight: FontWeight.w700,
+                  color: kThirdColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Container(
+                  height: inputHeight,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  margin: EdgeInsets.only(right: middleGap),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: row.ruleType,
+                      isExpanded: true,
+                      icon: const Icon(Icons.arrow_drop_down, size: 18),
+                      style: TextStyle(
+                        fontSize: textSize,
+                        fontWeight: FontWeight.w500,
+                        color: kThirdColor,
+                      ),
+                      items: _ruleOptions
+                          .map((opt) => DropdownMenuItem<int>(
+                                value: opt.value,
+                                child: Text(
+                                  opt.label,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            row.ruleType = value;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: amountColWidth,
+                height: inputHeight,
+                child: TextField(
+                  controller: row.controller,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(
+                    fontSize: textSize,
+                    color: kThirdColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlignVertical: TextAlignVertical.center,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 0,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide:
+                          BorderSide(color: Colors.grey.shade300, width: 1),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide:
+                          BorderSide(color: Colors.grey.shade300, width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide:
+                          const BorderSide(color: kPrimaryColor, width: 1),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: stockColWidth,
+                height: inputHeight,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      hasPricingApplied
+                          ? _formatMoney(
+                              _calculatePrice(
+                                row.ruleType,
+                                _parseValue(row.controller.text),
+                              ),
+                            )
+                          : "-",
+                      style: TextStyle(
+                        fontSize: textSize,
+                        fontWeight: FontWeight.w700,
+                        color: kPrimaryColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
