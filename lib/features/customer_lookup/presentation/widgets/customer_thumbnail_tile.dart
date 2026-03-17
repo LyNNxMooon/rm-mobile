@@ -63,11 +63,11 @@ class CustomerThumbnailTile extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              isDark ? colors.surfaceAlt : Colors.grey[400]!,
-              isDark
-                  ? colors.surfaceAlt.withOpacity(0.85)
-                  : Colors.grey[500]!,
+              isDark ? const Color(0xFFF2F2F2) : Colors.grey[400]!,
+              isDark ? const Color(0xFFCFCFCF) : Colors.grey[500]!,
+              if (isDark) const Color(0xFFB0B0B0),
             ],
+            stops: isDark ? const [0.0, 0.55, 1.0] : null,
           ),
           border: Border.all(
             color: isDark ? colors.divider : Colors.grey.withOpacity(0.2),
@@ -78,7 +78,7 @@ class CustomerThumbnailTile extends StatelessWidget {
         child: Text(
           initials,
           style: TextStyle(
-            color: isDark ? colors.onSurface : Colors.white,
+            color: isDark ? Colors.black : Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: fontSize,
             letterSpacing: 0.5,

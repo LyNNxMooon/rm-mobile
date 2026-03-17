@@ -61,8 +61,8 @@ class FilterChipRow extends StatelessWidget {
                     color: isSelected
                         ? kPrimaryColor
                         : (isDark
-                            ? colors.divider
-                            : kGreyColor.withOpacity(0.7)),
+                            ? Colors.white30
+                            : kGreyColor.withOpacity(0.35)),
                   ),
                 ),
                 child: Row(

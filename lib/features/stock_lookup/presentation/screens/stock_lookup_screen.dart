@@ -155,7 +155,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                   indent: 15,
                   endIndent: 15,
                   thickness: 0.5,
-                  color: isDark ? colors.divider : kGreyColor,
+                  color: isDark ? Colors.white30 : kGreyColor,
                 ),
                 const SyncInfoWidget(), // Added const
                 // Chip states and Count Text
@@ -402,7 +402,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           decoration: BoxDecoration(
             border: Border.all(
               color: isDark
-                  ? Colors.white24
+                  ? Colors.white38
                   : kGreyColor.withOpacity(0.6),
               width: 0.6,
             ),
@@ -667,12 +667,17 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDark ? colors.surface : kSecondaryColor,
+                  color: isDark
+                      ? Color.lerp(colors.surface, Colors.white, 0.06)
+                      : kSecondaryColor,
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
+                  border: isDark
+                      ? Border.all(color: Colors.white.withOpacity(0.18))
+                      : null,
                   boxShadow: [
                     BoxShadow(
                       color: isDark
-                          ? colors.cardShadow
+                          ? Colors.black.withOpacity(0.35)
                           : kThirdColor.withOpacity(0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),

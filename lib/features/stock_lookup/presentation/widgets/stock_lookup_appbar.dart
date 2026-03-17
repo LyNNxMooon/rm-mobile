@@ -143,7 +143,7 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isDark
-                              ? colors.divider
+                              ? Colors.white30
                               : Colors.grey[300]!,
                           width: 1,
                         ),
@@ -176,7 +176,7 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isDark
-                                ? colors.divider
+                                ? Colors.white30
                                 : Colors.grey[300]!,
                             width: 1,
                           ),

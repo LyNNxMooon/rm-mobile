@@ -59,8 +59,8 @@ class CustomerFilterChipRow extends StatelessWidget {
                     color: isSelected
                         ? kPrimaryColor
                         : (isDark
-                            ? colors.divider
-                            : kGreyColor.withOpacity(0.7)),
+                            ? Colors.white38
+                            : kGreyColor.withOpacity(0.35)),
                   ),
                 ),
                 child: Row(
@@ -71,7 +71,7 @@ class CustomerFilterChipRow extends StatelessWidget {
                         color: isSelected
                             ? colors.onHero
                             : (isDark
-                                ? colors.onSurfaceMuted
+                                ? Colors.white70
                                 : Colors.blueGrey[700]),
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

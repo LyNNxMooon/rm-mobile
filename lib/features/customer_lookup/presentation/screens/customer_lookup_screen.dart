@@ -144,7 +144,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                   indent: 15,
                   endIndent: 15,
                   thickness: 0.5,
-                  color: isDark ? colors.divider : kGreyColor,
+                  color: isDark ? Colors.white38 : kGreyColor,
                 ),
                 const CustomerSyncInfoWidget(),
                 BlocBuilder<CustomerListBloc, CustomerListState>(
@@ -196,7 +196,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                             Text(
                               "${state.customers.length} of ${NumberFormat('#,###').format(state.totalCount)}",
                               style: TextStyle(
-                                color: colors.onSurfaceMuted,
+                                color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                 fontSize: 11,
                               ),
                             ),
@@ -225,7 +225,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                           Text(
                             '0 of 0',
                             style: TextStyle(
-                              color: colors.onSurfaceMuted,
+                              color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                               fontSize: 11,
                             ),
                           ),
@@ -366,9 +366,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
           height: (isTablet ? 64 : 56) * uiScale,
           decoration: BoxDecoration(
             border: Border.all(
-              color: isDark
-                  ? colors.divider
-                  : kGreyColor.withOpacity(0.6),
+              color: isDark ? Colors.white38 : kGreyColor.withOpacity(0.6),
               width: 0.6,
             ),
             color: (isDark ? colors.surface : kSecondaryColor)
@@ -626,13 +624,17 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
 
   Widget loadingWidget() {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           'Getting Customers From Database...',
-          style: getSmartTitle(color: colors.onSurface, fontSize: 16),
+          style: getSmartTitle(
+            color: isDark ? Colors.white : colors.onSurface,
+            fontSize: 16,
+          ),
         ),
         Padding(
           padding: const EdgeInsets.only(
@@ -645,7 +647,10 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
         ),
         Text(
           'This may take a few seconds.',
-          style: TextStyle(fontSize: 11, color: colors.onSurfaceMuted),
+          style: TextStyle(
+            fontSize: 11,
+            color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+          ),
         ),
         const SizedBox(height: 60),
       ],
@@ -706,11 +711,18 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: colors.surface,
+                  color: isDark
+                      ? Color.lerp(colors.surface, Colors.white, 0.06)
+                      : colors.surface,
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
+                  border: isDark
+                      ? Border.all(color: Colors.white12)
+                      : null,
                   boxShadow: [
                     BoxShadow(
-                      color: colors.cardShadow,
+                      color: isDark
+                          ? Colors.black.withOpacity(0.35)
+                          : colors.cardShadow,
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                       spreadRadius: 0,
@@ -763,7 +775,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                   query: query,
                                   highlightColor: Colors.amber.withOpacity(0.6),
                                   style: getSmartTitle(
-                                    color: colors.onSurface,
+                                    color: isDark ? Colors.white : colors.onSurface,
                                     fontSize: 14 * textUiScale,
                                   ),
                                 ),
@@ -791,7 +803,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                 Icon(
                                   Icons.business,
                                   size: 12 * textUiScale,
-                                  color: colors.onSurfaceMuted,
+                                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -801,7 +813,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: colors.onSurfaceMuted,
+                                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -817,7 +829,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                 Icon(
                                   Icons.phone,
                                   size: 12 * textUiScale,
-                                  color: colors.onSurfaceMuted,
+                                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -827,7 +839,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: colors.onSurfaceMuted,
+                                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -843,7 +855,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                 Icon(
                                   Icons.print,
                                   size: 12 * textUiScale,
-                                  color: colors.onSurfaceMuted,
+                                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -853,7 +865,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: colors.onSurfaceMuted,
+                                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -869,7 +881,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                 Icon(
                                   Icons.phone_android,
                                   size: 12 * textUiScale,
-                                  color: colors.onSurfaceMuted,
+                                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -879,7 +891,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: colors.onSurfaceMuted,
+                                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -895,7 +907,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                 Icon(
                                   Icons.email,
                                   size: 12 * textUiScale,
-                                  color: colors.onSurfaceMuted,
+                                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -905,7 +917,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: colors.onSurfaceMuted,
+                                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -923,7 +935,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                         color: (customer.account
                                 ? Colors.green
                                 : (isDark
-                                    ? colors.onSurfaceMuted
+                                    ? Colors.white70
                                     : Colors.blueGrey[700]!))
                             .withOpacity(0.12),
                         borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
@@ -933,7 +945,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                         color: customer.account
                             ? Colors.green
                             : (isDark
-                                ? colors.onSurfaceMuted
+                                ? Colors.white70
                                 : Colors.blueGrey[700]!),
                         size: accountIconSize,
                       ),

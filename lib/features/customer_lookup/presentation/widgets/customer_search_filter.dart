@@ -39,17 +39,21 @@ class CustomerSearchFilterBar extends StatelessWidget {
         Expanded(
           child: TextField(
             onChanged: onChanged,
+            style: TextStyle(
+              color: isDark ? Colors.white : colors.onSurface,
+              fontSize: 14,
+            ),
             decoration: InputDecoration(
               hintText: 'Search by barcode, name, company, phone, fax, email',
               hintStyle: TextStyle(
-                color: isDark ? colors.onSurfaceMuted : kThirdColor,
+                color: isDark ? Colors.white70 : kThirdColor,
                 fontSize: 14,
               ),
               border: InputBorder.none,
               isDense: true,
               prefixIcon: Icon(
                 Icons.search,
-                color: isDark ? colors.onSurfaceMuted : Colors.blueGrey[700],
+                color: isDark ? Colors.white70 : Colors.blueGrey[700],
                 size: (isTablet ? 22 : 20) * uiScale,
               ),
             ),

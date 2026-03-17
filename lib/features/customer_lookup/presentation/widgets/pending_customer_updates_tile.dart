@@ -63,9 +63,9 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
               margin: const EdgeInsets.only(top: 5, bottom: 8),
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
+                color: Colors.orange.shade800.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.shade200),
+                border: Border.all(color: Colors.orange.shade400),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
