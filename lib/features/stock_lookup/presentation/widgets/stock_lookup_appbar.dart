@@ -80,7 +80,7 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                       "Stock List",
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark ? colors.onSurfaceMuted : kThirdColor,
+                        color: isDark ? Colors.white70 : kThirdColor,
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -150,7 +150,7 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                       ),
                       child: Icon(
                         Icons.sync,
-                        color: isDark ? colors.onSurfaceMuted : Colors.grey,
+                        color: isDark ? Colors.white70 : Colors.grey,
                         size: 24,
                       ),
                     ),
@@ -183,9 +183,7 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                         ),
                         child: Icon(
                           Icons.sync,
-                          color: isDark
-                              ? colors.onSurface
-                              : Colors.blueGrey[800],
+                          color: isDark ? Colors.white : Colors.blueGrey[800],
                           size: 24,
                         ),
                       ),

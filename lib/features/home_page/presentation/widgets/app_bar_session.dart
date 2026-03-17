@@ -29,6 +29,7 @@ class AppBarSession extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final shortestSide = MediaQuery.of(context).size.shortestSide;
     final isTablet = shortestSide >= 600;
     final isLargeTablet = shortestSide >= 900;
@@ -85,7 +86,7 @@ class AppBarSession extends StatelessWidget {
                           "Server: $host",
                           style: getSmartTitle(
                             fontSize: 16,
-                            color: colors.onHero,
+                            color: isDark ? Colors.white : colors.onHero,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -134,7 +135,10 @@ class AppBarSession extends StatelessWidget {
                 onPressed: () {
                   context.navigateToNext(const SettingsScreen());
                 },
-                icon: Icon(Icons.settings, color: colors.onHero),
+                icon: Icon(
+                  Icons.settings,
+                  color: isDark ? Colors.white : colors.onHero,
+                ),
               ),
             ],
           ),

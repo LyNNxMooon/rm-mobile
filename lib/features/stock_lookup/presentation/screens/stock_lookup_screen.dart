@@ -210,7 +210,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                               "${state.stocks.length} of ${NumberFormat('#,###').format(state.totalCount)}",
                               style: TextStyle(
                                 color: isDark
-                                    ? colors.onSurfaceMuted
+                                    ? Colors.white70
                                     : kGreyColor,
                                 fontSize: 11,
                               ),
@@ -240,7 +240,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             "0 of ${NumberFormat('#,###').format(0)}",
                             style: TextStyle(
                               color: isDark
-                                  ? colors.onSurfaceMuted
+                                  ? Colors.white70
                                   : kGreyColor,
                               fontSize: 11,
                             ),
@@ -402,7 +402,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           decoration: BoxDecoration(
             border: Border.all(
               color: isDark
-                  ? colors.divider
+                  ? Colors.white24
                   : kGreyColor.withOpacity(0.6),
               width: 0.6,
             ),
@@ -596,7 +596,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         Text(
           "Getting Stocks From Database...",
           style: getSmartTitle(
-            color: isDark ? colors.onSurface : kThirdColor,
+            color: isDark ? Colors.white : kThirdColor,
             fontSize: 16,
           ),
         ),
@@ -613,7 +613,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           "This may take a few seconds.",
           style: TextStyle(
             fontSize: 11,
-            color: isDark ? colors.onSurfaceMuted : kGreyColor,
+            color: isDark ? Colors.white70 : kGreyColor,
           ),
         ),
         const SizedBox(height: 60),
@@ -721,7 +721,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   highlightColor: Colors.amber.withOpacity(0.6),
                                   style: getSmartTitle(
                                     color: isDark
-                                        ? colors.onSurface
+                                        ? Colors.white
                                         : kThirdColor,
                                     fontSize: 14 * textUiScale,
                                   ),
@@ -752,7 +752,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: isDark
-                                        ? colors.onSurfaceMuted
+                                        ? Colors.white70
                                         : kGreyColor,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -765,7 +765,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
                                       color: isDark
-                                          ? colors.onSurfaceMuted
+                                          ? Colors.white70
                                           : kGreyColor,
                                       fontStyle: FontStyle.italic,
                                     ),
@@ -784,7 +784,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: isDark
-                                        ? colors.onSurfaceMuted
+                                        ? Colors.white70
                                         : kGreyColor,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -797,7 +797,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
                                       color: isDark
-                                          ? colors.onSurfaceMuted
+                                          ? Colors.white70
                                           : kGreyColor,
                                       fontStyle: FontStyle.italic,
                                     ),

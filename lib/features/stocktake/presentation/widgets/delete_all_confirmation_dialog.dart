@@ -20,11 +20,12 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Dialog(
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 10,
-      backgroundColor: colors.surface,
+      backgroundColor: isDark ? const Color(0xFF2B3644) : colors.surface,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
@@ -61,7 +62,7 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: colors.onSurface,
+                color: isDark ? Colors.white70 : colors.onSurface,
                 height: 1.5,
               ),
             ),
@@ -81,7 +82,9 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
-                        side: BorderSide(color: colors.divider),
+                        side: BorderSide(
+                          color: isDark ? Colors.white24 : colors.divider,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -90,7 +93,7 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
                         "Cancel",
                         textScaler: TextScaler.noScaling,
                         style: TextStyle(
-                          color: colors.onSurface,
+                          color: isDark ? Colors.white : colors.onSurface,
                           fontSize: 16,
                         ),
                       ),

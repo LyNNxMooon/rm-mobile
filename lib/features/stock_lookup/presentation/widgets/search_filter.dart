@@ -43,10 +43,14 @@ class SearchFilterBar extends StatelessWidget {
         Expanded(
           child: TextField(
             onChanged: onChanged,
+            style: TextStyle(
+              color: isDark ? Colors.white : colors.onSurface,
+              fontSize: 14,
+            ),
             decoration: InputDecoration(
               hintText: 'Search by barcode, description, custom1, or custom2',
               hintStyle: TextStyle(
-                color: isDark ? colors.onSurfaceMuted : kThirdColor,
+                color: isDark ? Colors.white70 : kThirdColor,
                 fontSize: 14,
               ),
               border: InputBorder.none,
@@ -72,7 +76,7 @@ class SearchFilterBar extends StatelessWidget {
         IconButton(
           icon: Icon(
             Icons.tune_rounded,
-            color: isDark ? colors.onSurfaceMuted : Colors.blueGrey[700],
+            color: isDark ? Colors.white70 : Colors.blueGrey[700],
             size: (isTablet ? 25 : 22) * uiScale,
           ),
           onPressed: onFilterTap,

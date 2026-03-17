@@ -163,6 +163,8 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final double logoWidth = isTablet ? 260 : 160;
@@ -238,7 +240,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: BoxDecoration(gradient: context.appColors.heroGradient),
+          decoration: BoxDecoration(gradient: colors.heroGradient),
           child: SafeArea(
             child: Center(
               child: Column(
@@ -262,7 +264,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
                         Text(
                           "RetailManager Mobile",
                           style: getSmartTitle(
-                            color: context.appColors.onHero,
+                            color: isDark ? Colors.white : colors.onHero,
                             fontSize: 24,
                           ),
                         ),
@@ -270,7 +272,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
                         Text(
                           "AAAPOS Pty Ltd",
                           style: TextStyle(
-                            color: context.appColors.onHero.withOpacity(0.8),
+                            color: isDark
+                                ? Colors.white70
+                                : colors.onHero.withOpacity(0.8),
                             fontWeight: FontWeight.w400,
                             fontSize: 16,
                           ),
@@ -282,7 +286,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
                         Text(
                           _loadingMessage,
                           style: TextStyle(
-                            color: context.appColors.onHero.withOpacity(0.8),
+                            color: isDark
+                                ? Colors.white70
+                                : colors.onHero.withOpacity(0.8),
                             fontWeight: FontWeight.w400,
                             fontSize: 12,
                           ),

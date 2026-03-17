@@ -40,7 +40,7 @@ class AppThemeColors {
       ? const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0C2B3B), Color(0xFF0E1116)],
+          colors: [Color(0xFF2B4D69), Color(0xFF182029)],
         )
       : kGColor;
 

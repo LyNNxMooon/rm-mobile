@@ -24,11 +24,12 @@ class RestoreBackupDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double maxDialogHeight = MediaQuery.of(context).size.height * 0.7;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: colors.surface,
+      backgroundColor: isDark ? const Color(0xFF2B3644) : colors.surface,
       elevation: 10,
       insetPadding: dialogInsetPadding(context),
       child: Container(
@@ -38,8 +39,15 @@ class RestoreBackupDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                gradient: isDark ? kGColor : null,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
               child: Row(
                 children: [
                   Container(
@@ -48,9 +56,9 @@ class RestoreBackupDialog extends StatelessWidget {
                       color: kPrimaryColor.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.restore_page_outlined,
-                      color: kPrimaryColor,
+                      color: isDark ? Colors.white : kPrimaryColor,
                       size: 24,
                     ),
                   ),
@@ -61,7 +69,7 @@ class RestoreBackupDialog extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: colors.onSurface,
+                        color: isDark ? Colors.white : colors.onSurface,
                       ),
                     ),
                   ),
@@ -69,7 +77,11 @@ class RestoreBackupDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 15),
-            Divider(height: 1, thickness: 1, color: colors.divider),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: isDark ? Colors.white24 : colors.divider,
+            ),
 
             Flexible(
               child: BlocConsumer<BackupRestoreBloc, BackupRestoreState>(
@@ -105,7 +117,11 @@ class RestoreBackupDialog extends StatelessWidget {
                             const SizedBox(height: 15),
                             Text(
                               "Processing...",
-                              style: TextStyle(color: colors.onSurfaceMuted),
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.white70
+                                    : colors.onSurfaceMuted,
+                              ),
                             ),
                           ],
                         ),
@@ -130,7 +146,9 @@ class RestoreBackupDialog extends StatelessWidget {
                               state.message,
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: colors.onSurfaceMuted,
+                                color: isDark
+                                    ? Colors.white70
+                                    : colors.onSurfaceMuted,
                                 fontSize: 13,
                               ),
                             ),
@@ -148,7 +166,9 @@ class RestoreBackupDialog extends StatelessWidget {
                           child: Text(
                             "No backup sessions found.",
                             style: TextStyle(
-                              color: colors.onSurfaceMuted,
+                              color: isDark
+                                  ? Colors.white70
+                                  : colors.onSurfaceMuted,
                               fontSize: 14,
                             ),
                           ),
@@ -172,7 +192,9 @@ class RestoreBackupDialog extends StatelessWidget {
                           child: Text(
                             "No backups found for this shopfront.",
                             style: TextStyle(
-                              color: colors.onSurfaceMuted,
+                              color: isDark
+                                  ? Colors.white70
+                                  : colors.onSurfaceMuted,
                               fontSize: 14,
                             ),
                           ),
@@ -197,7 +219,11 @@ class RestoreBackupDialog extends StatelessWidget {
               ),
             ),
 
-            Divider(height: 1, thickness: 1, color: colors.divider),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: isDark ? Colors.white24 : colors.divider,
+            ),
 
             // --- Footer ---
             Padding(
@@ -210,13 +236,17 @@ class RestoreBackupDialog extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(color: colors.divider),
+                      side: BorderSide(
+                        color: isDark ? Colors.white24 : colors.divider,
+                      ),
                     ),
                   ),
                   child: Text(
                     "Cancel",
                     style: TextStyle(
-                      color: colors.onSurfaceMuted,
+                      color: isDark
+                          ? Colors.white70
+                          : colors.onSurfaceMuted,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -231,6 +261,7 @@ class RestoreBackupDialog extends StatelessWidget {
 
   Widget _buildBackupItem(BuildContext context, BackupSessionVO session) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return InkWell(
       onTap: () {
         context.read<BackupRestoreBloc>().add(
@@ -241,7 +272,7 @@ class RestoreBackupDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: colors.surface,
+          color: isDark ? const Color(0xFF2F3B4B) : colors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: kPrimaryColor.withOpacity(0.1)),
           boxShadow: [

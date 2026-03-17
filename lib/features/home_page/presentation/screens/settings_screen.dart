@@ -119,6 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showManualPortDialog(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.42)
         .clamp(240.0, 340.0);
     showDialog(
@@ -127,7 +128,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
-        backgroundColor: colors.surface,
+        backgroundColor: isDark ? const Color(0xFF2B3644) : colors.surface,
         child: Container(
           constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
@@ -139,7 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   horizontal: 20,
                 ),
                 decoration: BoxDecoration(
-                  gradient: colors.heroGradient,
+                  gradient: isDark ? kGColor : colors.heroGradient,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(10),
                     topRight: Radius.circular(10),
@@ -147,12 +148,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.settings_ethernet, color: colors.onHero),
+                    Icon(
+                      Icons.settings_ethernet,
+                      color: isDark ? Colors.white : colors.onHero,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         "Enter Port",
-                        style: getSmartTitle(fontSize: 16, color: colors.onHero),
+                        style: getSmartTitle(
+                          fontSize: 16,
+                          color: isDark ? Colors.white : colors.onHero,
+                        ),
                       ),
                     ),
                   ],
@@ -171,6 +178,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                         ],
+                        style: TextStyle(
+                          color: isDark ? Colors.white : colors.onSurface,
+                        ),
                         onEditingComplete: () {
                           final trimmedValue = _manualPortController.text.trim();
                           if (_manualPortController.text != trimmedValue) {
@@ -182,6 +192,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: "Port (e.g. 5000)",
+                          hintStyle: TextStyle(
+                            color: isDark
+                                ? Colors.white70
+                                : colors.onSurfaceMuted,
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 10,
@@ -242,6 +257,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showManualConnectionDialog(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     _manualIpController.text = "";
     _manualCodeController.text = "";
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.50)
@@ -253,7 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
-        backgroundColor: colors.surface,
+        backgroundColor: isDark ? const Color(0xFF2B3644) : colors.surface,
         child: Container(
           constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
@@ -265,7 +281,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   horizontal: 20,
                 ),
                 decoration: BoxDecoration(
-                  gradient: colors.heroGradient,
+                  gradient: isDark ? kGColor : colors.heroGradient,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(10),
                     topRight: Radius.circular(10),
@@ -273,12 +289,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.link_rounded, color: colors.onHero),
+                    Icon(
+                      Icons.link_rounded,
+                      color: isDark ? Colors.white : colors.onHero,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         "Manual Connection",
-                        style: getSmartTitle(fontSize: 16, color: colors.onHero),
+                        style: getSmartTitle(
+                          fontSize: 16,
+                          color: isDark ? Colors.white : colors.onHero,
+                        ),
                       ),
                     ),
                   ],
@@ -292,6 +314,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       height: 45,
                       child: TextField(
                         controller: _manualIpController,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : colors.onSurface,
+                        ),
                         onEditingComplete: () {
                           final trimmedValue = _manualIpController.text.trim();
                           if (_manualIpController.text != trimmedValue) {
@@ -303,6 +328,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: "Host IP",
+                          hintStyle: TextStyle(
+                            color: isDark
+                                ? Colors.white70
+                                : colors.onSurfaceMuted,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -318,6 +348,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       height: 45,
                       child: TextField(
                         controller: _manualCodeController,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : colors.onSurface,
+                        ),
                         onEditingComplete: () {
                           final trimmedValue = _manualCodeController.text.trim();
                           if (_manualCodeController.text != trimmedValue) {
@@ -329,6 +362,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: "Pairing Code",
+                          hintStyle: TextStyle(
+                            color: isDark
+                                ? Colors.white70
+                                : colors.onSurfaceMuted,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -356,7 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Text(
                           "Connect",
                           style: TextStyle(
-                            color: colors.onHero,
+                            color: isDark ? Colors.white : colors.onHero,
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
@@ -656,7 +694,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Text(
                           "App Version 1.0.0 (AAAPOS Pty Ltd)",
                           style: TextStyle(
-                            color: colors.onHero.withOpacity(0.6),
+                            color: colors.isDark
+                                ? Colors.white70
+                                : colors.onHero.withOpacity(0.6),
                             fontSize: 12,
                           ),
                         ),
@@ -675,6 +715,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildAppBar(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       child: Row(
@@ -698,7 +739,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Text(
             "Settings",
-            style: getSmartTitle(fontSize: 22, color: colors.onHero),
+            style: getSmartTitle(
+              fontSize: 22,
+              color: isDark ? Colors.white : colors.onHero,
+            ),
           ),
           const SizedBox(width: 40), // Spacer to balance back button
         ],
@@ -708,6 +752,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSectionTitle(String title) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, left: 10),
       child: Align(
@@ -717,7 +762,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: colors.onHero.withOpacity(0.7),
+            color: isDark
+                ? Colors.white70
+                : colors.onHero.withOpacity(0.7),
             letterSpacing: 1.2,
           ),
         ),
@@ -749,6 +796,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
       child: Row(
@@ -759,7 +807,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: Colors.blue.withOpacity(0.5),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 20, color: colors.onHero),
+            child: Icon(
+              icon,
+              size: 20,
+              color: isDark ? Colors.white : colors.onHero,
+            ),
           ),
           const SizedBox(width: 15),
           Expanded(
@@ -768,14 +820,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 13, color: colors.onHero),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.white70 : colors.onHero,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: getSmartTitle(fontSize: 16, color: colors.onHero),
+                  style: getSmartTitle(
+                    fontSize: 16,
+                    color: isDark ? Colors.white : colors.onHero,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -789,6 +847,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSignOutButton() {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final bool isOffline = (AppGlobals.instance.hostName ?? "").trim().isEmpty;
     return Padding(
       padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
@@ -815,7 +874,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             "Sign Off",
             style: TextStyle(
               fontSize: 16,
-              color: colors.onHero,
+              color: isDark ? Colors.white : colors.onHero,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -862,6 +921,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
       builder: (context, state) {
         final colors = context.appColors;
+        final bool isDark = colors.isDark;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
           child: Column(
@@ -873,7 +933,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     "Keep Backup Days",
                     style: TextStyle(
-                      color: colors.onHero,
+                      color: isDark ? Colors.white : colors.onHero,
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -890,7 +950,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Text(
                       "${retentionDays.toInt()} Days",
                       style: TextStyle(
-                        color: colors.onHero,
+                        color: isDark ? Colors.white : colors.onHero,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),
@@ -902,7 +962,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 data: SliderTheme.of(context).copyWith(
                   activeTrackColor: kPrimaryColor,
                   inactiveTrackColor: colors.onSurfaceMuted,
-                  thumbColor: colors.onHero,
+                  thumbColor: isDark ? Colors.white : colors.onHero,
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: 8.0,
                     elevation: 4,
@@ -928,7 +988,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 "Determines how long committed stocktake data is kept locally before auto-deletion.",
                 style: TextStyle(
-                  color: colors.onHero.withOpacity(0.8),
+                  color: isDark
+                      ? Colors.white70
+                      : colors.onHero.withOpacity(0.8),
                   fontSize: 12,
                 ),
               ),
@@ -946,6 +1008,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Function(bool) onChanged,
   ) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       child: Row(
@@ -958,7 +1021,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   title,
                   style: TextStyle(
-                    color: colors.onHero,
+                    color: isDark ? Colors.white : colors.onHero,
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
@@ -969,7 +1032,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: colors.onHero.withOpacity(0.8),
+                    color: isDark
+                        ? Colors.white70
+                        : colors.onHero.withOpacity(0.8),
                     fontSize: 12,
                   ),
                   maxLines: 3, // Prevent overflow
@@ -998,6 +1063,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     VoidCallback onTap,
   ) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -1010,7 +1076,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: color.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 20, color: colors.onHero),
+              child: Icon(
+                icon,
+                size: 20,
+                color: isDark ? Colors.white : colors.onHero,
+              ),
             ),
             const SizedBox(width: 15),
             Expanded(
@@ -1022,7 +1092,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
-                      color: color,
+                      color: isDark ? Colors.white : color,
                     ),
                     maxLines: 1, // Prevent overflow
                     overflow: TextOverflow.ellipsis,
@@ -1031,7 +1101,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: colors.onHero.withOpacity(0.8),
+                      color: isDark
+                          ? Colors.white70
+                          : colors.onHero.withOpacity(0.8),
                       fontSize: 12,
                     ),
                     maxLines: 2, // Prevent overflow
@@ -1043,7 +1115,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Icon(
               Icons.arrow_forward_ios,
               size: 14,
-              color: colors.onHero.withOpacity(0.7),
+              color: isDark
+                  ? Colors.white70
+                  : colors.onHero.withOpacity(0.7),
             ),
           ],
         ),

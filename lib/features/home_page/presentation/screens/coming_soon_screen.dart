@@ -134,7 +134,7 @@ class ComingSoonScreen extends StatelessWidget {
                     maxLines: 1,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: colors.onHero,
+                      color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),

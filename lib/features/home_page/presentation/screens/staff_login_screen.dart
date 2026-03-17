@@ -85,6 +85,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isLandscape = media.orientation == Orientation.landscape;
@@ -191,7 +192,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                 Text(
                                   "Staff Sign In",
                                   style: getSmartTitle(
-                                    color: colors.onHero,
+                                    color: isDark ? Colors.white : colors.onHero,
                                     fontSize: 21,
                                   ),
                                 ),
@@ -199,7 +200,9 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                 Text(
                                   "Authenticate to continue to stock operations",
                                   style: TextStyle(
-                                    color: colors.onHero.withOpacity(0.8),
+                                    color: isDark
+                                        ? Colors.white70
+                                        : colors.onHero.withOpacity(0.8),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -211,10 +214,14 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: colors.surface.withOpacity(0.2),
+                                    color: isDark
+                                        ? Colors.white.withOpacity(0.08)
+                                        : colors.surface.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: colors.divider,
+                                      color: isDark
+                                          ? Colors.white24
+                                          : colors.divider,
                                     ),
                                   ),
                                   child: Text(
@@ -223,7 +230,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                             : _shopfrontName) ??
                                         "Shopfront",
                                     style: TextStyle(
-                                      color: colors.onHero,
+                                      color: isDark ? Colors.white : colors.onHero,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -267,7 +274,8 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                           disabledBackgroundColor:
                                               kPrimaryColor.withOpacity(0.7),
                                           disabledForegroundColor:
-                                            colors.onHero.withOpacity(0.8),
+                                            (isDark ? Colors.white : colors.onHero)
+                                              .withOpacity(0.8),
                                           minimumSize: Size(
                                             double.infinity,
                                             buttonHeight,
@@ -286,7 +294,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                         ),
                                         child: loading
                                             ? CupertinoActivityIndicator(
-                                                color: colors.onHero,
+                                                color: isDark ? Colors.white : colors.onHero,
                                               )
                                             : Center(
                                                 child: Text(
@@ -296,7 +304,9 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                                   maxLines: 1,
                                                   textAlign: TextAlign.center,
                                                   style: TextStyle(
-                                                    color: colors.onHero,
+                                                    color: isDark
+                                                        ? Colors.white
+                                                        : colors.onHero,
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w700,
                                                   ),
@@ -317,7 +327,9 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                       "App Version 1.0.0 (AAAPOS Pty Ltd)",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: colors.onHero.withOpacity(0.68),
+                        color: isDark
+                            ? Colors.white70
+                            : colors.onHero.withOpacity(0.68),
                         fontSize: 12,
                       ),
                     ),

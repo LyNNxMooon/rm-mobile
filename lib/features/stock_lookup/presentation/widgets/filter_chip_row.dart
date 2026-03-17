@@ -73,7 +73,7 @@ class FilterChipRow extends StatelessWidget {
                         color: isSelected
                             ? colors.onHero
                             : (isDark
-                                ? colors.onSurfaceMuted
+                                ? Colors.white70
                                 : Colors.blueGrey[700]),
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
