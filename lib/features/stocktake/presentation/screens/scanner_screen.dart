@@ -14,6 +14,7 @@ import 'package:rmstock_scanner/features/stocktake/presentation/widgets/stocktak
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/enums.dart';
 import '../BLoC/stocktake_events.dart';
@@ -152,6 +153,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isLandscape = media.orientation == Orientation.landscape;
@@ -163,7 +166,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: kBgColor,
+      backgroundColor: isDark ? colors.bg : kBgColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -287,7 +290,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                       context: context,
                                       text: 'Not Found!',
                                       typeInfo: TypeInfo.error,
-                                      backgroundColor: kSecondaryColor,
+                                      backgroundColor:
+                                          isDark ? colors.surface : kSecondaryColor,
                                       iconColor: kErrorColor,
                                       textColor: kErrorColor,
                                       position: MessagePosition.top,
@@ -332,6 +336,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   Widget _buildProductDetailsPanel(StockVO? stock, double horizontalPadding) {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isPortrait = media.orientation == Orientation.portrait;
@@ -414,11 +420,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
               horizontal: panelHorizontalPadding,
             ),
             decoration: BoxDecoration(
-              color: kSecondaryColor,
+              color: isDark ? colors.surface : kSecondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
               boxShadow: [
                 BoxShadow(
-                  color: kThirdColor.withOpacity(0.05),
+                  color: isDark
+                      ? colors.cardShadow
+                      : kThirdColor.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                   spreadRadius: 0,
@@ -437,7 +445,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                           fontSize: isTablet
                               ? 22
                               : 18, // Scale font up on tablet
-                          color: kThirdColor,
+                          color: isDark ? colors.onSurface : kThirdColor,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -600,11 +608,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
               horizontal: isTablet ? 20 : 12,
             ),
             decoration: BoxDecoration(
-              color: kSecondaryColor,
+              color: isDark ? colors.surface : kSecondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
               boxShadow: [
                 BoxShadow(
-                  color: kThirdColor.withOpacity(0.05),
+                  color: isDark
+                      ? colors.cardShadow
+                      : kThirdColor.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                   spreadRadius: 0,
@@ -616,7 +626,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 Text(
                   "Counted Qty : ",
                   style: TextStyle(
-                    color: kGreyColor,
+                    color: isDark ? colors.onSurfaceMuted : kGreyColor,
                     fontSize: isTablet ? 16 : 14,
                   ),
                 ),
@@ -710,6 +720,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   Widget _iosDoneBar() {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -728,8 +740,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
         return Container(
           height: (isTablet ? 48 : 44) * uiScale,
           decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            border: const Border(top: BorderSide(color: Colors.black12)),
+            color: isDark ? colors.surfaceAlt : Colors.grey.shade200,
+            border: Border(
+              top: BorderSide(
+                color: isDark ? colors.divider : Colors.black12,
+              ),
+            ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -750,7 +766,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   "Done",
                   style: TextStyle(
                     fontSize: isTablet ? 18 : 16,
-                    color: kThirdColor,
+                    color: isDark ? colors.onSurface : kThirdColor,
                   ),
                 ),
               ),
@@ -763,6 +779,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   Widget _stockCountSaveListener() {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocListener<StocktakeBloc, StocktakeStates>(
       listener: (context, state) {
         if (state is StocktakeError) {
@@ -778,9 +796,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
               context: context,
               text: 'Successfully Counted!',
               typeInfo: TypeInfo.success,
-              backgroundColor: kSecondaryColor,
+              backgroundColor: isDark ? colors.surface : kSecondaryColor,
               iconColor: kPrimaryColor,
-              textColor: kThirdColor,
+              textColor: isDark ? colors.onSurface : kThirdColor,
               padding: 70,
               position: MessagePosition.top,
             );
@@ -799,6 +817,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
     required String value,
     bool isBold = false,
   }) {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     // Dynamic sizing based on device context
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double iconSize = isTablet ? 26.0 : 20.0;
@@ -828,7 +848,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
             SizedBox(width: isTablet ? 12 : 8),
             Text(
               title,
-              style: TextStyle(fontSize: fontSize, color: kGreyColor),
+              style: TextStyle(
+                fontSize: fontSize,
+                color: isDark ? colors.onSurfaceMuted : kGreyColor,
+              ),
             ),
           ],
         ),
@@ -839,7 +862,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              color: isBold ? kPrimaryColor : kThirdColor,
+              color: isBold
+                  ? kPrimaryColor
+                  : (isDark ? colors.onSurface : kThirdColor),
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

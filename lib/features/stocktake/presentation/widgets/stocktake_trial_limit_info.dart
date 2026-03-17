@@ -4,12 +4,15 @@ import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_b
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 
 class StocktakeTrialLimitInfo extends StatelessWidget {
   const StocktakeTrialLimitInfo({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
       child: BlocBuilder<StocktakeLimitBloc, StocktakeLimitStates>(
@@ -30,11 +33,13 @@ class StocktakeTrialLimitInfo extends StatelessWidget {
               margin: const EdgeInsets.only(top: 4, bottom: 4),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: kSecondaryColor,
+                color: isDark ? colors.surface : kSecondaryColor,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: kThirdColor.withOpacity(0.05),
+                    color: isDark
+                        ? colors.cardShadow
+                        : kThirdColor.withOpacity(0.05),
                     blurRadius: 5,
                     offset: const Offset(0, 2),
                   ),

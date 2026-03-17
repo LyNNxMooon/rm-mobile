@@ -84,6 +84,8 @@ CustomerPurchaseItem _$CustomerPurchaseItemFromJson(
       product: json['product'] as String,
       qty: json['qty'] as num,
       price: json['price'] as num,
+      stockId: (json['stockId'] as num).toInt(),
+      goodsTax: json['goodsTax'] as String,
     );
 
 Map<String, dynamic> _$CustomerPurchaseItemToJson(
@@ -93,6 +95,8 @@ Map<String, dynamic> _$CustomerPurchaseItemToJson(
       'product': instance.product,
       'qty': instance.qty,
       'price': instance.price,
+      'stockId': instance.stockId,
+      'goodsTax': instance.goodsTax,
     };
 
 CustomerCreditItem _$CustomerCreditItemFromJson(Map<String, dynamic> json) =>

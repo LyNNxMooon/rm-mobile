@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 
 class ActionCard extends StatelessWidget {
@@ -19,6 +20,7 @@ class ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double scale = isTablet
         ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.85, 1.3)
@@ -33,22 +35,15 @@ class ActionCard extends StatelessWidget {
           minHeight: minHeight ?? 0,
         ),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              kSecondaryColor.withOpacity(0.95),
-              kSecondaryColor.withOpacity(0.70),
-            ],
-          ),
+          gradient: colors.glassGradient,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
-            color: kSecondaryColor.withOpacity(0.6),
+            color: colors.glassBorder,
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: kThirdColor.withOpacity(0.05),
+              color: colors.cardShadow,
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -79,7 +74,10 @@ class ActionCard extends StatelessWidget {
                         const SizedBox(height: 6),
                         Text(
                           subtitle,
-                          style: TextStyle(fontSize: subTitleSize, color: kGreyColor),
+                          style: TextStyle(
+                            fontSize: subTitleSize,
+                            color: colors.onSurfaceMuted,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -90,7 +88,7 @@ class ActionCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: kSecondaryColor.withOpacity(0.5),
+                      color: colors.surfaceAlt.withOpacity(0.6),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 
 class ComingSoonScreen extends StatelessWidget {
@@ -12,6 +13,7 @@ class ComingSoonScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final double outerCircle = isTablet ? 210 : 160;
@@ -21,19 +23,22 @@ class ComingSoonScreen extends StatelessWidget {
     final double sidePadding = isTablet ? 60 : 30;
 
     return Scaffold(
-      backgroundColor: kBgColor,
+      backgroundColor: colors.bg,
       appBar: AppBar(
         backgroundColor: kPrimaryColor,
         elevation: 0,
         leading: IconButton(
           onPressed: () => context.navigateBack(),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: kSecondaryColor,
+            color: colors.onHero,
             size: 20,
           ),
         ),
-        title: Text("Coming Soon", style: getSmartTitle()),
+        title: Text(
+          "Coming Soon",
+          style: getSmartTitle(color: colors.onHero, fontSize: 20),
+        ),
         centerTitle: true,
       ),
       body: Padding(
@@ -71,22 +76,22 @@ class ComingSoonScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 40),
-            const Text(
+            Text(
               "We're working on it!",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: kThirdColor,
+                color: colors.onSurface,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               "$featureName is currently under construction. We're working hard to bring it to you soon.",
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: kGreyColor,
+                color: colors.onSurfaceMuted,
                 height: 1.5,
               ),
             ),
@@ -100,16 +105,16 @@ class ComingSoonScreen extends StatelessWidget {
                     context: context,
                     text: "You'll be notified when it is ready!",
                     typeInfo: TypeInfo.success,
-                    backgroundColor: kSecondaryColor,
+                    backgroundColor: colors.surface,
                     iconColor: kPrimaryColor,
-                    textColor: kThirdColor,
+                    textColor: colors.onSurface,
                     padding: 70,
                     position: MessagePosition.top,
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
-                  foregroundColor: kSecondaryColor,
+                  foregroundColor: colors.onHero,
                   minimumSize: Size(double.infinity, buttonHeight),
                   padding: EdgeInsets.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -122,14 +127,14 @@ class ComingSoonScreen extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
                     "Notify Me When Ready",
                     textScaler: TextScaler.noScaling,
                     maxLines: 1,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: kSecondaryColor,
+                      color: colors.onHero,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),

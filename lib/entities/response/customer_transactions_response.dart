@@ -60,12 +60,16 @@ class CustomerPurchaseItem {
   final String product;
   final num qty;
   final num price;
+  final int stockId;
+  final String goodsTax;
 
   CustomerPurchaseItem({
     required this.date,
     required this.product,
     required this.qty,
     required this.price,
+    required this.stockId,
+    required this.goodsTax,
   });
 
   factory CustomerPurchaseItem.fromJson(Map<String, dynamic> json) =>

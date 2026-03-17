@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
-import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../BLoC/home_screen_bloc.dart';
@@ -28,6 +28,7 @@ class AppBarSession extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final shortestSide = MediaQuery.of(context).size.shortestSide;
     final isTablet = shortestSide >= 600;
     final isLargeTablet = shortestSide >= 900;
@@ -84,7 +85,7 @@ class AppBarSession extends StatelessWidget {
                           "Server: $host",
                           style: getSmartTitle(
                             fontSize: 16,
-                            color: kSecondaryColor,
+                            color: colors.onHero,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -133,7 +134,7 @@ class AppBarSession extends StatelessWidget {
                 onPressed: () {
                   context.navigateToNext(const SettingsScreen());
                 },
-                icon: const Icon(Icons.settings, color: kSecondaryColor),
+                icon: Icon(Icons.settings, color: colors.onHero),
               ),
             ],
           ),

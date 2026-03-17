@@ -57,6 +57,10 @@ abstract class HomeRepo {
 
   Future<void> setAutoBackupEnabled(bool enabled);
 
+  Future<bool> getDarkModeEnabled();
+
+  Future<void> setDarkModeEnabled(bool enabled);
+
   Future<DateTime?> getLastAutoBackupAt();
 
   Future<void> setLastAutoBackupAt(DateTime timestamp);

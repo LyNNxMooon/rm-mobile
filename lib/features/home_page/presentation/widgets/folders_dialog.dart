@@ -10,6 +10,7 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/dependency_injection_utils.dart';
@@ -97,6 +98,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     // Dynamic height calculation
     final double safeMaxHeight = MediaQuery.of(context).size.height * 0.8;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
@@ -111,7 +113,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 10,
-      backgroundColor: kBgColor,
+      backgroundColor: colors.surface,
       child: Container(
         // Responsive constraints
         constraints: BoxConstraints(maxHeight: safeMaxHeight),
@@ -120,8 +122,8 @@ class _FoldersDialogState extends State<FoldersDialog> {
           children: [
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-              decoration: const BoxDecoration(
-                gradient: kGColor,
+              decoration: BoxDecoration(
+                gradient: colors.heroGradient,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(10),
                   topRight: Radius.circular(10),
@@ -138,7 +140,10 @@ class _FoldersDialogState extends State<FoldersDialog> {
                   Expanded(
                     child: Text(
                       "Select a Folder",
-                      style: getSmartTitle(fontSize: 16),
+                      style: getSmartTitle(
+                        color: colors.onHero,
+                        fontSize: 16,
+                      ),
                       maxLines: 1, // Prevent header overflow
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -164,10 +169,10 @@ class _FoldersDialogState extends State<FoldersDialog> {
                         );
                       }
                     },
-                    child: const Icon(
+                    child: Icon(
                       CupertinoIcons.arrow_turn_down_left,
                       size: 24,
-                      color: kSecondaryColor,
+                      color: colors.onHero,
                     ),
                   ),
                 ],
@@ -201,7 +206,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       itemCount: direct.length,
                       separatorBuilder: (ctx, i) => Divider(
-                        color: kGreyColor.withOpacity(0.2),
+                        color: colors.divider,
                         height: 1,
                         indent: 16,
                         endIndent: 16,
@@ -226,7 +231,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                             Text(
                               state.message,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(color: kGreyColor),
+                              style: TextStyle(color: colors.onSurfaceMuted),
                             ),
                             const SizedBox(height: 20),
                             // Safe Container usage
@@ -295,7 +300,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
                                       ),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: kPrimaryColor,
-                                        foregroundColor: kSecondaryColor,
+                                        foregroundColor: colors.onHero,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
@@ -306,10 +311,10 @@ class _FoldersDialogState extends State<FoldersDialog> {
                                           vertical: buttonVerticalPadding,
                                         ),
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         "Try Logging in",
                                         style: TextStyle(
-                                          color: kSecondaryColor,
+                                          color: colors.onHero,
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -338,9 +343,9 @@ class _FoldersDialogState extends State<FoldersDialog> {
                     context: context,
                     text: state.message,
                     typeInfo: TypeInfo.success,
-                    backgroundColor: kSecondaryColor,
+                    backgroundColor: colors.surface,
                     iconColor: kPrimaryColor,
-                    textColor: kThirdColor,
+                    textColor: colors.onSurface,
                     position: MessagePosition.top,
                     padding: 70,
                   );
@@ -384,6 +389,7 @@ class _FoldersDialogState extends State<FoldersDialog> {
   }
 
   Widget _buildFolderTile(String direct, BuildContext ctx) {
+    final colors = ctx.appColors;
     return InkWell(
       onTap: () async {
         String targetPath = _currentPath.isEmpty
@@ -413,8 +419,8 @@ class _FoldersDialogState extends State<FoldersDialog> {
             Expanded(
               child: Text(
                 direct,
-                style: const TextStyle(
-                  color: kThirdColor,
+                style: TextStyle(
+                  color: colors.onSurface,
                   fontWeight: FontWeight.normal,
                 ),
                 maxLines: 1, // Fix list overflow
@@ -427,9 +433,9 @@ class _FoldersDialogState extends State<FoldersDialog> {
                     state.lastDirect == direct.split('/').last) {
                   return const CupertinoActivityIndicator();
                 } else {
-                  return const Icon(
+                  return Icon(
                     Icons.arrow_forward_ios,
-                    color: kGreyColor,
+                    color: colors.onSurfaceMuted,
                     size: 14,
                   );
                 }

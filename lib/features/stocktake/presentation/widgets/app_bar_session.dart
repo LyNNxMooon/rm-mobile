@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/enums.dart';
 import '../../../../utils/global_var_utils.dart';
@@ -23,6 +24,7 @@ class StocktakeAppbarSession extends StatefulWidget {
 class _StocktakeAppbarSessionState extends State<StocktakeAppbarSession> {
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Column(
       children: [
         Padding(
@@ -32,9 +34,9 @@ class _StocktakeAppbarSessionState extends State<StocktakeAppbarSession> {
             children: [
               IconButton(
                 onPressed: () => context.navigateBack(),
-                icon: const Icon(
+                icon: Icon(
                   Icons.arrow_back_ios,
-                  color: kThirdColor,
+                  color: colors.onSurface,
                   size: 20,
                 ),
               ),
@@ -59,7 +61,7 @@ class _StocktakeAppbarSessionState extends State<StocktakeAppbarSession> {
                   widget.isTorchOn
                       ? Icons.light_mode
                       : Icons.light_mode_outlined,
-                  color: kThirdColor,
+                  color: colors.onSurface,
                   size: 24,
                 ),
                 onPressed: widget.onTorchToggle,
@@ -108,6 +110,7 @@ class _ScanModeSelectorState extends State<ScanModeSelector> {
 
   Widget _buildRadioOption({required String text, required ScanMode value}) {
     final bool isSelected = _selectedMode == value;
+    final colors = context.appColors;
 
     return InkWell(
       onTap: () {
@@ -131,7 +134,7 @@ class _ScanModeSelectorState extends State<ScanModeSelector> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? kPrimaryColor : kGreyColor,
+                  color: isSelected ? kPrimaryColor : colors.onSurfaceMuted,
                   width: 2,
                 ),
                 color: Colors.transparent,
@@ -151,7 +154,7 @@ class _ScanModeSelectorState extends State<ScanModeSelector> {
                 text,
                 style: getSmartTitle(
                   fontSize: 12.5,
-                  color: isSelected ? kThirdColor : kGreyColor,
+                  color: isSelected ? colors.onSurface : colors.onSurfaceMuted,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

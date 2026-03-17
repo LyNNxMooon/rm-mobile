@@ -7,6 +7,7 @@ import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_s
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 
 import '../../../../utils/global_var_utils.dart';
@@ -21,6 +22,8 @@ class StocktakeListAppBar extends StatefulWidget {
 class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         const SizedBox(height: 15),
@@ -51,15 +54,18 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                                 .split('\\')
                                 .last,
                             style: getSmartTitle(
-                              color: kThirdColor,
+                              color: isDark ? colors.onSurface : kThirdColor,
                               fontSize: 16,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const Text(
+                          Text(
                             "Stocktake List",
-                            style: TextStyle(fontSize: 14, color: kGreyColor),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDark ? colors.onSurfaceMuted : kGreyColor,
+                            ),
                           ),
                         ],
                       ),
@@ -104,7 +110,9 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                         child: Icon(
                           Icons.arrow_back_ios_new,
                           size: 14,
-                          color: hasPrev ? kPrimaryColor : kGreyColor,
+                          color: hasPrev
+                              ? kPrimaryColor
+                              : (isDark ? colors.onSurfaceMuted : kGreyColor),
                         ),
                       ),
 
@@ -119,7 +127,9 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                         child: Icon(
                           Icons.arrow_forward_ios,
                           size: 14,
-                          color: hasNext ? kPrimaryColor : kGreyColor,
+                          color: hasNext
+                              ? kPrimaryColor
+                              : (isDark ? colors.onSurfaceMuted : kGreyColor),
                         ),
                       ),
 
@@ -132,11 +142,11 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
           ),
         ),
         const SizedBox(height: 5),
-        const Divider(
+        Divider(
           indent: 15,
           endIndent: 15,
           thickness: 0.5,
-          color: kGreyColor,
+          color: isDark ? colors.divider : kGreyColor,
         ),
       ],
     );

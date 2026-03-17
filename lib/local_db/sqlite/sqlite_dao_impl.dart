@@ -30,7 +30,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       _database = await openDatabase(
         path,
-        version: 6,
+        version: 7,
         onConfigure: (db) async {
           await db.rawQuery('PRAGMA journal_mode=WAL');
           await db.rawQuery('PRAGMA foreign_keys=ON');
@@ -100,6 +100,20 @@ class SQLiteDAOImpl extends LocalDbDAO {
               db: db,
               table: 'Stocks',
               column: 'pricing_rules',
+              definition: 'TEXT',
+            );
+          }
+          if (oldVersion < 7) {
+            await _addColumnIfMissing(
+              db: db,
+              table: 'CustomerPurchases',
+              column: 'stock_id',
+              definition: 'INTEGER',
+            );
+            await _addColumnIfMissing(
+              db: db,
+              table: 'CustomerPurchases',
+              column: 'goods_tax',
               definition: 'TEXT',
             );
           }

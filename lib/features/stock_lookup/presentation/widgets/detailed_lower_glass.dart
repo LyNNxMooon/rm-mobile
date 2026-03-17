@@ -9,6 +9,7 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/price
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/pricing_button.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/pricing_dialog.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../BLoC/stock_lookup_bloc.dart';
 import '../BLoC/stock_lookup_events.dart';
 
@@ -187,6 +188,9 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final Color onGlass = isDark ? colors.onHero : kSecondaryColor;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -209,11 +213,20 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
             horizontal: containerHorizontal,
           ),
           decoration: BoxDecoration(
-            color: kSecondaryColor.withOpacity(0.1),
+            color: isDark ? colors.glassFill : kSecondaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: kSecondaryColor.withOpacity(0.2)),
+            border: Border.all(
+              color: isDark
+                  ? colors.glassBorder
+                  : kSecondaryColor.withOpacity(0.2),
+            ),
             boxShadow: [
-              BoxShadow(blurRadius: 20, color: kThirdColor.withOpacity(.1)),
+              BoxShadow(
+                blurRadius: 20,
+                color: isDark
+                    ? colors.cardShadow
+                    : kThirdColor.withOpacity(.1),
+              ),
             ],
           ),
           child: Column(
@@ -239,9 +252,9 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         "Inc RRP",
-                        style: TextStyle(fontSize: 14, color: kSecondaryColor),
+                        style: TextStyle(fontSize: 14, color: onGlass),
                       ),
                     ],
                   ),
@@ -257,9 +270,9 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                         controller: _rrpController,
                         focusNode: _rrpFocus,
                         //keyboardType: TextInputType.number,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: kSecondaryColor,
+                          color: onGlass,
                         ),
                         onEditingComplete: () {
                           final trimmedValue = _rrpController.text.trim();
@@ -303,9 +316,9 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         "Exc RRP",
-                        style: TextStyle(fontSize: 14, color: kSecondaryColor),
+                        style: TextStyle(fontSize: 14, color: onGlass),
                       ),
                     ],
                   ),
@@ -320,9 +333,9 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: kSecondaryColor,
+                          color: onGlass,
                         ),
                         onEditingComplete: () {
                           final trimmedValue = _exRrpController.text.trim();
@@ -465,13 +478,18 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
   }
 
   InputDecoration _inputDecoration() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return InputDecoration(
       filled: true,
       fillColor: Colors.transparent,
       contentPadding: const EdgeInsets.symmetric(horizontal: 10),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
-        borderSide: BorderSide(color: Colors.grey[300]!, width: 0.5),
+        borderSide: BorderSide(
+          color: isDark ? colors.divider : Colors.grey[300]!,
+          width: 0.5,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
@@ -481,20 +499,29 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
   }
 
   BoxDecoration _buttonDecoration({bool disabled = false}) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          kSecondaryColor.withOpacity(disabled ? 0.65 : 0.95),
-          kSecondaryColor.withOpacity(disabled ? 0.45 : 0.70),
-        ],
-      ),
+      gradient: isDark
+          ? colors.glassGradient
+          : LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                kSecondaryColor.withOpacity(disabled ? 0.65 : 0.95),
+                kSecondaryColor.withOpacity(disabled ? 0.45 : 0.70),
+              ],
+            ),
       borderRadius: BorderRadius.circular(7),
-      border: Border.all(color: kSecondaryColor.withOpacity(0.6), width: 1.5),
+      border: Border.all(
+        color: isDark
+            ? colors.glassBorder
+            : kSecondaryColor.withOpacity(0.6),
+        width: 1.5,
+      ),
       boxShadow: [
         BoxShadow(
-          color: kThirdColor.withOpacity(0.05),
+          color: isDark ? colors.cardShadow : kThirdColor.withOpacity(0.05),
           blurRadius: 15,
           offset: const Offset(0, 8),
         ),

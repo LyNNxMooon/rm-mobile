@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/filter_criteria.dart';
@@ -41,6 +42,7 @@ class _CustomerLookupFilterDialogState
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isPortrait = media.orientation == Orientation.portrait;
@@ -71,11 +73,11 @@ class _CustomerLookupFilterDialogState
           maxHeight: isTablet ? 620 : 560,
         ),
         decoration: BoxDecoration(
-          color: kBgColor,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: kThirdColor.withOpacity(0.1),
+              color: colors.cardShadow,
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -89,7 +91,7 @@ class _CustomerLookupFilterDialogState
                 vertical: (isTablet ? 22 : 20) * uiScale,
               ),
               decoration: BoxDecoration(
-                gradient: kGColor,
+                gradient: colors.heroGradient,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(10),
                   topRight: Radius.circular(10),
@@ -101,20 +103,23 @@ class _CustomerLookupFilterDialogState
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Filter Customers', style: getSmartTitle()),
+                  Text(
+                    'Filter Customers',
+                    style: getSmartTitle(color: colors.onHero, fontSize: 20),
+                  ),
                   InkWell(
                     onTap: () => context.navigateBack(),
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
                       padding: EdgeInsets.all((isTablet ? 8 : 6) * uiScale),
                       decoration: BoxDecoration(
-                        color: kGreyColor.withOpacity(0.5),
+                        color: colors.surfaceAlt.withOpacity(0.6),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close,
                         size: 18,
-                        color: kSecondaryColor,
+                        color: colors.onHero,
                       ),
                     ),
                   ),
@@ -149,7 +154,7 @@ class _CustomerLookupFilterDialogState
                           Text(
                             'Loading your filter options...',
                             style: getSmartTitle(
-                              color: kThirdColor,
+                              color: colors.onSurface,
                               fontSize: 16,
                             ),
                           ),
@@ -223,14 +228,14 @@ class _CustomerLookupFilterDialogState
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: BorderSide(color: kGreyColor.withOpacity(0.3)),
+                          side: BorderSide(color: colors.divider),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         child: Text(
                           'Reset',
-                          style: TextStyle(color: kThirdColor.withOpacity(0.6)),
+                          style: TextStyle(color: colors.onSurfaceMuted),
                         ),
                       ),
                     ),
@@ -264,10 +269,10 @@ class _CustomerLookupFilterDialogState
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Apply Filters',
                           style: TextStyle(
-                            color: kSecondaryColor,
+                            color: colors.onHero,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -301,26 +306,27 @@ class _CustomerLookupFilterDialogState
     List<String> items,
     Function(String?) onChanged,
   ) {
+    final colors = context.appColors;
     return Container(
       constraints: const BoxConstraints(minHeight: 46),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: kSecondaryColor,
-        border: Border.all(color: kGreyColor.withOpacity(0.3)),
+        color: colors.surface,
+        border: Border.all(color: colors.divider),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          dropdownColor: kSecondaryColor,
+          dropdownColor: colors.surface,
           hint: Text(
             hint,
-            style: const TextStyle(color: kGreyColor, fontSize: 14),
+            style: TextStyle(color: colors.onSurfaceMuted, fontSize: 14),
           ),
           isExpanded: true,
-          icon: const Icon(
+          icon: Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: kGreyColor,
+            color: colors.onSurfaceMuted,
           ),
           onChanged: onChanged,
           items: items
@@ -329,7 +335,7 @@ class _CustomerLookupFilterDialogState
                   value: e,
                   child: Text(
                     e,
-                    style: const TextStyle(fontSize: 14),
+                    style: TextStyle(fontSize: 14, color: colors.onSurface),
                   ),
                 ),
               )

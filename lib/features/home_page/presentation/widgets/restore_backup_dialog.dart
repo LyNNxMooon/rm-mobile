@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
@@ -22,11 +23,12 @@ class RestoreBackupDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final double maxDialogHeight = MediaQuery.of(context).size.height * 0.7;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: Colors.white,
+      backgroundColor: colors.surface,
       elevation: 10,
       insetPadding: dialogInsetPadding(context),
       child: Container(
@@ -53,13 +55,13 @@ class RestoreBackupDialog extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 15),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       "Restore Session",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: kThirdColor,
+                        color: colors.onSurface,
                       ),
                     ),
                   ),
@@ -67,7 +69,7 @@ class RestoreBackupDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 15),
-            const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+            Divider(height: 1, thickness: 1, color: colors.divider),
 
             Flexible(
               child: BlocConsumer<BackupRestoreBloc, BackupRestoreState>(
@@ -82,9 +84,9 @@ class RestoreBackupDialog extends StatelessWidget {
                       context: context,
                       text: "Your Backup is restored!",
                       typeInfo: TypeInfo.success,
-                      backgroundColor: kSecondaryColor,
+                      backgroundColor: colors.surface,
                       iconColor: kPrimaryColor,
-                      textColor: kThirdColor,
+                      textColor: colors.onSurface,
                       position: MessagePosition.top,
                       padding: 70,
                     );
@@ -93,17 +95,17 @@ class RestoreBackupDialog extends StatelessWidget {
                 builder: (context, state) {
                   if (state is BackupRestoreLoading ||
                       state is BackupRestoreRestoring) {
-                    return const Padding(
-                      padding: EdgeInsets.all(40),
+                    return Padding(
+                      padding: const EdgeInsets.all(40),
                       child: Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            CupertinoActivityIndicator(radius: 15),
-                            SizedBox(height: 15),
+                            const CupertinoActivityIndicator(radius: 15),
+                            const SizedBox(height: 15),
                             Text(
                               "Processing...",
-                              style: TextStyle(color: kGreyColor),
+                              style: TextStyle(color: colors.onSurfaceMuted),
                             ),
                           ],
                         ),
@@ -127,8 +129,8 @@ class RestoreBackupDialog extends StatelessWidget {
                             Text(
                               state.message,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: kGreyColor,
+                              style: TextStyle(
+                                color: colors.onSurfaceMuted,
                                 fontSize: 13,
                               ),
                             ),
@@ -140,12 +142,15 @@ class RestoreBackupDialog extends StatelessWidget {
 
                   if (state is BackupRestoreSessionsLoaded) {
                     if (state.sessions.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.all(30),
+                      return Padding(
+                        padding: const EdgeInsets.all(30),
                         child: Center(
                           child: Text(
                             "No backup sessions found.",
-                            style: TextStyle(color: kGreyColor, fontSize: 14),
+                            style: TextStyle(
+                              color: colors.onSurfaceMuted,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
                       );
@@ -161,12 +166,15 @@ class RestoreBackupDialog extends StatelessWidget {
                       );
                     }).toList();
                     if (filteredSessions.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.all(30),
+                      return Padding(
+                        padding: const EdgeInsets.all(30),
                         child: Center(
                           child: Text(
                             "No backups found for this shopfront.",
-                            style: TextStyle(color: kGreyColor, fontSize: 14),
+                            style: TextStyle(
+                              color: colors.onSurfaceMuted,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
                       );
@@ -189,7 +197,7 @@ class RestoreBackupDialog extends StatelessWidget {
               ),
             ),
 
-            const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+            Divider(height: 1, thickness: 1, color: colors.divider),
 
             // --- Footer ---
             Padding(
@@ -202,13 +210,13 @@ class RestoreBackupDialog extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(color: kGreyColor.withOpacity(0.3)),
+                      side: BorderSide(color: colors.divider),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     "Cancel",
                     style: TextStyle(
-                      color: kGreyColor,
+                      color: colors.onSurfaceMuted,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -222,6 +230,7 @@ class RestoreBackupDialog extends StatelessWidget {
   }
 
   Widget _buildBackupItem(BuildContext context, BackupSessionVO session) {
+    final colors = context.appColors;
     return InkWell(
       onTap: () {
         context.read<BackupRestoreBloc>().add(
@@ -232,12 +241,12 @@ class RestoreBackupDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: kSecondaryColor,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: kPrimaryColor.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
-              color: kThirdColor.withOpacity(0.05),
+              color: colors.cardShadow,
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
@@ -264,19 +273,19 @@ class RestoreBackupDialog extends StatelessWidget {
                 children: [
                   Text(
                     _fmt(session.createdAt),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: kThirdColor,
+                      color: colors.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
                   // File Name - Fully Visible
                   Text(
                     session.fileName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: kGreyColor,
+                      color: colors.onSurfaceMuted,
                       height: 1.3,
                     ),
                   ),
@@ -286,12 +295,12 @@ class RestoreBackupDialog extends StatelessWidget {
 
             const SizedBox(width: 8),
 
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 8.0),
               child: Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 14,
-                color: kGreyColor,
+                color: colors.onSurfaceMuted,
               ),
             ),
           ],

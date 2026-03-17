@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_states.dart';
@@ -527,38 +528,51 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   // --- UI Styling Components matching Details Screen ---
 
   InputDecoration _minimalInputDecoration({String? hintText}) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final Color borderColor =
+        isDark ? colors.divider : Colors.grey.shade400;
     return InputDecoration(
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: kPrimaryColor, width: 1.2),
       ),
       hintText: hintText,
-      hintStyle: TextStyle(color: Colors.grey[400]),
+      hintStyle: TextStyle(
+        color: isDark ? colors.onSurfaceMuted : Colors.grey[400],
+      ),
     );
   }
 
   Widget _buildBaseCard({required Widget child}) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFBF7F0),
+        color: isDark ? colors.surface : const Color(0xFFFBF7F0),
         borderRadius: BorderRadius.circular(12),
         // Adding a subtle stroke to give that "solid card" look from modern UI
-        border: Border.all(color: const Color(0xFFC9B9A6), width: 0.57),
+        border: Border.all(
+          color: isDark ? colors.divider : const Color(0xFFC9B9A6),
+          width: 0.57,
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2B2012).withOpacity(0.07),
+            color: isDark
+                ? colors.cardShadow
+                : const Color(0xFF2B2012).withOpacity(0.07),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -572,6 +586,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     required String title,
     required List<Widget> children,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -584,7 +600,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               style: TextStyle(
                 fontSize: baseSize,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: isDark ? colors.onSurface : Colors.black87,
               ),
             ),
             const SizedBox(height: 16),
@@ -604,6 +620,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     String? hintText,
     List<TextInputFormatter>? inputFormatters,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -616,7 +634,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               padding: const EdgeInsets.only(top: 8.0),
               child: Text(
                 label,
-                style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: baseSize,
+                  color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+                ),
               ),
             ),
           ),
@@ -627,7 +648,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               controller: controller,
               keyboardType: keyboardType,
               maxLines: maxLines,
-              style: TextStyle(fontSize: baseSize),
+              style: TextStyle(
+                fontSize: baseSize,
+                color: isDark ? colors.onSurface : Colors.black87,
+              ),
               decoration: _minimalInputDecoration(hintText: hintText),
               validator: validator,
               inputFormatters: inputFormatters,
@@ -655,6 +679,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     ValueChanged<bool> onChanged, {
     bool enabled = true,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -663,7 +689,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: baseSize,
+              color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+            ),
           ),
           Switch(
             value: value,
@@ -681,6 +710,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     required List<DropdownMenuItem<T>> items,
     required ValueChanged<T?> onChanged,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -693,7 +724,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               padding: const EdgeInsets.only(top: 8.0),
               child: Text(
                 label,
-                style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: baseSize,
+                  color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+                ),
               ),
             ),
           ),
@@ -705,7 +739,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               items: items,
               onChanged: onChanged,
               decoration: _minimalInputDecoration(),
-              style: TextStyle(fontSize: baseSize, color: Colors.black87),
+              style: TextStyle(
+                fontSize: baseSize,
+                color: isDark ? colors.onSurface : Colors.black87,
+              ),
             ),
           ),
         ],
@@ -721,6 +758,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     required bool isValid,
     required bool isLoading,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
     return Padding(
@@ -739,7 +778,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                     label,
                     style: TextStyle(
                       fontSize: baseSize,
-                      color: Colors.grey[600],
+                      color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
                     ),
                   ),
                 ),
@@ -750,7 +789,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                 child: TextFormField(
                   controller: controller,
                   keyboardType: TextInputType.text,
-                  style: TextStyle(fontSize: baseSize),
+                  style: TextStyle(
+                    fontSize: baseSize,
+                    color: isDark ? colors.onSurface : Colors.black87,
+                  ),
                   decoration: _minimalInputDecoration(),
                   onChanged: onChanged,
                   onEditingComplete: () {
@@ -775,8 +817,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               style: TextStyle(
                 fontSize: smallSize,
                 color: isLoading
-                    ? Colors.grey[600]
-                    : (isValid ? Colors.green[700] : Colors.red[700]),
+                    ? (isDark ? colors.onSurfaceMuted : Colors.grey[600])
+                    : (isValid
+                        ? Colors.green[700]
+                        : Theme.of(context).colorScheme.error),
               ),
             ),
           ],
@@ -786,6 +830,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   }
 
   List<Widget> _buildSecondaryAddressEditors() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 13);
     final List<Widget> widgets = [];
 
@@ -801,7 +847,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
             style: TextStyle(
               fontSize: baseSize,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: isDark ? colors.onSurface : Colors.black87,
             ),
           ),
         ),
@@ -850,6 +896,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     required String label,
     required VoidCallback? onTap,
   }) {
+    final colors = context.appColors;
     final double baseSize = _font(context, 14);
     return SizedBox(
       width: double.infinity,
@@ -857,7 +904,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
           backgroundColor: kPrimaryColor,
-          foregroundColor: Colors.white,
+          foregroundColor: colors.onHero,
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -885,6 +932,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return MultiBlocListener(
       listeners: [
         BlocListener<CustomerCreateBloc, CustomerCreateState>(
@@ -950,13 +999,15 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
         ),
       ],
       child: Scaffold(
-        backgroundColor: const Color(0xFFF3EFE8), // Matching background
+        backgroundColor: isDark ? colors.bg : const Color(0xFFF3EFE8),
         body: Stack(
           children: [
             // Background Gradient Container (Top Half)
             Container(
               height: MediaQuery.of(context).size.height * 0.4,
-              decoration: const BoxDecoration(gradient: kGColor),
+              decoration: BoxDecoration(
+                gradient: isDark ? colors.heroGradient : kGColor,
+              ),
             ),
 
             // Custom App Bar Elements (Overlay)
@@ -973,21 +1024,24 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                       children: [
                         TextButton.icon(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.arrow_back_ios_new,
-                            color: Colors.white,
+                            color: isDark ? colors.onHero : Colors.white,
                             size: 18,
                           ),
-                          label: const Text(
+                          label: Text(
                             "Back",
-                            style: TextStyle(color: Colors.white, fontSize: 16),
+                            style: TextStyle(
+                              color: isDark ? colors.onHero : Colors.white,
+                              fontSize: 16,
+                            ),
                           ),
                           style: TextButton.styleFrom(padding: EdgeInsets.zero),
                         ),
-                        const Text(
+                        Text(
                           "Create Customer",
                           style: TextStyle(
-                            color: Colors.white,
+                            color: isDark ? colors.onHero : Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1016,9 +1070,18 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                         controller: _barcodeController,
                                         style: TextStyle(
                                           fontSize: _font(context, 14),
+                                          color: isDark
+                                              ? colors.onSurface
+                                              : Colors.black87,
                                         ),
                                         decoration: _minimalInputDecoration(
                                           hintText: 'Enter a barcode (Leave empty to auto-generate)',
+                                        ).copyWith(
+                                          hintStyle: TextStyle(
+                                            color: isDark
+                                                ? colors.onSurfaceMuted
+                                                : Colors.black,
+                                          ),
                                         ),
                                         onChanged: _validateBarcode,
                                         onEditingComplete: () {
@@ -1158,9 +1221,11 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                 ),
                                 _buildEditRow("Country", _countryController),
                                 const SizedBox(height: 8),
-                                const Divider(
+                                Divider(
                                   height: 1,
-                                  color: Color(0xFFEEEEEE),
+                                  color: isDark
+                                      ? colors.divider
+                                      : const Color(0xFFEEEEEE),
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
@@ -1168,7 +1233,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                   style: TextStyle(
                                     fontSize: _font(context, 14),
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                                    color: isDark
+                                        ? colors.onSurface
+                                        : Colors.black87,
                                   ),
                                 ),
                                 const SizedBox(height: 12),

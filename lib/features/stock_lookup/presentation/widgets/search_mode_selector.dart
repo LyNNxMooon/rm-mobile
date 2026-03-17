@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/search_mode.dart';
 
 class SearchModeSelector extends StatelessWidget {
@@ -13,6 +14,8 @@ class SearchModeSelector extends StatelessWidget {
   });
 
   void _showModeMenu(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final RenderBox button = context.findRenderObject() as RenderBox;
     final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
     final RelativeRect position = RelativeRect.fromRect(
@@ -28,7 +31,7 @@ class SearchModeSelector extends StatelessWidget {
       position: position,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 8,
-      color: Colors.white,
+      color: isDark ? colors.surface : kSecondaryColor,
       items: SearchMode.values.map((mode) {
         final isSelected = mode == currentMode;
         return PopupMenuItem<SearchMode>(
@@ -38,7 +41,9 @@ class SearchModeSelector extends StatelessWidget {
             children: [
               Icon(
                 isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                color: isSelected ? kPrimaryColor : Colors.grey.shade400,
+                color: isSelected
+                    ? kPrimaryColor
+                    : (isDark ? colors.onSurfaceMuted : kThirdColor),
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -47,7 +52,9 @@ class SearchModeSelector extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected ? kPrimaryColor : Colors.blueGrey.shade700,
+                  color: isSelected
+                      ? kPrimaryColor
+                      : (isDark ? colors.onSurfaceMuted : kThirdColor),
                 ),
               ),
             ],

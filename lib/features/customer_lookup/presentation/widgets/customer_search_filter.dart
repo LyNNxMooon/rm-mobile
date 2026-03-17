@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/search_mode.dart';
 import '../../../stock_lookup/presentation/widgets/search_mode_selector.dart';
 
@@ -24,6 +25,8 @@ class CustomerSearchFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -38,12 +41,15 @@ class CustomerSearchFilterBar extends StatelessWidget {
             onChanged: onChanged,
             decoration: InputDecoration(
               hintText: 'Search by barcode, name, company, phone, fax, email',
-              hintStyle: const TextStyle(color: kThirdColor, fontSize: 14),
+              hintStyle: TextStyle(
+                color: isDark ? colors.onSurfaceMuted : kThirdColor,
+                fontSize: 14,
+              ),
               border: InputBorder.none,
               isDense: true,
               prefixIcon: Icon(
                 Icons.search,
-                color: kGreyColor,
+                color: isDark ? colors.onSurfaceMuted : Colors.blueGrey[700],
                 size: (isTablet ? 22 : 20) * uiScale,
               ),
             ),

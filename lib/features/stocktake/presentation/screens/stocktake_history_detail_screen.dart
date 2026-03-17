@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 import 'package:rmstock_scanner/constants/txt_styles.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/stocktake_history_session_row.dart';
@@ -147,6 +148,7 @@ class _StocktakeHistoryDetailsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return WillPopScope(
       onWillPop: () async {
         if (mounted) {
@@ -155,7 +157,7 @@ class _StocktakeHistoryDetailsScreenState
         return true; // allow pop
       },
       child: Scaffold(
-        backgroundColor: kBgColor,
+        backgroundColor: colors.bg,
         body: SafeArea(
           child: Column(
             children: [
@@ -186,7 +188,7 @@ class _StocktakeHistoryDetailsScreenState
                         Text(
                           "History Details",
                           style: getSmartTitle(
-                            color: kThirdColor,
+                            color: colors.onSurface,
                             fontSize: 16,
                           ),
                         ),
@@ -302,6 +304,7 @@ class _StocktakeHistoryDetailsScreenState
   }
 
   Widget _itemTile(CountedStockVO stock) {
+    final colors = context.appColors;
     return InkWell(
       onTap: () {
         context.read<StockDetailsBloc>().add(
@@ -317,11 +320,11 @@ class _StocktakeHistoryDetailsScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: kSecondaryColor,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: kThirdColor.withOpacity(0.05),
+              color: colors.cardShadow,
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -343,7 +346,7 @@ class _StocktakeHistoryDetailsScreenState
                     stock.description,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: getSmartTitle(color: kThirdColor, fontSize: 14),
+                    style: getSmartTitle(color: colors.onSurface, fontSize: 14),
                   ),
                   Text(
                     stock.barcode,

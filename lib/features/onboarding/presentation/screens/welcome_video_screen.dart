@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 import 'package:video_player/video_player.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -45,6 +46,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final media = MediaQuery.of(context);
     final size = media.size;
     final shortestSide = size.shortestSide;
@@ -134,7 +136,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                 Text(
                                   "Smart inventory management, \nRight in your pocket.",
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: colors.onHero,
                                     fontSize: headlineFontSize,
                                     fontWeight: FontWeight.w700,
                                     height: 1.1,
@@ -145,7 +147,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                 Text(
                                   "The complete Point of Sale solution for your mobile device.",
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.85),
+                                    color: colors.onHero.withOpacity(0.85),
                                     fontSize: bodyFontSize,
                                     fontWeight: FontWeight.w400,
                                   ),
@@ -158,7 +160,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                     onPressed: widget.onContinue,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: kPrimaryColor,
-                                      foregroundColor: kSecondaryColor,
+                                      foregroundColor: colors.onHero,
                                       minimumSize: const Size(double.infinity, buttonHeight),
                                       padding: EdgeInsets.zero,
                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -171,14 +173,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
-                                    child: const Center(
+                                    child: Center(
                                       child: Text(
                                         "Continue",
                                         textScaler: TextScaler.noScaling,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          color: kSecondaryColor,
+                                          color: colors.onHero,
                                           fontSize: buttonFontSize,
                                           fontWeight: FontWeight.w700,
                                         ),

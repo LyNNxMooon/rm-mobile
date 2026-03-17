@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/entities/customer_transactions_local_data.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
@@ -20,6 +21,7 @@ class CustomerTransactionsScreen extends StatefulWidget {
 
 class _CustomerTransactionsScreenState
     extends State<CustomerTransactionsScreen> {
+  bool _showIncTax = false;
   @override
   void initState() {
     super.initState();
@@ -30,6 +32,8 @@ class _CustomerTransactionsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     // Define the tabs based on the provided images
     final List<String> tabs = [
       "Purchases",
@@ -46,37 +50,53 @@ class _CustomerTransactionsScreenState
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
-        backgroundColor: const Color(0xFFEFEFF4), // Matching the deep grey background
+        backgroundColor: isDark ? colors.bg : const Color(0xFFEFEFF4),
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(120.0), // Custom height for Appbar + Tabbar
           child: AppBar(
             flexibleSpace: Container(
-              decoration: const BoxDecoration(gradient: kGColor),
+              decoration: BoxDecoration(
+                gradient: isDark ? colors.heroGradient : kGColor,
+              ),
             ),
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+              icon: Icon(
+                Icons.arrow_back_ios_new,
+                color: isDark ? colors.onHero : Colors.white,
+                size: 18,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Transactions',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: isDark ? colors.onHero : Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   widget.customer.displayName,
-                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13, fontWeight: FontWeight.normal),
+                  style: TextStyle(
+                    color: (isDark ? colors.onHero : Colors.white)
+                        .withOpacity(0.8),
+                    fontSize: 13,
+                    fontWeight: FontWeight.normal,
+                  ),
                 ),
               ],
             ),
             bottom: TabBar(
               isScrollable: true,
-              indicatorColor: Colors.white,
+              indicatorColor: isDark ? colors.onHero : Colors.white,
               indicatorWeight: 3,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white.withOpacity(0.6),
+              labelColor: isDark ? colors.onHero : Colors.white,
+              unselectedLabelColor: (isDark ? colors.onHero : Colors.white)
+                  .withOpacity(0.6),
               labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
               tabs: tabs.map((String name) => Tab(text: name)).toList(),
@@ -107,6 +127,7 @@ class _CustomerTransactionsScreenState
               children: [
                 _buildTabContentContainer(
                   note: "Showing 20 last sold items from Non-Archived Data.",
+                  header: _buildPurchasesTaxToggle(),
                   child: _buildPurchasesData(data.purchases),
                 ),
                 _buildTabContentContainer(
@@ -150,18 +171,29 @@ class _CustomerTransactionsScreenState
   }
 
   // --- Wrapper for Tab Content ---
-  Widget _buildTabContentContainer({required String note, required Widget child}) {
+  Widget _buildTabContentContainer({
+    required String note,
+    required Widget child,
+    Widget? header,
+  }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? colors.surface : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200, width: 1.5),
+          border: Border.all(
+            color: isDark ? colors.divider : Colors.grey.shade200,
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: isDark
+                  ? colors.cardShadow
+                  : Colors.black.withOpacity(0.03),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -179,16 +211,20 @@ class _CustomerTransactionsScreenState
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  note,
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                    note,
+                    style: TextStyle(
+                      color: isDark ? colors.onSurface : Colors.black,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                 ),
               ),
             ),
-            Divider(height: 1, color: Colors.grey.shade200),
+            if (header != null) header,
+              Divider(
+                height: 1,
+                color: isDark ? colors.divider : Colors.grey.shade200,
+              ),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -213,22 +249,29 @@ class _CustomerTransactionsScreenState
 
   // --- Reusable Data Table Builder ---
   Widget _buildDataTable(List<String> columns, List<List<String>> rows) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return DataTable(
-      headingRowColor: MaterialStateProperty.resolveWith((states) => Colors.grey.shade50),
+      headingRowColor: MaterialStateProperty.resolveWith(
+        (states) => isDark ? colors.surfaceAlt : Colors.grey.shade50,
+      ),
       dataRowMaxHeight: 50,
-      headingTextStyle: const TextStyle(
+      headingTextStyle: TextStyle(
         fontWeight: FontWeight.bold,
-        color: Colors.black87,
+        color: isDark ? colors.onSurface : Colors.black87,
         fontSize: 13,
       ),
       dataTextStyle: TextStyle(
-        color: Colors.grey.shade800,
+        color: isDark ? colors.onSurfaceMuted : Colors.grey.shade800,
         fontSize: 13,
       ),
       columnSpacing: 24,
       horizontalMargin: 16,
       border: TableBorder(
-        horizontalInside: BorderSide(width: 1, color: Colors.grey.shade200),
+        horizontalInside: BorderSide(
+          width: 1,
+          color: isDark ? colors.divider : Colors.grey.shade200,
+        ),
       ),
       columns: columns.map((col) => DataColumn(label: Text(col))).toList(),
       rows: rows.map((rowData) {
@@ -254,7 +297,12 @@ class _CustomerTransactionsScreenState
               _formatDate(row['date']),
               _asString(row['product']),
               _formatNumber(row['qty']),
-              _formatMoney(row['price']),
+              _formatMoney(
+                _applyPurchaseTax(
+                  row['price'],
+                  row['goods_tax'] ?? row['goodsTax'],
+                ),
+              ),
             ],
           )
           .toList(),
@@ -475,6 +523,105 @@ class _CustomerTransactionsScreenState
     if (parsed == null) return value.toString();
     if (parsed % 1 == 0) return parsed.toInt().toString();
     return parsed.toStringAsFixed(2);
+  }
+
+  num _applyPurchaseTax(Object? price, Object? goodsTax) {
+    final num? parsed = price is num ? price : num.tryParse(price.toString());
+    if (parsed == null) return 0;
+    if (!_showIncTax) return parsed;
+    final String taxCode = (goodsTax ?? "").toString().toUpperCase();
+    if (taxCode != "GST") return parsed;
+    return parsed * 1.1;
+  }
+
+  Widget _buildPurchasesTaxToggle() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? colors.divider : Colors.grey.shade300,
+          ),
+        ),
+        child: Row(
+          children: [
+            _buildTaxOption(
+              label: "Ex Tax",
+              value: false,
+              isDark: isDark,
+              colors: colors,
+            ),
+            const SizedBox(width: 6),
+            _buildTaxOption(
+              label: "Inc Tax",
+              value: true,
+              isDark: isDark,
+              colors: colors,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaxOption({
+    required String label,
+    required bool value,
+    required bool isDark,
+    required AppThemeColors colors,
+  }) {
+    final bool selected = _showIncTax == value;
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () {
+          setState(() {
+            _showIncTax = value;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+          decoration: BoxDecoration(
+            color: selected
+                ? (isDark ? colors.surface : Colors.white)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Radio<bool>(
+                value: value,
+                groupValue: _showIncTax,
+                onChanged: (next) {
+                  if (next == null) return;
+                  setState(() {
+                    _showIncTax = next;
+                  });
+                },
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                activeColor: kPrimaryColor,
+              ),
+              const SizedBox(width: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? colors.onSurface : Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildEmptyTable(List<String> columns, String message) {

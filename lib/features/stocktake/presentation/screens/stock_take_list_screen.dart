@@ -17,6 +17,7 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../BLoC/stocktake_events.dart';
@@ -84,6 +85,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return BlocListener<StocktakeDeleteBloc, StocktakeDeleteStates>(
       listener: (context, state) {
         if (state is StocktakeDeleted) {
@@ -102,7 +104,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: kBgColor,
+        backgroundColor: colors.bg,
         floatingActionButton: _buildSubmitFAB(),
         body: SafeArea(
           child: Column(
@@ -142,6 +144,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
 
   //Stock count update listener
   Widget stockCountUpdateListener() {
+    final colors = context.appColors;
     return BlocListener<StockCountUpdateBloc, StockCountUpdateStates>(
       listener: (context, state) {
         if (state is StockCountUpdated) {
@@ -152,11 +155,11 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
 
             typeInfo: TypeInfo.success,
 
-            backgroundColor: kSecondaryColor,
+            backgroundColor: colors.surface,
 
             iconColor: kPrimaryColor,
 
-            textColor: kThirdColor,
+            textColor: colors.onSurface,
             padding: 70,
             position: MessagePosition.top,
           );
@@ -175,6 +178,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   }
 
   Widget finalStocktakeLoading() {
+    final colors = context.appColors;
     return BlocConsumer<SendingFinalStocktakeBloc, SendingFinalStocktakeStates>(
       listener: (context, state) {
         if (state is ErrorSendingStocktake) {
@@ -216,11 +220,11 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
             ),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: kSecondaryColor,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: kThirdColor.withOpacity(0.05),
+                  color: colors.cardShadow,
                   blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),
@@ -252,7 +256,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
                   value: 0.5,
-                  backgroundColor: Colors.grey.shade200,
+                  backgroundColor: colors.divider,
                   valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
                   minHeight: 6,
                   borderRadius: BorderRadius.circular(3),
@@ -260,7 +264,10 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                 const SizedBox(height: 5),
                 Text(
                   "This may take a few seconds",
-                  style: TextStyle(fontSize: 12, color: kGreyColor),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.onSurfaceMuted,
+                  ),
                 ),
               ],
             ),
@@ -273,6 +280,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   }
 
   Widget _buildSubmitFAB() {
+    final colors = context.appColors;
     return MultiBlocListener(
       listeners: [
         BlocListener<CommittingStocktakeBloc, CommitingStocktakeStates>(
@@ -325,10 +333,10 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         onPressed: _handleSendToRM,
         elevation: 4,
         backgroundColor: kPrimaryColor,
-        label: const Text(
+        label: Text(
           "Send Stocktake to RM",
           style: TextStyle(
-            color: kSecondaryColor,
+            color: colors.onHero,
             fontWeight: FontWeight.bold,
             fontSize: 13,
           ),
@@ -394,6 +402,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   }
 
   Widget _itemTile(CountedStockVO stock, int index) {
+    final colors = context.appColors;
     return AnimationConfiguration.staggeredList(
       position: index,
       duration: const Duration(milliseconds: 500),
@@ -411,7 +420,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                     );
                   },
                   backgroundColor: kErrorColor,
-                  foregroundColor: kSecondaryColor,
+                  foregroundColor: colors.onHero,
                   icon: Icons.delete,
                   label: 'Delete',
                   borderRadius: const BorderRadius.horizontal(
@@ -440,11 +449,11 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: kSecondaryColor,
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: kThirdColor.withOpacity(0.05),
+                      color: colors.cardShadow,
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -455,7 +464,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                     Icon(
                       Icons.cloud_done_outlined,
                       size: 18,
-                      color: kGreyColor,
+                      color: colors.onSurfaceMuted,
                     ),
                     const SizedBox(width: 15),
 
@@ -468,7 +477,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: getSmartTitle(
-                              color: kThirdColor,
+                              color: colors.onSurface,
                               fontSize: 14,
                             ),
                           ),
@@ -491,7 +500,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                               Text(
                                 "|",
                                 style: TextStyle(
-                                  color: kGreyColor,
+                                  color: colors.onSurfaceMuted,
                                   fontSize: 12,
                                 ),
                               ),
@@ -554,11 +563,12 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   }
 
   Widget _buildValidationDialog(StocktakeValidationHasAudits state) {
+    final colors = context.appColors;
     final double safeMaxHeight = MediaQuery.of(context).size.height * 0.7;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: kSecondaryColor,
+      backgroundColor: colors.surface,
       titlePadding: EdgeInsets.zero,
       insetPadding: dialogInsetPadding(context),
       contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
@@ -569,11 +579,11 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(bottom: 12),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
               child: Text(
                 "The following items were modified recently. How would you like to proceed?",
-                style: TextStyle(fontSize: 13, color: kGreyColor),
+                style: TextStyle(fontSize: 13, color: colors.onSurfaceMuted),
               ),
             ),
 
@@ -581,7 +591,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
               child: Container(
                 constraints: BoxConstraints(maxHeight: safeMaxHeight),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: colors.divider),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ListView.separated(
@@ -644,7 +654,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                 child: Text(
                   "Ignore & Commit",
                   style: TextStyle(
-                    color: kSecondaryColor,
+                    color: colors.onHero,
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
@@ -658,6 +668,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   }
 
   Widget _buildDialogHeader() {
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
       decoration: const BoxDecoration(
@@ -669,9 +680,12 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
       ),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             backgroundColor: Colors.orange,
-            child: Icon(Icons.warning_amber_rounded, color: kSecondaryColor),
+            child: Icon(
+              Icons.warning_amber_rounded,
+              color: colors.onHero,
+            ),
           ),
           const SizedBox(width: 15),
           Expanded(
@@ -695,6 +709,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   }
 
   Widget _buildAuditTile(AuditWithStockVO row) {
+    final colors = context.appColors;
     final s = row.stock;
     final a = row.audit;
     final timeStr = _formatAuditTime(a.auditDate);
@@ -738,7 +753,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         padding: const EdgeInsets.only(top: 4),
         child: Text(
           "${TransactionTypeHelper.translate(a.tranType)} on $timeStr",
-          style: TextStyle(color: kGreyColor, fontSize: 11),
+          style: TextStyle(color: colors.onSurfaceMuted, fontSize: 11),
         ),
       ),
       trailing: Text(

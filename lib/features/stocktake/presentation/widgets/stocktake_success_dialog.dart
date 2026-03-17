@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
 class StocktakeSuccessDialog extends StatelessWidget {
@@ -14,11 +15,12 @@ class StocktakeSuccessDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Dialog(
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 10,
-      backgroundColor: kBgColor,
+      backgroundColor: colors.surface,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
@@ -43,13 +45,13 @@ class StocktakeSuccessDialog extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Title
-            const Text(
+            Text(
               "Success!",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: kThirdColor,
+                color: colors.onSurface,
               ),
             ),
             const SizedBox(height: 12),
@@ -60,7 +62,7 @@ class StocktakeSuccessDialog extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: kThirdColor.withOpacity(0.8),
+                color: colors.onSurfaceMuted,
                 height: 1.5,
               ),
             ),
@@ -74,7 +76,7 @@ class StocktakeSuccessDialog extends StatelessWidget {
                 onPressed: onOkayPressed, // Executes your passed function
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
-                  foregroundColor: kSecondaryColor,
+                  foregroundColor: colors.onHero,
                   minimumSize: const Size(double.infinity, 48),
                   padding: EdgeInsets.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -87,11 +89,11 @@ class StocktakeSuccessDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   "Okay",
                   textScaler: TextScaler.noScaling,
                   style: TextStyle(
-                    color: kSecondaryColor,
+                    color: colors.onHero,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),

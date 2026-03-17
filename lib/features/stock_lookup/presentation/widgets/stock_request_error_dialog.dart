@@ -4,6 +4,7 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
@@ -34,6 +35,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
@@ -47,7 +49,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 10,
-      backgroundColor: kBgColor,
+      backgroundColor: colors.surface,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
@@ -72,10 +74,10 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
             Text(
               "Oops!",
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: kThirdColor,
+                color: colors.onSurface,
               ),
             ),
             const SizedBox(height: 12),
@@ -85,7 +87,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: kThirdColor.withOpacity(0.8),
+                color: colors.onSurfaceMuted,
                 height: 1.5,
               ),
             ),
@@ -162,7 +164,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kPrimaryColor,
-                        foregroundColor: kSecondaryColor,
+                        foregroundColor: colors.onHero,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -172,7 +174,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
                       child: Text(
                         "Try Logging in",
                         style: TextStyle(
-                          color: kSecondaryColor,
+                          color: colors.onHero,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),

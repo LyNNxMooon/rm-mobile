@@ -1,8 +1,11 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
+
 
 class Scanner extends StatefulWidget {
   const Scanner({
@@ -36,11 +39,13 @@ class _ScannerState extends State<Scanner> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       height: widget.constraints.maxHeight * 0.2,
       child: widget.isScan
           ? Container(
-              color: kThirdColor,
+              color: isDark ? colors.surface : kThirdColor,
               child: Stack(
                 children: [
                   MobileScanner(
@@ -111,17 +116,19 @@ class _ScannerState extends State<Scanner> {
   }
 
   Widget _scannerPlaceHolder() {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double sidePadding = isTablet ? widget.horizontalPadding : 15.0;
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: sidePadding),
       decoration: BoxDecoration(
-        gradient: kGColor,
+        gradient: isDark ? colors.heroGradient : kGColor,
         borderRadius: const BorderRadius.all(Radius.circular(10)),
         boxShadow: [
           BoxShadow(
-            color: kThirdColor.withOpacity(0.05),
+            color: isDark ? colors.cardShadow : kThirdColor.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
             spreadRadius: 0,
@@ -133,17 +140,17 @@ class _ScannerState extends State<Scanner> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 CupertinoIcons.barcode_viewfinder,
                 size: 80,
-                color: kSecondaryColor,
+                color: isDark ? colors.onHero : kSecondaryColor,
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 "Scan Barcode",
                 style: TextStyle(
                   fontSize: 16,
-                  color: kSecondaryColor,
+                  color: isDark ? colors.onHero : kSecondaryColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),

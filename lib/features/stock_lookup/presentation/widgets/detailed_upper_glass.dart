@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:languagetool_textfield/languagetool_textfield.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 
 class DetailedUpperGlass extends StatefulWidget {
@@ -51,6 +52,11 @@ class DetailedUpperGlass extends StatefulWidget {
 class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final Color onGlass = isDark ? colors.onHero : kSecondaryColor;
+    final Color onGlassMuted =
+        isDark ? colors.onHero.withOpacity(0.7) : kGreyColor;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -74,11 +80,20 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
             horizontal: containerHorizontal,
           ),
           decoration: BoxDecoration(
-            color: kSecondaryColor.withOpacity(0.1),
+            color: isDark ? colors.glassFill : kSecondaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: kSecondaryColor.withOpacity(0.2)),
+            border: Border.all(
+              color: isDark
+                  ? colors.glassBorder
+                  : kSecondaryColor.withOpacity(0.2),
+            ),
             boxShadow: [
-              BoxShadow(blurRadius: 20, color: kThirdColor.withOpacity(.1)),
+              BoxShadow(
+                blurRadius: 20,
+                color: isDark
+                    ? colors.cardShadow
+                    : kThirdColor.withOpacity(.1),
+              ),
             ],
           ),
           child: Column(
@@ -91,7 +106,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                     child: Text(
                       widget.barcode,
                       style: getSmartTitle(
-                        color: kSecondaryColor,
+                        color: onGlass,
                         fontSize: 18,
                       ), // Increased readability
                       maxLines: 1,
@@ -105,7 +120,9 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: kSecondaryColor.withOpacity(0.2),
+                        color: isDark
+                            ? colors.surfaceAlt.withOpacity(0.35)
+                            : kSecondaryColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
@@ -121,9 +138,9 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                         const SizedBox(width: 5),
                         Text(
                           widget.qty,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: kSecondaryColor,
+                            color: onGlass,
                           ),
                         ),
                       ],
@@ -158,11 +175,11 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         "Description",
                         style: TextStyle(
                           fontSize: 14,
-                          color: kSecondaryColor,
+                          color: onGlass,
                         ), // Readability
                       ),
                     ],
@@ -176,16 +193,16 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       height: descFieldHeight, // Slightly taller for better touch target
                       child: LanguageToolTextField(
                         controller: widget.descController,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14, // Increased font size
-                          color: kSecondaryColor,
+                          color: onGlass,
                         ),
 
                         decoration: InputDecoration(
                           //enabled: false,
                           hintText: "Description",
-                          hintStyle: const TextStyle(
-                            color: kGreyColor,
+                          hintStyle: TextStyle(
+                            color: onGlassMuted,
                             fontSize: 14,
                           ),
                           filled: true,
@@ -257,9 +274,9 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       const SizedBox(width: 8),
                       Text(
                         widget.custom1Label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: kSecondaryColor,
+                          color: onGlass,
                         ),
                       ),
                     ],
@@ -270,9 +287,9 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       height: customFieldHeight,
                       child: TextField(
                         controller: widget.custom1Controller,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: kSecondaryColor,
+                          color: onGlass,
                         ),
                         onEditingComplete: () {
                           final trimmedValue = widget.custom1Controller.text.trim();
@@ -285,8 +302,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                         },
                         decoration: InputDecoration(
                           hintText: widget.custom1Label,
-                          hintStyle: const TextStyle(
-                            color: kGreyColor,
+                          hintStyle: TextStyle(
+                            color: onGlassMuted,
                             fontSize: 14,
                           ),
                           filled: true,
@@ -297,7 +314,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(7),
                             borderSide: BorderSide(
-                              color: Colors.grey[300]!,
+                              color: isDark ? colors.divider : Colors.grey[300]!,
                               width: 0.5,
                             ),
                           ),
@@ -340,9 +357,9 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       const SizedBox(width: 8),
                       Text(
                         widget.custom2Label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: kSecondaryColor,
+                          color: onGlass,
                         ),
                       ),
                     ],
@@ -353,9 +370,9 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       height: customFieldHeight,
                       child: TextField(
                         controller: widget.custom2Controller,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: kSecondaryColor,
+                          color: onGlass,
                         ),
                         onEditingComplete: () {
                           final trimmedValue = widget.custom2Controller.text.trim();
@@ -368,8 +385,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                         },
                         decoration: InputDecoration(
                           hintText: widget.custom2Label,
-                          hintStyle: const TextStyle(
-                            color: kGreyColor,
+                          hintStyle: TextStyle(
+                            color: onGlassMuted,
                             fontSize: 14,
                           ),
                           filled: true,
@@ -380,7 +397,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(7),
                             borderSide: BorderSide(
-                              color: Colors.grey[300]!,
+                              color: isDark ? colors.divider : Colors.grey[300]!,
                               width: 0.5,
                             ),
                           ),
@@ -465,6 +482,9 @@ class StockInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final Color onGlass = isDark ? colors.onSurface : kSecondaryColor;
     return Padding(
       padding: const EdgeInsets.symmetric(
         vertical: 6.0,
@@ -491,9 +511,9 @@ class StockInfoRow extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: kSecondaryColor,
+                  color: onGlass,
                 ), // Increased font size
               ),
             ],
@@ -507,9 +527,9 @@ class StockInfoRow extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14, // Increased font size for readability
-                color: kSecondaryColor,
+                color: onGlass,
                 fontWeight: FontWeight.w500,
               ),
             ),

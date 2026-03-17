@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../BLoC/customer_lookup_bloc.dart';
@@ -14,6 +15,8 @@ class CustomerLookupAppbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -48,7 +51,13 @@ class CustomerLookupAppbar extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Customer List', style: TextStyle(fontSize: 14)),
+                    Text(
+                      'Customer List',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? colors.onSurfaceMuted : kThirdColor,
+                      ),
+                    ),
                     const SizedBox(height: 5),
                     Text(
                       (AppGlobals.instance.shopfront ?? 'RM-Shopfront')
@@ -68,7 +77,7 @@ class CustomerLookupAppbar extends StatelessWidget {
           children: [
             const SizedBox(width: 10),
             Material(
-              color: kSecondaryColor,
+              color: isDark ? colors.surface : kSecondaryColor,
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
                 onTap: () {
@@ -97,18 +106,21 @@ class CustomerLookupAppbar extends StatelessWidget {
               builder: (context, state) {
                 if (state is FetchCustomerProgress) {
                   return Material(
-                    color: kSecondaryColor,
+                    color: isDark ? colors.surface : kSecondaryColor,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       height: actionHeight,
                       width: actionWidth,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!, width: 1),
+                        border: Border.all(
+                          color: isDark ? colors.divider : Colors.grey[300]!,
+                          width: 1,
+                        ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.sync,
-                        color: Colors.grey,
+                        color: isDark ? colors.onSurfaceMuted : Colors.grey,
                         size: 24,
                       ),
                     ),
@@ -116,7 +128,7 @@ class CustomerLookupAppbar extends StatelessWidget {
                 }
 
                 return Material(
-                  color: kSecondaryColor,
+                  color: isDark ? colors.surface : kSecondaryColor,
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
                     onTap: () {
@@ -130,11 +142,14 @@ class CustomerLookupAppbar extends StatelessWidget {
                       width: actionWidth,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!, width: 1),
+                        border: Border.all(
+                          color: isDark ? colors.divider : Colors.grey[300]!,
+                          width: 1,
+                        ),
                       ),
                       child: Icon(
                         Icons.sync,
-                        color: Colors.blueGrey[800],
+                        color: isDark ? colors.onSurface : Colors.blueGrey[800],
                         size: 24,
                       ),
                     ),

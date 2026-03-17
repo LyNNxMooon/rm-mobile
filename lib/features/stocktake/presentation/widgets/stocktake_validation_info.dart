@@ -5,12 +5,14 @@ import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_b
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 
 class StocktakeValidationInfo extends StatelessWidget {
   const StocktakeValidationInfo({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
       child: BlocBuilder<StocktakeValidationBloc, StocktakeValidationState>(
@@ -20,11 +22,11 @@ class StocktakeValidationInfo extends StatelessWidget {
               margin: const EdgeInsets.only(top: 4, bottom: 4),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: kSecondaryColor,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: kThirdColor.withOpacity(0.05),
+                    color: colors.cardShadow,
                     blurRadius: 5,
                     offset: const Offset(0, 2),
                   ),
@@ -56,7 +58,7 @@ class StocktakeValidationInfo extends StatelessWidget {
                   const SizedBox(height: 8),
                   LinearProgressIndicator(
                     value: state.percentage,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: colors.divider,
                     valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
                     minHeight: 6,
                     borderRadius: BorderRadius.circular(3),
@@ -64,7 +66,10 @@ class StocktakeValidationInfo extends StatelessWidget {
                   const SizedBox(height: 5),
                   Text(
                     "${state.current} / ${state.total} records",
-                    style: TextStyle(fontSize: 12, color: kGreyColor),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colors.onSurfaceMuted,
+                    ),
                   ),
                 ],
               ),

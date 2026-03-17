@@ -211,7 +211,9 @@ const customerPurchasesTableCreationQuery = '''
     date TEXT,
     product TEXT,
     qty REAL,
-    price REAL
+    price REAL,
+    stock_id INTEGER,
+    goods_tax TEXT
   )
 ''';
 

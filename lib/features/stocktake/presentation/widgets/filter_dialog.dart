@@ -3,6 +3,7 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
@@ -26,6 +27,7 @@ class _FilterDialogState extends State<FilterDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: dialogInsetPadding(context),
@@ -33,11 +35,11 @@ class _FilterDialogState extends State<FilterDialog> {
         width: double.infinity,
         constraints: const BoxConstraints(maxWidth: 400, maxHeight: 650),
         decoration: BoxDecoration(
-          color: kBgColor,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: kThirdColor.withOpacity(0.1),
+              color: colors.cardShadow,
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -48,7 +50,7 @@ class _FilterDialogState extends State<FilterDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               decoration: BoxDecoration(
-                gradient: kGColor,
+                gradient: colors.heroGradient,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(10),
                   topRight: Radius.circular(10),
@@ -60,20 +62,23 @@ class _FilterDialogState extends State<FilterDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Filter Stock", style: getSmartTitle()),
+                  Text(
+                    "Filter Stock",
+                    style: getSmartTitle(color: colors.onHero, fontSize: 20),
+                  ),
                   InkWell(
                     onTap: () => context.navigateBack(),
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: kGreyColor.withOpacity(0.5),
+                        color: colors.onHero.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close,
                         size: 18,
-                        color: kSecondaryColor,
+                        color: colors.onHero,
                       ),
                     ),
                   ),
@@ -87,43 +92,48 @@ class _FilterDialogState extends State<FilterDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionHeader("Classifications"),
+                    _buildSectionHeader("Classifications", colors),
                     const SizedBox(height: 12),
                     _buildDropdown(
                       "Department",
                       selectedDept,
                       (val) => setState(() => selectedDept = val),
+                      colors,
                     ),
                     const SizedBox(height: 12),
                     _buildDropdown(
                       "Category 1",
                       selectedCat1,
                       (val) => setState(() => selectedCat1 = val),
+                      colors,
                     ),
                     const SizedBox(height: 12),
                     _buildDropdown(
                       "Category 2",
                       selectedCat2,
                       (val) => setState(() => selectedCat2 = val),
+                      colors,
                     ),
                     const SizedBox(height: 12),
                     _buildDropdown(
                       "Category 3",
                       selectedCat3,
                       (val) => setState(() => selectedCat3 = val),
+                      colors,
                     ),
 
                     const SizedBox(height: 24),
-                    _buildSectionHeader("Sourcing"),
+                    _buildSectionHeader("Sourcing", colors),
                     const SizedBox(height: 12),
                     _buildDropdown(
                       "Supplier",
                       selectedSupplier,
                       (val) => setState(() => selectedSupplier = val),
+                      colors,
                     ),
 
                     const SizedBox(height: 24),
-                    _buildSectionHeader("Custom Data"),
+                    _buildSectionHeader("Custom Data", colors),
                     const SizedBox(height: 12),
                     CustomTextField(
                       controller: sCustom1Controller,
@@ -148,14 +158,14 @@ class _FilterDialogState extends State<FilterDialog> {
                       onPressed: () {},
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(color: kGreyColor.withOpacity(0.3)),
+                        side: BorderSide(color: colors.divider),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: Text(
                         "Reset",
-                        style: TextStyle(color: kThirdColor.withOpacity(0.6)),
+                        style: TextStyle(color: colors.onSurfaceMuted),
                       ),
                     ),
                   ),
@@ -172,10 +182,10 @@ class _FilterDialogState extends State<FilterDialog> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         "Apply Filters",
                         style: TextStyle(
-                          color: kSecondaryColor,
+                          color: colors.onHero,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -190,7 +200,7 @@ class _FilterDialogState extends State<FilterDialog> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, AppThemeColors colors) {
     return Text(
       title.toUpperCase(),
       style: TextStyle(
@@ -206,12 +216,13 @@ class _FilterDialogState extends State<FilterDialog> {
     String hint,
     String? value,
     Function(String?) onChanged,
+    AppThemeColors colors,
   ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: kSecondaryColor,
-        border: Border.all(color: kGreyColor.withOpacity(0.3)),
+        color: colors.surface,
+        border: Border.all(color: colors.divider),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
@@ -219,12 +230,12 @@ class _FilterDialogState extends State<FilterDialog> {
           value: value,
           hint: Text(
             hint,
-            style: const TextStyle(color: kGreyColor, fontSize: 14),
+            style: TextStyle(color: colors.onSurfaceMuted, fontSize: 14),
           ),
           isExpanded: true,
-          icon: const Icon(
+          icon: Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: kGreyColor,
+            color: colors.onSurfaceMuted,
           ),
           onChanged: onChanged,
 

@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lo
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import 'pending_stock_updates_tile.dart';
 import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
 import '../../../home_page/presentation/BLoC/home_screen_events.dart';
@@ -108,16 +109,18 @@ class SyncInfoWidget extends StatelessWidget {
           }
         },
         builder: (context, state) {
+          final colors = context.appColors;
+          final bool isDark = colors.isDark;
           if (state is FetchStockProgress) {
             return Container(
               margin: const EdgeInsets.only(top: 5, bottom: 2),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: kSecondaryColor,
+                color: isDark ? colors.surface : kSecondaryColor,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: kThirdColor.withOpacity(0.05),
+                    color: isDark ? colors.cardShadow : kThirdColor.withOpacity(0.05),
                     blurRadius: 5,
                     offset: const Offset(0, 2),
                   ),
@@ -131,9 +134,10 @@ class SyncInfoWidget extends StatelessWidget {
                     children: [
                       Text(
                         state.message,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
+                          color: isDark ? colors.onSurface : null,
                         ),
                       ),
                       Text(
@@ -149,7 +153,8 @@ class SyncInfoWidget extends StatelessWidget {
                   const SizedBox(height: 8),
                   LinearProgressIndicator(
                     value: state.percentage,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor:
+                        isDark ? colors.surfaceAlt : Colors.grey.shade200,
                     valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
                     minHeight: 6,
                     borderRadius: BorderRadius.circular(3),
@@ -157,28 +162,41 @@ class SyncInfoWidget extends StatelessWidget {
                   const SizedBox(height: 5),
                   Text(
                     "${state.currentCount} / ${state.totalCount} records",
-                    style: TextStyle(fontSize: 12, color: kGreyColor),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? colors.onSurfaceMuted : kGreyColor,
+                    ),
                   ),
                 ],
               ),
             );
           } else if (state is FetchStockError) {
+            final scheme = Theme.of(context).colorScheme;
             return Container(
               margin: const EdgeInsets.only(top: 5, bottom: 2),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
+                color: isDark ? scheme.errorContainer : Colors.red.shade50,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.shade200),
+                border: Border.all(
+                  color: isDark ? scheme.errorContainer : Colors.red.shade200,
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, color: kErrorColor, size: 20),
+                  Icon(
+                    Icons.error_outline,
+                    color: isDark ? scheme.onErrorContainer : kErrorColor,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       state.message,
-                      style: TextStyle(color: kErrorColor, fontSize: 14),
+                      style: TextStyle(
+                        color: isDark ? scheme.onErrorContainer : kErrorColor,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ],
@@ -189,19 +207,25 @@ class SyncInfoWidget extends StatelessWidget {
               margin: const EdgeInsets.only(top: 5, bottom: 2),
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
+                color: isDark ? colors.surface : Colors.green.shade50,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.shade200),
+                border: Border.all(
+                  color: isDark ? colors.divider : Colors.green.shade200,
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green, size: 18),
+                  Icon(
+                    Icons.check_circle,
+                    color: isDark ? colors.onSurfaceMuted : Colors.green,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     "Stock Database Updated Successfully",
                     style: TextStyle(
-                      color: Colors.green.shade800,
+                      color: isDark ? colors.onSurfaceMuted : Colors.green.shade800,
                       fontSize: 14,
                     ),
                   ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 import 'package:rmstock_scanner/constants/txt_styles.dart';
 import 'package:rmstock_scanner/entities/vos/stocktake_history_session_row.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
@@ -27,8 +28,9 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Scaffold(
-      backgroundColor: kBgColor,
+      backgroundColor: colors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -48,7 +50,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                   const SizedBox(width: 12),
                   Text(
                     "Stocktake History",
-                    style: getSmartTitle(color: kThirdColor, fontSize: 16),
+                    style: getSmartTitle(color: colors.onSurface, fontSize: 16),
                   ),
                 ],
               ),
@@ -122,8 +124,8 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
     
                             Text(
                               "No stocktake history found!",
-                              style: const TextStyle(
-                                color: kGreyColor,
+                              style: TextStyle(
+                                color: colors.onSurfaceMuted,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -170,6 +172,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
   }
 
   Widget _sessionTile(StocktakeHistorySessionRow s, int index) {
+    final colors = context.appColors;
     String fmt(DateTime dt) =>
         "${dt.day.toString().padLeft(2, '0')}/"
         "${dt.month.toString().padLeft(2, '0')}/"
@@ -189,11 +192,11 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: kSecondaryColor,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: kThirdColor.withOpacity(0.05),
+                    color: colors.cardShadow,
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -218,7 +221,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                         Text(
                           "Sent ${s.totalStocks} item(s)",
                           style: getSmartTitle(
-                            color: kThirdColor,
+                            color: colors.onSurface,
                             fontSize: 14,
                           ),
                           maxLines: 1,
@@ -227,15 +230,18 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                         const SizedBox(height: 3),
                         Text(
                           fmt(s.createdAt),
-                          style: const TextStyle(
-                            color: kGreyColor,
+                          style: TextStyle(
+                            color: colors.onSurfaceMuted,
                             fontSize: 11,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: kGreyColor),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: colors.onSurfaceMuted,
+                  ),
                 ],
               ),
             ),

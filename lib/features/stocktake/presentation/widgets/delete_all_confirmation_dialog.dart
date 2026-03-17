@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
 class StocktakeDeleteConfirmationDialog extends StatelessWidget {
@@ -18,11 +19,12 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Dialog(
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 10,
-      backgroundColor: kBgColor,
+      backgroundColor: colors.surface,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
@@ -59,7 +61,7 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: kThirdColor,
+                color: colors.onSurface,
                 height: 1.5,
               ),
             ),
@@ -79,15 +81,18 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
-                        side: BorderSide(color: kGreyColor.withOpacity(0.3)),
+                        side: BorderSide(color: colors.divider),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         "Cancel",
                         textScaler: TextScaler.noScaling,
-                        style: TextStyle(color: kThirdColor, fontSize: 16),
+                        style: TextStyle(
+                          color: colors.onSurface,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -103,7 +108,7 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kErrorColor,
-                        foregroundColor: kSecondaryColor,
+                        foregroundColor: colors.onHero,
                         minimumSize: const Size(double.infinity, 48),
                         padding: EdgeInsets.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -116,11 +121,11 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         "Delete All",
                         textScaler: TextScaler.noScaling,
                         style: TextStyle(
-                          color: kSecondaryColor,
+                          color: colors.onHero,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),

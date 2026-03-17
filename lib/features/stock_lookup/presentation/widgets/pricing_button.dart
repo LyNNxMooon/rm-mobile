@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 
 class PricingButton extends StatelessWidget {
   const PricingButton({
@@ -13,11 +14,13 @@ class PricingButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(vertical: verticalPadding),
-        decoration: _buttonDecoration(),
+        decoration: _buttonDecoration(colors, isDark),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -41,21 +44,28 @@ class PricingButton extends StatelessWidget {
     );
   }
 
-  BoxDecoration _buttonDecoration() {
+  BoxDecoration _buttonDecoration(AppThemeColors colors, bool isDark) {
     return BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          kSecondaryColor.withOpacity(0.95),
-          kSecondaryColor.withOpacity(0.7),
-        ],
-      ),
+      gradient: isDark
+          ? colors.glassGradient
+          : LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                kSecondaryColor.withOpacity(0.95),
+                kSecondaryColor.withOpacity(0.7),
+              ],
+            ),
       borderRadius: BorderRadius.circular(7),
-      border: Border.all(color: kSecondaryColor.withOpacity(0.6), width: 1.5),
+      border: Border.all(
+        color: isDark
+            ? colors.glassBorder
+            : kSecondaryColor.withOpacity(0.6),
+        width: 1.5,
+      ),
       boxShadow: [
         BoxShadow(
-          color: kThirdColor.withOpacity(0.05),
+          color: isDark ? colors.cardShadow : kThirdColor.withOpacity(0.05),
           blurRadius: 15,
           offset: const Offset(0, 8),
         ),

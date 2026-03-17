@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
 class DuplicateStockDialog extends StatelessWidget {
@@ -10,12 +11,14 @@ class DuplicateStockDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     final double maxDialogHeight = MediaQuery.of(context).size.height * 0.6;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: kBgColor,
+      backgroundColor: isDark ? colors.surface : kBgColor,
       elevation: 10,
       insetPadding: dialogInsetPadding(context),
       child: Padding(
@@ -43,21 +46,21 @@ class DuplicateStockDialog extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 15),
-                  const Text(
+                  Text(
                     "Duplicate Barcode",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: kThirdColor,
+                      color: isDark ? colors.onSurface : kThirdColor,
                     ),
                   ),
                   const SizedBox(height: 5),
-                  const Text(
+                  Text(
                     "Multiple items found. Please select one:",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
-                      color: kGreyColor,
+                      color: isDark ? colors.onSurfaceMuted : kGreyColor,
                     ),
                   ),
                 ],
@@ -87,20 +90,35 @@ class DuplicateStockDialog extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SizedBox(
                 width: double.infinity,
-                height: 45,
-                child: OutlinedButton(
+                height: 50,
+                child: ElevatedButton(
                   onPressed: () => Navigator.pop(context, null),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: kGreyColor.withOpacity(0.5)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    foregroundColor: colors.onHero,
+                    minimumSize: const Size(double.infinity, 50),
+                    padding: EdgeInsets.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 0,
+                    textStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  child: const Text(
-                    "Cancel",
-                    style: TextStyle(
-                      color: kGreyColor,
-                      fontWeight: FontWeight.bold,
+                  child: const Center(
+                    child: Text(
+                      "Cancel",
+                      textScaler: TextScaler.noScaling,
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -113,18 +131,22 @@ class DuplicateStockDialog extends StatelessWidget {
   }
 
   Widget _buildStockItem(BuildContext context, StockVO s) {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: () => Navigator.pop(context, s),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: kSecondaryColor,
+          color: isDark ? colors.surface : kSecondaryColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: kPrimaryColor.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
-              color: kThirdColor.withOpacity(0.05),
+              color: isDark
+                  ? colors.cardShadow
+                  : kThirdColor.withOpacity(0.05),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -141,10 +163,10 @@ class DuplicateStockDialog extends StatelessWidget {
                     s.description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: kThirdColor,
+                      color: isDark ? colors.onSurface : kThirdColor,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -156,16 +178,18 @@ class DuplicateStockDialog extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.grey.shade300),
+                          border: Border.all(
+                            color: isDark ? colors.divider : Colors.grey.shade300,
+                          ),
                         ),
                         child: Text(
                           s.barcode,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontFamily: 'monospace',
-                            color: kThirdColor,
+                            color: isDark ? colors.onSurface : kThirdColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -188,7 +212,11 @@ class DuplicateStockDialog extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: kGreyColor),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: isDark ? colors.onSurfaceMuted : kGreyColor,
+            ),
           ],
         ),
       ),

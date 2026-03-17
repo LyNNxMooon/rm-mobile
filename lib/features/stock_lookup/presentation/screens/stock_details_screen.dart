@@ -30,6 +30,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/images.dart';
+import '../../../../constants/theme_colors.dart';
 import '../widgets/detailed_lower_glass.dart';
 import '../widgets/detailed_upper_glass.dart';
 
@@ -101,6 +102,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _onCameraTap() async {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -109,7 +112,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
           margin: const EdgeInsets.all(12),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: kSecondaryColor,
+            color: isDark ? colors.surface : kSecondaryColor,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -152,6 +155,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   }
 
   Future<void> _previewAndUpload(String path) async {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final media = MediaQuery.of(context);
     final double previewHeight = (media.size.height * 0.42).clamp(190.0, 340.0);
     final bool? confirmed = await showDialog<bool>(
@@ -159,7 +164,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
       builder: (_) => Dialog(
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? colors.surface : Colors.white,
         elevation: 10,
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -184,7 +189,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   border: Border.all(color: kPrimaryColor.withOpacity(0.2)),
                   boxShadow: [
                     BoxShadow(
-                      color: kThirdColor.withOpacity(0.1),
+                      color: isDark
+                          ? colors.cardShadow
+                          : kThirdColor.withOpacity(0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),
@@ -209,10 +216,10 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         },
 
                     errorBuilder: (context, error, stackTrace) {
-                      return const Center(
+                      return Center(
                         child: Icon(
                           Icons.broken_image,
-                          color: kGreyColor,
+                          color: isDark ? colors.onSurfaceMuted : kGreyColor,
                           size: 40,
                         ),
                       );
@@ -276,10 +283,12 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                       radius: 11,
                                       color: Colors.white,
                                     )
-                                  : const Text(
+                                  : Text(
                                       "Upload",
                                       style: TextStyle(
-                                        color: Colors.white,
+                                        color: isDark
+                                            ? colors.onHero
+                                            : Colors.white,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -386,6 +395,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isLandscape = media.orientation == Orientation.landscape;
@@ -438,9 +449,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                 context: context,
                 text: state.message,
                 typeInfo: TypeInfo.success,
-                backgroundColor: kSecondaryColor,
+                backgroundColor: isDark ? colors.surface : kSecondaryColor,
                 iconColor: kPrimaryColor,
-                textColor: kThirdColor,
+                textColor: isDark ? colors.onSurface : kThirdColor,
                 padding: 70,
                 position: MessagePosition.top,
               );
@@ -487,14 +498,16 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         child: Scaffold(
           extendBodyBehindAppBar: true,
           extendBody: true,
-          backgroundColor: kPrimaryColor,
+          backgroundColor: isDark ? colors.bg : kPrimaryColor,
           body: SafeArea(
             bottom: false,
             top: false,
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              decoration: const BoxDecoration(gradient: kGColor),
+              decoration: BoxDecoration(
+                gradient: isDark ? colors.heroGradient : kGColor,
+              ),
               child: Stack(
                 children: [
                   ListView(
@@ -504,7 +517,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         tag: 'stock_image_${widget.stock.stockID}',
                         child: Container(
                           decoration: BoxDecoration(
-                            color: kSecondaryColor,
+                            color: isDark ? colors.surface : kSecondaryColor,
                             borderRadius: const BorderRadius.only(
                               bottomRight: Radius.circular(20),
                               bottomLeft: Radius.circular(20),
@@ -533,17 +546,29 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                         File(localImagePath),
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, _, _) =>
-                                            Container(color: kSecondaryColor),
+                                            Container(
+                                              color: isDark
+                                                  ? colors.surface
+                                                  : kSecondaryColor,
+                                            ),
                                       )
                                     else if (imageUrl.isNotEmpty)
                                       CachedNetworkImage(
                                         imageUrl: imageUrl,
                                         fit: BoxFit.cover,
                                         errorWidget: (_, _, _) =>
-                                            Container(color: kSecondaryColor),
+                                            Container(
+                                              color: isDark
+                                                  ? colors.surface
+                                                  : kSecondaryColor,
+                                            ),
                                       )
                                     else
-                                      Container(color: kSecondaryColor),
+                                      Container(
+                                        color: isDark
+                                            ? colors.surface
+                                            : kSecondaryColor,
+                                      ),
 
                                     BackdropFilter(
                                       filter: ImageFilter.blur(
@@ -709,23 +734,31 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return InkWell(
       onTap: onTap,
       child: Container(
         width: 35,
         height: 35,
         decoration: BoxDecoration(
-          color: kSecondaryColor,
+          color: isDark ? colors.surface : kSecondaryColor,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: kThirdColor.withOpacity(0.1),
+              color: isDark
+                  ? colors.cardShadow
+                  : kThirdColor.withOpacity(0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Icon(icon, color: kThirdColor, size: 16),
+        child: Icon(
+          icon,
+          color: isDark ? colors.onSurface : kThirdColor,
+          size: 16,
+        ),
       ),
     );
   }

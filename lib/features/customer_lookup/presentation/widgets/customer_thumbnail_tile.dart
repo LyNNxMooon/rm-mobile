@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
+//import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 
 //import '../../../../constants/colors.dart';
 
@@ -38,6 +40,8 @@ class CustomerThumbnailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double shortestSide = MediaQuery.of(context).size.shortestSide;
     final bool isTablet = shortestSide >= 600;
     //final bool isLargeTablet = shortestSide >= 900;
@@ -59,17 +63,22 @@ class CustomerThumbnailTile extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.grey[400]!, // Slightly lighter grey at the top
-              Colors.grey[500]!, // Slightly darker grey at the bottom
+              isDark ? colors.surfaceAlt : Colors.grey[400]!,
+              isDark
+                  ? colors.surfaceAlt.withOpacity(0.85)
+                  : Colors.grey[500]!,
             ],
           ),
-          border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
+          border: Border.all(
+            color: isDark ? colors.divider : Colors.grey.withOpacity(0.2),
+            width: 1,
+          ),
         ),
         alignment: Alignment.center,
         child: Text(
           initials,
           style: TextStyle(
-            color: Colors.white, // White text color as requested
+            color: isDark ? colors.onSurface : Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: fontSize,
             letterSpacing: 0.5,

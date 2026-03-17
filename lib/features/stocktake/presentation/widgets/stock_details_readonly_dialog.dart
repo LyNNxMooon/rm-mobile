@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart'; // Adjust if needed
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart'; // Adjust if needed
@@ -12,13 +13,14 @@ class StockDetailsReadOnlyDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     // Dynamic height constraint (max 85% of screen height)
     final double maxDialogHeight = MediaQuery.of(context).size.height * 0.85;
 
     return Dialog(
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: Colors.white,
+      backgroundColor: colors.surface,
       elevation: 10,
       child: Container(
         constraints: BoxConstraints(maxHeight: maxDialogHeight),
@@ -27,14 +29,17 @@ class StockDetailsReadOnlyDialog extends StatelessWidget {
           builder: (context, state) {
             // 1. Loading State
             if (state is StockDetailsLoading) {
-              return const Padding(
-                padding: EdgeInsets.all(40.0),
+              return Padding(
+                padding: const EdgeInsets.all(40.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CupertinoActivityIndicator(radius: 15),
-                    SizedBox(height: 15),
-                    Text("Fetching details...", style: TextStyle(color: kGreyColor)),
+                    const CupertinoActivityIndicator(radius: 15),
+                    const SizedBox(height: 15),
+                    Text(
+                      "Fetching details...",
+                      style: TextStyle(color: colors.onSurfaceMuted),
+                    ),
                   ],
                 ),
               );
@@ -52,7 +57,7 @@ class StockDetailsReadOnlyDialog extends StatelessWidget {
                     Text(
                       state.message,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: kGreyColor),
+                      style: TextStyle(color: colors.onSurfaceMuted),
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
@@ -61,7 +66,10 @@ class StockDetailsReadOnlyDialog extends StatelessWidget {
                         backgroundColor: kPrimaryColor,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text("Close", style: TextStyle(color: Colors.white)),
+                      child: Text(
+                        "Close",
+                        style: TextStyle(color: colors.onHero),
+                      ),
                     ),
                   ],
                 ),
@@ -136,6 +144,7 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
   }
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     // Format quantity cleanly (e.g. 5 instead of 5.0)
     final String formattedQty = (widget.currentQty % 1 == 0)
         ? widget.currentQty.toInt().toString()
@@ -161,8 +170,11 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
               Text(
                 widget.stock.description,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: kThirdColor, fontWeight: FontWeight.w600, fontSize: 14),
+                style: TextStyle(
+                  color: colors.onSurface,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -191,10 +203,10 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         "Counted Quantity:",
                         style: TextStyle(
-                          color: kThirdColor,
+                          color: colors.onSurface,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -266,10 +278,10 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
+                child: Text(
                 "Okay",
                 style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold),
+                  color: colors.onHero, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -279,6 +291,7 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
   }
 
   Widget _buildDetailRow(IconData icon, String label, String value) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -299,18 +312,18 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: kGreyColor,
+                    color: colors.onSurfaceMuted,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: kThirdColor,
+                    color: colors.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

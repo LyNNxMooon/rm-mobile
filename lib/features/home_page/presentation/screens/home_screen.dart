@@ -5,6 +5,7 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../local_db/sqlite/sqlite_constants.dart';
 import '../../../../utils/global_var_utils.dart';
@@ -305,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: const BoxDecoration(gradient: kGColor),
+          decoration: BoxDecoration(gradient: context.appColors.heroGradient),
           child: SafeArea(
             bottom: false,
             top: true,
@@ -446,18 +447,22 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget logo() {
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     // Scale logo for tablets based on screen size
     final double tabletScale = isTablet
         ? (media.size.shortestSide / 768).clamp(0.85, 1.3)
         : 1.0;
     final double horizontalPad = isTablet ? 40 : 25;
     final double logoHeight = isTablet ? (98 * tabletScale) : 75;
+    final String logoAsset = isDark
+        ? "assets/images/trademark_dark.png"
+        : "assets/images/trademark.png";
     return Center(
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: horizontalPad),
         width: double.infinity,
         height: logoHeight,
-        child: Image.asset("assets/images/trademark.png", fit: BoxFit.contain),
+        child: Image.asset(logoAsset, fit: BoxFit.contain),
       ),
     );
   }

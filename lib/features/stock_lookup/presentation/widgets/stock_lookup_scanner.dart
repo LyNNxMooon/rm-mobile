@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 
 
 class StockLookupScanner extends StatefulWidget {
@@ -24,6 +25,7 @@ class _StockLookupScannerState extends State<StockLookupScanner> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final double scannerHeight = isTablet
@@ -41,7 +43,7 @@ class _StockLookupScannerState extends State<StockLookupScanner> {
       child: SizedBox(
         height: scannerHeight,
         child: Container(
-          color: kThirdColor,
+          color: colors.surface,
           child: Stack(
             children: [
               MobileScanner(

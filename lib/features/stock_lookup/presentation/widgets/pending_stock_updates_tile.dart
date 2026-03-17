@@ -12,6 +12,7 @@ import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
 class PendingStockUpdatesTile extends StatefulWidget {
@@ -105,19 +106,20 @@ class _PendingStockUpdatesTileState extends State<PendingStockUpdatesTile> {
   }
 
   Widget _buildLoadingTile() {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
       child: Container(
         margin: const EdgeInsets.only(top: 5, bottom: 8),
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         decoration: BoxDecoration(
-          color: kSecondaryColor,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: kGreyColor.withOpacity(0.3)),
+          border: Border.all(color: colors.divider),
         ),
         child: Row(
-          children: const [
-            SizedBox(
+          children: [
+            const SizedBox(
               width: 18,
               height: 18,
               child: CupertinoActivityIndicator(
@@ -125,12 +127,12 @@ class _PendingStockUpdatesTileState extends State<PendingStockUpdatesTile> {
                 radius: 10,
               ),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 "Processing pending stock updates...",
                 style: TextStyle(
-                  color: kThirdColor,
+                  color: colors.onSurface,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -163,6 +165,7 @@ class _PendingStockTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -176,11 +179,11 @@ class _PendingStockTile extends StatelessWidget {
 
     final tile = Container(
       decoration: BoxDecoration(
-        color: kSecondaryColor,
+        color: colors.surface,
         borderRadius: const BorderRadius.all(Radius.circular(10)),
         boxShadow: [
           BoxShadow(
-            color: kThirdColor.withOpacity(0.05),
+            color: colors.cardShadow,
             blurRadius: 10,
             offset: const Offset(0, 4),
             spreadRadius: 0,
@@ -221,10 +224,10 @@ class _PendingStockTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: kThirdColor,
+                    color: colors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -241,7 +244,7 @@ class _PendingStockTile extends StatelessWidget {
             ),
           ),
           if (canNavigate)
-            const Icon(Icons.chevron_right, color: kGreyColor, size: 20),
+            Icon(Icons.chevron_right, color: colors.onSurfaceMuted, size: 20),
         ],
       ),
     );
@@ -288,10 +291,11 @@ Future<void> showPendingStockUpdatesDialog({
       final dialogEntries = List<_PendingStockEntry>.from(entries);
       return StatefulBuilder(
         builder: (context, setDialogState) {
+          final colors = context.appColors;
           return Dialog(
             insetPadding: dialogInsetPadding(dialogContext),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            backgroundColor: kBgColor,
+            backgroundColor: colors.surface,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
               child: Column(
@@ -317,16 +321,16 @@ Future<void> showPendingStockUpdatesDialog({
                       Expanded(
                         child: Text(
                           "Pending Stock Updates",
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: kThirdColor,
+                            color: colors.onSurface,
                           ),
                         ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.of(dialogContext).pop(),
-                        icon: const Icon(Icons.close, color: kThirdColor),
+                        icon: Icon(Icons.close, color: colors.onSurface),
                         tooltip: 'Close',
                       ),
                     ],
@@ -336,7 +340,7 @@ Future<void> showPendingStockUpdatesDialog({
                     "${dialogEntries.length} item(s) are saved locally and not sent yet.",
                     style: TextStyle(
                       fontSize: 12.5,
-                      color: kThirdColor.withOpacity(0.7),
+                      color: colors.onSurfaceMuted,
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -344,12 +348,15 @@ Future<void> showPendingStockUpdatesDialog({
                     constraints: const BoxConstraints(maxHeight: 380),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: kSecondaryColor,
+                      color: colors.surface,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: kGreyColor.withOpacity(0.2)),
+                      border: Border.all(color: colors.divider),
                     ),
                     child: dialogEntries.isEmpty
-                        ? const Text("No pending stock updates found.")
+                        ? Text(
+                            "No pending stock updates found.",
+                            style: TextStyle(color: colors.onSurfaceMuted),
+                          )
                         : ListView.separated(
                             shrinkWrap: true,
                             itemCount: dialogEntries.length,
@@ -462,7 +469,7 @@ Future<void> showPendingStockUpdatesDialog({
                                       },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: kPrimaryColor,
-                                  foregroundColor: kSecondaryColor,
+                                  foregroundColor: colors.onHero,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
@@ -14,13 +15,15 @@ class StockDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     // Dynamic height constraint (max 85% of screen height)
     final double maxDialogHeight = MediaQuery.of(context).size.height * 0.85;
 
     return Dialog(
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? colors.surface : Colors.white,
       elevation: 10,
       child: Container(
         constraints: BoxConstraints(maxHeight: maxDialogHeight),
@@ -28,16 +31,18 @@ class StockDetailsDialog extends StatelessWidget {
           builder: (context, state) {
             // 1. Loading State
             if (state is StockDetailsLoading) {
-              return const Padding(
-                padding: EdgeInsets.all(40.0),
+              return Padding(
+                padding: const EdgeInsets.all(40.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CupertinoActivityIndicator(radius: 15),
-                    SizedBox(height: 15),
+                    const CupertinoActivityIndicator(radius: 15),
+                    const SizedBox(height: 15),
                     Text(
                       "Fetching details...",
-                      style: TextStyle(color: kGreyColor),
+                      style: TextStyle(
+                        color: isDark ? colors.onSurfaceMuted : kGreyColor,
+                      ),
                     ),
                   ],
                 ),
@@ -60,7 +65,9 @@ class StockDetailsDialog extends StatelessWidget {
                     Text(
                       state.message,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: kGreyColor),
+                      style: TextStyle(
+                        color: isDark ? colors.onSurfaceMuted : kGreyColor,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
@@ -71,9 +78,11 @@ class StockDetailsDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         "Close",
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: isDark ? colors.onHero : Colors.white,
+                        ),
                       ),
                     ),
                   ],
@@ -193,6 +202,8 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       mainAxisSize: MainAxisSize.min, // Wrap content height
       children: [
@@ -213,8 +224,8 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
               Text(
                 widget.stock.description,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: kThirdColor,
+                style: TextStyle(
+                  color: isDark ? colors.onSurface : kThirdColor,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
@@ -288,14 +299,14 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   "Update Count:",
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: kGreyColor,
+                    color: isDark ? colors.onSurfaceMuted : kGreyColor,
                   ),
                 ),
               ),
@@ -303,7 +314,9 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 15),
                 decoration: BoxDecoration(
-                  color: kSecondaryColor.withOpacity(0.1),
+                  color: isDark
+                      ? colors.glassFill
+                      : kSecondaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: kPrimaryColor.withOpacity(0.3)),
                 ),
@@ -314,10 +327,10 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                     decimal: true,
                   ),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: kThirdColor,
+                    color: isDark ? colors.onSurface : kThirdColor,
                   ),
                   onEditingComplete: () {
                     final trimmedValue = _qtyController.text.trim();
@@ -369,10 +382,10 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
+                      child: Text(
                         "Update",
                         style: TextStyle(
-                          color: Colors.white,
+                          color: isDark ? colors.onHero : Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -388,6 +401,8 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
   }
 
   Widget _buildDetailRow(IconData icon, String label, String value) {
+    final colors = context.appColors;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -408,18 +423,18 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: kGreyColor,
+                    color: isDark ? colors.onSurfaceMuted : kGreyColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: kThirdColor,
+                    color: isDark ? colors.onSurface : kThirdColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

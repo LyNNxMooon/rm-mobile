@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
 class PriceCalculatorDialog extends StatefulWidget {
@@ -183,6 +184,12 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final Color textColor = isDark ? colors.onSurface : kThirdColor;
+    final Color surface = isDark ? colors.surface : Colors.white;
+    final Color surfaceAlt = isDark ? colors.surfaceAlt : Colors.grey[100]!;
+    final Color divider = isDark ? colors.divider : Colors.grey[300]!;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final double dialogWidth = isTablet
@@ -192,7 +199,7 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
     return Dialog(
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      backgroundColor: Colors.white,
+      backgroundColor: surface,
       child: AnimatedPadding(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
@@ -206,7 +213,7 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     "Sell Price (RRP) Calculator",
                     style: TextStyle(
                       fontSize: 18,
@@ -219,9 +226,12 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
                     children: [
                       Expanded(
                         child: CheckboxListTile(
-                          title: const Text(
+                          title: Text(
                             "Cost Price",
-                            style: TextStyle(fontSize: 12),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: textColor,
+                            ),
                           ),
                           value: _isCostSelected,
                           activeColor: kPrimaryColor,
@@ -237,9 +247,12 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
                       ),
                       Expanded(
                         child: CheckboxListTile(
-                          title: const Text(
+                          title: Text(
                             "Is Exclusive",
-                            style: TextStyle(fontSize: 12),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: textColor,
+                            ),
                           ),
                           value: _isExclusiveSelected,
                           activeColor: kPrimaryColor,
@@ -264,16 +277,16 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
                       vertical: 16,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: surfaceAlt,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[300]!),
+                      border: Border.all(color: divider),
                     ),
                     child: Text(
                       _display,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: kThirdColor,
+                        color: textColor,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -311,16 +324,16 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
                         borderRadius: BorderRadius.circular(8),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: kSecondaryColor,
+                            color: surface,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           alignment: Alignment.center,
-                          child: const Text(
+                          child: Text(
                             "=",
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: kThirdColor,
+                              color: textColor,
                             ),
                           ),
                         ),
@@ -338,7 +351,10 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           alignment: Alignment.center,
-                          child: const Icon(Icons.check, color: Colors.white),
+                          child: Icon(
+                            Icons.check,
+                            color: isDark ? colors.onHero : Colors.white,
+                          ),
                         ),
                       ),
                     ],
@@ -353,17 +369,21 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
   }
 
   Widget _numBtn(String label) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return InkWell(
       onTap: () => _onNumberTap(label),
       borderRadius: BorderRadius.circular(8),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? colors.surface : Colors.white,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            color: isDark ? colors.divider : Colors.grey[300]!,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: isDark ? colors.cardShadow : Colors.grey.withOpacity(0.1),
               blurRadius: 2,
               offset: const Offset(0, 2),
             ),
@@ -372,10 +392,10 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
         alignment: Alignment.center,
         child: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: kThirdColor,
+            color: isDark ? colors.onSurface : kThirdColor,
           ),
         ),
       ),
@@ -383,21 +403,23 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
   }
 
   Widget _opBtn(String label, VoidCallback onTap) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         decoration: BoxDecoration(
-          color: kSecondaryColor.withOpacity(0.3),
+          color: isDark ? colors.surfaceAlt : kSecondaryColor.withOpacity(0.3),
           borderRadius: BorderRadius.circular(8),
         ),
         alignment: Alignment.center,
         child: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: kThirdColor,
+            color: isDark ? colors.onSurface : kThirdColor,
           ),
         ),
       ),

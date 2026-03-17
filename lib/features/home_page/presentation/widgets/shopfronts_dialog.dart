@@ -10,6 +10,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
@@ -68,6 +69,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.78)
         .clamp(420.0, 780.0);
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
@@ -159,7 +161,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
-        backgroundColor: kBgColor,
+        backgroundColor: colors.surface,
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
@@ -171,7 +173,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                   horizontal: 20,
                 ),
                 decoration: BoxDecoration(
-                  gradient: kGColor,
+                  gradient: colors.heroGradient,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(10),
                     topRight: Radius.circular(10),
@@ -179,9 +181,9 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.storefront_rounded,
-                      color: kSecondaryColor,
+                      color: colors.onHero,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -197,9 +199,13 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                 child: BlocBuilder<ShopfrontBloc, ShopFrontStates>(
                   builder: (context, state) {
                     if (state is ShopsLoading) {
-                      return const Padding(
-                        padding: EdgeInsets.all(40.0),
-                        child: Center(child: CupertinoActivityIndicator()),
+                      return Padding(
+                        padding: const EdgeInsets.all(40.0),
+                        child: Center(
+                          child: CupertinoActivityIndicator(
+                            color: colors.onHero,
+                          ),
+                        ),
                       );
                     }
 
@@ -221,7 +227,9 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                                 Text(
                                   state.message,
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(color: kGreyColor),
+                                  style: TextStyle(
+                                    color: colors.onSurfaceMuted,
+                                  ),
                                 ),
                                 const SizedBox(height: 12),
                                 TextButton(
@@ -263,7 +271,9 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                               Text(
                                 state.message,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(color: kGreyColor),
+                                style: TextStyle(
+                                  color: colors.onSurfaceMuted,
+                                ),
                               ),
                               const SizedBox(height: 20),
                               SizedBox(
@@ -335,7 +345,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                                       },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: kPrimaryColor,
-                                        foregroundColor: kSecondaryColor,
+                                        foregroundColor: colors.onHero,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
@@ -346,10 +356,10 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                                           vertical: errorButtonVerticalPadding,
                                         ),
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         "Try Logging in",
                                         style: TextStyle(
-                                          color: kSecondaryColor,
+                                          color: colors.onHero,
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -365,19 +375,19 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                     }
 
                     if (state is ShopsLoaded) {
-                    if (state.shops.shopfronts.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.all(30),
-                        child: Text("No shopfronts found."),
-                      );
-                    }
+                      if (state.shops.shopfronts.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(30),
+                          child: Text("No shopfronts found."),
+                        );
+                      }
 
                       return ListView.separated(
                         shrinkWrap: true,
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         itemCount: state.shops.shopfronts.length,
                         separatorBuilder: (ctx, i) => Divider(
-                          color: kGreyColor.withOpacity(0.2),
+                          color: colors.divider,
                           height: 1,
                           indent: 16,
                           endIndent: 16,
@@ -402,6 +412,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
 
   Widget _buildShopTile(String shopName, BuildContext ctx) {
     final bool expanded = _expandedShop == shopName;
+    final colors = ctx.appColors;
 
     return InkWell(
       onTap: () {
@@ -431,7 +442,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                 Expanded(
                   child: Text(
                     shopName.split(r'\\').last,
-                    style: const TextStyle(color: kThirdColor),
+                    style: TextStyle(color: colors.onSurface),
                   ),
                 ),
                 Icon(
@@ -439,7 +450,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                       ? Icons.keyboard_arrow_up_rounded
                       : Icons.keyboard_arrow_down_rounded,
                   size: 18,
-                  color: kGreyColor,
+                  color: colors.onSurfaceMuted,
                 ),
               ],
             ),
@@ -453,6 +464,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
   Widget _buildStaffSignInSection(String shopName, BuildContext ctx) {
     final bool loading =
         ctx.watch<StaffAuthBloc>().state is StaffAuthenticating;
+    final colors = ctx.appColors;
     final media = MediaQuery.of(ctx);
     final bool isTablet = media.size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(ctx).scale(14) / 14;
@@ -476,9 +488,9 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
         isTablet ? 10 : 8,
       ),
       decoration: BoxDecoration(
-        color: kSecondaryColor,
+        color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: kGreyColor.withOpacity(0.4)),
+        border: Border.all(color: colors.divider),
       ),
       child: Column(
         children: [
@@ -511,7 +523,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                   : () => _onTapStaffSignIn(shopName, ctx),
               style: ElevatedButton.styleFrom(
                 backgroundColor: kPrimaryColor,
-                foregroundColor: kSecondaryColor,
+                foregroundColor: colors.onHero,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(isTablet ? 9 : 7),
                 ),
@@ -521,7 +533,9 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                   ? SizedBox(
                       height: isTablet ? 22 : 18,
                       width: isTablet ? 22 : 18,
-                      child: CupertinoActivityIndicator(color: kSecondaryColor),
+                          child: CupertinoActivityIndicator(
+                            color: colors.onHero,
+                          ),
                     )
                   : const Text(
                       'Sign In',

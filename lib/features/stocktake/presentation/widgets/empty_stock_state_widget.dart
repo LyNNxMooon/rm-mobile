@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 
 class EmptyStockState extends StatelessWidget {
   final String message;
@@ -13,6 +14,7 @@ class EmptyStockState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final double outerSize = isTablet ? 190 : 160;
@@ -67,8 +69,8 @@ class EmptyStockState extends StatelessWidget {
 
           Text(
             message,
-            style: const TextStyle(
-              color: kGreyColor,
+            style: TextStyle(
+              color: colors.onSurfaceMuted,
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),

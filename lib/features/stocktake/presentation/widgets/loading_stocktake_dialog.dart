@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
@@ -14,11 +14,12 @@ class LoadingStocktakeDialog extends StatefulWidget {
 class _LoadingStocktakeDialogState extends State<LoadingStocktakeDialog> {
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Dialog(
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 10,
-      backgroundColor: kBgColor,
+      backgroundColor: colors.surface,
 
       child: Container(
         constraints: const BoxConstraints(maxHeight: 500),
@@ -28,7 +29,7 @@ class _LoadingStocktakeDialogState extends State<LoadingStocktakeDialog> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 26),
               decoration: BoxDecoration(
-                gradient: kGColor,
+                gradient: colors.heroGradient,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(10),
                   topRight: Radius.circular(10),
@@ -36,12 +37,15 @@ class _LoadingStocktakeDialogState extends State<LoadingStocktakeDialog> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.all_inbox, color: kSecondaryColor),
+                  Icon(Icons.all_inbox, color: colors.onHero),
                   const SizedBox(width: 20),
                   Expanded(
                     child: Text(
                       "Stocktaking",
-                      style: getSmartTitle(fontSize: 18),
+                      style: getSmartTitle(
+                        color: colors.onHero,
+                        fontSize: 18,
+                      ),
                     ),
                   ),
                 ],
@@ -55,7 +59,10 @@ class _LoadingStocktakeDialogState extends State<LoadingStocktakeDialog> {
                   children: [
                     Text(
                       "Validating Stocktake Data...",
-                      style: getSmartTitle(color: kThirdColor, fontSize: 16),
+                      style: getSmartTitle(
+                        color: colors.onSurface,
+                        fontSize: 16,
+                      ),
                     ),
                     Container(
                       width: 200,

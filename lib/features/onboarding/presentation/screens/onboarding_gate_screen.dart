@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 import 'package:rmstock_scanner/constants/global_widgets.dart';
 import 'package:rmstock_scanner/constants/txt_styles.dart';
 import 'package:rmstock_scanner/features/loading_splash/presentation/screens/index_screen.dart';
@@ -61,7 +62,7 @@ class _OnboardingGateScreenState extends State<OnboardingGateScreen> {
     if (_isLoading) {
       body = Scaffold(
         body: Container(
-          decoration: const BoxDecoration(gradient: kGColor),
+          decoration: BoxDecoration(gradient: context.appColors.heroGradient),
           child: const Center(child: ModernLoadingBar()),
         ),
       );
@@ -182,6 +183,7 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     const double horizontalPadding = 22;
@@ -198,7 +200,7 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: kGColor),
+        decoration: BoxDecoration(gradient: context.appColors.heroGradient),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -217,7 +219,9 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
                           width: logoWidth,
                           height: logoHeight,
                           child: Image.asset(
-                            "assets/images/trademark.png",
+                            Theme.of(context).brightness == Brightness.dark
+                                ? "assets/images/trademark_dark.png"
+                                : "assets/images/trademark.png",
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -235,10 +239,10 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
                           width: double.infinity,
                           padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
                           decoration: BoxDecoration(
-                            color: kSecondaryColor.withOpacity(0.14),
+                            color: colors.glassFill,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: kSecondaryColor.withOpacity(0.30),
+                              color: colors.glassBorder,
                               width: 1,
                             ),
                           ),
@@ -252,7 +256,7 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
                                   child: Text(
                                     "Welcome!",
                                     style: getSmartTitle(
-                                      color: kSecondaryColor,
+                                      color: colors.onHero,
                                       fontSize: 26,
                                     ),
                                   ),
@@ -266,7 +270,7 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
                                   child: Text(
                                     kWelcomeContent,
                                     style: TextStyle(
-                                      color: kSecondaryColor.withOpacity(0.92),
+                                      color: colors.onHero.withOpacity(0.92),
                                       height: 1.45,
                                       fontSize: 13,
                                     ),
@@ -281,7 +285,7 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
                                   onPressed: widget.onContinue,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: kPrimaryColor,
-                                    foregroundColor: kSecondaryColor,
+                                    foregroundColor: colors.onHero,
                                     minimumSize: const Size(double.infinity, 42),
                                     padding: EdgeInsets.zero,
                                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -293,14 +297,14 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                   ),
-                                  child: const Center(
+                                  child: Center(
                                     child: Text(
                                       "Continue",
                                       textScaler: TextScaler.noScaling,
                                       maxLines: 1,
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
-                                        color: kSecondaryColor,
+                                        color: colors.onHero,
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -318,7 +322,7 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
                   Text(
                     "App Version 1.0.0 (AAAPOS Pty Ltd)",
                     style: TextStyle(
-                      color: kSecondaryColor.withOpacity(0.6),
+                      color: colors.onHero.withOpacity(0.6),
                       fontSize: 12,
                     ),
                   ),
@@ -370,11 +374,12 @@ class _TermsScreenState extends State<_TermsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return PopScope(
       canPop: false,
       child: Scaffold(
         body: Container(
-          decoration: const BoxDecoration(gradient: kGColor),
+          decoration: BoxDecoration(gradient: context.appColors.heroGradient),
           child: SafeArea(
             child: Center(
               child: Padding(
@@ -389,10 +394,10 @@ class _TermsScreenState extends State<_TermsScreen> {
                     child: Container(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                       decoration: BoxDecoration(
-                        color: kSecondaryColor.withOpacity(0.14),
+                        color: colors.glassFill,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: kSecondaryColor.withOpacity(0.30),
+                          color: colors.glassBorder,
                           width: 1,
                         ),
                       ),
@@ -401,7 +406,7 @@ class _TermsScreenState extends State<_TermsScreen> {
                           Text(
                             "Terms & Conditions",
                             style: getSmartTitle(
-                              color: kSecondaryColor,
+                              color: colors.onHero,
                               fontSize: 22,
                             ),
                           ),
@@ -410,10 +415,10 @@ class _TermsScreenState extends State<_TermsScreen> {
                             child: Container(
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                color: kSecondaryColor.withOpacity(0.13),
+                                color: colors.surface.withOpacity(0.9),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: kSecondaryColor.withOpacity(0.2),
+                                  color: colors.divider,
                                 ),
                               ),
                               child: ClipRRect(
@@ -425,7 +430,7 @@ class _TermsScreenState extends State<_TermsScreen> {
                                     ),
                                     if (_isWebLoading)
                                       Container(
-                                        color: kSecondaryColor.withOpacity(0.65),
+                                        color: colors.surface.withOpacity(0.65),
                                         child: const Center(
                                           child: CircularProgressIndicator(
                                             color: kPrimaryColor,
@@ -444,9 +449,9 @@ class _TermsScreenState extends State<_TermsScreen> {
                               Checkbox(
                                 value: _isAgreed,
                                 activeColor: kPrimaryColor,
-                                checkColor: kSecondaryColor,
+                                checkColor: colors.onHero,
                                 side: BorderSide(
-                                  color: kSecondaryColor.withOpacity(0.85),
+                                  color: colors.onHero.withOpacity(0.85),
                                 ),
                                 onChanged: (v) {
                                   setState(() => _isAgreed = v ?? false);
@@ -458,7 +463,7 @@ class _TermsScreenState extends State<_TermsScreen> {
                                   child: Text(
                                     "I agree to the Terms & Conditions and Privacy Policy.",
                                     style: TextStyle(
-                                      color: kSecondaryColor.withOpacity(0.95),
+                                      color: colors.onHero.withOpacity(0.95),
                                       fontSize: 13,
                                     ),
                                   ),
@@ -475,12 +480,12 @@ class _TermsScreenState extends State<_TermsScreen> {
                                   child: OutlinedButton(
                                     onPressed: widget.onDecline,
                                     style: OutlinedButton.styleFrom(
-                                      foregroundColor: kSecondaryColor,
+                                      foregroundColor: colors.onHero,
                                       minimumSize: const Size(double.infinity, 40),
                                       padding: EdgeInsets.zero,
                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       side: BorderSide(
-                                        color: kSecondaryColor.withOpacity(0.7),
+                                        color: colors.onHero.withOpacity(0.7),
                                       ),
                                       textStyle: const TextStyle(
                                         fontSize: 16,
@@ -490,14 +495,14 @@ class _TermsScreenState extends State<_TermsScreen> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
-                                    child: const Center(
+                                    child: Center(
                                       child: Text(
                                         "Decline",
                                         textScaler: TextScaler.noScaling,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          color: kSecondaryColor,
+                                          color: colors.onHero,
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -514,9 +519,9 @@ class _TermsScreenState extends State<_TermsScreen> {
                                     onPressed: _isAgreed ? widget.onAgree : null,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: kPrimaryColor,
-                                      foregroundColor: kSecondaryColor,
+                                      foregroundColor: colors.onHero,
                                       disabledBackgroundColor: kPrimaryColor.withOpacity(0.5),
-                                      disabledForegroundColor: kSecondaryColor.withOpacity(0.6),
+                                      disabledForegroundColor: colors.onHero.withOpacity(0.6),
                                       minimumSize: const Size(double.infinity, 40),
                                       padding: EdgeInsets.zero,
                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -528,14 +533,14 @@ class _TermsScreenState extends State<_TermsScreen> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
-                                    child: const Center(
+                                    child: Center(
                                       child: Text(
                                         "Agree",
                                         textScaler: TextScaler.noScaling,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          color: kSecondaryColor,
+                                          color: colors.onHero,
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,
                                         ),

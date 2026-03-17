@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
 class StocktakeQuestionDialog extends StatelessWidget {
@@ -18,11 +19,12 @@ class StocktakeQuestionDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Dialog(
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 10,
-      backgroundColor: kBgColor,
+      backgroundColor: colors.surface,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
@@ -50,10 +52,10 @@ class StocktakeQuestionDialog extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: kThirdColor,
+                color: colors.onSurface,
               ),
             ),
             const SizedBox(height: 12),
@@ -64,7 +66,7 @@ class StocktakeQuestionDialog extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: kThirdColor.withOpacity(0.8),
+                color: colors.onSurfaceMuted,
                 height: 1.5,
               ),
             ),
@@ -114,10 +116,10 @@ class StocktakeQuestionDialog extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       "Yes",
                       style: TextStyle(
-                        color: kSecondaryColor,
+                        color: colors.onHero,
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),

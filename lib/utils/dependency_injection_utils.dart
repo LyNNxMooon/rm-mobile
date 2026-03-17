@@ -3,6 +3,7 @@ import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_history.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_host.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/authenticate_staff.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_dark_mode_enabled.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_session.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_connection_info.dart';
@@ -11,6 +12,7 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/run_auto_bac
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_auto_backup_enabled.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/sign_out_staff.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_auto_backup_enabled.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_dark_mode_enabled.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
@@ -93,6 +95,7 @@ import '../features/onboarding/domain/use_cases/get_terms_accepted.dart';
 import '../features/onboarding/domain/use_cases/set_terms_accepted.dart';
 import '../features/onboarding/presentation/BLoC/onboarding_bloc.dart';
 import '../features/customer_lookup/domain/use_cases/get_customer_transactions_local.dart';
+import '../features/theme/presentation/bloc/theme_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -173,6 +176,12 @@ Future<void> init() async {
       updateAutoBackupEnabled: sl(),
       runAutoBackupIfDue: sl(),
       deleteAllStocktake: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => ThemeCubit(
+      loadDarkModeEnabled: sl(),
+      updateDarkModeEnabled: sl(),
     ),
   );
   sl.registerFactory(() => DiscoverHostBloc(discoverHost: sl()));
@@ -274,6 +283,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CleanupHistory(sl()));
   sl.registerLazySingleton(() => LoadAutoBackupEnabled(sl()));
   sl.registerLazySingleton(() => UpdateAutoBackupEnabled(sl()));
+  sl.registerLazySingleton(() => LoadDarkModeEnabled(sl()));
+  sl.registerLazySingleton(() => UpdateDarkModeEnabled(sl()));
   sl.registerLazySingleton(
     () => RunAutoBackupIfDue(repository: sl(), backupStocktake: sl()),
   );

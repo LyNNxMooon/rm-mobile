@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 
 class FilterChipRow extends StatelessWidget {
   final ValueChanged<String> onFilterChanged;
@@ -28,6 +29,8 @@ class FilterChipRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -50,10 +53,16 @@ class FilterChipRow extends StatelessWidget {
                   vertical: (isTablet ? 8 : 5) * uiScale,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected ? kPrimaryColor : kSecondaryColor,
+                  color: isSelected
+                      ? kPrimaryColor
+                      : (isDark ? colors.surface : kSecondaryColor),
                   borderRadius: BorderRadius.circular(isTablet ? 24 : 20),
                   border: Border.all(
-                    color: isSelected ? kPrimaryColor : Colors.grey[300]!,
+                    color: isSelected
+                        ? kPrimaryColor
+                        : (isDark
+                            ? colors.divider
+                            : kGreyColor.withOpacity(0.7)),
                   ),
                 ),
                 child: Row(
@@ -62,8 +71,10 @@ class FilterChipRow extends StatelessWidget {
                       filter,
                       style: TextStyle(
                         color: isSelected
-                            ? kSecondaryColor
-                            : Colors.blueGrey[700],
+                            ? colors.onHero
+                            : (isDark
+                                ? colors.onSurfaceMuted
+                                : Colors.blueGrey[700]),
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -76,7 +87,7 @@ class FilterChipRow extends StatelessWidget {
                             ? CupertinoIcons.sort_up
                             : CupertinoIcons.sort_down,
                         size: (isTablet ? 16 : 14) * uiScale,
-                        color: kSecondaryColor,
+                        color: colors.onHero,
                       ),
                     ],
                   ],

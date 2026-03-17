@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/search_mode.dart';
 import 'search_mode_selector.dart';
 
@@ -21,6 +22,8 @@ class SearchFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -40,9 +43,12 @@ class SearchFilterBar extends StatelessWidget {
         Expanded(
           child: TextField(
             onChanged: onChanged,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Search by barcode, description, custom1, or custom2',
-              hintStyle: TextStyle(color: kThirdColor, fontSize: 14),
+              hintStyle: TextStyle(
+                color: isDark ? colors.onSurfaceMuted : kThirdColor,
+                fontSize: 14,
+              ),
               border: InputBorder.none,
               isDense: true,
             ),
@@ -59,12 +65,14 @@ class SearchFilterBar extends StatelessWidget {
         Container(
           height: (isTablet ? 30 : 26) * uiScale,
           width: 1,
-          color: Colors.grey.withOpacity(0.3),
+          color: isDark
+              ? colors.divider
+              : Colors.grey.withOpacity(0.3),
         ),
         IconButton(
           icon: Icon(
             Icons.tune_rounded,
-            color: Colors.blueGrey.shade700,
+            color: isDark ? colors.onSurfaceMuted : Colors.blueGrey[700],
             size: (isTablet ? 25 : 22) * uiScale,
           ),
           onPressed: onFilterTap,

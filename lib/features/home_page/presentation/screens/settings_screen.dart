@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
+import 'package:rmstock_scanner/features/theme/presentation/bloc/theme_cubit.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
@@ -15,6 +16,7 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
@@ -116,6 +118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showManualPortDialog(BuildContext context) {
+    final colors = context.appColors;
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.42)
         .clamp(240.0, 340.0);
     showDialog(
@@ -124,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
-        backgroundColor: kBgColor,
+        backgroundColor: colors.surface,
         child: Container(
           constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
@@ -135,8 +138,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   vertical: 16,
                   horizontal: 20,
                 ),
-                decoration: const BoxDecoration(
-                  gradient: kGColor,
+                decoration: BoxDecoration(
+                  gradient: colors.heroGradient,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(10),
                     topRight: Radius.circular(10),
@@ -144,12 +147,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.settings_ethernet, color: kSecondaryColor),
+                    Icon(Icons.settings_ethernet, color: colors.onHero),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         "Enter Port",
-                        style: getSmartTitle(fontSize: 16),
+                        style: getSmartTitle(fontSize: 16, color: colors.onHero),
                       ),
                     ),
                   ],
@@ -210,17 +213,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryColor,
-                          foregroundColor: kSecondaryColor,
+                          foregroundColor: colors.onHero,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text(
+                        child: Text(
                           "Try Port",
                           style: TextStyle(
-                            color: kSecondaryColor,
+                            color: colors.onHero,
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
@@ -238,6 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showManualConnectionDialog(BuildContext context) {
+    final colors = context.appColors;
     _manualIpController.text = "";
     _manualCodeController.text = "";
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.50)
@@ -249,7 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
-        backgroundColor: kBgColor,
+        backgroundColor: colors.surface,
         child: Container(
           constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
@@ -260,8 +264,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   vertical: 16,
                   horizontal: 20,
                 ),
-                decoration: const BoxDecoration(
-                  gradient: kGColor,
+                decoration: BoxDecoration(
+                  gradient: colors.heroGradient,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(10),
                     topRight: Radius.circular(10),
@@ -269,12 +273,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.link_rounded, color: kSecondaryColor),
+                    Icon(Icons.link_rounded, color: colors.onHero),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         "Manual Connection",
-                        style: getSmartTitle(fontSize: 16),
+                        style: getSmartTitle(fontSize: 16, color: colors.onHero),
                       ),
                     ),
                   ],
@@ -342,17 +346,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onPressed: () => _startManualConnection(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryColor,
-                          foregroundColor: kSecondaryColor,
+                          foregroundColor: colors.onHero,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text(
+                        child: Text(
                           "Connect",
                           style: TextStyle(
-                            color: kSecondaryColor,
+                            color: colors.onHero,
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
@@ -371,6 +375,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return MultiBlocListener(
       listeners: [
         BlocListener<SettingsBloc, SettingsState>(
@@ -383,9 +388,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 context: context,
                 text: state.message,
                 typeInfo: TypeInfo.success,
-                backgroundColor: kSecondaryColor,
+                backgroundColor: colors.surface,
                 iconColor: kPrimaryColor,
-                textColor: kThirdColor,
+                textColor: colors.onSurface,
                 position: MessagePosition.top,
                 padding: 70,
               );
@@ -456,9 +461,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 context: context,
                 text: state.response.message,
                 typeInfo: TypeInfo.success,
-                backgroundColor: kSecondaryColor,
+                backgroundColor: colors.surface,
                 iconColor: kPrimaryColor,
-                textColor: kThirdColor,
+                textColor: colors.onSurface,
                 padding: 70,
                 position: MessagePosition.top,
               );
@@ -489,7 +494,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ],
       child: Scaffold(
         body: Container(
-          decoration: const BoxDecoration(gradient: kGColor),
+          decoration: BoxDecoration(gradient: colors.heroGradient),
           child: SafeArea(
             child: Column(
               children: [
@@ -539,6 +544,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               const SizedBox(height: 10),
                               _buildSignOutButton(),
                             ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 25),
+
+                        _buildSectionTitle("Appearance"),
+                        _buildGlassContainer(
+                          child: BlocBuilder<ThemeCubit, ThemeMode>(
+                            builder: (context, themeMode) {
+                              final bool isDark = themeMode == ThemeMode.dark;
+                              return _buildSwitchRow(
+                                "Dark Mode",
+                                "Use a darker color palette across the app",
+                                isDark,
+                                (val) {
+                                  context.read<ThemeCubit>().setDarkMode(val);
+                                },
+                              );
+                            },
                           ),
                         ),
 
@@ -632,7 +656,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Text(
                           "App Version 1.0.0 (AAAPOS Pty Ltd)",
                           style: TextStyle(
-                            color: kSecondaryColor.withOpacity(0.6),
+                            color: colors.onHero.withOpacity(0.6),
                             fontSize: 12,
                           ),
                         ),
@@ -650,6 +674,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAppBar(BuildContext context) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       child: Row(
@@ -661,7 +686,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: kSecondaryColor.withOpacity(0.6),
+                color: colors.surfaceAlt.withOpacity(0.6),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -673,7 +698,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Text(
             "Settings",
-            style: getSmartTitle(fontSize: 22, color: kSecondaryColor),
+            style: getSmartTitle(fontSize: 22, color: colors.onHero),
           ),
           const SizedBox(width: 40), // Spacer to balance back button
         ],
@@ -682,6 +707,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, left: 10),
       child: Align(
@@ -691,7 +717,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: kSecondaryColor.withOpacity(0.7),
+            color: colors.onHero.withOpacity(0.7),
             letterSpacing: 1.2,
           ),
         ),
@@ -700,6 +726,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildGlassContainer({required Widget child}) {
+    final colors = context.appColors;
     return ClipRRect(
       borderRadius: BorderRadius.circular(15),
       child: BackdropFilter(
@@ -707,11 +734,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
           decoration: BoxDecoration(
-            color: kSecondaryColor.withOpacity(0.1),
+            color: colors.glassFill,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: kSecondaryColor.withOpacity(0.2)),
+            border: Border.all(color: colors.glassBorder),
             boxShadow: [
-              BoxShadow(blurRadius: 20, color: kThirdColor.withOpacity(.1)),
+              BoxShadow(blurRadius: 20, color: colors.cardShadow),
             ],
           ),
           child: child,
@@ -721,6 +748,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
       child: Row(
@@ -731,7 +759,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: Colors.blue.withOpacity(0.5),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 20, color: kSecondaryColor),
+            child: Icon(icon, size: 20, color: colors.onHero),
           ),
           const SizedBox(width: 15),
           Expanded(
@@ -740,14 +768,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(fontSize: 13, color: kSecondaryColor),
+                  style: TextStyle(fontSize: 13, color: colors.onHero),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: getSmartTitle(fontSize: 16, color: kSecondaryColor),
+                  style: getSmartTitle(fontSize: 16, color: colors.onHero),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -760,6 +788,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSignOutButton() {
+    final colors = context.appColors;
     final bool isOffline = (AppGlobals.instance.hostName ?? "").trim().isEmpty;
     return Padding(
       padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
@@ -782,11 +811,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             padding: const EdgeInsets.symmetric(vertical: 12),
           ),
-          child: const Text(
+          child: Text(
             "Sign Off",
             style: TextStyle(
               fontSize: 16,
-              color: kSecondaryColor,
+              color: colors.onHero,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -798,6 +827,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSliderRow() {
     return BlocConsumer<SettingsBloc, SettingsState>(
       listener: (context, state) {
+        final colors = context.appColors;
         if (state is SettingsLoaded) {
           setState(() {
             retentionDays = state.retentionDays.toDouble();
@@ -821,9 +851,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               context: context,
               text: "Auto backup completed.",
               typeInfo: TypeInfo.success,
-              backgroundColor: kSecondaryColor,
+              backgroundColor: colors.surface,
               iconColor: kPrimaryColor,
-              textColor: kThirdColor,
+              textColor: colors.onSurface,
               padding: 70,
               position: MessagePosition.top,
             );
@@ -831,6 +861,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       },
       builder: (context, state) {
+        final colors = context.appColors;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
           child: Column(
@@ -839,10 +870,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "Keep Backup Days",
                     style: TextStyle(
-                      color: kSecondaryColor,
+                      color: colors.onHero,
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -858,8 +889,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     child: Text(
                       "${retentionDays.toInt()} Days",
-                      style: const TextStyle(
-                        color: kSecondaryColor,
+                      style: TextStyle(
+                        color: colors.onHero,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),
@@ -870,8 +901,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   activeTrackColor: kPrimaryColor,
-                  inactiveTrackColor: kGreyColor.withOpacity(0.7),
-                  thumbColor: kSecondaryColor,
+                  inactiveTrackColor: colors.onSurfaceMuted,
+                  thumbColor: colors.onHero,
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: 8.0,
                     elevation: 4,
@@ -897,7 +928,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 "Determines how long committed stocktake data is kept locally before auto-deletion.",
                 style: TextStyle(
-                  color: kSecondaryColor.withOpacity(0.8),
+                  color: colors.onHero.withOpacity(0.8),
                   fontSize: 12,
                 ),
               ),
@@ -914,6 +945,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     bool value,
     Function(bool) onChanged,
   ) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       child: Row(
@@ -925,8 +957,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: kSecondaryColor,
+                  style: TextStyle(
+                    color: colors.onHero,
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
@@ -937,7 +969,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: kSecondaryColor.withOpacity(0.8),
+                    color: colors.onHero.withOpacity(0.8),
                     fontSize: 12,
                   ),
                   maxLines: 3, // Prevent overflow
@@ -950,7 +982,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           CupertinoSwitch(
             value: value,
             activeColor: kPrimaryColor,
-            inactiveTrackColor: kGreyColor,
+            inactiveTrackColor: colors.divider,
             onChanged: onChanged,
           ),
         ],
@@ -965,6 +997,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Color color,
     VoidCallback onTap,
   ) {
+    final colors = context.appColors;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -977,7 +1010,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: color.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 20, color: kSecondaryColor),
+              child: Icon(icon, size: 20, color: colors.onHero),
             ),
             const SizedBox(width: 15),
             Expanded(
@@ -998,7 +1031,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: kSecondaryColor.withOpacity(0.8),
+                      color: colors.onHero.withOpacity(0.8),
                       fontSize: 12,
                     ),
                     maxLines: 2, // Prevent overflow
@@ -1010,7 +1043,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Icon(
               Icons.arrow_forward_ios,
               size: 14,
-              color: kSecondaryColor.withOpacity(0.7),
+              color: colors.onHero.withOpacity(0.7),
             ),
           ],
         ),

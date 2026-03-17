@@ -13,7 +13,7 @@ import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
-import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/images.dart';
 import '../../../../constants/txt_styles.dart';
@@ -238,7 +238,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: BoxDecoration(gradient: kGColor),
+          decoration: BoxDecoration(gradient: context.appColors.heroGradient),
           child: SafeArea(
             child: Center(
               child: Column(
@@ -262,7 +262,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
                         Text(
                           "RetailManager Mobile",
                           style: getSmartTitle(
-                            color: kSecondaryColor,
+                            color: context.appColors.onHero,
                             fontSize: 24,
                           ),
                         ),
@@ -270,7 +270,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
                         Text(
                           "AAAPOS Pty Ltd",
                           style: TextStyle(
-                            color: kSecondaryColor.withOpacity(0.8),
+                            color: context.appColors.onHero.withOpacity(0.8),
                             fontWeight: FontWeight.w400,
                             fontSize: 16,
                           ),
@@ -282,7 +282,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
                         Text(
                           _loadingMessage,
                           style: TextStyle(
-                            color: kSecondaryColor.withOpacity(0.8),
+                            color: context.appColors.onHero.withOpacity(0.8),
                             fontWeight: FontWeight.w400,
                             fontSize: 12,
                           ),

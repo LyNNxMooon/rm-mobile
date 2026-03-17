@@ -5,6 +5,7 @@ import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loadin
 import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_events.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
@@ -15,6 +16,7 @@ class NetworkPathDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     if (paths.length == 1) {
       context.read<NetworkSavedPathValidationBloc>().add(
         ConnectionCheckingEvent(paths[0]['path']),
@@ -26,7 +28,7 @@ class NetworkPathDialog extends StatelessWidget {
       insetPadding: dialogInsetPadding(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 10,
-      backgroundColor: kBgColor,
+      backgroundColor: colors.surface,
       child: Container(
         constraints: const BoxConstraints(maxHeight: 500),
         child: Column(
@@ -35,7 +37,7 @@ class NetworkPathDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
               decoration: BoxDecoration(
-                gradient: kGColor,
+                gradient: colors.heroGradient,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(10),
                   topRight: Radius.circular(10),
@@ -43,12 +45,12 @@ class NetworkPathDialog extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.folder_copy_rounded, color: kSecondaryColor),
+                  Icon(Icons.folder_copy_rounded, color: colors.onHero),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       "Saved Locations",
-                      style: getSmartTitle(fontSize: 16),
+                      style: getSmartTitle(fontSize: 16, color: colors.onHero),
                     ),
                   ),
                 ],
@@ -60,7 +62,7 @@ class NetworkPathDialog extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 itemCount: paths.length,
                 separatorBuilder: (ctx, i) => Divider(
-                  color: kGreyColor.withOpacity(0.2),
+                  color: colors.divider,
                   height: 1,
                   indent: 16,
                   endIndent: 16,
@@ -91,6 +93,7 @@ class NetworkPathDialog extends StatelessWidget {
     String realPath,
     BuildContext ctx,
   ) {
+    final colors = ctx.appColors;
     return Slidable(
       key: ValueKey(realPath),
 
@@ -107,7 +110,7 @@ class NetworkPathDialog extends StatelessWidget {
               }
             },
             backgroundColor: kErrorColor,
-            foregroundColor: kSecondaryColor,
+            foregroundColor: colors.onHero,
             icon: Icons.delete,
             label: 'Delete',
           ),
@@ -147,7 +150,7 @@ class NetworkPathDialog extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: kThirdColor.withOpacity(0.8),
+                    color: colors.onSurface,
                     fontSize: 12,
                   ),
                 ),
@@ -155,7 +158,7 @@ class NetworkPathDialog extends StatelessWidget {
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 14,
-                color: kGreyColor,
+                color: colors.onSurfaceMuted,
               ),
             ],
           ),

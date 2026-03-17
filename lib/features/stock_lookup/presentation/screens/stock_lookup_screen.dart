@@ -19,6 +19,7 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/stock
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/utils/text_highlight_utils.dart';
 import '../../../../../../constants/colors.dart';
+import '../../../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/filter_criteria.dart';
@@ -133,9 +134,11 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: kBgColor,
+      backgroundColor: isDark ? colors.bg : kBgColor,
       body: SafeArea(
         child: Stack(
           children: [
@@ -148,11 +151,11 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 const SizedBox(height: 5),
                 const PendingStockUpdatesTile(),
                 //const SizedBox(height: 10),
-                const Divider(
+                Divider(
                   indent: 15,
                   endIndent: 15,
                   thickness: 0.5,
-                  color: kGreyColor,
+                  color: isDark ? colors.divider : kGreyColor,
                 ),
                 const SyncInfoWidget(), // Added const
                 // Chip states and Count Text
@@ -205,8 +208,10 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             const SizedBox(width: 8),
                             Text(
                               "${state.stocks.length} of ${NumberFormat('#,###').format(state.totalCount)}",
-                              style: const TextStyle(
-                                color: kGreyColor,
+                              style: TextStyle(
+                                color: isDark
+                                    ? colors.onSurfaceMuted
+                                    : kGreyColor,
                                 fontSize: 11,
                               ),
                             ),
@@ -233,8 +238,10 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           const SizedBox(width: 8),
                           Text(
                             "0 of ${NumberFormat('#,###').format(0)}",
-                            style: const TextStyle(
-                              color: kGreyColor,
+                            style: TextStyle(
+                              color: isDark
+                                  ? colors.onSurfaceMuted
+                                  : kGreyColor,
                               fontSize: 11,
                             ),
                           ),
@@ -276,9 +283,18 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.white.withOpacity(0.0),
-                                Colors.white.withOpacity(0.5),
-                                Colors.white.withOpacity(0.9),
+                                (isDark
+                                        ? colors.surface
+                                        : kSecondaryColor)
+                                    .withOpacity(0.0),
+                                (isDark
+                                        ? colors.surface
+                                        : kSecondaryColor)
+                                    .withOpacity(0.5),
+                                (isDark
+                                        ? colors.surface
+                                        : kSecondaryColor)
+                                    .withOpacity(0.9),
                               ],
                               stops: const [0.0, 0.4, 1.0],
                             ),
@@ -369,6 +385,8 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   }
 
   Widget _buildGlassSearchBar() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -382,12 +400,20 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         child: Container(
           height: (isTablet ? 64 : 56) * uiScale,
           decoration: BoxDecoration(
-            border: Border.all(color: kGreyColor.withOpacity(0.6), width: 0.6),
-            color: Colors.white.withOpacity(0.65),
+            border: Border.all(
+              color: isDark
+                  ? colors.divider
+                  : kGreyColor.withOpacity(0.6),
+              width: 0.6,
+            ),
+            color: (isDark ? colors.surface : kSecondaryColor)
+                .withOpacity(0.65),
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: isDark
+                    ? colors.cardShadow
+                    : kThirdColor.withOpacity(0.05),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -561,13 +587,18 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   }
 
   Widget loadingWidget() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           "Getting Stocks From Database...",
-          style: getSmartTitle(color: kThirdColor, fontSize: 16),
+          style: getSmartTitle(
+            color: isDark ? colors.onSurface : kThirdColor,
+            fontSize: 16,
+          ),
         ),
         Padding(
           padding: const EdgeInsets.only(
@@ -578,9 +609,12 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           ),
           child: ModernLoadingBar(),
         ),
-        const Text(
+        Text(
           "This may take a few seconds.",
-          style: TextStyle(fontSize: 11),
+          style: TextStyle(
+            fontSize: 11,
+            color: isDark ? colors.onSurfaceMuted : kGreyColor,
+          ),
         ),
         const SizedBox(height: 60),
       ],
@@ -593,6 +627,8 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     required String query,
     String? matchedField,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -631,11 +667,13 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: kSecondaryColor,
+                  color: isDark ? colors.surface : kSecondaryColor,
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
                   boxShadow: [
                     BoxShadow(
-                      color: kThirdColor.withOpacity(0.05),
+                      color: isDark
+                          ? colors.cardShadow
+                          : kThirdColor.withOpacity(0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                       spreadRadius: 0,
@@ -682,7 +720,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   query: query,
                                   highlightColor: Colors.amber.withOpacity(0.6),
                                   style: getSmartTitle(
-                                    color: kThirdColor,
+                                    color: isDark
+                                        ? colors.onSurface
+                                        : kThirdColor,
                                     fontSize: 14 * textUiScale,
                                   ),
                                 ),
@@ -711,7 +751,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   'Custom 1: ',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: kThirdColor.withOpacity(0.6),
+                                    color: isDark
+                                        ? colors.onSurfaceMuted
+                                        : kGreyColor,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -722,7 +764,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: kThirdColor.withOpacity(0.7),
+                                      color: isDark
+                                          ? colors.onSurfaceMuted
+                                          : kGreyColor,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -739,7 +783,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   'Custom 2: ',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: kThirdColor.withOpacity(0.6),
+                                    color: isDark
+                                        ? colors.onSurfaceMuted
+                                        : kGreyColor,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -750,7 +796,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: kThirdColor.withOpacity(0.7),
+                                      color: isDark
+                                          ? colors.onSurfaceMuted
+                                          : kGreyColor,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -796,7 +844,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           color: stock.quantity > 0
                               ? kPrimaryColor
                               : stock.quantity == 0
-                              ? kThirdColor
+                              ? (isDark ? colors.onSurface : kThirdColor)
                               : kErrorColor,
                           letterSpacing: -0.5,
                         ),

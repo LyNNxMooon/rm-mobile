@@ -20,13 +20,7 @@ import 'package:rmstock_scanner/utils/dependency_injection_utils.dart' as di;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import '../../../../constants/colors.dart';
-
-// Assuming you have this gradient defined in your constants
-const kGColor = LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-  colors: [Color(0xFF0F8ABE), Color(0xFF05203C)],
-);
+import '../../../../constants/theme_colors.dart';
 
 class _AddressControllers {
   _AddressControllers({
@@ -747,16 +741,20 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   InputDecoration _minimalInputDecoration() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final Color borderColor =
+        isDark ? colors.divider : Colors.grey.shade300;
     return InputDecoration(
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -776,6 +774,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     bool isLoading = false,
     List<TextInputFormatter>? inputFormatters,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
     return Padding(
@@ -790,7 +790,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 flex: 2,
                 child: Text(
                   label,
-                  style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: baseSize,
+                    color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -800,7 +803,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   controller: controller,
                   keyboardType: keyboardType,
                   maxLines: maxLines,
-                  style: TextStyle(fontSize: baseSize),
+                  style: TextStyle(
+                    fontSize: baseSize,
+                    color: isDark ? colors.onSurface : Colors.black87,
+                  ),
                   decoration: _minimalInputDecoration(),
                   onChanged: onChanged,
                   inputFormatters: inputFormatters,
@@ -826,7 +832,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               style: TextStyle(
                 fontSize: smallSize,
                 color: isLoading
-                    ? Colors.grey[600]
+                    ? (isDark ? colors.onSurfaceMuted : Colors.grey[600])
                     : (isValid ? Colors.green[700] : Colors.red[700]),
               ),
             ),
@@ -842,12 +848,18 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     TextEditingController controller, {
     TextInputType? keyboardType,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: _iconSize(context, 18), color: Colors.grey[700]),
+          Icon(
+            icon,
+            size: _iconSize(context, 18),
+            color: isDark ? colors.onSurfaceMuted : Colors.grey[700],
+          ),
           const SizedBox(width: 12),
           Expanded(
             flex: 2,
@@ -856,7 +868,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               style: TextStyle(
                 fontSize: baseSize,
                 fontWeight: FontWeight.w500,
-                color: Colors.black87,
+                color: isDark ? colors.onSurface : Colors.black87,
               ),
             ),
           ),
@@ -865,7 +877,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             child: TextField(
               controller: controller,
               keyboardType: keyboardType,
-              style: TextStyle(fontSize: baseSize),
+              style: TextStyle(
+                fontSize: baseSize,
+                color: isDark ? colors.onSurface : Colors.black87,
+              ),
               decoration: _minimalInputDecoration(),
               onEditingComplete: () {
                 final trimmedValue = controller.text.trim();
@@ -891,6 +906,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     ValueChanged<bool> onChanged, {
     bool enabled = true,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -899,7 +916,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: baseSize,
+              color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+            ),
           ),
           Switch(
             value: value,
@@ -917,6 +937,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     required List<DropdownMenuItem<T>> items,
     required ValueChanged<T?> onChanged,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -927,7 +949,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             flex: 2,
             child: Text(
               label,
-              style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: baseSize,
+                color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -938,7 +963,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               items: items,
               onChanged: onChanged,
               decoration: _minimalInputDecoration(),
-              style: TextStyle(fontSize: baseSize, color: Colors.black87),
+              style: TextStyle(
+                fontSize: baseSize,
+                color: isDark ? colors.onSurface : Colors.black87,
+              ),
             ),
           ),
         ],
@@ -947,6 +975,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   List<Widget> _buildSecondaryAddressEditors() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 13);
     final List<Widget> widgets = [];
 
@@ -960,7 +990,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           style: TextStyle(
             fontSize: baseSize,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: isDark ? colors.onSurface : Colors.black87,
           ),
         ),
       );
@@ -1122,6 +1152,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   void _showSecondaryAddressesDialog() {
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
 
     showDialog(
       context: context,
@@ -1138,8 +1170,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             borderRadius: BorderRadius.circular(16),
           ),
           elevation: 10,
-          backgroundColor: Colors
-              .white, // Or a slightly off-white like Color(0xFFF9FAFB) if you prefer
+          backgroundColor: isDark ? colors.surface : Colors.white,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1150,15 +1181,18 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(
-                    0xFFF3F4F6,
-                  ), // Matches the scaffold background of the details screen
+                  color: isDark
+                      ? colors.surfaceAlt
+                      : const Color(0xFFF3F4F6),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
                   ),
                   border: Border(
-                    bottom: BorderSide(color: Colors.grey.shade200, width: 1.5),
+                    bottom: BorderSide(
+                      color: isDark ? colors.divider : Colors.grey.shade200,
+                      width: 1.5,
+                    ),
                   ),
                 ),
                 child: Row(
@@ -1177,7 +1211,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           style: TextStyle(
                             fontSize: _font(context, 16),
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: isDark ? colors.onSurface : Colors.black87,
                           ),
                         ),
                       ],
@@ -1191,7 +1225,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         child: Icon(
                           Icons.close,
                           size: _iconSize(context, 20),
-                          color: Colors.grey[600],
+                          color: isDark
+                              ? colors.onSurfaceMuted
+                              : Colors.grey[600],
                         ),
                       ),
                     ),
@@ -1224,15 +1260,17 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         margin: const EdgeInsets.only(bottom: 16),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: isDark ? colors.surface : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.grey.shade200,
+                            color: isDark ? colors.divider : Colors.grey.shade200,
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
+                              color: isDark
+                                  ? colors.cardShadow
+                                  : Colors.black.withOpacity(0.02),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -1272,7 +1310,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                       width: mapWidth,
                                       height: mapHeight,
                                       decoration: BoxDecoration(
-                                        color: Colors.grey[200],
+                                        color: isDark
+                                            ? colors.surfaceAlt
+                                            : Colors.grey[200],
                                         borderRadius: BorderRadius.circular(mapRadius),
                                       ),
                                       child: ClipRRect(
@@ -1294,7 +1334,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                 address.addr1,
                                 style: TextStyle(
                                   fontSize: baseSize,
-                                  color: Colors.black87,
+                                  color: isDark ? colors.onSurface : Colors.black87,
                                 ),
                               ),
                             ],
@@ -1303,7 +1343,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                 address.addr2,
                                 style: TextStyle(
                                   fontSize: baseSize,
-                                  color: Colors.black87,
+                                  color: isDark ? colors.onSurface : Colors.black87,
                                 ),
                               ),
                             ],
@@ -1312,7 +1352,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                 address.addr3,
                                 style: TextStyle(
                                   fontSize: baseSize,
-                                  color: Colors.black87,
+                                  color: isDark ? colors.onSurface : Colors.black87,
                                 ),
                               ),
                             ],
@@ -1324,7 +1364,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                     .trim(),
                                 style: TextStyle(
                                   fontSize: baseSize,
-                                  color: Colors.black87,
+                                  color: isDark ? colors.onSurface : Colors.black87,
                                 ),
                               ),
                             ],
@@ -1333,13 +1373,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                 address.country,
                                 style: TextStyle(
                                   fontSize: baseSize,
-                                  color: Colors.black87,
+                                  color: isDark ? colors.onSurface : Colors.black87,
                                 ),
                               ),
                             ],
 
                             const SizedBox(height: 12),
-                            const Divider(height: 1),
+                            Divider(
+                              height: 1,
+                              color: isDark ? colors.divider : null,
+                            ),
                             const SizedBox(height: 12),
 
                             // Contact Info within this address
@@ -1373,7 +1416,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                 "No contact details for this address.",
                                 style: TextStyle(
                                   fontSize: smallSize,
-                                  color: Colors.grey[500],
+                                  color: isDark
+                                      ? colors.onSurfaceMuted
+                                      : Colors.grey[500],
                                   fontStyle: FontStyle.italic,
                                 ),
                               ),
@@ -1410,16 +1455,25 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Widget _buildDialogContactRow(IconData icon, String text, double fontSize) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Icon(icon, size: _iconSize(context, 16), color: Colors.grey[500]),
+          Icon(
+            icon,
+            size: _iconSize(context, 16),
+            color: isDark ? colors.onSurfaceMuted : Colors.grey[500],
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: fontSize, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: fontSize,
+                color: isDark ? colors.onSurface : Colors.grey[700],
+              ),
             ),
           ),
         ],
@@ -1429,6 +1483,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return MultiBlocListener(
       listeners: [
         BlocListener<CustomerUpdateBloc, CustomerUpdateState>(
@@ -1543,13 +1599,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         },
         child: Scaffold(
           // A slightly deeper grey helps the white cards pop and look solid
-          backgroundColor: const Color(0xFFF3EFE8),
+          backgroundColor: isDark ? colors.bg : const Color(0xFFF3EFE8),
           body: Stack(
             children: [
               // Background Gradient Container (Top Half)
               Container(
                 height: MediaQuery.of(context).size.height * 0.4,
-                decoration: const BoxDecoration(gradient: kGColor),
+                decoration: BoxDecoration(
+                  gradient: isDark ? colors.heroGradient : kGColor,
+                ),
               ),
 
               // Custom App Bar Elements (Overlay)
@@ -1569,15 +1627,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                               _triggerSyncIfNeeded();
                               Navigator.pop(context);
                             },
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.arrow_back_ios_new,
-                              color: Colors.white,
+                              color: isDark ? colors.onHero : Colors.white,
                               size: 18,
                             ),
-                            label: const Text(
+                            label: Text(
                               "Customers",
                               style: TextStyle(
-                                color: Colors.white,
+                                color: isDark ? colors.onHero : Colors.white,
                                 fontSize: 16,
                               ),
                             ),
@@ -1585,10 +1643,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                               padding: EdgeInsets.zero,
                             ),
                           ),
-                          const Text(
+                          Text(
                             "Profile",
                             style: TextStyle(
-                              color: Colors.white,
+                              color: isDark ? colors.onHero : Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1643,6 +1701,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   String get _customerStatusLabel => AppGlobals.instance.customerStatusLabel;
 
   Widget _buildHeaderCard() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double shortestSide = MediaQuery.of(context).size.shortestSide;
     final bool isTablet = shortestSide >= 600;
     final bool isLargeTablet = shortestSide >= 900;
@@ -1713,10 +1773,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             displayName.isEmpty
                                 ? widget.customer.displayName
                                 : displayName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                              color: isDark
+                                  ? colors.onSurface
+                                  : Colors.black87,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1755,7 +1817,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             : widget.customer.company,
                         style: TextStyle(
                           fontSize: baseSize,
-                          color: Colors.grey[600],
+                          color: isDark
+                              ? colors.onSurfaceMuted
+                              : Colors.grey[600],
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1766,7 +1830,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       "Customer ID: ${widget.customer.barcode}",
                       style: TextStyle(
                         fontSize: smallSize,
-                        color: Colors.grey[500],
+                        color:
+                            isDark ? colors.onSurfaceMuted : Colors.grey[500],
                       ),
                     ),
                   ],
@@ -1808,7 +1873,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ),
 
           const SizedBox(height: 16),
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+          Divider(
+            height: 1,
+            color: isDark ? colors.divider : const Color(0xFFEEEEEE),
+          ),
           const SizedBox(height: 12),
 
           if (isEditing) ...[
@@ -1913,6 +1981,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     return InkWell(
       onTap: onTap,
@@ -1922,13 +1992,17 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: _iconSize(context, 18), color: Colors.grey[800]),
+            Icon(
+              icon,
+              size: _iconSize(context, 18),
+              color: isDark ? colors.onSurfaceMuted : Colors.grey[800],
+            ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: baseSize,
-                color: Colors.grey[800],
+                color: isDark ? colors.onSurfaceMuted : Colors.grey[800],
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -2023,6 +2097,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Widget _buildAddressCard() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     final bool isEditing = _editingSection == CustomerEditSection.address;
     final List<String> primaryAddressParts = [
@@ -2065,6 +2141,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 style: TextStyle(
                   fontSize: baseSize,
                   fontWeight: FontWeight.bold,
+                  color: isDark ? colors.onSurface : Colors.black87,
                 ),
               ),
               const SizedBox(height: 8),
@@ -2077,7 +2154,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   Icon(
                     Icons.business_outlined,
                     size: 18,
-                    color: Colors.grey[700],
+                    color: isDark ? colors.onSurfaceMuted : Colors.grey[700],
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -2085,7 +2162,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       primaryAddressStr,
                       style: TextStyle(
                         fontSize: baseSize,
-                        color: Colors.black87,
+                        color: isDark ? colors.onSurface : Colors.black87,
                         height: 1.4,
                       ),
                     ),
@@ -2097,7 +2174,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       width: 60,
                       height: 55,
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                        color: isDark ? colors.surfaceAlt : Colors.grey[200],
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: ClipRRect(
@@ -2126,6 +2203,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         style: TextStyle(
                           fontSize: baseSize,
                           fontWeight: FontWeight.bold,
+                          color: isDark ? colors.onSurface : Colors.black87,
                         ),
                       ),
                       Row(
@@ -2134,14 +2212,18 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             "View All Addr",
                             style: TextStyle(
                               fontSize: baseSize,
-                              color: Colors.grey[600],
+                              color: isDark
+                                  ? colors.onSurfaceMuted
+                                  : Colors.grey[600],
                             ),
                           ),
                           const SizedBox(width: 4),
                           Icon(
                             Icons.chevron_right,
                             size: 16,
-                            color: Colors.grey[400],
+                            color: isDark
+                                ? colors.onSurfaceMuted
+                                : Colors.grey[400],
                           ),
                         ],
                       ),
@@ -2154,6 +2236,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Widget _buildFinancialCard() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
     final bool isEditing = _editingSection == CustomerEditSection.financial;
@@ -2192,7 +2276,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       "Credit Limit",
                       style: TextStyle(
                         fontSize: smallSize,
-                        color: Colors.grey[500],
+                        color:
+                            isDark ? colors.onSurfaceMuted : Colors.grey[500],
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -2201,6 +2286,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       style: TextStyle(
                         fontSize: baseSize,
                         fontWeight: FontWeight.w600,
+                        color: isDark ? colors.onSurface : Colors.black87,
                       ),
                     ),
                   ],
@@ -2214,7 +2300,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       "Payment Terms",
                       style: TextStyle(
                         fontSize: smallSize,
-                        color: Colors.grey[500],
+                        color:
+                            isDark ? colors.onSurfaceMuted : Colors.grey[500],
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -2223,6 +2310,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       style: TextStyle(
                         fontSize: baseSize,
                         fontWeight: FontWeight.w600,
+                        color: isDark ? colors.onSurface : Colors.black87,
                       ),
                     ),
                   ],
@@ -2256,7 +2344,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         "Opened By",
                         style: TextStyle(
                           fontSize: smallSize,
-                          color: Colors.grey[500],
+                          color: isDark
+                              ? colors.onSurfaceMuted
+                              : Colors.grey[500],
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -2295,7 +2385,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                 style: TextStyle(
                                   fontSize: smallSize,
                                   color: _openedByStaffLookupLoading
-                                      ? Colors.grey[600]
+                                      ? (isDark
+                                          ? colors.onSurfaceMuted
+                                          : Colors.grey[600])
                                       : (_openedByStaffLookupValid
                                             ? Colors.green[700]
                                             : Colors.red[700]),
@@ -2309,6 +2401,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           openedBy,
                           style: TextStyle(
                             fontSize: baseSize,
+                              color: isDark ? colors.onSurface : Colors.black87,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -2323,7 +2416,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         "Owner Account",
                         style: TextStyle(
                           fontSize: smallSize,
-                          color: Colors.grey[500],
+                          color: isDark
+                              ? colors.onSurfaceMuted
+                              : Colors.grey[500],
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -2363,7 +2458,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                 style: TextStyle(
                                   fontSize: smallSize,
                                   color: _ownerStaffLookupLoading
-                                      ? Colors.grey[600]
+                                      ? (isDark
+                                          ? colors.onSurfaceMuted
+                                          : Colors.grey[600])
                                       : (_ownerStaffLookupValid
                                             ? Colors.green[700]
                                             : Colors.red[700]),
@@ -2377,6 +2474,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           ownerAccount,
                           style: TextStyle(
                             fontSize: baseSize,
+                              color: isDark ? colors.onSurface : Colors.black87,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -2447,6 +2545,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Widget _buildAdditionalInfoCard() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final bool isEditing = _editingSection == CustomerEditSection.additional;
     final String custom1Label = _customerCustom1Label;
     final String custom2Label = _customerCustom2Label;
@@ -2503,7 +2603,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 "Internal Notes:",
                 style: TextStyle(
                   fontSize: _font(context, 12),
-                  color: Colors.grey[600],
+                  color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -2530,7 +2630,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 "Comments:",
                 style: TextStyle(
                   fontSize: _font(context, 12),
-                  color: Colors.grey[600],
+                  color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -2571,6 +2671,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Widget _buildNotesCard() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
     return _buildSectionCard(
@@ -2581,14 +2683,17 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             "Internal Notes:",
             style: TextStyle(
               fontSize: smallSize,
-              color: Colors.grey[600],
+              color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             _notesController.text,
-            style: TextStyle(fontSize: baseSize, color: Colors.black87),
+            style: TextStyle(
+              fontSize: baseSize,
+              color: isDark ? colors.onSurface : Colors.black87,
+            ),
           ),
           const SizedBox(height: 12),
         ],
@@ -2597,14 +2702,17 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             "Comments:",
             style: TextStyle(
               fontSize: smallSize,
-              color: Colors.grey[600],
+              color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             _commentsController.text,
-            style: TextStyle(fontSize: baseSize, color: Colors.black87),
+            style: TextStyle(
+              fontSize: baseSize,
+              color: isDark ? colors.onSurface : Colors.black87,
+            ),
           ),
         ],
       ],
@@ -2612,6 +2720,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Widget _buildMetadataCard() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
     return _buildBaseCard(
@@ -2626,13 +2736,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 style: TextStyle(
                   fontSize: baseSize,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: isDark ? colors.onSurface : Colors.black87,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 "Created: ${_formatDate(widget.customer.dateCreated)}",
-                style: TextStyle(fontSize: smallSize, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: smallSize,
+                  color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+                ),
               ),
             ],
           ),
@@ -2642,7 +2755,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               const SizedBox(height: 22),
               Text(
                 "Modified: ${_formatDate(widget.customer.dateModified)}",
-                style: TextStyle(fontSize: smallSize, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: smallSize,
+                  color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+                ),
               ),
             ],
           ),
@@ -2661,6 +2777,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     bool isSaving = false,
   }) {
     final double baseSize = _font(context, 14);
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return _buildBaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2673,7 +2791,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 style: TextStyle(
                   fontSize: baseSize,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: isDark ? colors.onSurface : Colors.black87,
                 ),
               ),
               if (onEditTap != null)
@@ -2705,17 +2823,24 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Widget _buildBaseCard({required Widget child}) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFBF7F0),
+        color: isDark ? colors.surface : const Color(0xFFFBF7F0),
         borderRadius: BorderRadius.circular(12),
         // Adding a subtle stroke to give that "solid card" look from modern UI
-        border: Border.all(color: const Color(0xFFC9B9A6), width: 0.57),
+        border: Border.all(
+          color: isDark ? colors.divider : const Color(0xFFC9B9A6),
+          width: 0.57,
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2B2012).withOpacity(0.07),
+            color: isDark
+                ? colors.cardShadow
+                : const Color(0xFF2B2012).withOpacity(0.07),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -2727,12 +2852,18 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   Widget _buildIconDataRow(IconData icon, String label, String value) {
     if (value.isEmpty) return const SizedBox.shrink();
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: _iconSize(context, 18), color: Colors.grey[700]),
+          Icon(
+            icon,
+            size: _iconSize(context, 18),
+            color: isDark ? colors.onSurfaceMuted : Colors.grey[700],
+          ),
           const SizedBox(width: 12),
           Expanded(
             flex: 2,
@@ -2741,7 +2872,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               style: TextStyle(
                 fontSize: baseSize,
                 fontWeight: FontWeight.w500,
-                color: Colors.black87,
+                color: isDark ? colors.onSurface : Colors.black87,
               ),
             ),
           ),
@@ -2749,7 +2880,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             flex: 4,
             child: Text(
               value,
-              style: TextStyle(fontSize: baseSize, color: Colors.blue),
+              style: TextStyle(
+                fontSize: baseSize,
+                color: isDark ? colors.onSurface : Colors.blue,
+              ),
               textAlign: TextAlign.right,
             ),
           ),
@@ -2760,6 +2894,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   Widget _buildDataRow(String label, String value) {
     if (value.isEmpty) return const SizedBox.shrink();
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double baseSize = _font(context, 14);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -2770,14 +2906,20 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             flex: 2,
             child: Text(
               label,
-              style: TextStyle(fontSize: baseSize, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: baseSize,
+                color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+              ),
             ),
           ),
           Expanded(
             flex: 4,
             child: Text(
               value,
-              style: TextStyle(fontSize: baseSize, color: Colors.black87),
+              style: TextStyle(
+                fontSize: baseSize,
+                color: isDark ? colors.onSurface : Colors.black87,
+              ),
             ),
           ),
         ],

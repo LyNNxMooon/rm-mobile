@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmstock_scanner/constants/theme_colors.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
 
@@ -80,6 +81,14 @@ class _PricingDialogState extends State<PricingDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final Color textColor = isDark ? colors.onSurface : kThirdColor;
+    final Color mutedText =
+            isDark ? colors.onSurfaceMuted : kThirdColor.withOpacity(0.75);
+    final Color surface = isDark ? colors.surface : Colors.white;
+    //final Color surfaceAlt = isDark ? colors.surfaceAlt : Colors.grey.shade50;
+    final Color divider = isDark ? colors.divider : Colors.grey.shade300;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     
     final double headerSize = isTablet ? 16 : 13;
@@ -104,7 +113,7 @@ class _PricingDialogState extends State<PricingDialog> {
     return Dialog(
       insetPadding: customInsetPadding,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      backgroundColor: Colors.white,
+      backgroundColor: surface,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: isTablet ? 780 : 680, 
@@ -154,7 +163,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                             "Grade",
                                             style: TextStyle(
                                               fontSize: headerSize,
-                                              color: kThirdColor,
+                                              color: textColor,
                                               fontWeight: FontWeight.w700,
                                             ),
                                           ),
@@ -168,7 +177,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                             "Rule",
                                             style: TextStyle(
                                               fontSize: headerSize,
-                                              color: kThirdColor,
+                                              color: textColor,
                                               fontWeight: FontWeight.w700,
                                             ),
                                           ),
@@ -182,7 +191,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                             "Amount",
                                             style: TextStyle(
                                               fontSize: headerSize,
-                                              color: kThirdColor,
+                                              color: textColor,
                                               fontWeight: FontWeight.w700,
                                             ),
                                           ),
@@ -208,7 +217,7 @@ class _PricingDialogState extends State<PricingDialog> {
                             // Vertical Divider
                             Container(
                               width: 1,
-                              color: Colors.grey.shade300,
+                              color: divider,
                               margin: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 12),
                             ),
               
@@ -222,7 +231,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                     "Stock",
                                     style: TextStyle(
                                       fontSize: headerSize,
-                                      color: kThirdColor,
+                                      color: textColor,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -235,7 +244,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             fontSize: textSize,
-                                            color: kThirdColor.withOpacity(0.75),
+                                                color: mutedText,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -291,7 +300,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: textSize,
-                                      color: kThirdColor.withOpacity(0.75),
+                                      color: mutedText,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -341,7 +350,7 @@ class _PricingDialogState extends State<PricingDialog> {
                       "Add/Update",
                       style: TextStyle(
                         fontSize: isTablet ? 16 : 14,
-                        color: Colors.white,
+                        color: isDark ? colors.onHero : Colors.white,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -355,7 +364,7 @@ class _PricingDialogState extends State<PricingDialog> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: isTablet ? 11 : 9.5,
-                color: kThirdColor.withOpacity(0.65),
+                color: mutedText,
                 fontWeight: FontWeight.w600,
                 height: 1.3,
               ),
@@ -376,6 +385,12 @@ class _PricingDialogState extends State<PricingDialog> {
       double middleGap,
       double rowSpacing,
       bool isTablet) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final Color textColor = isDark ? colors.onSurface : kThirdColor;
+    final Color surface = isDark ? colors.surface : Colors.white;
+    final Color surfaceAlt = isDark ? colors.surfaceAlt : Colors.grey.shade50;
+    final Color divider = isDark ? colors.divider : Colors.grey.shade300;
     return Container(
       margin: EdgeInsets.only(bottom: rowSpacing),
       height: inputHeight, 
@@ -409,7 +424,7 @@ class _PricingDialogState extends State<PricingDialog> {
                   style: TextStyle(
                     fontSize: textSize,
                     fontWeight: FontWeight.w600,
-                    color: kThirdColor,
+                    color: textColor,
                   ),
                 ),
               ],
@@ -423,8 +438,8 @@ class _PricingDialogState extends State<PricingDialog> {
               padding: EdgeInsets.symmetric(horizontal: isTablet ? 12 : 8),
               margin: EdgeInsets.only(right: middleGap),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border.all(color: Colors.grey.shade300),
+                color: surfaceAlt,
+                border: Border.all(color: divider),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: DropdownButtonHideUnderline(
@@ -435,7 +450,7 @@ class _PricingDialogState extends State<PricingDialog> {
                   style: TextStyle(
                     fontSize: textSize,
                     fontWeight: FontWeight.w500,
-                    color: kThirdColor,
+                    color: textColor,
                   ),
                   items: _ruleOptions
                       .map((opt) => DropdownMenuItem<int>(
@@ -467,24 +482,24 @@ class _PricingDialogState extends State<PricingDialog> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               style: TextStyle(
                 fontSize: textSize,
-                color: kThirdColor,
+                color: textColor,
                 fontWeight: FontWeight.w500,
               ),
               textAlignVertical: TextAlignVertical.center,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: surface,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: isTablet ? 12 : 8, 
                   vertical: 0
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                  borderSide: BorderSide(color: divider, width: 1),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                  borderSide: BorderSide(color: divider, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
@@ -507,6 +522,12 @@ class _PricingDialogState extends State<PricingDialog> {
       double middleGap,
       double rowSpacing,
       bool hasPricingApplied) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final Color textColor = isDark ? colors.onSurface : kThirdColor;
+    final Color surface = isDark ? colors.surface : Colors.white;
+    final Color surfaceAlt = isDark ? colors.surfaceAlt : Colors.grey.shade50;
+    final Color divider = isDark ? colors.divider : Colors.grey.shade300;
     return Container(
       margin: EdgeInsets.only(bottom: rowSpacing),
       child: Column(
@@ -536,7 +557,7 @@ class _PricingDialogState extends State<PricingDialog> {
                 style: TextStyle(
                   fontSize: textSize,
                   fontWeight: FontWeight.w700,
-                  color: kThirdColor,
+                  color: textColor,
                 ),
               ),
             ],
@@ -551,8 +572,8 @@ class _PricingDialogState extends State<PricingDialog> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   margin: EdgeInsets.only(right: middleGap),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    border: Border.all(color: Colors.grey.shade300),
+                    color: surfaceAlt,
+                    border: Border.all(color: divider),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -563,7 +584,7 @@ class _PricingDialogState extends State<PricingDialog> {
                       style: TextStyle(
                         fontSize: textSize,
                         fontWeight: FontWeight.w500,
-                        color: kThirdColor,
+                        color: textColor,
                       ),
                       items: _ruleOptions
                           .map((opt) => DropdownMenuItem<int>(
@@ -594,26 +615,30 @@ class _PricingDialogState extends State<PricingDialog> {
                       const TextInputType.numberWithOptions(decimal: true),
                   style: TextStyle(
                     fontSize: textSize,
-                    color: kThirdColor,
+                    color: textColor,
                     fontWeight: FontWeight.w500,
                   ),
                   textAlignVertical: TextAlignVertical.center,
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: surface,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 0,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(6),
-                      borderSide:
-                          BorderSide(color: Colors.grey.shade300, width: 1),
+                      borderSide: BorderSide(
+                        color: divider,
+                        width: 1,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(6),
-                      borderSide:
-                          BorderSide(color: Colors.grey.shade300, width: 1),
+                      borderSide: BorderSide(
+                        color: divider,
+                        width: 1,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(6),

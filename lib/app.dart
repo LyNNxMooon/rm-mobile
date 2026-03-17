@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmstock_scanner/features/theme/presentation/bloc/theme_cubit.dart';
 //import 'package:rmstock_scanner/features/loading_splash/presentation/screens/loading_screen.dart';
 import 'package:rmstock_scanner/features/onboarding/presentation/screens/onboarding_gate_screen.dart';
 import 'package:rmstock_scanner/features/onboarding/presentation/BLoC/onboarding_bloc.dart';
@@ -189,6 +190,7 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<PendingCustomerUpdatesBloc>(
           create: (_) => sl<PendingCustomerUpdatesBloc>(),
         ),
+        BlocProvider<ThemeCubit>(create: (_) => sl<ThemeCubit>()),
 
         //Local web server changes
         BlocProvider<DiscoverHostBloc>(create: (_) => sl<DiscoverHostBloc>()),
@@ -197,83 +199,115 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<StaffAuthBloc>(create: (_) => sl<StaffAuthBloc>()),
         BlocProvider<OnboardingBloc>(create: (_) => sl<OnboardingBloc>()),
       ],
-      child: MaterialApp(
-        title: 'RM-Mobile',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(fontFamily: "Inter"),
-        builder: (context, child) {
-          final media = MediaQuery.of(context);
-          final double textScale = _tabletTextScaleFor(context);
-          final double uiScale = _tabletUiScaleFor(textScale);
-          final ThemeData baseTheme = Theme.of(context);
-          final double densityAdjust = ((uiScale - 1.0) * 3.2).clamp(0.0, 1.35);
-          final ThemeData scaledTheme = baseTheme.copyWith(
-            visualDensity: VisualDensity(
-              horizontal: densityAdjust,
-              vertical: densityAdjust,
-            ),
-            listTileTheme: baseTheme.listTileTheme.copyWith(
-              minVerticalPadding: (4 * uiScale).clamp(4.0, 10.0),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: (16 * uiScale).clamp(16.0, 26.0),
-                vertical: (2 * uiScale).clamp(2.0, 8.0),
-              ),
-            ),
-            inputDecorationTheme: baseTheme.inputDecorationTheme.copyWith(
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: (14 * uiScale).clamp(14.0, 22.0),
-                vertical: (13 * uiScale).clamp(13.0, 20.0),
-              ),
-            ),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: (18 * uiScale).clamp(18.0, 30.0),
-                  vertical: (12 * uiScale).clamp(12.0, 20.0),
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          return MaterialApp(
+            title: 'RM-Mobile',
+            debugShowCheckedModeBanner: false,
+            themeMode: themeMode,
+            theme: _buildTheme(Brightness.light),
+            darkTheme: _buildTheme(Brightness.dark),
+            builder: (context, child) {
+              final media = MediaQuery.of(context);
+              final double textScale = _tabletTextScaleFor(context);
+              final double uiScale = _tabletUiScaleFor(textScale);
+              final ThemeData baseTheme = Theme.of(context);
+              final double densityAdjust =
+                  ((uiScale - 1.0) * 3.2).clamp(0.0, 1.35);
+              final ThemeData scaledTheme = baseTheme.copyWith(
+                visualDensity: VisualDensity(
+                  horizontal: densityAdjust,
+                  vertical: densityAdjust,
                 ),
-                minimumSize: Size(
-                  (84 * uiScale).clamp(84.0, 130.0),
-                  (42 * uiScale).clamp(42.0, 60.0),
+                listTileTheme: baseTheme.listTileTheme.copyWith(
+                  minVerticalPadding: (4 * uiScale).clamp(4.0, 10.0),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: (16 * uiScale).clamp(16.0, 26.0),
+                    vertical: (2 * uiScale).clamp(2.0, 8.0),
+                  ),
                 ),
-              ),
-            ),
-            outlinedButtonTheme: OutlinedButtonThemeData(
-              style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: (18 * uiScale).clamp(18.0, 30.0),
-                  vertical: (12 * uiScale).clamp(12.0, 20.0),
+                inputDecorationTheme: baseTheme.inputDecorationTheme.copyWith(
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: (14 * uiScale).clamp(14.0, 22.0),
+                    vertical: (13 * uiScale).clamp(13.0, 20.0),
+                  ),
                 ),
-                minimumSize: Size(
-                  (84 * uiScale).clamp(84.0, 130.0),
-                  (42 * uiScale).clamp(42.0, 60.0),
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: (18 * uiScale).clamp(18.0, 30.0),
+                      vertical: (12 * uiScale).clamp(12.0, 20.0),
+                    ),
+                    minimumSize: Size(
+                      (84 * uiScale).clamp(84.0, 130.0),
+                      (42 * uiScale).clamp(42.0, 60.0),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: (16 * uiScale).clamp(16.0, 28.0),
-                  vertical: (10 * uiScale).clamp(10.0, 18.0),
+                outlinedButtonTheme: OutlinedButtonThemeData(
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: (18 * uiScale).clamp(18.0, 30.0),
+                      vertical: (12 * uiScale).clamp(12.0, 20.0),
+                    ),
+                    minimumSize: Size(
+                      (84 * uiScale).clamp(84.0, 130.0),
+                      (42 * uiScale).clamp(42.0, 60.0),
+                    ),
+                  ),
                 ),
-                minimumSize: Size(
-                  (74 * uiScale).clamp(74.0, 120.0),
-                  (38 * uiScale).clamp(38.0, 56.0),
+                textButtonTheme: TextButtonThemeData(
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: (16 * uiScale).clamp(16.0, 28.0),
+                      vertical: (10 * uiScale).clamp(10.0, 18.0),
+                    ),
+                    minimumSize: Size(
+                      (74 * uiScale).clamp(74.0, 120.0),
+                      (38 * uiScale).clamp(38.0, 56.0),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          );
+              );
 
-          return MediaQuery(
-            data: media.copyWith(textScaler: TextScaler.linear(textScale)),
-            child: Theme(
-              data: scaledTheme,
-              child: child ?? const SizedBox.shrink(),
-            ),
+              return MediaQuery(
+                data: media.copyWith(textScaler: TextScaler.linear(textScale)),
+                child: Theme(
+                  data: scaledTheme,
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              );
+            },
+            home: const OnboardingGateScreen(),
+            //home: const LoadingScreen(),
           );
         },
-        home: const OnboardingGateScreen(),
-        //home: const LoadingScreen(),
       ),
+    );
+  }
+
+  ThemeData _buildTheme(Brightness brightness) {
+    final bool isDark = brightness == Brightness.dark;
+    final ColorScheme scheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF0F8ABE),
+      brightness: brightness,
+    );
+
+    return ThemeData(
+      brightness: brightness,
+      fontFamily: "Inter",
+      colorScheme: scheme,
+      scaffoldBackgroundColor:
+          isDark ? const Color(0xFF0E1116) : const Color(0xFFF6F7F8),
+      appBarTheme: AppBarTheme(
+        backgroundColor:
+            isDark ? const Color(0xFF0E1116) : const Color(0xFFF6F7F8),
+        foregroundColor: scheme.onBackground,
+        elevation: 0,
+      ),
+      dialogBackgroundColor:
+          isDark ? const Color(0xFF151B22) : Colors.white,
+      dividerColor: isDark ? const Color(0xFF222A33) : const Color(0xFFE1E5EA),
     );
   }
 }

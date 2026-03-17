@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
 import 'colors.dart';
+import 'theme_colors.dart';
 
 //Global Text Field
 class CustomTextField extends StatefulWidget {
@@ -72,6 +73,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
@@ -95,7 +97,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       enabled: widget.isEnabled,
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: const TextStyle(color: kGreyColor, fontSize: 14),
+        hintStyle: TextStyle(color: colors.onSurfaceMuted, fontSize: 14),
         prefixIcon: widget.leadingIcon != null
             ? Icon(
                 widget.leadingIcon,
@@ -104,14 +106,14 @@ class _CustomTextFieldState extends State<CustomTextField> {
               )
             : null,
         filled: true,
-        fillColor: kSecondaryColor,
+        fillColor: colors.surface,
         contentPadding: EdgeInsets.symmetric(
           vertical: (12 * uiScale).clamp(12.0, 14.5),
           horizontal: (10 * uiScale).clamp(10.0, 12.0),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular((10 * uiScale).clamp(10.0, 12.0)),
-          borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+          borderSide: BorderSide(color: colors.divider, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular((10 * uiScale).clamp(10.0, 12.0)),
@@ -119,7 +121,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular((10 * uiScale).clamp(10.0, 12.0)),
-          borderSide: BorderSide(color: kGreyColor, width: 1),
+          borderSide: BorderSide(color: colors.divider, width: 1),
         ),
       ),
     );
@@ -132,6 +134,7 @@ class ModernLoadingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final double textScale =
         MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.65)).clamp(1.0, 1.42);
@@ -139,8 +142,8 @@ class ModernLoadingBar extends StatelessWidget {
       borderRadius: BorderRadius.circular((10 * uiScale).clamp(10.0, 14.0)),
       child: LinearProgressIndicator(
         minHeight: (6 * uiScale).clamp(6.0, 10.0),
-        backgroundColor: kSecondaryColor,
-        color: kGreyColor,
+        backgroundColor: colors.surfaceAlt,
+        color: kPrimaryColor,
       ),
     );
   }

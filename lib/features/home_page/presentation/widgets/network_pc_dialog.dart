@@ -8,6 +8,7 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
@@ -70,6 +71,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
   void _showManualPortDialog(BuildContext context) {
     if (_selectedPc == null) return;
+    final colors = context.appColors;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -86,7 +88,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
-        backgroundColor: kBgColor,
+        backgroundColor: colors.surface,
         child: Container(
           constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
@@ -94,8 +96,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                decoration: const BoxDecoration(
-                  gradient: kGColor,
+                decoration: BoxDecoration(
+                  gradient: colors.heroGradient,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(10),
                     topRight: Radius.circular(10),
@@ -103,12 +105,15 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.settings_ethernet, color: kSecondaryColor),
+                    Icon(Icons.settings_ethernet, color: colors.onHero),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         "Enter Port",
-                        style: getSmartTitle(fontSize: 16),
+                        style: getSmartTitle(
+                          color: colors.onHero,
+                          fontSize: 16,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -169,17 +174,17 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryColor,
-                          foregroundColor: kSecondaryColor,
+                          foregroundColor: colors.onHero,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                           padding: EdgeInsets.symmetric(vertical: buttonPad),
                         ),
-                        child: const Text(
+                        child: Text(
                           "Try Port",
                           style: TextStyle(
-                            color: kSecondaryColor,
+                            color: colors.onHero,
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
@@ -198,6 +203,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
   void _showPairCodeDialog(BuildContext context, String pairCode) {
     _connectCodeController.clear();
+    final colors = context.appColors;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -214,7 +220,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
-        backgroundColor: kBgColor,
+        backgroundColor: colors.surface,
         child: Container(
           constraints: BoxConstraints(maxHeight: maxDialogHeight),
           child: Column(
@@ -222,8 +228,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                decoration: const BoxDecoration(
-                  gradient: kGColor,
+                decoration: BoxDecoration(
+                  gradient: colors.heroGradient,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(10),
                     topRight: Radius.circular(10),
@@ -231,12 +237,15 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.key_rounded, color: kSecondaryColor),
+                    Icon(Icons.key_rounded, color: colors.onHero),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         "Pair With Host",
-                        style: getSmartTitle(fontSize: 16),
+                        style: getSmartTitle(
+                          color: colors.onHero,
+                          fontSize: 16,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -253,15 +262,18 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: kGreyColor.withOpacity(0.3)),
-                        color: kSecondaryColor.withOpacity(0.2),
+                        border: Border.all(color: colors.divider),
+                        color: colors.surfaceAlt,
                       ),
                       child: Row(
                         children: [
                           Expanded(
                             child: SelectableText(
                               pairCode,
-                              style: TextStyle(fontSize: 20, color: kThirdColor),
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: colors.onSurface,
+                              ),
                             ),
                           ),
                           IconButton(
@@ -271,9 +283,9 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                                 context: context,
                                 text: "Pair code copied",
                                 typeInfo: TypeInfo.success,
-                                backgroundColor: kSecondaryColor,
+                                backgroundColor: colors.surface,
                                 iconColor: kPrimaryColor,
-                                textColor: kThirdColor,
+                                textColor: colors.onSurface,
                                 padding: 70,
                                 position: MessagePosition.top,
                               );
@@ -326,7 +338,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                                   },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: kPrimaryColor,
-                              foregroundColor: kSecondaryColor,
+                              foregroundColor: colors.onHero,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -334,20 +346,20 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                               padding: EdgeInsets.symmetric(vertical: buttonPad),
                             ),
                             child: pairState is PairingDevice
-                                ? const SizedBox(
+                                ? SizedBox(
                                     height: 16,
                                     width: 16,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        kSecondaryColor,
+                                        colors.onHero,
                                       ),
                                     ),
                                   )
-                                : const Text(
+                                : Text(
                                     "Connect",
                                     style: TextStyle(
-                                      color: kSecondaryColor,
+                                      color: colors.onHero,
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -368,6 +380,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     // Calculate a safe max height (e.g., 70% of screen)
     final double safeMaxHeight = (MediaQuery.of(context).size.height * 0.72)
         .clamp(380.0, 760.0);
@@ -463,9 +476,9 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                 context: navigator.context,
                 text: state.response.message,
                 typeInfo: TypeInfo.success,
-                backgroundColor: kSecondaryColor,
+                backgroundColor: colors.surface,
                 iconColor: kPrimaryColor,
-                textColor: kThirdColor,
+                textColor: colors.onSurface,
                 padding: 70,
                 position: MessagePosition.top,
               );
@@ -481,7 +494,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 10,
-        backgroundColor: kBgColor,
+        backgroundColor: colors.surface,
         child: Container(
           constraints: BoxConstraints(maxHeight: safeMaxHeight),
           child: Column(
@@ -489,8 +502,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 26),
-                decoration: const BoxDecoration(
-                  gradient: kGColor,
+                decoration: BoxDecoration(
+                  gradient: colors.heroGradient,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(10),
                     topRight: Radius.circular(10),
@@ -498,12 +511,15 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.dns_rounded, color: kSecondaryColor),
+                    Icon(Icons.dns_rounded, color: colors.onHero),
                     const SizedBox(width: 20),
                     Expanded(
                       child: Text(
                         "Network Servers",
-                        style: getSmartTitle(fontSize: 18),
+                        style: getSmartTitle(
+                          color: colors.onHero,
+                          fontSize: 18,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -523,7 +539,10 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                             children: [
                               Text(
                                 "Finding Network Servers...",
-                                style: getSmartTitle(color: kThirdColor, fontSize: 16),
+                                style: getSmartTitle(
+                                  color: colors.onSurface,
+                                  fontSize: 16,
+                                ),
                               ),
                               Container(
                                 width: 200,
@@ -554,7 +573,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                               Text(
                                 state.message,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(color: kGreyColor),
+                                style: TextStyle(color: colors.onSurfaceMuted),
                               ),
                               const SizedBox(height: 10),
                               TextButton(
@@ -585,7 +604,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         itemCount: state.pcList.length,
                         separatorBuilder: (ctx, i) => Divider(
-                          color: kGreyColor.withOpacity(0.2),
+                          color: colors.divider,
                           height: 1,
                           indent: 16,
                           endIndent: 16,
@@ -612,6 +631,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
+    final colors = ctx.appColors;
 
     return InkWell(
       onTap: () {
@@ -640,17 +660,17 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
             Expanded(
               child: Text(
                 pc.hostName ?? "Unknown-Server",
-                style: const TextStyle(color: kThirdColor),
+                style: TextStyle(color: colors.onSurface),
                 maxLines: 1, // Fix overflow
                 overflow: TextOverflow.ellipsis, // Fix overflow
               ),
             ),
             if (_isPairFlowLoading && _selectedPc?.ipAddress == pc.ipAddress)
-              const CupertinoActivityIndicator()
+              CupertinoActivityIndicator(color: colors.onSurfaceMuted)
             else
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios,
-                color: kGreyColor,
+                color: colors.onSurfaceMuted,
                 size: 14,
               ),
 

@@ -7,6 +7,7 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
@@ -83,6 +84,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isLandscape = media.orientation == Orientation.landscape;
@@ -132,7 +134,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
       },
       child: Scaffold(
         body: Container(
-          decoration: const BoxDecoration(gradient: kGColor),
+          decoration: BoxDecoration(gradient: colors.heroGradient),
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -151,7 +153,9 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                           width: double.infinity,
                           height: logoHeight,
                           child: Image.asset(
-                            "assets/images/trademark.png",
+                            Theme.of(context).brightness == Brightness.dark
+                                ? "assets/images/trademark_dark.png"
+                                : "assets/images/trademark.png",
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -168,14 +172,14 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                             decoration: BoxDecoration(
-                              color: kSecondaryColor.withOpacity(0.14),
+                              color: colors.glassFill,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: kSecondaryColor.withOpacity(0.28),
+                                color: colors.glassBorder,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: kThirdColor.withOpacity(0.12),
+                                  color: colors.cardShadow,
                                   blurRadius: 16,
                                   offset: const Offset(0, 8),
                                 ),
@@ -187,7 +191,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                 Text(
                                   "Staff Sign In",
                                   style: getSmartTitle(
-                                    color: kSecondaryColor,
+                                    color: colors.onHero,
                                     fontSize: 21,
                                   ),
                                 ),
@@ -195,7 +199,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                 Text(
                                   "Authenticate to continue to stock operations",
                                   style: TextStyle(
-                                    color: kSecondaryColor.withOpacity(0.8),
+                                    color: colors.onHero.withOpacity(0.8),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -207,10 +211,10 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: kSecondaryColor.withOpacity(0.2),
+                                    color: colors.surface.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: kSecondaryColor.withOpacity(0.25),
+                                      color: colors.divider,
                                     ),
                                   ),
                                   child: Text(
@@ -218,8 +222,8 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                             ? AppGlobals.instance.shopfront
                                             : _shopfrontName) ??
                                         "Shopfront",
-                                    style: const TextStyle(
-                                      color: kSecondaryColor,
+                                    style: TextStyle(
+                                      color: colors.onHero,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -259,11 +263,11 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                         onPressed: loading ? null : _onSignIn,
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: kPrimaryColor,
-                                          foregroundColor: kSecondaryColor,
+                                          foregroundColor: colors.onHero,
                                           disabledBackgroundColor:
                                               kPrimaryColor.withOpacity(0.7),
                                           disabledForegroundColor:
-                                              kSecondaryColor.withOpacity(0.8),
+                                            colors.onHero.withOpacity(0.8),
                                           minimumSize: Size(
                                             double.infinity,
                                             buttonHeight,
@@ -281,10 +285,10 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                           ),
                                         ),
                                         child: loading
-                                            ? const CupertinoActivityIndicator(
-                                                color: kSecondaryColor,
+                                            ? CupertinoActivityIndicator(
+                                                color: colors.onHero,
                                               )
-                                            : const Center(
+                                            : Center(
                                                 child: Text(
                                                   "Sign In",
                                                   textScaler:
@@ -292,7 +296,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                                   maxLines: 1,
                                                   textAlign: TextAlign.center,
                                                   style: TextStyle(
-                                                    color: kSecondaryColor,
+                                                    color: colors.onHero,
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w700,
                                                   ),
@@ -313,7 +317,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                       "App Version 1.0.0 (AAAPOS Pty Ltd)",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: kSecondaryColor.withOpacity(0.68),
+                        color: colors.onHero.withOpacity(0.68),
                         fontSize: 12,
                       ),
                     ),

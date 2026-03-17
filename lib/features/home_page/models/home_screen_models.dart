@@ -22,6 +22,7 @@ class HomeScreenModels implements HomeRepo {
   //Data manipulation can be done here (E.g. substituting data for null values returned from API)
   static const String _kAutoBackupEnabledKey = "auto_backup_enabled";
   static const String _kLastAutoBackupAtKey = "last_auto_backup_at";
+  static const String _kDarkModeEnabledKey = "dark_mode_enabled";
 
   @override
   Future<List<NetworkServerVO>> fetchNetworkServers() async {
@@ -194,10 +195,35 @@ class HomeScreenModels implements HomeRepo {
   }
 
   @override
+  Future<bool> getDarkModeEnabled() async {
+    try {
+      final raw = await LocalDbDAO.instance.getAppConfig(
+        _kDarkModeEnabledKey,
+      );
+      if (raw == null || raw.isEmpty) return false;
+      return raw == "1";
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
   Future<void> setAutoBackupEnabled(bool enabled) async {
     try {
       await LocalDbDAO.instance.saveAppConfig(
         _kAutoBackupEnabledKey,
+        enabled ? "1" : "0",
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<void> setDarkModeEnabled(bool enabled) async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(
+        _kDarkModeEnabledKey,
         enabled ? "1" : "0",
       );
     } on Exception catch (error) {

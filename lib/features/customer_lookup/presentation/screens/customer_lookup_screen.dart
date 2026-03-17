@@ -29,6 +29,7 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/cu
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/filter_criteria.dart';
@@ -124,9 +125,11 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: kBgColor,
+      backgroundColor: isDark ? colors.bg : kBgColor,
       body: SafeArea(
         child: Stack(
           children: [
@@ -134,14 +137,14 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
               children: [
                 const SizedBox(height: 25),
                 const CustomerLookupAppbar(),
-                 const SizedBox(height: 5),
+                const SizedBox(height: 5),
                 const PendingCustomerUpdatesTile(),
                
-                const Divider(
+                Divider(
                   indent: 15,
                   endIndent: 15,
                   thickness: 0.5,
-                  color: kGreyColor,
+                  color: isDark ? colors.divider : kGreyColor,
                 ),
                 const CustomerSyncInfoWidget(),
                 BlocBuilder<CustomerListBloc, CustomerListState>(
@@ -192,8 +195,8 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                             const SizedBox(width: 8),
                             Text(
                               "${state.customers.length} of ${NumberFormat('#,###').format(state.totalCount)}",
-                              style: const TextStyle(
-                                color: kGreyColor,
+                              style: TextStyle(
+                                color: colors.onSurfaceMuted,
                                 fontSize: 11,
                               ),
                             ),
@@ -219,9 +222,12 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
+                          Text(
                             '0 of 0',
-                            style: TextStyle(color: kGreyColor, fontSize: 11),
+                            style: TextStyle(
+                              color: colors.onSurfaceMuted,
+                              fontSize: 11,
+                            ),
                           ),
                         ],
                       ),
@@ -255,9 +261,9 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.white.withOpacity(0.0),
-                                Colors.white.withOpacity(0.5),
-                                Colors.white.withOpacity(0.9),
+                                context.appColors.surface.withOpacity(0.0),
+                                context.appColors.surface.withOpacity(0.5),
+                                context.appColors.surface.withOpacity(0.9),
                               ],
                               stops: const [0.0, 0.4, 1.0],
                             ),
@@ -344,6 +350,8 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
   }
 
   Widget _buildGlassSearchBar() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -357,12 +365,20 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
         child: Container(
           height: (isTablet ? 64 : 56) * uiScale,
           decoration: BoxDecoration(
-            border: Border.all(color: kGreyColor.withOpacity(0.6), width: 0.6),
-            color: Colors.white.withOpacity(0.65),
+            border: Border.all(
+              color: isDark
+                  ? colors.divider
+                  : kGreyColor.withOpacity(0.6),
+              width: 0.6,
+            ),
+            color: (isDark ? colors.surface : kSecondaryColor)
+                .withOpacity(0.65),
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: isDark
+                    ? colors.cardShadow
+                    : kThirdColor.withOpacity(0.05),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -609,13 +625,14 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
   }
 
   Widget loadingWidget() {
+    final colors = context.appColors;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           'Getting Customers From Database...',
-          style: getSmartTitle(color: kThirdColor, fontSize: 16),
+          style: getSmartTitle(color: colors.onSurface, fontSize: 16),
         ),
         Padding(
           padding: const EdgeInsets.only(
@@ -626,9 +643,9 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
           ),
           child: ModernLoadingBar(),
         ),
-        const Text(
+        Text(
           'This may take a few seconds.',
-          style: TextStyle(fontSize: 11),
+          style: TextStyle(fontSize: 11, color: colors.onSurfaceMuted),
         ),
         const SizedBox(height: 60),
       ],
@@ -641,6 +658,8 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     required String query,
     String? matchedField,
   }) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final double shortestSide = MediaQuery.of(context).size.shortestSide;
     final bool isTablet = shortestSide >= 600;
     final bool isLargeTablet = shortestSide >= 900;
@@ -687,11 +706,11 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: kSecondaryColor,
+                  color: colors.surface,
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
                   boxShadow: [
                     BoxShadow(
-                      color: kThirdColor.withOpacity(0.05),
+                      color: colors.cardShadow,
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                       spreadRadius: 0,
@@ -744,7 +763,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                   query: query,
                                   highlightColor: Colors.amber.withOpacity(0.6),
                                   style: getSmartTitle(
-                                    color: kThirdColor,
+                                    color: colors.onSurface,
                                     fontSize: 14 * textUiScale,
                                   ),
                                 ),
@@ -772,7 +791,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                 Icon(
                                   Icons.business,
                                   size: 12 * textUiScale,
-                                  color: kThirdColor.withOpacity(0.6),
+                                  color: colors.onSurfaceMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -782,7 +801,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: kThirdColor.withOpacity(0.7),
+                                      color: colors.onSurfaceMuted,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -798,7 +817,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                 Icon(
                                   Icons.phone,
                                   size: 12 * textUiScale,
-                                  color: kThirdColor.withOpacity(0.6),
+                                  color: colors.onSurfaceMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -808,7 +827,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: kThirdColor.withOpacity(0.7),
+                                      color: colors.onSurfaceMuted,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -824,7 +843,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                 Icon(
                                   Icons.print,
                                   size: 12 * textUiScale,
-                                  color: kThirdColor.withOpacity(0.6),
+                                  color: colors.onSurfaceMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -834,7 +853,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: kThirdColor.withOpacity(0.7),
+                                      color: colors.onSurfaceMuted,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -850,7 +869,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                 Icon(
                                   Icons.phone_android,
                                   size: 12 * textUiScale,
-                                  color: kThirdColor.withOpacity(0.6),
+                                  color: colors.onSurfaceMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -860,7 +879,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: kThirdColor.withOpacity(0.7),
+                                      color: colors.onSurfaceMuted,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -876,7 +895,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                 Icon(
                                   Icons.email,
                                   size: 12 * textUiScale,
-                                  color: kThirdColor.withOpacity(0.6),
+                                  color: colors.onSurfaceMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -886,7 +905,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
-                                      color: kThirdColor.withOpacity(0.7),
+                                      color: colors.onSurfaceMuted,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -903,13 +922,19 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                       decoration: BoxDecoration(
                         color: (customer.account
                                 ? Colors.green
-                                : kGreyColor)
+                                : (isDark
+                                    ? colors.onSurfaceMuted
+                                    : Colors.blueGrey[700]!))
                             .withOpacity(0.12),
                         borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
                       ),
                       child: Icon(
                         Icons.person,
-                        color: customer.account ? Colors.green : kGreyColor,
+                        color: customer.account
+                            ? Colors.green
+                            : (isDark
+                                ? colors.onSurfaceMuted
+                                : Colors.blueGrey[700]!),
                         size: accountIconSize,
                       ),
                     ),

@@ -441,6 +441,8 @@ class CustomerLookupModels implements CustomerLookupRepo {
                 "product": item.product,
                 "qty": item.qty,
                 "price": item.price,
+                "stock_id": item.stockId,
+                "goods_tax": item.goodsTax,
               },
             )
             .toList(),

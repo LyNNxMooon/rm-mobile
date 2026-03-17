@@ -10,6 +10,7 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/network_server_vo.dart';
 import '../../../../utils/global_var_utils.dart';
@@ -61,6 +62,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isPortrait = media.orientation == Orientation.portrait;
@@ -106,14 +108,14 @@ class _GlassDrawerState extends State<GlassDrawer> {
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
               decoration: BoxDecoration(
-                color: kSecondaryColor.withOpacity(0.1),
+                color: colors.glassFill,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(40),
                   topRight: Radius.circular(40),
                 ),
-                border: Border.all(color: kSecondaryColor.withOpacity(0.2)),
+                border: Border.all(color: colors.glassBorder),
                 boxShadow: [
-                  BoxShadow(blurRadius: 20, color: kThirdColor.withOpacity(.1)),
+                  BoxShadow(blurRadius: 20, color: colors.cardShadow),
                 ],
               ),
               child: Column(
@@ -126,7 +128,9 @@ class _GlassDrawerState extends State<GlassDrawer> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: kSecondaryColor.withOpacity(0.5),
+                        color: colors.isDark
+                            ? colors.onSurfaceMuted
+                            : kSecondaryColor.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -148,8 +152,10 @@ class _GlassDrawerState extends State<GlassDrawer> {
 
                             return Text(
                               shopText,
-                              style: const TextStyle(
-                                color: kSecondaryColor,
+                              style: TextStyle(
+                                color: colors.isDark
+                                    ? colors.onSurface
+                                    : kSecondaryColor,
                                 fontSize: 16,
                               ),
                               maxLines: 1,
@@ -370,6 +376,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
     int columnCount,
     double scale,
   ) {
+    final colors = context.appColors;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     // Scale fonts and icon only for tablets/iPads
     final double titleSize = isTablet ? (14 * scale).clamp(14.0, 19.0) : 14.0;
@@ -386,22 +393,15 @@ class _GlassDrawerState extends State<GlassDrawer> {
         child: FadeInAnimation(
           child: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  kSecondaryColor.withOpacity(0.95),
-                  kSecondaryColor.withOpacity(0.70),
-                ],
-              ),
+              gradient: colors.glassGradient,
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
-                color: kSecondaryColor.withOpacity(0.6),
+                color: colors.glassBorder,
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: kThirdColor.withOpacity(0.05),
+                  color: colors.cardShadow,
                   blurRadius: 15,
                   offset: const Offset(0, 8),
                 ),
@@ -439,7 +439,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
                           child: Text(
                             subTitle,
                             style: TextStyle(
-                              color: kGreyColor,
+                              color: colors.onSurfaceMuted,
                               fontSize: subTitleSize,
                               fontWeight: FontWeight.w500,
                             ),

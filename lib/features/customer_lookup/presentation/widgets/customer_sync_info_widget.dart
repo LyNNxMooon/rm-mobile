@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 import 'pending_customer_updates_tile.dart';
 import '../BLoC/customer_lookup_bloc.dart';
 import '../BLoC/customer_lookup_events.dart';
@@ -138,6 +139,8 @@ class CustomerSyncInfoWidget extends StatelessWidget {
           }
         },
         builder: (context, state) {
+          final colors = context.appColors;
+          final bool isDark = colors.isDark;
           if (state is FetchCustomerProgress) {
             final int total = state.totalCount == 0 ? 1 : state.totalCount;
             final double percent = (state.currentCount / total).clamp(0.0, 1.0);
@@ -145,11 +148,11 @@ class CustomerSyncInfoWidget extends StatelessWidget {
               margin: const EdgeInsets.only(top: 5, bottom: 2),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: kSecondaryColor,
+                color: isDark ? colors.surface : kSecondaryColor,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: kThirdColor.withOpacity(0.05),
+                    color: isDark ? colors.cardShadow : kThirdColor.withOpacity(0.05),
                     blurRadius: 5,
                     offset: const Offset(0, 2),
                   ),
@@ -163,9 +166,10 @@ class CustomerSyncInfoWidget extends StatelessWidget {
                     children: [
                       Text(
                         state.message,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
+                          color: isDark ? colors.onSurface : null,
                         ),
                       ),
                       Text(
@@ -181,7 +185,8 @@ class CustomerSyncInfoWidget extends StatelessWidget {
                   const SizedBox(height: 8),
                   LinearProgressIndicator(
                     value: percent,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor:
+                        isDark ? colors.surfaceAlt : Colors.grey.shade200,
                     valueColor: const AlwaysStoppedAnimation<Color>(kPrimaryColor),
                     minHeight: 6,
                     borderRadius: BorderRadius.circular(3),
@@ -189,28 +194,41 @@ class CustomerSyncInfoWidget extends StatelessWidget {
                   const SizedBox(height: 5),
                   Text(
                     '${state.currentCount} / ${state.totalCount} records',
-                    style: const TextStyle(fontSize: 12, color: kGreyColor),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? colors.onSurfaceMuted : kGreyColor,
+                    ),
                   ),
                 ],
               ),
             );
           } else if (state is FetchCustomerFailure) {
+            final scheme = Theme.of(context).colorScheme;
             return Container(
               margin: const EdgeInsets.only(top: 5, bottom: 2),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
+                color: isDark ? scheme.errorContainer : Colors.red.shade50,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.shade200),
+                border: Border.all(
+                  color: isDark ? scheme.errorContainer : Colors.red.shade200,
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: kErrorColor, size: 20),
+                  Icon(
+                    Icons.error_outline,
+                    color: isDark ? scheme.onErrorContainer : kErrorColor,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       state.errorMessage,
-                      style: const TextStyle(color: kErrorColor, fontSize: 14),
+                      style: TextStyle(
+                        color: isDark ? scheme.onErrorContainer : kErrorColor,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ],
