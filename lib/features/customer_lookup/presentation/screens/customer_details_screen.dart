@@ -166,6 +166,21 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         builder: (_) => const Center(child: CircularProgressIndicator(color: kPrimaryColor,)),
       );
 
+      final isOnline =
+          await InternetConnectionUtils.instance.checkInternetConnection();
+      if (!mounted) return;
+
+      if (!isOnline) {
+        Navigator.of(context, rootNavigator: true).pop();
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CustomerTransactionsScreen(customer: widget.customer),
+          ),
+        );
+        return;
+      }
+
       try {
         await di.sl<FetchCustomerTransactions>()(widget.customer.customerId);
         if (!mounted) return;
@@ -177,12 +192,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ),
         );
       } catch (error) {
-        if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error.toString())),
-          );
-        }
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).pop();
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CustomerTransactionsScreen(customer: widget.customer),
+          ),
+        );
       }
     }
   bool _shouldSyncOnExit = false;
