@@ -190,7 +190,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final Color onGlass = isDark ? colors.onHero : kSecondaryColor;
+    final Color onGlass = isDark ? Colors.white : kSecondaryColor;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -370,7 +370,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                             size: 20,
                           ),
                           const SizedBox(width: 8),
-                          const Text(
+                          Text(
                             "CALCULATOR",
                             style: TextStyle(
                               fontSize: 13,
@@ -434,7 +434,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                             },
                           ),
                           const SizedBox(width: 8),
-                          const Text(
+                          Text(
                             "UPDATE",
                             style: TextStyle(
                               fontSize: 13,
@@ -487,7 +487,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: BorderSide(
-          color: isDark ? colors.divider : Colors.grey[300]!,
+          color: isDark ? Colors.white : Colors.grey[300]!,
           width: 0.5,
         ),
       ),

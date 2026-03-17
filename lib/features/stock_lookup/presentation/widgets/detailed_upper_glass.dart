@@ -54,9 +54,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final Color onGlass = isDark ? colors.onHero : kSecondaryColor;
-    final Color onGlassMuted =
-        isDark ? colors.onHero.withOpacity(0.7) : kGreyColor;
+    final Color onGlass = isDark ? Colors.white : kSecondaryColor;
+    final Color onGlassMuted = isDark ? Colors.white70 : kGreyColor;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -120,9 +119,9 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                        color: isDark
-                            ? colors.surfaceAlt.withOpacity(0.35)
-                            : kSecondaryColor.withOpacity(0.2),
+                      color: isDark
+                        ? Colors.grey.withOpacity(0.35)
+                        : kSecondaryColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
@@ -314,7 +313,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(7),
                             borderSide: BorderSide(
-                              color: isDark ? colors.divider : Colors.grey[300]!,
+                              color: isDark ? Colors.white : Colors.grey[300]!,
                               width: 0.5,
                             ),
                           ),
@@ -397,7 +396,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(7),
                             borderSide: BorderSide(
-                              color: isDark ? colors.divider : Colors.grey[300]!,
+                              color: isDark ? Colors.white : Colors.grey[300]!,
                               width: 0.5,
                             ),
                           ),
@@ -484,7 +483,7 @@ class StockInfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final Color onGlass = isDark ? colors.onSurface : kSecondaryColor;
+    final Color onGlass = isDark ? Colors.white : kSecondaryColor;
     return Padding(
       padding: const EdgeInsets.symmetric(
         vertical: 6.0,

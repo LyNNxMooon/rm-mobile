@@ -123,7 +123,12 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   Icons.camera_alt_rounded,
                   color: kPrimaryColor,
                 ),
-                title: const Text("Take Photo"),
+                title: Text(
+                  "Take Photo",
+                  style: TextStyle(
+                    color: isDark ? colors.onSurface : null,
+                  ),
+                ),
                 onTap: () async {
                   Navigator.pop(context);
                   final x = await _picker.pickImage(
@@ -138,7 +143,12 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   Icons.photo_library_rounded,
                   color: kPrimaryColor,
                 ),
-                title: const Text("Choose from Gallery"),
+                title: Text(
+                  "Choose from Gallery",
+                  style: TextStyle(
+                    color: isDark ? colors.onSurface : null,
+                  ),
+                ),
                 onTap: () async {
                   Navigator.pop(context);
                   final x = await _picker.pickImage(
@@ -397,6 +407,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final Color imageBackground = kSecondaryColor;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isLandscape = media.orientation == Orientation.landscape;
@@ -517,7 +528,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         tag: 'stock_image_${widget.stock.stockID}',
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isDark ? colors.surface : kSecondaryColor,
+                            color: imageBackground,
                             borderRadius: const BorderRadius.only(
                               bottomRight: Radius.circular(20),
                               bottomLeft: Radius.circular(20),
@@ -547,9 +558,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, _, _) =>
                                             Container(
-                                              color: isDark
-                                                  ? colors.surface
-                                                  : kSecondaryColor,
+                                              color: imageBackground,
                                             ),
                                       )
                                     else if (imageUrl.isNotEmpty)
@@ -558,16 +567,12 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                         fit: BoxFit.cover,
                                         errorWidget: (_, _, _) =>
                                             Container(
-                                              color: isDark
-                                                  ? colors.surface
-                                                  : kSecondaryColor,
+                                              color: imageBackground,
                                             ),
                                       )
                                     else
                                       Container(
-                                        color: isDark
-                                            ? colors.surface
-                                            : kSecondaryColor,
+                                        color: imageBackground,
                                       ),
 
                                     BackdropFilter(

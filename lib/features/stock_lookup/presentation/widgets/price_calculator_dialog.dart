@@ -187,7 +187,7 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final Color textColor = isDark ? colors.onSurface : kThirdColor;
-    final Color surface = isDark ? colors.surface : Colors.white;
+    final Color surface = isDark ? colors.surfaceAlt : Colors.white;
     final Color surfaceAlt = isDark ? colors.surfaceAlt : Colors.grey[100]!;
     final Color divider = isDark ? colors.divider : Colors.grey[300]!;
     final media = MediaQuery.of(context);
@@ -198,7 +198,12 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
 
     return Dialog(
       insetPadding: dialogInsetPadding(context),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isDark
+            ? const BorderSide(color: Colors.white30, width: 1)
+            : BorderSide.none,
+      ),
       backgroundColor: surface,
       child: AnimatedPadding(
         duration: const Duration(milliseconds: 180),

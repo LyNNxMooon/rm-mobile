@@ -86,7 +86,7 @@ class _PricingDialogState extends State<PricingDialog> {
     final Color textColor = isDark ? colors.onSurface : kThirdColor;
     final Color mutedText =
             isDark ? colors.onSurfaceMuted : kThirdColor.withOpacity(0.75);
-    final Color surface = isDark ? colors.surface : Colors.white;
+    final Color surface = isDark ? colors.surfaceAlt : Colors.white;
     //final Color surfaceAlt = isDark ? colors.surfaceAlt : Colors.grey.shade50;
     final Color divider = isDark ? colors.divider : Colors.grey.shade300;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
@@ -112,7 +112,12 @@ class _PricingDialogState extends State<PricingDialog> {
 
     return Dialog(
       insetPadding: customInsetPadding,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isDark
+            ? const BorderSide(color: Colors.white30, width: 1)
+            : BorderSide.none,
+      ),
       backgroundColor: surface,
       child: ConstrainedBox(
         constraints: BoxConstraints(
