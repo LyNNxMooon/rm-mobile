@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_create_screen.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_details_screen.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_thumbnail_tile.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
@@ -469,22 +470,30 @@ Future<void> showPendingCustomerUpdatesDialog({
                                 child: _PendingCustomerTile(
                                   update: entry.update,
                                   customer: entry.customer,
-                                  onTap: entry.customer == null
-                                      ? null
-                                      : () async {
-                                          Navigator.of(dialogContext).pop();
-                                          await context.navigateToNext(
-                                            CustomerDetailsScreen(
-                                              customer: entry.customer!,
-                                            ),
-                                          );
-                                          if (!context.mounted) return;
-                                          context
-                                              .read<PendingCustomerUpdatesBloc>()
-                                              .add(
-                                                LoadPendingCustomerUpdatesCountEvent(),
-                                              );
-                                        },
+                                  onTap: () async {
+                                    Navigator.of(dialogContext).pop();
+                                    if (entry.update.action == 'create') {
+                                      // Navigate to create screen with pre-filled data
+                                      await context.navigateToNext(
+                                        CustomerCreateScreen(
+                                          pendingUpdate: entry.update,
+                                        ),
+                                      );
+                                    } else if (entry.customer != null) {
+                                      // Navigate to details screen for updates
+                                      await context.navigateToNext(
+                                        CustomerDetailsScreen(
+                                          customer: entry.customer!,
+                                        ),
+                                      );
+                                    }
+                                    if (!context.mounted) return;
+                                    context
+                                        .read<PendingCustomerUpdatesBloc>()
+                                        .add(
+                                          LoadPendingCustomerUpdatesCountEvent(),
+                                        );
+                                  },
                                 ),
                               );
                             },

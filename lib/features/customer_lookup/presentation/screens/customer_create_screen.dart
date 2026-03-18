@@ -12,9 +12,12 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
+import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
 
 class CustomerCreateScreen extends StatefulWidget {
-  const CustomerCreateScreen({super.key});
+  final PendingCustomerUpdateVO? pendingUpdate;
+
+  const CustomerCreateScreen({super.key, this.pendingUpdate});
 
   @override
   State<CustomerCreateScreen> createState() => _CustomerCreateScreenState();
@@ -187,6 +190,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   void initState() {
     super.initState();
     _initControllers();
+    _populateFromPendingUpdate();
     context.read<CustomerCreateBloc>().add(ResetCustomerCreateEvent());
   }
 
@@ -236,6 +240,145 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
         });
       }
     });
+  }
+
+  void _populateFromPendingUpdate() {
+    final pending = widget.pendingUpdate;
+    if (pending == null) return;
+
+    final payload = pending.payload;
+    final items = payload['items'];
+    if (items is! List || items.isEmpty) return;
+
+    final raw = items.first;
+    final item = raw is Map<String, dynamic>
+        ? raw
+        : (raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{});
+
+    String getString(String key, [String altKey = '']) {
+      final v = item[key] ?? (altKey.isNotEmpty ? item[altKey] : null);
+      return v is String ? v.trim() : '';
+    }
+
+    int getInt(String key, [String altKey = '', int fallback = 0]) {
+      final v = item[key] ?? (altKey.isNotEmpty ? item[altKey] : null);
+      if (v is int) return v;
+      if (v is String) return int.tryParse(v) ?? fallback;
+      return fallback;
+    }
+
+    double getDouble(String key, [double fallback = 0.0]) {
+      final v = item[key];
+      if (v is double) return v;
+      if (v is int) return v.toDouble();
+      if (v is String) return double.tryParse(v) ?? fallback;
+      return fallback;
+    }
+
+    bool getBool(String key, [bool fallback = false]) {
+      final v = item[key];
+      if (v is bool) return v;
+      if (v is int) return v != 0;
+      if (v is String) return v.toLowerCase() == 'true' || v == '1';
+      return fallback;
+    }
+
+    // Personal Details
+    _barcodeController.text = getString('barcode');
+    _surnameController.text = getString('surname');
+    _givenNamesController.text = getString('givenNames', 'given_names');
+    _companyController.text = getString('company');
+    _positionController.text = getString('position');
+    _salutationController.text = getString('salutation');
+    _gradeController.text = getInt('grade').toString();
+
+    // Contact Information
+    _phoneController.text = getString('phone');
+    _faxController.text = getString('fax');
+    _mobileController.text = getString('mobile');
+    _emailController.text = getString('email');
+
+    // Primary Address
+    _addr1Controller.text = getString('addr1');
+    _addr2Controller.text = getString('addr2');
+    _addr3Controller.text = getString('addr3');
+    _suburbController.text = getString('suburb');
+    _stateController.text = getString('state');
+    _postcodeController.text = getString('postcode');
+    _countryController.text = getString('country');
+
+    // Account Details
+    _accountValue = getBool('account');
+    _fromEomValue = getBool('fromEOM', false) || getBool('from_eom');
+    _daysController.text = getInt('days').toString();
+    _limitController.text = getDouble('limit').toString();
+    _abnController.text = _formatAbn(getString('abn'));
+    _overseasValue = getBool('overseas');
+
+    // Flags
+    _statusValue = getBool('status');
+    _inactiveValue = getBool('inactive');
+
+    // Notes & Custom Fields
+    _notesController.text = getString('notes');
+    _commentsController.text = getString('comments');
+    _custom1Controller.text = getString('custom1');
+    _custom2Controller.text = getString('custom2');
+
+    // Delivery
+    _defaultDeliveryAddressController.text =
+        getInt('defaultDeliveryAddress', 'default_delivery_address', 1).toString();
+    _documentDeliveryTypeController.text =
+        getInt('documentDeliveryType', 'document_delivery_type', 0).toString();
+
+    // Secondary Addresses
+    final addresses = item['addresses'];
+    if (addresses is List) {
+      for (final rawAddr in addresses) {
+        final addr = rawAddr is Map<String, dynamic>
+            ? rawAddr
+            : (rawAddr is Map
+                ? Map<String, dynamic>.from(rawAddr)
+                : <String, dynamic>{});
+        final addrNum = addr['addressNumber'] ?? addr['address_number'];
+        final int addressNumber = addrNum is int
+            ? addrNum
+            : (addrNum is String ? (int.tryParse(addrNum) ?? 0) : 0);
+
+        if (addressNumber > 1 &&
+            _secondaryAddressControllers.containsKey(addressNumber)) {
+          final c = _secondaryAddressControllers[addressNumber]!;
+          c.addr1.text = addr['addr1']?.toString().trim() ?? '';
+          c.addr2.text = addr['addr2']?.toString().trim() ?? '';
+          c.addr3.text = addr['addr3']?.toString().trim() ?? '';
+          c.suburb.text = addr['suburb']?.toString().trim() ?? '';
+          c.state.text = addr['state']?.toString().trim() ?? '';
+          c.postcode.text = addr['postcode']?.toString().trim() ?? '';
+          c.country.text = addr['country']?.toString().trim() ?? '';
+          c.phone.text = addr['phone']?.toString().trim() ?? '';
+          c.mobile.text = addr['mobile']?.toString().trim() ?? '';
+          c.email.text = addr['email']?.toString().trim() ?? '';
+        }
+      }
+    }
+
+    // If we have a barcode from pending, mark it as valid for editing
+    if (_barcodeController.text.isNotEmpty) {
+      _isBarcodeValid = true;
+    }
+  }
+
+  String _formatAbn(String digits) {
+    final digitsOnly = digits.replaceAll(RegExp(r'\D'), '');
+    if (digitsOnly.isEmpty) return '';
+    final buffer = StringBuffer();
+    for (var i = 0; i < digitsOnly.length && i < 11; i++) {
+      if (i == 2 || i == 5 || i == 8) {
+        buffer.write('-');
+      }
+      buffer.write(digitsOnly[i]);
+    }
+    return buffer.toString();
   }
 
   @override
