@@ -110,7 +110,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
                       },
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  SizedBox(height: MediaQuery.of(context).size.shortestSide >= 600 ? 15 : 14),
                   Expanded(child: dashBoardView(scrollController)),
                 ],
               ),
@@ -129,7 +129,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
     final double fontSize = isTablet ? 18 : 16;
 
     return Padding(
-      padding: const EdgeInsets.only(left: 28, right: 28, top: 10, bottom: 12),
+      padding: EdgeInsets.only(left: 28, right: 28, top: isTablet ? 10 : 8, bottom: 12),
       child: Text(
         title,
         style: TextStyle(
@@ -169,7 +169,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
 
         return ListView(
           controller: scrollController,
-          padding: const EdgeInsets.only(top: 10, bottom: 40),
+          padding: EdgeInsets.only(top: isTablet ? 10 : 8, bottom: 40),
           physics: const ClampingScrollPhysics(),
           children: [
             // --- SECTION 1: TRANSACTIONS ---

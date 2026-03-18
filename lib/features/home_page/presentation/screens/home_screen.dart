@@ -58,8 +58,8 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       maxChildSize = 0.91;
     } else if (isPortrait) {
-      initialChildSize = 0.67;
-      minChildSize = 0.67;
+      initialChildSize = 0.63;
+      minChildSize = 0.63;
       maxChildSize = 0.88;
     } else if (isTablet) {
       final double pxOffset = 30 / media.size.height;
@@ -72,8 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       maxChildSize = 0.90;
     } else {
-      initialChildSize = 0.54;
-      minChildSize = 0.52;
+      initialChildSize = 0.52;
+      minChildSize = 0.50;
       maxChildSize = 0.86;
     }
 
