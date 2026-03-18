@@ -63,7 +63,7 @@ class _CustomerTransactionsScreenState
             leading: IconButton(
               icon: Icon(
                 Icons.arrow_back_ios_new,
-                color: isDark ? colors.onHero : Colors.white,
+                color: isDark ? Colors.white : Colors.white,
                 size: 18,
               ),
               onPressed: () => Navigator.pop(context),
@@ -74,7 +74,7 @@ class _CustomerTransactionsScreenState
                 Text(
                   'Transactions',
                   style: TextStyle(
-                    color: isDark ? colors.onHero : Colors.white,
+                    color: isDark ? Colors.white : Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -82,7 +82,7 @@ class _CustomerTransactionsScreenState
                 Text(
                   widget.customer.displayName,
                   style: TextStyle(
-                    color: (isDark ? colors.onHero : Colors.white)
+                    color: (isDark ? Colors.white : Colors.white)
                         .withOpacity(0.8),
                     fontSize: 13,
                     fontWeight: FontWeight.normal,
@@ -92,10 +92,10 @@ class _CustomerTransactionsScreenState
             ),
             bottom: TabBar(
               isScrollable: true,
-              indicatorColor: isDark ? colors.onHero : Colors.white,
+              indicatorColor: isDark ? Colors.white : Colors.white,
               indicatorWeight: 3,
-              labelColor: isDark ? colors.onHero : Colors.white,
-              unselectedLabelColor: (isDark ? colors.onHero : Colors.white)
+              labelColor: isDark ? Colors.white : Colors.white,
+              unselectedLabelColor: (isDark ? Colors.white : Colors.white)
                   .withOpacity(0.6),
               labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
@@ -183,11 +183,11 @@ class _CustomerTransactionsScreenState
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: isDark ? colors.surface : Colors.white,
+          color: isDark ? colors.surfaceAlt : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDark ? colors.divider : Colors.grey.shade200,
-            width: 1.5,
+            color: isDark ? Colors.white38 : Colors.grey.shade400,
+            width: 1,
           ),
           boxShadow: [
             BoxShadow(
@@ -213,7 +213,7 @@ class _CustomerTransactionsScreenState
                 child: Text(
                     note,
                     style: TextStyle(
-                      color: isDark ? colors.onSurface : Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -223,7 +223,7 @@ class _CustomerTransactionsScreenState
             if (header != null) header,
               Divider(
                 height: 1,
-                color: isDark ? colors.divider : Colors.grey.shade200,
+                color: isDark ? Colors.white24 : Colors.grey.shade200,
               ),
             Expanded(
               child: LayoutBuilder(
@@ -253,25 +253,34 @@ class _CustomerTransactionsScreenState
     final bool isDark = colors.isDark;
     return DataTable(
       headingRowColor: MaterialStateProperty.resolveWith(
-        (states) => isDark ? colors.surfaceAlt : Colors.grey.shade50,
+        (states) =>
+            isDark ? colors.surfaceAlt.withOpacity(0.9) : Colors.grey.shade50,
       ),
-      dataRowMaxHeight: 50,
+      dataRowMinHeight: isDark ? 44 : 48,
+      dataRowMaxHeight: isDark ? 44 : 50,
       headingTextStyle: TextStyle(
         fontWeight: FontWeight.bold,
-        color: isDark ? colors.onSurface : Colors.black87,
+        color: isDark ? Colors.white : Colors.black87,
         fontSize: 13,
       ),
       dataTextStyle: TextStyle(
-        color: isDark ? colors.onSurfaceMuted : Colors.grey.shade800,
+        color: isDark ? Colors.white.withOpacity(0.8) : Colors.grey.shade800,
         fontSize: 13,
       ),
+      dataRowColor: isDark
+          ? MaterialStateProperty.resolveWith(
+              (states) => colors.surface.withOpacity(0.06),
+            )
+          : null,
       columnSpacing: 24,
       horizontalMargin: 16,
       border: TableBorder(
         horizontalInside: BorderSide(
-          width: 1,
-          color: isDark ? colors.divider : Colors.grey.shade200,
+          width: isDark ? 0.1 : 1,
+          color: isDark ? Colors.white10 : Colors.grey.shade200,
         ),
+
+        
       ),
       columns: columns.map((col) => DataColumn(label: Text(col))).toList(),
       rows: rows.map((rowData) {
@@ -545,7 +554,7 @@ class _CustomerTransactionsScreenState
           color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDark ? colors.divider : Colors.grey.shade300,
+            color: isDark ? Colors.white38 : Colors.grey.shade300,
           ),
         ),
         child: Row(
@@ -613,7 +622,7 @@ class _CustomerTransactionsScreenState
                 label,
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? colors.onSurface : Colors.black87,
+                  color: isDark ? Colors.white : Colors.black87,
                   fontWeight: FontWeight.w600,
                 ),
               ),

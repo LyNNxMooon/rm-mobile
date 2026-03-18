@@ -761,7 +761,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final Color borderColor =
-        isDark ? colors.divider : Colors.grey.shade300;
+        isDark ? Colors.white38 : Colors.grey.shade300;
     return InputDecoration(
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -1646,13 +1646,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             },
                             icon: Icon(
                               Icons.arrow_back_ios_new,
-                              color: isDark ? colors.onHero : Colors.white,
+                              color: isDark ? Colors.white : Colors.white,
                               size: 18,
                             ),
                             label: Text(
                               "Customers",
                               style: TextStyle(
-                                color: isDark ? colors.onHero : Colors.white,
+                                color: isDark ? Colors.white : Colors.white,
                                 fontSize: 16,
                               ),
                             ),
@@ -1663,7 +1663,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           Text(
                             "Profile",
                             style: TextStyle(
-                              color: isDark ? colors.onHero : Colors.white,
+                              color: isDark ? Colors.white : Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1809,16 +1809,22 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: inactiveValue
-                                ? Colors.red[50]
-                                : Colors.green[50],
+                                ? Colors.red.withOpacity(0.15)
+                                : Colors.green.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: inactiveValue
+                                  ? Colors.red
+                                  : Colors.green,
+                              width: 1,
+                            ),
                           ),
                           child: Text(
                             inactiveValue ? 'Inactive' : 'Active',
                             style: TextStyle(
                               color: inactiveValue
-                                  ? Colors.red[700]
-                                  : Colors.green[700],
+                                  ? Colors.red[500]
+                                  : Colors.green[500],
                               fontSize: badgeSize,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1892,7 +1898,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           const SizedBox(height: 16),
           Divider(
             height: 1,
-            color: isDark ? colors.divider : const Color(0xFFEEEEEE),
+            color: isDark ? Colors.white54 : Colors.grey.shade400,
           ),
           const SizedBox(height: 12),
 
@@ -1974,10 +1980,20 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   Widget _buildPillBadge(String text, MaterialColor themeColor, bool isActive) {
     final double badgeSize = _font(context, 11);
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
     // If not active, it falls back to a muted grey styling
-    final bgColor = isActive ? themeColor[50] : Colors.grey[100];
-    final textColor = isActive ? themeColor[700] : Colors.grey[600];
-    final borderColor = isActive ? themeColor[200] : Colors.grey[300];
+    final bgColor = isDark
+      ? (isActive
+        ? themeColor.withOpacity(0.15)
+        : Colors.white.withOpacity(0.10))
+      : (isActive ? themeColor.withOpacity(0.20) : Colors.grey[200]);
+    final textColor = isDark
+      ? (isActive ? themeColor[500] : Colors.white70)
+      : (isActive ? themeColor[800] : Colors.grey[700]);
+    final borderColor = isDark
+      ? (isActive ? themeColor : Colors.white38)
+      : (isActive ? themeColor[400] : Colors.grey[400]);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -2846,11 +2862,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? colors.surface : const Color(0xFFFBF7F0),
+        color: isDark ? colors.surfaceAlt : const Color(0xFFFBF7F0),
         borderRadius: BorderRadius.circular(12),
         // Adding a subtle stroke to give that "solid card" look from modern UI
         border: Border.all(
-          color: isDark ? colors.divider : const Color(0xFFC9B9A6),
+          color: isDark ? Colors.white54 : const Color(0xFFC9B9A6),
           width: 0.57,
         ),
         boxShadow: [

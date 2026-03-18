@@ -531,7 +531,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final Color borderColor =
-        isDark ? colors.divider : Colors.grey.shade400;
+      isDark ? Colors.white38 : Colors.grey.shade400;
     return InputDecoration(
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -561,11 +561,11 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? colors.surface : const Color(0xFFFBF7F0),
+        color: isDark ? colors.surfaceAlt : const Color(0xFFFBF7F0),
         borderRadius: BorderRadius.circular(12),
         // Adding a subtle stroke to give that "solid card" look from modern UI
         border: Border.all(
-          color: isDark ? colors.divider : const Color(0xFFC9B9A6),
+          color: isDark ? Colors.white54 : const Color(0xFFC9B9A6),
           width: 0.57,
         ),
         boxShadow: [
@@ -924,6 +924,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                 style: TextStyle(
                   fontSize: baseSize,
                   fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
               ),
       ),
@@ -1026,13 +1027,13 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                           onPressed: () => Navigator.pop(context),
                           icon: Icon(
                             Icons.arrow_back_ios_new,
-                            color: isDark ? colors.onHero : Colors.white,
+                            color: isDark ? Colors.white : Colors.white,
                             size: 18,
                           ),
                           label: Text(
                             "Back",
                             style: TextStyle(
-                              color: isDark ? colors.onHero : Colors.white,
+                              color: isDark ? Colors.white : Colors.white,
                               fontSize: 16,
                             ),
                           ),
@@ -1041,7 +1042,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                         Text(
                           "Create Customer",
                           style: TextStyle(
-                            color: isDark ? colors.onHero : Colors.white,
+                            color: isDark ? Colors.white : Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
