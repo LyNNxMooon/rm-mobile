@@ -535,6 +535,10 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
               return emptyOrErrorWidget();
             }
 
+            final String effectiveQuery = _searchQuery.isNotEmpty
+                ? _searchQuery
+                : state.currentQuery;
+
             return AnimationLimiter(
               child: ListView.separated(
                 controller: _scrollController,
@@ -558,7 +562,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                   return _buildCustomerTile(
                     customer,
                     index,
-                    query: state.currentQuery,
+                    query: effectiveQuery,
                     matchedField: matchedField,
                   );
                 },
@@ -677,16 +681,58 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     final double accountIconSize = (isLargeTablet ? 22 : isTablet ? 19 : 16) * uiScale;
     final double accountIconPadding = (isLargeTablet ? 9 : isTablet ? 7 : 6) * uiScale;
 
-    // Determine which non-default fields to show (only if matched)
-    final bool showCompany = matchedField == 'company' && customer.company.isNotEmpty;
-    final bool showPhone = matchedField == 'phone' && customer.phone.isNotEmpty;
-    final bool showFax = matchedField == 'fax' && customer.fax.isNotEmpty;
-    final bool showMobile = matchedField == 'mobile' && customer.mobile.isNotEmpty;
-    final bool showEmail = matchedField == 'email' && customer.email.isNotEmpty;
+    final String trimmedQuery = query.trim();
+    final String lowerQuery = trimmedQuery.toLowerCase();
+    final bool hasQuery = trimmedQuery.isNotEmpty;
+
+    String normalizeValue(String value) {
+      return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
+    }
+
+    bool matchesQuery(String value) {
+      if (!hasQuery) return false;
+      final normalized = value.trim();
+      if (normalized.isEmpty) return false;
+      if (normalized.toLowerCase().contains(lowerQuery)) return true;
+      final compactQuery = normalizeValue(trimmedQuery);
+      if (compactQuery.isEmpty) return false;
+      return normalizeValue(normalized).contains(compactQuery);
+    }
+
+    final bool showCompany = matchesQuery(customer.company);
+    final bool showPhone = matchesQuery(customer.phone);
+    final bool showFax = matchesQuery(customer.fax);
+    final bool showMobile = matchesQuery(customer.mobile);
+    final bool showEmail = matchesQuery(customer.email);
+    final bool showSuburb = matchesQuery(customer.suburb);
+    final bool showState = matchesQuery(customer.state);
+    final bool showPostcode = matchesQuery(customer.postcode);
+    final bool showCountry = matchesQuery(customer.country);
+    final bool showAddr1 = matchesQuery(customer.addr1);
+    final bool showAddr2 = matchesQuery(customer.addr2);
+    final bool showAddr3 = matchesQuery(customer.addr3);
+    final bool showCustom1 = matchesQuery(customer.custom1);
+    final bool showCustom2 = matchesQuery(customer.custom2);
+    final bool showPosition = matchesQuery(customer.position);
+    final bool showAbn = matchesQuery(customer.abn);
     final bool showExtraFields =
-      showCompany || showPhone || showFax || showMobile || showEmail;
-    final bool shouldScaleUp =
-      isTablet && query.trim().isNotEmpty && matchedField != null;
+      showCompany ||
+      showPhone ||
+      showFax ||
+      showMobile ||
+      showEmail ||
+      showSuburb ||
+      showState ||
+      showPostcode ||
+      showCountry ||
+      showAddr1 ||
+      showAddr2 ||
+      showAddr3 ||
+      showCustom1 ||
+      showCustom2 ||
+      showPosition ||
+      showAbn;
+    final bool shouldScaleUp = isTablet && hasQuery;
     final double textUiScale = shouldScaleUp
       ? (1.0 + ((textScale - 1.0) * 0.85)).clamp(1.0, 1.65)
       : 1.0;
@@ -772,7 +818,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                               children: [
                                 HighlightedText(
                                   text: customer.displayName,
-                                  query: query,
+                                  query: trimmedQuery,
                                   highlightColor: Colors.amber.withOpacity(0.6),
                                   style: getSmartTitle(
                                     color: isDark ? Colors.white : colors.onSurface,
@@ -786,7 +832,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                           // Barcode with highlighting
                           HighlightedText(
                             text: _barcodeLine(customer),
-                            query: query,
+                            query: trimmedQuery,
                             highlightColor: Colors.amber.withOpacity(0.6),
                             style: TextStyle(
                               fontFamily: 'monospace',
@@ -795,136 +841,45 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          // Company (only if matched)
-                          if (showCompany) ...[
-                            SizedBox(height: isTablet ? 4 : 3),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.business,
-                                  size: 12 * textUiScale,
-                                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: HighlightedText(
-                                    text: customer.company,
-                                    query: query,
-                                    highlightColor: Colors.amber.withOpacity(0.6),
-                                    style: TextStyle(
-                                      fontSize: 12 * textUiScale,
-                                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          // Phone (only if matched)
-                          if (showPhone) ...[
-                            SizedBox(height: isTablet ? 4 : 3),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.phone,
-                                  size: 12 * textUiScale,
-                                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: HighlightedText(
-                                    text: customer.phone,
-                                    query: query,
-                                    highlightColor: Colors.amber.withOpacity(0.6),
-                                    style: TextStyle(
-                                      fontSize: 12 * textUiScale,
-                                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          // Fax (only if matched)
-                          if (showFax) ...[
-                            SizedBox(height: isTablet ? 4 : 3),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.print,
-                                  size: 12 * textUiScale,
-                                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: HighlightedText(
-                                    text: customer.fax,
-                                    query: query,
-                                    highlightColor: Colors.amber.withOpacity(0.6),
-                                    style: TextStyle(
-                                      fontSize: 12 * textUiScale,
-                                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          // Mobile (only if matched)
-                          if (showMobile) ...[
-                            SizedBox(height: isTablet ? 4 : 3),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.phone_android,
-                                  size: 12 * textUiScale,
-                                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: HighlightedText(
-                                    text: customer.mobile,
-                                    query: query,
-                                    highlightColor: Colors.amber.withOpacity(0.6),
-                                    style: TextStyle(
-                                      fontSize: 12 * textUiScale,
-                                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          // Email (only if matched)
-                          if (showEmail) ...[
-                            SizedBox(height: isTablet ? 4 : 3),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.email,
-                                  size: 12 * textUiScale,
-                                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: HighlightedText(
-                                    text: customer.email,
-                                    query: query,
-                                    highlightColor: Colors.amber.withOpacity(0.6),
-                                    style: TextStyle(
-                                      fontSize: 12 * textUiScale,
-                                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                          if (showExtraFields) ..._buildMatchedInfoRows(
+                            isTablet: isTablet,
+                            isDark: isDark,
+                            colors: colors,
+                            textUiScale: textUiScale,
+                            query: query,
+                            showCompany: showCompany,
+                            company: customer.company,
+                            showPhone: showPhone,
+                            phone: customer.phone,
+                            showFax: showFax,
+                            fax: customer.fax,
+                            showMobile: showMobile,
+                            mobile: customer.mobile,
+                            showEmail: showEmail,
+                            email: customer.email,
+                            showSuburb: showSuburb,
+                            suburb: customer.suburb,
+                            showState: showState,
+                            state: customer.state,
+                            showPostcode: showPostcode,
+                            postcode: customer.postcode,
+                            showCountry: showCountry,
+                            country: customer.country,
+                            showAddr1: showAddr1,
+                            addr1: customer.addr1,
+                            showAddr2: showAddr2,
+                            addr2: customer.addr2,
+                            showAddr3: showAddr3,
+                            addr3: customer.addr3,
+                            showCustom1: showCustom1,
+                            custom1: customer.custom1,
+                            showCustom2: showCustom2,
+                            custom2: customer.custom2,
+                            showPosition: showPosition,
+                            position: customer.position,
+                            showAbn: showAbn,
+                            abn: customer.abn,
+                          ),
                         ],
                       ),
                     ),
@@ -963,6 +918,123 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
   String _barcodeLine(CustomerVO customer) {
     if (customer.barcode.isNotEmpty) return customer.barcode;
     return '---';
+  }
+
+  List<Widget> _buildMatchedInfoRows({
+    required bool isTablet,
+    required bool isDark,
+    required AppThemeColors colors,
+    required double textUiScale,
+    required String query,
+    required bool showCompany,
+    required String company,
+    required bool showPhone,
+    required String phone,
+    required bool showFax,
+    required String fax,
+    required bool showMobile,
+    required String mobile,
+    required bool showEmail,
+    required String email,
+    required bool showSuburb,
+    required String suburb,
+    required bool showState,
+    required String state,
+    required bool showPostcode,
+    required String postcode,
+    required bool showCountry,
+    required String country,
+    required bool showAddr1,
+    required String addr1,
+    required bool showAddr2,
+    required String addr2,
+    required bool showAddr3,
+    required String addr3,
+    required bool showCustom1,
+    required String custom1,
+    required bool showCustom2,
+    required String custom2,
+    required bool showPosition,
+    required String position,
+    required bool showAbn,
+    required String abn,
+  }) {
+    final rows = <Widget>[];
+    void addRow(IconData icon, String label, String value) {
+      if (rows.isNotEmpty) rows.add(SizedBox(height: isTablet ? 4 : 3));
+      rows.add(
+        _buildMatchedInfoRow(
+          icon: icon,
+          label: label,
+          value: value,
+          query: query.trim(),
+          isDark: isDark,
+          mutedColor: colors.onSurfaceMuted,
+          textUiScale: textUiScale,
+        ),
+      );
+    }
+
+    if (showCompany) addRow(Icons.business, 'Company', company);
+    if (showPosition) addRow(Icons.badge_outlined, 'Position', position);
+    if (showPhone) addRow(Icons.phone, 'Phone', phone);
+    if (showFax) addRow(Icons.print, 'Fax', fax);
+    if (showMobile) addRow(Icons.phone_android, 'Mobile', mobile);
+    if (showEmail) addRow(Icons.email, 'Email', email);
+    if (showAddr1) addRow(Icons.location_on_outlined, 'Addr 1', addr1);
+    if (showAddr2) addRow(Icons.location_on_outlined, 'Addr 2', addr2);
+    if (showAddr3) addRow(Icons.location_on_outlined, 'Addr 3', addr3);
+    if (showSuburb) addRow(Icons.location_city, 'Suburb', suburb);
+    if (showState) addRow(Icons.map_outlined, 'State', state);
+    if (showPostcode) addRow(Icons.markunread_mailbox_outlined, 'Postcode', postcode);
+    if (showCountry) addRow(Icons.public, 'Country', country);
+    if (showCustom1) addRow(Icons.tune, 'Custom 1', custom1);
+    if (showCustom2) addRow(Icons.tune, 'Custom 2', custom2);
+    if (showAbn) addRow(Icons.assignment_ind_outlined, 'ABN', abn);
+
+    return rows;
+  }
+
+  Widget _buildMatchedInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required String query,
+    required bool isDark,
+    required Color mutedColor,
+    required double textUiScale,
+  }) {
+    final labelColor = isDark ? Colors.white70 : mutedColor;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 12 * textUiScale,
+          color: labelColor,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontSize: 12 * textUiScale,
+            color: labelColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Expanded(
+          child: HighlightedText(
+            text: value,
+            query: query.trim(),
+            highlightColor: Colors.amber.withOpacity(0.6),
+            style: TextStyle(
+              fontSize: 12 * textUiScale,
+              color: labelColor,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   String _customerHeroTag(CustomerVO customer) {

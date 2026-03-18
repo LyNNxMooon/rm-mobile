@@ -637,12 +637,22 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
     final double tileHorizontalPadding = (isTablet ? 16 : 15) * uiScale;
 
+    final String trimmedQuery = query.trim();
+    final String lowerQuery = trimmedQuery.toLowerCase();
+    final bool hasQuery = trimmedQuery.isNotEmpty;
+
+    bool matchesQuery(String? value) {
+      if (!hasQuery || value == null) return false;
+      final normalized = value.trim();
+      if (normalized.isEmpty) return false;
+      return normalized.toLowerCase().contains(lowerQuery);
+    }
+
     // Check if we should show custom fields
-    final bool showCustom1 = matchedField == 'custom1' && stock.custom1 != null && stock.custom1!.isNotEmpty;
-    final bool showCustom2 = matchedField == 'custom2' && stock.custom2 != null && stock.custom2!.isNotEmpty;
+    final bool showCustom1 = matchesQuery(stock.custom1);
+    final bool showCustom2 = matchesQuery(stock.custom2);
     final bool showExtraFields = showCustom1 || showCustom2;
-    final bool shouldScaleUp =
-      isTablet && query.trim().isNotEmpty && matchedField != null;
+    final bool shouldScaleUp = isTablet && hasQuery;
     final double textUiScale = shouldScaleUp
       ? (1.0 + ((textScale - 1.0) * 0.85)).clamp(1.0, 1.65)
       : 1.0;
@@ -722,7 +732,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                               children: [
                                 HighlightedText(
                                   text: stock.description,
-                                  query: query,
+                                  query: trimmedQuery,
                                   highlightColor: Colors.amber.withOpacity(0.6),
                                   style: getSmartTitle(
                                     color: isDark
@@ -738,7 +748,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           // Barcode with highlighting
                           HighlightedText(
                             text: stock.barcode,
-                            query: query,
+                            query: trimmedQuery,
                             highlightColor: Colors.amber.withOpacity(0.6),
                             style: TextStyle(
                               fontFamily: 'monospace',
@@ -765,7 +775,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                 Expanded(
                                   child: HighlightedText(
                                     text: stock.custom1!,
-                                    query: query,
+                                    query: trimmedQuery,
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
@@ -797,7 +807,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                 Expanded(
                                   child: HighlightedText(
                                     text: stock.custom2!,
-                                    query: query,
+                                    query: trimmedQuery,
                                     highlightColor: Colors.amber.withOpacity(0.6),
                                     style: TextStyle(
                                       fontSize: 12 * textUiScale,
