@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
@@ -32,16 +33,27 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
     return BlocConsumer<PendingCustomerUpdatesBloc, PendingCustomerUpdatesState>(
       listener: (context, state) async {
         if (state is PendingCustomerUpdatesCountLoaded) {
+          final shopfront =
+              (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
+          final int creationsCount = shopfront.isEmpty
+              ? 0
+              : await LocalDbDAO.instance
+                  .getPendingCustomerCreationsCount(shopfront);
           setState(() {
-            _count = state.count;
+            _count = state.count + creationsCount;
           });
         }
         if (state is PendingCustomerUpdatesLoaded) {
+          final shopfront =
+              (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
+          final creations = shopfront.isEmpty
+              ? <PendingCustomerCreationVO>[]
+              : await LocalDbDAO.instance.getPendingCustomerCreations(shopfront);
           setState(() {
-            _count = state.updates.length;
+            _count = state.updates.length + creations.length;
           });
           if (state.showDialog) {
-            await _showPendingDialog(context, state.updates);
+            await _showPendingDialog(context, state.updates, creations);
           }
         }
       },
@@ -75,7 +87,7 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "$_count customer update(s) not sent to RetailManager",
+                      "$_count pending customer item(s) not sent",
                       style: TextStyle(
                         color: Colors.orange.shade800,
                         fontSize: 13,
@@ -98,10 +110,12 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
   Future<void> _showPendingDialog(
     BuildContext context,
     List<PendingCustomerUpdateVO> updates,
+    List<PendingCustomerCreationVO> creations,
   ) async {
-    await showPendingCustomerUpdatesDialog(
+    await showPendingCustomerQueueDialog(
       context: context,
       updates: updates,
+      creations: creations,
       showSendButton: false,
     );
 
@@ -158,6 +172,22 @@ class _PendingCustomerEntry {
   const _PendingCustomerEntry({required this.update, required this.customer});
 }
 
+class _PendingCustomerQueueEntry {
+  final PendingCustomerUpdateVO? update;
+  final PendingCustomerCreationVO? creation;
+  final CustomerVO? customer;
+  final DateTime createdAt;
+
+  const _PendingCustomerQueueEntry({
+    required this.update,
+    required this.creation,
+    required this.customer,
+    required this.createdAt,
+  });
+
+  bool get isCreation => creation != null;
+}
+
 Map<String, dynamic> _firstCustomerPayloadItem(Map<String, dynamic> payload) {
   final items = payload['items'];
   if (items is List && items.isNotEmpty) {
@@ -190,7 +220,13 @@ String _pendingCustomerName(PendingCustomerUpdateVO update) {
 String _pendingCustomerBarcode(PendingCustomerUpdateVO update) {
   final item = _firstCustomerPayloadItem(update.payload);
   final barcode = _payloadString(item, 'barcode');
-  return barcode.isNotEmpty ? barcode : 'Pending create';
+  return barcode.isNotEmpty ? barcode : 'Pending update';
+}
+
+CustomerVO? _customerFromPendingUpdate(PendingCustomerUpdateVO update) {
+  final item = _firstCustomerPayloadItem(update.payload);
+  if (item.isEmpty) return null;
+  return CustomerVO.fromApiItem(item);
 }
 
 String _initialsFromName(String name) {
@@ -205,11 +241,15 @@ class _PendingCustomerTile extends StatelessWidget {
   final PendingCustomerUpdateVO update;
   final CustomerVO? customer;
   final VoidCallback? onTap;
+  final String? statusLabel;
+  final Color? statusColor;
 
   const _PendingCustomerTile({
     required this.update,
     required this.customer,
     required this.onTap,
+    this.statusLabel,
+    this.statusColor,
   });
 
   @override
@@ -292,9 +332,41 @@ class _PendingCustomerTile extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                if (update.errorMessage != null &&
+                    update.errorMessage!.trim().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      update.errorMessage!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.red.shade600,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
+          if (statusLabel != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: (statusColor ?? kPrimaryColor).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: (statusColor ?? kPrimaryColor).withOpacity(0.6),
+                ),
+              ),
+              child: Text(
+                statusLabel!,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: statusColor ?? kPrimaryColor,
+                ),
+              ),
+            ),
           if (canNavigate)
             Icon(Icons.chevron_right, color: colors.onSurfaceMuted, size: 20),
         ],
@@ -311,33 +383,49 @@ class _PendingCustomerTile extends StatelessWidget {
   }
 }
 
-Future<void> showPendingCustomerUpdatesDialog({
+DateTime _pendingDateTime(String value) {
+  return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+}
+
+Future<void> showPendingCustomerQueueDialog({
   required BuildContext context,
   required List<PendingCustomerUpdateVO> updates,
+  required List<PendingCustomerCreationVO> creations,
   required bool showSendButton,
   String? warningMessage,
   Future<void> Function()? onSend,
 }) async {
-  if (updates.isEmpty) return;
-
-  final shopfront =
-      (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
-  final entries = <_PendingCustomerEntry>[];
+  if (updates.isEmpty && creations.isEmpty) return;
+  final entries = <_PendingCustomerQueueEntry>[];
   for (final update in updates) {
-    CustomerVO? customer;
-    if (update.action != 'create') {
-      customer =
-          await LocalDbDAO.instance.getCustomerById(update.customerId, shopfront);
-    }
-    entries.add(_PendingCustomerEntry(update: update, customer: customer));
+    final customer = _customerFromPendingUpdate(update);
+    entries.add(
+      _PendingCustomerQueueEntry(
+        update: update,
+        creation: null,
+        customer: customer,
+        createdAt: _pendingDateTime(update.createdAt),
+      ),
+    );
   }
+  for (final creation in creations) {
+    entries.add(
+      _PendingCustomerQueueEntry(
+        update: null,
+        creation: creation,
+        customer: null,
+        createdAt: _pendingDateTime(creation.createdAt),
+      ),
+    );
+  }
+  entries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   if (!context.mounted) return;
 
   await showDialog(
     context: context,
     builder: (dialogContext) {
-      final dialogEntries = List<_PendingCustomerEntry>.from(entries);
+      final dialogEntries = List<_PendingCustomerQueueEntry>.from(entries);
       return StatefulBuilder(
         builder: (context, setDialogState) {
           final colors = context.appColors;
@@ -374,7 +462,7 @@ Future<void> showPendingCustomerUpdatesDialog({
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          "Pending Customer Updates",
+                          "Pending Customer Items",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -422,7 +510,7 @@ Future<void> showPendingCustomerUpdatesDialog({
                     ),
                     child: dialogEntries.isEmpty
                         ? Text(
-                            "No pending customer updates found.",
+                            "No pending customer items found.",
                             style: TextStyle(color: colors.onSurfaceMuted),
                           )
                         : ListView.separated(
@@ -432,8 +520,13 @@ Future<void> showPendingCustomerUpdatesDialog({
                                 const SizedBox(height: 8),
                             itemBuilder: (context, index) {
                               final entry = dialogEntries[index];
+                              final bool isCreation = entry.isCreation;
                               return Dismissible(
-                                key: ValueKey('pending_customer_${entry.update.id}'),
+                                key: ValueKey(
+                                  isCreation
+                                      ? 'pending_customer_create_${entry.creation!.id}'
+                                      : 'pending_customer_${entry.update!.id}',
+                                ),
                                 direction: DismissDirection.endToStart,
                                 background: Container(
                                   alignment: Alignment.centerRight,
@@ -450,51 +543,72 @@ Future<void> showPendingCustomerUpdatesDialog({
                                   ),
                                 ),
                                 onDismissed: (direction) async {
-                                  await LocalDbDAO.instance
-                                      .deletePendingCustomerUpdates(
-                                    [entry.update.id],
-                                  );
+                                  if (isCreation) {
+                                    await LocalDbDAO.instance
+                                        .deletePendingCustomerCreations(
+                                      [entry.creation!.id],
+                                    );
+                                  } else {
+                                    await LocalDbDAO.instance
+                                        .deletePendingCustomerUpdates(
+                                      [entry.update!.id],
+                                    );
+                                  }
                                   setDialogState(() {
                                     dialogEntries.removeWhere(
-                                      (item) => item.update.id == entry.update.id,
+                                      (item) => isCreation
+                                          ? item.creation?.id == entry.creation!.id
+                                          : item.update?.id == entry.update!.id,
                                     );
                                   });
                                   if (!dialogContext.mounted) return;
-                                  dialogContext
-                                      .read<PendingCustomerUpdatesBloc>()
-                                      .add(LoadPendingCustomerUpdatesCountEvent());
-                                  if (dialogEntries.isEmpty) {
-                                    Navigator.of(dialogContext).pop();
-                                  }
-                                },
-                                child: _PendingCustomerTile(
-                                  update: entry.update,
-                                  customer: entry.customer,
-                                  onTap: () async {
-                                    Navigator.of(dialogContext).pop();
-                                    if (entry.update.action == 'create') {
-                                      // Navigate to create screen with pre-filled data
-                                      await context.navigateToNext(
-                                        CustomerCreateScreen(
-                                          pendingUpdate: entry.update,
-                                        ),
-                                      );
-                                    } else if (entry.customer != null) {
-                                      // Navigate to details screen for updates
-                                      await context.navigateToNext(
-                                        CustomerDetailsScreen(
-                                          customer: entry.customer!,
-                                        ),
-                                      );
-                                    }
-                                    if (!context.mounted) return;
-                                    context
+                                  if (!isCreation) {
+                                    dialogContext
                                         .read<PendingCustomerUpdatesBloc>()
                                         .add(
                                           LoadPendingCustomerUpdatesCountEvent(),
                                         );
-                                  },
-                                ),
+                                  }
+                                  if (dialogEntries.isEmpty) {
+                                    Navigator.of(dialogContext).pop();
+                                  }
+                                },
+                                child: isCreation
+                                    ? _PendingCustomerCreationTile(
+                                        creation: entry.creation!,
+                                        statusLabel: 'CREATE',
+                                        statusColor: Colors.green.shade700,
+                                        onTap: () async {
+                                          Navigator.of(dialogContext).pop();
+                                          await context.navigateToNext(
+                                            CustomerCreateScreen(
+                                              pendingCreation: entry.creation,
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : _PendingCustomerTile(
+                                        update: entry.update!,
+                                        customer: entry.customer,
+                                        statusLabel: 'UPDATE',
+                                        statusColor: Colors.orange.shade700,
+                                        onTap: () async {
+                                          Navigator.of(dialogContext).pop();
+                                          if (entry.customer != null) {
+                                            await context.navigateToNext(
+                                              CustomerDetailsScreen(
+                                                customer: entry.customer!,
+                                              ),
+                                            );
+                                          }
+                                          if (!context.mounted) return;
+                                          context
+                                              .read<PendingCustomerUpdatesBloc>()
+                                              .add(
+                                                LoadPendingCustomerUpdatesCountEvent(),
+                                              );
+                                        },
+                                      ),
                               );
                             },
                           ),
@@ -507,15 +621,32 @@ Future<void> showPendingCustomerUpdatesDialog({
                           onPressed: dialogEntries.isEmpty
                               ? null
                               : () async {
-                                  final ids = dialogEntries
-                                      .map((entry) => entry.update.id)
+                                  final updateIds = dialogEntries
+                                      .where((entry) => entry.update != null)
+                                      .map((entry) => entry.update!.id)
                                       .toList();
-                                  await LocalDbDAO.instance
-                                      .deletePendingCustomerUpdates(ids);
+                                  final creationIds = dialogEntries
+                                      .where((entry) => entry.creation != null)
+                                      .map((entry) => entry.creation!.id)
+                                      .toList();
+                                  if (updateIds.isNotEmpty) {
+                                    await LocalDbDAO.instance
+                                        .deletePendingCustomerUpdates(updateIds);
+                                  }
+                                  if (creationIds.isNotEmpty) {
+                                    await LocalDbDAO.instance
+                                        .deletePendingCustomerCreations(
+                                      creationIds,
+                                    );
+                                  }
                                   if (!dialogContext.mounted) return;
-                                  dialogContext
-                                      .read<PendingCustomerUpdatesBloc>()
-                                      .add(LoadPendingCustomerUpdatesCountEvent());
+                                  if (updateIds.isNotEmpty) {
+                                    dialogContext
+                                        .read<PendingCustomerUpdatesBloc>()
+                                        .add(
+                                          LoadPendingCustomerUpdatesCountEvent(),
+                                        );
+                                  }
                                   Navigator.of(dialogContext).pop();
                                 },
                           style: OutlinedButton.styleFrom(
@@ -584,4 +715,170 @@ Future<void> showPendingCustomerUpdatesDialog({
   context.read<PendingCustomerUpdatesBloc>().add(
     LoadPendingCustomerUpdatesCountEvent(),
   );
+}
+
+class _PendingCustomerCreationEntry {
+  final PendingCustomerCreationVO creation;
+
+  const _PendingCustomerCreationEntry({required this.creation});
+}
+
+String _pendingCustomerCreationName(PendingCustomerCreationVO creation) {
+  final item = _firstCustomerPayloadItem(creation.payload);
+  final given = _payloadString(item, 'givenNames').isNotEmpty
+      ? _payloadString(item, 'givenNames')
+      : _payloadString(item, 'given_names');
+  final surname = _payloadString(item, 'surname');
+  final company = _payloadString(item, 'company');
+  final baseName = [given, surname].where((s) => s.isNotEmpty).join(' ');
+  final name = baseName.isNotEmpty
+      ? baseName
+      : (creation.customerId > 0
+          ? 'Customer #${creation.customerId}'
+          : 'New customer');
+  return company.isNotEmpty ? '$name ($company)' : name;
+}
+
+String _pendingCustomerCreationBarcode(PendingCustomerCreationVO creation) {
+  final item = _firstCustomerPayloadItem(creation.payload);
+  final barcode = _payloadString(item, 'barcode');
+  if (barcode.isEmpty) return 'Pending create';
+  return creation.barcodeMissing ? '$barcode (new)' : barcode;
+}
+
+class _PendingCustomerCreationTile extends StatelessWidget {
+  final PendingCustomerCreationVO creation;
+  final VoidCallback? onTap;
+  final String? statusLabel;
+  final Color? statusColor;
+
+  const _PendingCustomerCreationTile({
+    required this.creation,
+    required this.onTap,
+    this.statusLabel,
+    this.statusColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
+
+    final String title = _pendingCustomerCreationName(creation);
+    final String barcode = _pendingCustomerCreationBarcode(creation);
+    final bool canNavigate = onTap != null;
+
+    final tile = Container(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        boxShadow: [
+          BoxShadow(
+            color: colors.cardShadow,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: thumbnailSize,
+            height: thumbnailSize,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+            ),
+            child: ClipOval(
+              child: Container(
+                color: kPrimaryColor.withOpacity(0.1),
+                alignment: Alignment.center,
+                child: Text(
+                  _initialsFromName(title),
+                  style: TextStyle(
+                    color: kPrimaryColor.withOpacity(0.9),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: (isTablet ? 17 : 15) * uiScale),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colors.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  barcode,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    color: kPrimaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (creation.errorMessage != null &&
+                    creation.errorMessage!.trim().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      creation.errorMessage!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.red.shade600,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (statusLabel != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: (statusColor ?? kPrimaryColor).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: (statusColor ?? kPrimaryColor).withOpacity(0.6),
+                ),
+              ),
+              child: Text(
+                statusLabel!,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: statusColor ?? kPrimaryColor,
+                ),
+              ),
+            ),
+          if (canNavigate)
+            Icon(Icons.chevron_right, color: colors.onSurfaceMuted, size: 20),
+        ],
+      ),
+    );
+
+    if (!canNavigate) return tile;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: tile,
+    );
+  }
 }

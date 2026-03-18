@@ -75,6 +75,10 @@ class SendPendingStockUpdates {
           sentIds.add(entry.id);
         } else {
           skipped += 1;
+          await LocalDbDAO.instance.setPendingStockUpdateError(
+            id: entry.id,
+            errorMessage: response.message,
+          );
         }
       }
 

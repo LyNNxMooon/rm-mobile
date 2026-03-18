@@ -329,7 +329,8 @@ const pendingStockUpdatesTableCreationQuery = '''
     stock_id INTEGER NOT NULL,
     payload_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
-    status INTEGER NOT NULL DEFAULT 0
+    status INTEGER NOT NULL DEFAULT 0,
+    error_message TEXT
   )
 ''';
 
@@ -342,7 +343,21 @@ const pendingCustomerUpdatesTableCreationQuery = '''
     payload_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
     status INTEGER NOT NULL DEFAULT 0,
-    has_conflict INTEGER NOT NULL DEFAULT 0
+    has_conflict INTEGER NOT NULL DEFAULT 0,
+    error_message TEXT
+  )
+''';
+
+const pendingCustomerCreationsTableCreationQuery = '''
+  CREATE TABLE PendingCustomerCreations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shopfront TEXT NOT NULL,
+    customer_id INTEGER NOT NULL,
+    payload_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    status INTEGER NOT NULL DEFAULT 0,
+    error_message TEXT,
+    barcode_missing INTEGER NOT NULL DEFAULT 0
   )
 ''';
 

@@ -324,7 +324,11 @@ class PendingCustomerUpdatesBloc
         emit(PendingCustomerUpdatesLoaded([]));
         return;
       }
-      final updates = await getPendingCustomerUpdates(shopfront);
+      final updates = await getPendingCustomerUpdates(
+        shopfront,
+        action: 'update',
+        conflictOnly: false,
+      );
       emit(PendingCustomerUpdatesLoaded(updates));
     } catch (e) {
       emit(PendingCustomerUpdatesError(e.toString()));

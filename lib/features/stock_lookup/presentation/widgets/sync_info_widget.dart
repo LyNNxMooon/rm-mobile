@@ -11,11 +11,11 @@ import 'pending_stock_updates_tile.dart';
 import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
 import '../../../home_page/presentation/BLoC/home_screen_events.dart';
 import '../../../home_page/presentation/BLoC/home_screen_states.dart';
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 
 class SyncInfoWidget extends StatelessWidget {
   const SyncInfoWidget({super.key});
+
+  static bool _skipNextPrompt = false;
 
   Future<void> _promptSendPendingStockUpdates(BuildContext context) async {
     final shopfront =
@@ -36,6 +36,7 @@ class SyncInfoWidget extends StatelessWidget {
       updates: pendingUpdates,
       showSendButton: true,
       onSend: () async {
+        _skipNextPrompt = true;
         await _sendPendingUpdates(context);
       },
     );
@@ -61,10 +62,21 @@ class SyncInfoWidget extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message)),
       );
+      final shopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? '').trim();
+      if (shopfrontId.isNotEmpty) {
+        final syncKey = 'stock_sync_timestamp_$shopfrontId';
+        final lastSync = await LocalDbDAO.instance.getAppConfig(syncKey);
+        if (lastSync == null || lastSync.trim().isEmpty) {
+          await LocalDbDAO.instance.saveAppConfig(
+            syncKey,
+            DateTime.now().toIso8601String(),
+          );
+        }
+      }
+      await Future<void>.delayed(const Duration(seconds: 1));
+      if (!context.mounted) return;
       context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-      context.read<FetchCustomerBloc>().add(
-        StartCustomerSyncEvent(ipAddress: ""),
-      );
     } else if (result is PendingStockUpdatesError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message)),
@@ -105,6 +117,10 @@ class SyncInfoWidget extends StatelessWidget {
             context.read<PendingStockUpdatesBloc>().add(
               LoadPendingStockUpdatesCountEvent(),
             );
+            if (_skipNextPrompt) {
+              _skipNextPrompt = false;
+              return;
+            }
             _promptSendPendingStockUpdates(context);
           }
         },

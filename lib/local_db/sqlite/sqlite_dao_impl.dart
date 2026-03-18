@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart'
 import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_stock_update_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
@@ -30,7 +31,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       _database = await openDatabase(
         path,
-        version: 7,
+        version: 8,
         onConfigure: (db) async {
           await db.rawQuery('PRAGMA journal_mode=WAL');
           await db.rawQuery('PRAGMA foreign_keys=ON');
@@ -49,6 +50,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           await db.execute(customerAddressesTableCreationQuery);
           await db.execute(pendingStockUpdatesTableCreationQuery);
           await db.execute(pendingCustomerUpdatesTableCreationQuery);
+          await db.execute(pendingCustomerCreationsTableCreationQuery);
           await db.execute(customerPurchasesTableCreationQuery);
           await db.execute(customerCreditTableCreationQuery);
           await db.execute(customerInvoicesTableCreationQuery);
@@ -83,6 +85,52 @@ class SQLiteDAOImpl extends LocalDbDAO {
           if (oldVersion < 4) {
             await db.execute(pendingStockUpdatesTableCreationQuery);
             await db.execute(pendingCustomerUpdatesTableCreationQuery);
+          }
+          if (oldVersion < 8) {
+            await db.execute(pendingCustomerCreationsTableCreationQuery);
+            await _addColumnIfMissing(
+              db: db,
+              table: 'PendingCustomerCreations',
+              column: 'barcode_missing',
+              definition: 'INTEGER NOT NULL DEFAULT 0',
+            );
+            await _addColumnIfMissing(
+              db: db,
+              table: 'PendingStockUpdates',
+              column: 'error_message',
+              definition: 'TEXT',
+            );
+            await _addColumnIfMissing(
+              db: db,
+              table: 'PendingCustomerUpdates',
+              column: 'error_message',
+              definition: 'TEXT',
+            );
+            try {
+              final rows = await db.query(
+                'PendingCustomerUpdates',
+                where: 'action = ?',
+                whereArgs: ['create'],
+              );
+              for (final row in rows) {
+                await db.insert('PendingCustomerCreations', {
+                  'shopfront': row['shopfront'],
+                  'customer_id': row['customer_id'],
+                  'payload_json': row['payload_json'],
+                  'created_at': row['created_at'],
+                  'status': row['status'] ?? 0,
+                  'error_message': null,
+                  'barcode_missing': 0,
+                });
+              }
+              await db.delete(
+                'PendingCustomerUpdates',
+                where: 'action = ?',
+                whereArgs: ['create'],
+              );
+            } catch (e) {
+              logger.e('Error migrating pending customer creations: $e');
+            }
           }
           if (oldVersion < 5) {
             await db.execute(customerPurchasesTableCreationQuery);
@@ -1454,6 +1502,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
             'payload_json': jsonEncode(combined),
             'created_at': DateTime.now().toIso8601String(),
             'status': 0,
+            'error_message': null,
           },
           where: 'id = ?',
           whereArgs: [id],
@@ -1467,6 +1516,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         'payload_json': jsonEncode(mergedPayload),
         'created_at': DateTime.now().toIso8601String(),
         'status': 0,
+        'error_message': null,
       });
     } catch (error) {
       logger.e('Error saving pending stock update: $error');
@@ -1510,6 +1560,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           stockId: row['stock_id'] as int,
           payload: Map<String, dynamic>.from(payload as Map),
           createdAt: row['created_at'] as String,
+          errorMessage: row['error_message'] as String?,
         );
       }).toList();
     } catch (error) {
@@ -1532,6 +1583,25 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error deleting pending stock updates: $error');
       return Future.error("Error deleting pending stock updates: $error");
+    }
+  }
+
+  @override
+  Future<void> setPendingStockUpdateError({
+    required int id,
+    String? errorMessage,
+  }) async {
+    try {
+      final db = _database!;
+      await db.update(
+        'PendingStockUpdates',
+        {'error_message': errorMessage},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (error) {
+      logger.e('Error updating pending stock update error: $error');
+      return Future.error("Error updating pending stock update error: $error");
     }
   }
 
@@ -1657,6 +1727,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
             'created_at': DateTime.now().toIso8601String(),
             'status': 0,
             'has_conflict': 0,
+            'error_message': null,
           },
           where: 'id = ?',
           whereArgs: [id],
@@ -1672,6 +1743,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         'created_at': DateTime.now().toIso8601String(),
         'status': 0,
         'has_conflict': 0,
+        'error_message': null,
       });
     } catch (error) {
       logger.e('Error saving pending customer update: $error');
@@ -1684,8 +1756,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
     try {
       final db = _database!;
       final result = await db.rawQuery(
-        'SELECT COUNT(*) as cnt FROM PendingCustomerUpdates WHERE shopfront = ? AND status = 0',
-        [shopfront],
+        'SELECT COUNT(*) as cnt FROM PendingCustomerUpdates '
+        'WHERE shopfront = ? AND status = 0 AND action = ?',
+        [shopfront, 'update'],
       );
       return (result.first['cnt'] as int?) ?? 0;
     } catch (error) {
@@ -1733,6 +1806,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           payload: Map<String, dynamic>.from(payload as Map),
           createdAt: row['created_at'] as String,
           hasConflict: (row['has_conflict'] as int? ?? 0) == 1,
+          errorMessage: row['error_message'] as String?,
         );
       }).toList();
     } catch (error) {
@@ -1795,6 +1869,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           'customer_id': customerId,
           'payload_json': jsonEncode(payload),
           'has_conflict': 0,
+          'error_message': null,
         },
         where: 'id = ?',
         whereArgs: [id],
@@ -1806,39 +1881,359 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
+  Future<void> setPendingCustomerUpdateError({
+    required int id,
+    String? errorMessage,
+  }) async {
+    try {
+      final db = _database!;
+      await db.update(
+        'PendingCustomerUpdates',
+        {'error_message': errorMessage},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (error) {
+      logger.e('Error updating pending customer update error: $error');
+      return Future.error(
+        "Error updating pending customer update error: $error",
+      );
+    }
+  }
+
+  @override
   Future<void> applyPendingCustomerUpdates(String shopfront) async {
     try {
       final pending = await getPendingCustomerUpdates(shopfront);
       if (pending.isEmpty) return;
 
-      final conflictIds = <int>[];
-
       for (final entry in pending) {
+        if (entry.action != 'update') {
+          continue;
+        }
         final payload = entry.payload;
         final items = payload['items'];
         if (items is! List || items.isEmpty) continue;
         final item = Map<String, dynamic>.from(items.first as Map);
-        final int customerId = (item['customerId'] as num?)?.toInt() ??
-            (item['customer_id'] as num?)?.toInt() ??
-            entry.customerId;
-
-        if (entry.action == 'create') {
-          final existing = await getCustomerById(customerId, shopfront);
-          if (existing != null) {
-            conflictIds.add(entry.id);
-          }
-          continue;
-        }
 
         await _updateCustomerFromPayload(item, shopfront);
-      }
-
-      if (conflictIds.isNotEmpty) {
-        await setPendingCustomerConflict(conflictIds, true);
       }
     } catch (error) {
       logger.e('Error applying pending customer updates: $error');
       return Future.error("Error applying pending customer updates: $error");
+    }
+  }
+
+  @override
+  Future<int> addPendingCustomerCreation({
+    required String shopfront,
+    required int customerId,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      final db = _database!;
+      final existing = await db.query(
+        'PendingCustomerCreations',
+        where: 'shopfront = ? AND customer_id = ? AND status = 0',
+        whereArgs: [shopfront, customerId],
+        limit: 1,
+      );
+
+      final Map<String, dynamic> mergedPayload = Map<String, dynamic>.from(
+        payload,
+      );
+
+      if (existing.isNotEmpty) {
+        final row = existing.first;
+        final int id = row['id'] as int;
+        final Map<String, dynamic> current = Map<String, dynamic>.from(
+          jsonDecode(row['payload_json'] as String) as Map,
+        );
+        final Map<String, dynamic> combined = {
+          ...current,
+          ...mergedPayload,
+        };
+
+        await db.update(
+          'PendingCustomerCreations',
+          {
+            'payload_json': jsonEncode(combined),
+            'created_at': DateTime.now().toIso8601String(),
+            'status': 0,
+            'error_message': null,
+            'barcode_missing': 0,
+          },
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+        return id;
+      }
+
+      return await db.insert('PendingCustomerCreations', {
+        'shopfront': shopfront,
+        'customer_id': customerId,
+        'payload_json': jsonEncode(mergedPayload),
+        'created_at': DateTime.now().toIso8601String(),
+        'status': 0,
+        'error_message': null,
+        'barcode_missing': 0,
+      });
+    } catch (error) {
+      logger.e('Error saving pending customer creation: $error');
+      return Future.error("Error saving pending customer creation: $error");
+    }
+  }
+
+  @override
+  Future<int> getPendingCustomerCreationsCount(String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) as cnt FROM PendingCustomerCreations '
+        'WHERE shopfront = ? AND status = 0',
+        [shopfront],
+      );
+      return (result.first['cnt'] as int?) ?? 0;
+    } catch (error) {
+      logger.e('Error getting pending customer creation count: $error');
+      return Future.error(
+        "Error getting pending customer creation count: $error",
+      );
+    }
+  }
+
+  @override
+  Future<List<PendingCustomerCreationVO>> getPendingCustomerCreations(
+    String shopfront,
+  ) async {
+    try {
+      final db = _database!;
+      final rows = await db.query(
+        'PendingCustomerCreations',
+        where: 'shopfront = ? AND status = 0',
+        whereArgs: [shopfront],
+        orderBy: 'created_at DESC',
+      );
+
+      return rows.map((row) {
+        final payload = jsonDecode(row['payload_json'] as String);
+        return PendingCustomerCreationVO(
+          id: row['id'] as int,
+          shopfront: row['shopfront'] as String,
+          customerId: row['customer_id'] as int,
+          payload: Map<String, dynamic>.from(payload as Map),
+          createdAt: row['created_at'] as String,
+          errorMessage: row['error_message'] as String?,
+          barcodeMissing: (row['barcode_missing'] as int? ?? 0) == 1,
+        );
+      }).toList();
+    } catch (error) {
+      logger.e('Error loading pending customer creations: $error');
+      return Future.error("Error loading pending customer creations: $error");
+    }
+  }
+
+  @override
+  Future<void> deletePendingCustomerCreations(List<int> ids) async {
+    try {
+      if (ids.isEmpty) return;
+      final db = _database!;
+      final placeholders = List.filled(ids.length, '?').join(',');
+      await db.delete(
+        'PendingCustomerCreations',
+        where: 'id IN ($placeholders)',
+        whereArgs: ids,
+      );
+    } catch (error) {
+      logger.e('Error deleting pending customer creations: $error');
+      return Future.error("Error deleting pending customer creations: $error");
+    }
+  }
+
+  @override
+  Future<void> updatePendingCustomerCreationPayload({
+    required int id,
+    required int customerId,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      final db = _database!;
+      await db.update(
+        'PendingCustomerCreations',
+        {
+          'customer_id': customerId,
+          'payload_json': jsonEncode(payload),
+          'error_message': null,
+          'barcode_missing': 0,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (error) {
+      logger.e('Error updating pending customer creation payload: $error');
+      return Future.error(
+        "Error updating pending customer creation payload: $error",
+      );
+    }
+  }
+
+  @override
+  Future<void> setPendingCustomerCreationError({
+    required int id,
+    String? errorMessage,
+  }) async {
+    try {
+      final db = _database!;
+      await db.update(
+        'PendingCustomerCreations',
+        {'error_message': errorMessage},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (error) {
+      logger.e('Error updating pending customer creation error: $error');
+      return Future.error(
+        "Error updating pending customer creation error: $error",
+      );
+    }
+  }
+
+  @override
+  Future<void> setPendingCustomerCreationBarcodeMissing({
+    required int id,
+    required bool isMissing,
+  }) async {
+    try {
+      final db = _database!;
+      await db.update(
+        'PendingCustomerCreations',
+        {
+          'barcode_missing': isMissing ? 1 : 0,
+          'error_message': null,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (error) {
+      logger.e('Error updating pending creation barcode flag: $error');
+      return Future.error(
+        "Error updating pending creation barcode flag: $error",
+      );
+    }
+  }
+
+  @override
+  Future<void> resolvePendingCustomerCreationBarcodes(String shopfront) async {
+    try {
+      final db = _database!;
+      final rows = await db.query(
+        'PendingCustomerCreations',
+        where: 'shopfront = ? AND status = 0 AND barcode_missing = 1',
+        whereArgs: [shopfront],
+      );
+
+      for (final row in rows) {
+        final payload = jsonDecode(row['payload_json'] as String);
+        if (payload is! Map) continue;
+        final items = payload['items'];
+        if (items is! List || items.isEmpty) continue;
+        final item = Map<String, dynamic>.from(items.first as Map);
+        final barcode = item['barcode'] as String?;
+        if (barcode == null || barcode.trim().isEmpty) continue;
+
+        final exists = await checkBarcodeExistsInCustomers(
+          barcode.trim(),
+          shopfront,
+        );
+        if (exists) {
+          await db.delete(
+            'PendingCustomerCreations',
+            where: 'id = ?',
+            whereArgs: [row['id'] as int],
+          );
+        } else {
+          await db.update(
+            'PendingCustomerCreations',
+            {
+              'error_message':
+                  'Duplicate barcodes cannot be created. Reassign new barcode to create this customer',
+            },
+            where: 'id = ?',
+            whereArgs: [row['id'] as int],
+          );
+        }
+      }
+    } catch (error) {
+      logger.e('Error resolving pending creation barcodes: $error');
+      return Future.error(
+        "Error resolving pending creation barcodes: $error",
+      );
+    }
+  }
+
+  @override
+  Future<void> renewPendingCustomerCreationIds(String shopfront) async {
+    try {
+      final db = _database!;
+      final maxResult = await db.rawQuery(
+        'SELECT MAX(customer_id) as max_id FROM Customers WHERE shopfront = ?',
+        [shopfront],
+      );
+      int maxId = (maxResult.first['max_id'] as int?) ?? 0;
+
+      final rows = await db.query(
+        'PendingCustomerCreations',
+        where: 'shopfront = ? AND status = 0',
+        whereArgs: [shopfront],
+        orderBy: 'created_at ASC',
+      );
+
+      if (rows.isEmpty) return;
+
+      for (final row in rows) {
+        maxId += 1;
+        final payload = jsonDecode(row['payload_json'] as String);
+        if (payload is! Map) continue;
+        final items = payload['items'];
+        if (items is! List || items.isEmpty) continue;
+
+        final item = Map<String, dynamic>.from(items.first as Map);
+        int nextAddressId =
+            await LocalDbDAO.instance.getNextCustomerAddressId(shopfront);
+
+        item['customerId'] = maxId;
+        item['customer_id'] = maxId;
+
+        if (item['addresses'] is List) {
+          final addresses = item['addresses'] as List;
+          for (final raw in addresses) {
+            final addr = Map<String, dynamic>.from(raw as Map);
+            addr['customerId'] = maxId;
+            addr['customer_id'] = maxId;
+            addr['addressId'] = nextAddressId;
+            addr['address_id'] = nextAddressId;
+            nextAddressId += 1;
+          }
+        }
+
+        payload['items'] = [item];
+
+        await db.update(
+          'PendingCustomerCreations',
+          {
+            'customer_id': maxId,
+            'payload_json': jsonEncode(payload),
+            'error_message': null,
+          },
+          where: 'id = ?',
+          whereArgs: [row['id'] as int],
+        );
+      }
+    } catch (error) {
+      logger.e('Error renewing pending customer creation ids: $error');
+      return Future.error(
+        "Error renewing pending customer creation ids: $error",
+      );
     }
   }
 
@@ -2315,9 +2710,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       final maxCustomerId = (result.first['max_id'] as int?) ?? 0;
       final pendingResult = await db.rawQuery(
-        'SELECT MAX(customer_id) as max_id FROM PendingCustomerUpdates '
-        'WHERE shopfront = ? AND action = ? AND status = 0',
-        [shopfront, 'create'],
+        'SELECT MAX(customer_id) as max_id FROM PendingCustomerCreations '
+        'WHERE shopfront = ? AND status = 0',
+        [shopfront],
       );
       final maxPendingId = (pendingResult.first['max_id'] as int?) ?? 0;
       final String? maxRemoteValue = await getAppConfig(
@@ -2372,9 +2767,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
       );
 
       final pendingResult = await db.rawQuery(
-        'SELECT payload_json FROM PendingCustomerUpdates '
-        'WHERE shopfront = ? AND action = ? AND status = 0',
-        [shopfront, 'create'],
+        'SELECT payload_json FROM PendingCustomerCreations '
+        'WHERE shopfront = ? AND status = 0',
+        [shopfront],
       );
 
       if (result.isEmpty) {
@@ -2443,9 +2838,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
       if (result.isNotEmpty) return true;
 
       final pending = await db.rawQuery(
-        'SELECT payload_json FROM PendingCustomerUpdates '
-        'WHERE shopfront = ? AND action = ? AND status = 0',
-        [shopfront, 'create'],
+        'SELECT payload_json FROM PendingCustomerCreations '
+        'WHERE shopfront = ? AND status = 0',
+        [shopfront],
       );
 
       final needle = barcode.trim();
@@ -2466,6 +2861,26 @@ class SQLiteDAOImpl extends LocalDbDAO {
       return false;
     } catch (error) {
       logger.e('Error checking barcode existence: $error');
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> checkBarcodeExistsInCustomers(
+    String barcode,
+    String shopfront,
+  ) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'Customers',
+        where: 'barcode = ? AND shopfront = ?',
+        whereArgs: [barcode, shopfront],
+        limit: 1,
+      );
+      return result.isNotEmpty;
+    } catch (error) {
+      logger.e('Error checking barcode in customers: $error');
       return false;
     }
   }

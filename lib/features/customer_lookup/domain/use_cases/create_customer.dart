@@ -24,38 +24,37 @@ class CreateCustomer {
       final Map<String, dynamic> item = items is List && items.isNotEmpty
           ? Map<String, dynamic>.from(items.first as Map)
           : <String, dynamic>{};
-        customerId =
+      customerId =
           (item['customerId'] as num?)?.toInt() ??
           (item['customer_id'] as num?)?.toInt() ??
           0;
 
-      await LocalDbDAO.instance.addPendingCustomerUpdate(
-        shopfront: shopfront,
-        customerId: customerId,
-        action: 'create',
-        payload: body,
-      );
-
-      if (await InternetConnectionUtils.instance.checkInternetConnection()) {
+      final bool isOnline =
+          await InternetConnectionUtils.instance.checkInternetConnection();
+      if (isOnline) {
         try {
           final response = await repository.createCustomer(body);
           if (response.success) {
-            final pending = await LocalDbDAO.instance.getPendingCustomerUpdates(
+            final pending = await LocalDbDAO.instance.getPendingCustomerCreations(
               shopfront,
-              action: 'create',
-              conflictOnly: false,
             );
             final matching = pending
                 .where((entry) => entry.customerId == customerId)
                 .map((entry) => entry.id)
                 .toList();
             if (matching.isNotEmpty) {
-              await LocalDbDAO.instance.deletePendingCustomerUpdates(matching);
+              await LocalDbDAO.instance.deletePendingCustomerCreations(matching);
             }
             return response;
           }
         } catch (_) {}
       }
+
+      await LocalDbDAO.instance.addPendingCustomerCreation(
+        shopfront: shopfront,
+        customerId: customerId,
+        payload: body,
+      );
 
       return CustomerCreateResponse(
         success: true,

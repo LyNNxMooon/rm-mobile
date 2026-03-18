@@ -12,12 +12,13 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
+import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 
 class CustomerCreateScreen extends StatefulWidget {
-  final PendingCustomerUpdateVO? pendingUpdate;
+  final PendingCustomerCreationVO? pendingCreation;
 
-  const CustomerCreateScreen({super.key, this.pendingUpdate});
+  const CustomerCreateScreen({super.key, this.pendingCreation});
 
   @override
   State<CustomerCreateScreen> createState() => _CustomerCreateScreenState();
@@ -190,7 +191,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   void initState() {
     super.initState();
     _initControllers();
-    _populateFromPendingUpdate();
+    _populateFromPendingCreation();
     context.read<CustomerCreateBloc>().add(ResetCustomerCreateEvent());
   }
 
@@ -242,8 +243,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     });
   }
 
-  void _populateFromPendingUpdate() {
-    final pending = widget.pendingUpdate;
+  void _populateFromPendingCreation() {
+    final pending = widget.pendingCreation;
     if (pending == null) return;
 
     final payload = pending.payload;
@@ -1081,7 +1082,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     return MultiBlocListener(
       listeners: [
         BlocListener<CustomerCreateBloc, CustomerCreateState>(
-          listener: (context, state) {
+          listener: (context, state) async {
             if (state is CustomerCreateLoading) {
               setState(() {
                 _isSubmitting = true;
@@ -1090,6 +1091,11 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               setState(() {
                 _isSubmitting = false;
               });
+              final pending = widget.pendingCreation;
+              if (pending != null) {
+                await LocalDbDAO.instance
+                    .deletePendingCustomerCreations([pending.id]);
+              }
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text(state.message)));

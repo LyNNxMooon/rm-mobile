@@ -2,6 +2,7 @@ import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_stock_update_vo.dart';
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
@@ -111,6 +112,7 @@ abstract class LocalDbDAO {
   Future<String> getNextNumericBarcode(String shopfront);
 
   Future<bool> checkBarcodeExists(String barcode, String shopfront);
+  Future<bool> checkBarcodeExistsInCustomers(String barcode, String shopfront);
 
   // Customer transactions
   Future<void> replaceCustomerTransactions({
@@ -252,6 +254,7 @@ abstract class LocalDbDAO {
   Future<int> getPendingStockUpdatesCount(String shopfront);
   Future<List<PendingStockUpdateVO>> getPendingStockUpdates(String shopfront);
   Future<void> deletePendingStockUpdates(List<int> ids);
+  Future<void> setPendingStockUpdateError({required int id, String? errorMessage});
   Future<void> applyPendingStockUpdates(String shopfront);
 
   Future<int> addPendingCustomerUpdate({
@@ -273,7 +276,34 @@ abstract class LocalDbDAO {
     required int customerId,
     required Map<String, dynamic> payload,
   });
+  Future<void> setPendingCustomerUpdateError({required int id, String? errorMessage});
   Future<void> applyPendingCustomerUpdates(String shopfront);
+
+  Future<int> addPendingCustomerCreation({
+    required String shopfront,
+    required int customerId,
+    required Map<String, dynamic> payload,
+  });
+  Future<int> getPendingCustomerCreationsCount(String shopfront);
+  Future<List<PendingCustomerCreationVO>> getPendingCustomerCreations(
+    String shopfront,
+  );
+  Future<void> deletePendingCustomerCreations(List<int> ids);
+  Future<void> updatePendingCustomerCreationPayload({
+    required int id,
+    required int customerId,
+    required Map<String, dynamic> payload,
+  });
+  Future<void> setPendingCustomerCreationError({
+    required int id,
+    String? errorMessage,
+  });
+  Future<void> setPendingCustomerCreationBarcodeMissing({
+    required int id,
+    required bool isMissing,
+  });
+  Future<void> resolvePendingCustomerCreationBarcodes(String shopfront);
+  Future<void> renewPendingCustomerCreationIds(String shopfront);
 
   //Removing data
   Future<void> removeNetworkCredential({required String ip});

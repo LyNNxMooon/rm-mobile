@@ -44,8 +44,18 @@ class UpdateSingleStock {
         pricingRules: pricingRules,
       );
 
+      final stockMap = await LocalDbDAO.instance.getStocksByIds(
+        shopfront: shopfrontName,
+        stockIds: [stockId],
+      );
+      final stock = stockMap[stockId];
+
       final payload = <String, dynamic>{
         'stock_id': stockId,
+        if (stock != null) 'barcode': stock.barcode,
+        if (stock != null) 'cost': stock.cost,
+        if (stock != null) 'goods_tax': stock.goodsTax,
+        if (stock != null) 'sales_tax': stock.salesTax,
         'description': description,
         'sell': sell,
         if (custom1 != null) 'custom1': custom1,

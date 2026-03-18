@@ -1,17 +1,19 @@
-class PendingStockUpdateVO {
+class PendingCustomerCreationVO {
   final int id;
   final String shopfront;
-  final int stockId;
+  final int customerId;
   final Map<String, dynamic> payload;
   final String createdAt;
   final String? errorMessage;
+  final bool barcodeMissing;
 
-  PendingStockUpdateVO({
+  PendingCustomerCreationVO({
     required this.id,
     required this.shopfront,
-    required this.stockId,
+    required this.customerId,
     required this.payload,
     required this.createdAt,
     this.errorMessage,
+    this.barcodeMissing = false,
   });
 }

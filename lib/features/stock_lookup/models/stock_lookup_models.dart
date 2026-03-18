@@ -158,7 +158,6 @@ class StockLookupModels implements StockLookupRepo {
         );
       }
 
-      await LocalDbDAO.instance.applyPendingStockUpdates(resolvedShopfrontName);
       await LocalDbDAO.instance.saveAppConfig(syncKey, latestSyncTimestamp);
       yield SyncStatus(1, 1, "Stock sync completed.");
     } on Exception catch (error) {

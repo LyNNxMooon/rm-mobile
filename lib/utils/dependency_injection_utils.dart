@@ -77,6 +77,7 @@ import '../features/customer_lookup/domain/use_cases/update_customer_details.dar
 import '../features/customer_lookup/domain/use_cases/get_pending_customer_updates.dart';
 import '../features/customer_lookup/domain/use_cases/get_pending_customer_updates_count.dart';
 import '../features/customer_lookup/domain/use_cases/send_pending_customer_updates.dart';
+import '../features/customer_lookup/domain/use_cases/send_pending_customer_creations.dart';
 import '../features/customer_lookup/domain/use_cases/resolve_customer_create_conflicts.dart';
 import '../features/customer_lookup/models/customer_lookup_models.dart';
 import '../features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
@@ -311,5 +312,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetPendingCustomerUpdates());
   sl.registerLazySingleton(() => GetPendingCustomerUpdatesCount());
   sl.registerLazySingleton(() => SendPendingCustomerUpdates(sl()));
+  sl.registerLazySingleton(() => SendPendingCustomerCreations(sl()));
   sl.registerLazySingleton(() => ResolveCustomerCreateConflicts());
 }

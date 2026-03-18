@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
+import 'package:rmstock_scanner/utils/dependency_injection_utils.dart' as di;
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/send_pending_customer_creations.dart';
 
 import '../../../../constants/colors.dart';
 import 'pending_customer_updates_tile.dart';
@@ -11,26 +13,39 @@ import '../BLoC/customer_lookup_states.dart';
 class CustomerSyncInfoWidget extends StatelessWidget {
   const CustomerSyncInfoWidget({super.key});
 
+  static bool _skipNextPrompt = false;
+
   Future<void> _promptSendPendingCustomerUpdates(BuildContext context) async {
     final shopfront =
         (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
     if (shopfront.isEmpty) return;
 
-    final pendingCount =
+    final pendingUpdateCount =
         await LocalDbDAO.instance.getPendingCustomerUpdatesCount(shopfront);
-    if (pendingCount <= 0) return;
+    final pendingCreationCount =
+        await LocalDbDAO.instance.getPendingCustomerCreationsCount(shopfront);
+    if (pendingUpdateCount + pendingCreationCount <= 0) return;
 
     final pendingUpdates = await LocalDbDAO.instance.getPendingCustomerUpdates(
       shopfront,
+      action: 'update',
+      conflictOnly: false,
     );
-    if (pendingUpdates.isEmpty || !context.mounted) return;
+    final pendingCreations =
+        await LocalDbDAO.instance.getPendingCustomerCreations(shopfront);
+    if ((pendingUpdates.isEmpty && pendingCreations.isEmpty) ||
+        !context.mounted) {
+      return;
+    }
 
-    await showPendingCustomerUpdatesDialog(
+    await showPendingCustomerQueueDialog(
       context: context,
       updates: pendingUpdates,
+      creations: pendingCreations,
       showSendButton: true,
       onSend: () async {
-        await _sendPendingUpdates(context, shopfront);
+        _skipNextPrompt = true;
+        await _sendPendingAll(context, shopfront);
       },
     );
   }
@@ -38,7 +53,9 @@ class CustomerSyncInfoWidget extends StatelessWidget {
   Future<void> _sendPendingUpdates(
     BuildContext context,
     String shopfront,
-  ) async {
+    {
+      bool triggerSync = true,
+    }) async {
     context.read<PendingCustomerUpdatesBloc>().add(
       SendPendingCustomerUpdatesEvent(),
     );
@@ -54,44 +71,15 @@ class CustomerSyncInfoWidget extends StatelessWidget {
 
     if (!context.mounted) return;
 
-    if (result is PendingCustomerUpdatesSent && result.hasConflicts) {
-      final conflictUpdates =
-          await LocalDbDAO.instance.getPendingCustomerUpdates(
-        shopfront,
-        action: 'create',
-        conflictOnly: true,
-      );
-      if (!context.mounted) return;
-
-      await showPendingCustomerUpdatesDialog(
-        context: context,
-        updates: conflictUpdates,
-        showSendButton: true,
-        warningMessage:
-            'There are newly created stocks in RetailManager, please double check and decide carelly whether you still want to send these changes!',
-        onSend: () async {
-          context.read<PendingCustomerUpdatesBloc>().add(
-            ResolveCustomerCreateConflictsEvent(duplicate: true),
-          );
-          await context
-              .read<PendingCustomerUpdatesBloc>()
-              .stream
-              .firstWhere(
-                (state) =>
-                    state is PendingCustomerUpdatesLoaded ||
-                    state is PendingCustomerUpdatesError,
-              );
-          if (!context.mounted) return;
-          await _sendPendingUpdates(context, shopfront);
-        },
-      );
-    } else if (result is PendingCustomerUpdatesSent) {
+    if (result is PendingCustomerUpdatesSent) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message)),
       );
-      context.read<FetchCustomerBloc>().add(
-        StartCustomerSyncEvent(ipAddress: ""),
-      );
+      if (triggerSync) {
+        context.read<FetchCustomerBloc>().add(
+          StartCustomerSyncEvent(ipAddress: ""),
+        );
+      }
     } else if (result is PendingCustomerUpdatesError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message)),
@@ -100,6 +88,51 @@ class CustomerSyncInfoWidget extends StatelessWidget {
 
     context.read<PendingCustomerUpdatesBloc>().add(
       LoadPendingCustomerUpdatesCountEvent(),
+    );
+  }
+
+  Future<void> _sendPendingCreations(
+    BuildContext context,
+    String shopfront,
+    {
+      bool triggerSync = true,
+    }) async {
+    try {
+      final result = await di.sl<SendPendingCustomerCreations>()(shopfront);
+      if (!context.mounted) return;
+      final message = (result['message'] ?? '').toString();
+      if (message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
+      if (triggerSync) {
+        context.read<FetchCustomerBloc>().add(
+          StartCustomerSyncEvent(ipAddress: ""),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+    }
+  }
+
+  Future<void> _sendPendingAll(
+    BuildContext context,
+    String shopfront,
+  ) async {
+    await _sendPendingUpdates(
+      context,
+      shopfront,
+      triggerSync: false,
+    );
+    await _sendPendingCreations(
+      context,
+      shopfront,
+      triggerSync: false,
+    );
+    if (!context.mounted) return;
+    context.read<FetchCustomerBloc>().add(
+      StartCustomerSyncEvent(ipAddress: ""),
     );
   }
 
@@ -134,6 +167,10 @@ class CustomerSyncInfoWidget extends StatelessWidget {
             context.read<PendingCustomerUpdatesBloc>().add(
               LoadPendingCustomerUpdatesCountEvent(),
             );
+            if (_skipNextPrompt) {
+              _skipNextPrompt = false;
+              return;
+            }
             _promptSendPendingCustomerUpdates(context);
           }
         },

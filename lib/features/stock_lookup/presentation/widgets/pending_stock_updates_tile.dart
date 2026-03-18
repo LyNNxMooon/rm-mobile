@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_stock_update_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
@@ -240,6 +241,19 @@ class _PendingStockTile extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                if (update.errorMessage != null &&
+                    update.errorMessage!.trim().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      update.errorMessage!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.red.shade600,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -259,6 +273,78 @@ class _PendingStockTile extends StatelessWidget {
   }
 }
 
+PricingRules? _pendingPricingRules(dynamic payload) {
+  if (payload is Map<String, dynamic>) {
+    return PricingRules.fromJson(payload);
+  }
+  if (payload is Map) {
+    return PricingRules.fromJson(Map<String, dynamic>.from(payload));
+  }
+  return null;
+}
+
+StockVO _stockFromPendingPayload(PendingStockUpdateVO update) {
+  final payload = update.payload;
+  final int stockId = (payload['stock_id'] as num?)?.toInt() ??
+      (payload['stockId'] as num?)?.toInt() ??
+      update.stockId;
+
+  final Map<String, dynamic> item = {
+    'stock_id': stockId,
+    'barcode': payload['barcode'] ?? '',
+    'description': payload['description'] ?? '',
+    'sell': payload['sell'] ?? 0,
+    'cost': payload['cost'] ?? 0,
+    'goods_tax': payload['goods_tax'] ?? '',
+    'sales_tax': payload['sales_tax'] ?? '',
+    'custom1': payload['custom1'],
+    'custom2': payload['custom2'],
+    'pricing_rules': payload['pricing_rules'],
+    'date_modified': payload['date_modified'] ?? DateTime.now().toIso8601String(),
+  };
+
+  final stock = StockVO.fromApiItem(item);
+  final rules = _pendingPricingRules(payload['pricing_rules']);
+  return StockVO(
+    stockID: stock.stockID,
+    barcode: stock.barcode,
+    description: stock.description,
+    deptName: stock.deptName,
+    deptID: stock.deptID,
+    custom1: stock.custom1,
+    custom2: stock.custom2,
+    longDescription: stock.longDescription,
+    supplier: stock.supplier,
+    category1: stock.category1,
+    category2: stock.category2,
+    category3: stock.category3,
+    cost: stock.cost,
+    sell: stock.sell,
+    inactive: stock.inactive,
+    quantity: stock.quantity,
+    laybyQuantity: stock.laybyQuantity,
+    salesOrderQuantity: stock.salesOrderQuantity,
+    dateCreated: stock.dateCreated,
+    orderThreshold: stock.orderThreshold,
+    orderQuantity: stock.orderQuantity,
+    allowFractions: stock.allowFractions,
+    package: stock.package,
+    staticQuantity: stock.staticQuantity,
+    pictureFileName: stock.pictureFileName,
+    imageUrl: stock.imageUrl,
+    goodsTax: stock.goodsTax,
+    salesTax: stock.salesTax,
+    dateModified: stock.dateModified,
+    freight: stock.freight,
+    tareWeight: stock.tareWeight,
+    unitOfMeasure: stock.unitOfMeasure,
+    weighted: stock.weighted,
+    trackSerial: stock.trackSerial,
+    lastSaleDate: stock.lastSaleDate,
+    pricingRules: rules,
+  );
+}
+
 Future<void> showPendingStockUpdatesDialog({
   required BuildContext context,
   required List<PendingStockUpdateVO> updates,
@@ -267,18 +353,11 @@ Future<void> showPendingStockUpdatesDialog({
 }) async {
   if (updates.isEmpty) return;
 
-  final shopfront =
-      (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
-  final List<num> ids = updates.map<num>((e) => e.stockId).toList();
-  final stockMap = await LocalDbDAO.instance.getStocksByIds(
-    shopfront: shopfront,
-    stockIds: ids,
-  );
   final entries = updates
       .map(
         (update) => _PendingStockEntry(
           update: update,
-          stock: stockMap[update.stockId],
+          stock: _stockFromPendingPayload(update),
         ),
       )
       .toList();
