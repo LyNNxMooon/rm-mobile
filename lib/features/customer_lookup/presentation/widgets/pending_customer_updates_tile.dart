@@ -340,10 +340,15 @@ Future<void> showPendingCustomerUpdatesDialog({
       return StatefulBuilder(
         builder: (context, setDialogState) {
           final colors = context.appColors;
+          final bool isDark = colors.isDark;
           return Dialog(
             insetPadding: dialogInsetPadding(dialogContext),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            backgroundColor: colors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side:
+                  isDark ? const BorderSide(color: Colors.white30) : BorderSide.none,
+            ),
+            backgroundColor: isDark ? colors.surfaceAlt : colors.surface,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
               child: Column(
@@ -410,7 +415,9 @@ Future<void> showPendingCustomerUpdatesDialog({
                     decoration: BoxDecoration(
                       color: colors.surface,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: colors.divider),
+                      border: Border.all(
+                        color: isDark ? Colors.white24 : colors.divider,
+                      ),
                     ),
                     child: dialogEntries.isEmpty
                         ? Text(

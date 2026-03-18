@@ -1185,9 +1185,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
+            side: isDark
+                ? const BorderSide(color: Colors.white30)
+                : BorderSide.none,
           ),
           elevation: 10,
-          backgroundColor: isDark ? colors.surface : Colors.white,
+          backgroundColor: isDark ? colors.surfaceAlt : Colors.white,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1207,7 +1210,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   ),
                   border: Border(
                     bottom: BorderSide(
-                      color: isDark ? colors.divider : Colors.grey.shade200,
+                      color: isDark ? Colors.white24 : Colors.grey.shade200,
                       width: 1.5,
                     ),
                   ),
@@ -1280,7 +1283,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           color: isDark ? colors.surface : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isDark ? colors.divider : Colors.grey.shade200,
+                            color: isDark ? Colors.white24 : Colors.grey.shade200,
                             width: 1.5,
                           ),
                           boxShadow: [
@@ -1398,7 +1401,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             const SizedBox(height: 12),
                             Divider(
                               height: 1,
-                              color: isDark ? colors.divider : null,
+                              color: isDark ? Colors.white24 : null,
                             ),
                             const SizedBox(height: 12),
 
