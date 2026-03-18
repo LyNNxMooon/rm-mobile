@@ -38,9 +38,9 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                   children: [
                     IconButton(
                       onPressed: () => context.navigateBack(),
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.arrow_back_ios,
-                        color: kPrimaryColor,
+                        color: isDark ? Colors.white : kPrimaryColor,
                         size: 18,
                       ),
                     ),
@@ -54,7 +54,7 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                                 .split('\\')
                                 .last,
                             style: getSmartTitle(
-                              color: isDark ? colors.onSurface : kThirdColor,
+                              color: isDark ? Colors.white : kThirdColor,
                               fontSize: 16,
                             ),
                             maxLines: 1,
@@ -64,7 +64,7 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                             "Stocktake List",
                             style: TextStyle(
                               fontSize: 14,
-                              color: isDark ? colors.onSurfaceMuted : kGreyColor,
+                              color: isDark ? Colors.white70 : kGreyColor,
                             ),
                           ),
                         ],
@@ -146,7 +146,7 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
           indent: 15,
           endIndent: 15,
           thickness: 0.5,
-          color: isDark ? colors.divider : kGreyColor,
+          color: isDark ? Colors.white : kGreyColor,
         ),
       ],
     );

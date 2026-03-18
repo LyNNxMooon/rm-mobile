@@ -18,6 +18,7 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
@@ -31,8 +32,9 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
         children: [
           Expanded(
             child: Container(
+              height: actionSize,
               decoration: BoxDecoration(
-                color: colors.surface,
+                color: isDark ? colors.surfaceAlt : colors.surface,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -44,30 +46,39 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
               ),
               child: TextField(
                 onChanged: onChanged,
+                textAlignVertical: TextAlignVertical.center,
                 decoration: InputDecoration(
                   hintText:
                       "Search barcode or description...", // Shortened hint
                   hintStyle: TextStyle(
-                    color: colors.onSurfaceMuted,
+                    color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                     fontSize: 13,
                   ),
                   prefixIcon: Icon(
                     Icons.search,
-                    color: kPrimaryColor,
+                    color: isDark ? Colors.white70 : kPrimaryColor,
                     size: 20,
                   ),
                   filled: true,
-                  fillColor: colors.surface,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                  isDense: true, // Compact
+                  fillColor: isDark ? colors.surfaceAlt : colors.surface,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  isDense: true,
+                  isCollapsed: true,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: colors.divider, width: 1),
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white38 : colors.divider,
+                      width: 1,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
                   ),
+                ),
+                style: TextStyle(
+                  color: isDark ? Colors.white : colors.onSurface,
+                  fontSize: 13,
                 ),
               ),
             ),
@@ -75,7 +86,7 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
 
           const SizedBox(width: 8),
           Material(
-            color: colors.surface,
+            color: isDark ? colors.surfaceAlt : colors.surface,
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
               onTap: () {
@@ -87,11 +98,14 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
                 width: actionSize,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colors.divider, width: 1),
+                  border: Border.all(
+                    color: isDark ? Colors.white38 : colors.divider,
+                    width: 1,
+                  ),
                 ),
                 child: Icon(
                   Icons.history,
-                  color: colors.onSurface,
+                  color: isDark ? Colors.white70 : colors.onSurface,
                   size: 20,
                 ),
               ),

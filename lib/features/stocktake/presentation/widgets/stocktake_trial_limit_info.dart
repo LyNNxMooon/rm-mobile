@@ -33,8 +33,13 @@ class StocktakeTrialLimitInfo extends StatelessWidget {
               margin: const EdgeInsets.only(top: 4, bottom: 4),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? colors.surface : kSecondaryColor,
-                borderRadius: BorderRadius.circular(8),
+                color: isDark
+                  ? colors.surfaceAlt.withOpacity(0.85)
+                  : kSecondaryColor,
+                borderRadius: BorderRadius.circular(12),
+                border: isDark
+                  ? Border.all(color: Colors.white30, width: 1)
+                  : null,
                 boxShadow: [
                   BoxShadow(
                     color: isDark

@@ -28,6 +28,7 @@ class _FilterDialogState extends State<FilterDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: dialogInsetPadding(context),
@@ -35,8 +36,11 @@ class _FilterDialogState extends State<FilterDialog> {
         width: double.infinity,
         constraints: const BoxConstraints(maxWidth: 400, maxHeight: 650),
         decoration: BoxDecoration(
-          color: colors.surface,
+          color: isDark ? colors.surfaceAlt : colors.surface,
           borderRadius: BorderRadius.circular(10),
+          border: isDark
+              ? Border.all(color: Colors.white30, width: 1)
+              : null,
           boxShadow: [
             BoxShadow(
               color: colors.cardShadow,
@@ -158,14 +162,18 @@ class _FilterDialogState extends State<FilterDialog> {
                       onPressed: () {},
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(color: colors.divider),
+                        side: BorderSide(
+                          color: isDark ? Colors.white38 : colors.divider,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: Text(
                         "Reset",
-                        style: TextStyle(color: colors.onSurfaceMuted),
+                        style: TextStyle(
+                          color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                        ),
                       ),
                     ),
                   ),
@@ -218,11 +226,14 @@ class _FilterDialogState extends State<FilterDialog> {
     Function(String?) onChanged,
     AppThemeColors colors,
   ) {
+    final bool isDark = colors.isDark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: colors.surface,
-        border: Border.all(color: colors.divider),
+        color: isDark ? colors.surfaceAlt : colors.surface,
+        border: Border.all(
+          color: isDark ? Colors.white38 : colors.divider,
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
@@ -230,12 +241,15 @@ class _FilterDialogState extends State<FilterDialog> {
           value: value,
           hint: Text(
             hint,
-            style: TextStyle(color: colors.onSurfaceMuted, fontSize: 14),
+            style: TextStyle(
+              color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+              fontSize: 14,
+            ),
           ),
           isExpanded: true,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: colors.onSurfaceMuted,
+            color: isDark ? Colors.white70 : colors.onSurfaceMuted,
           ),
           onChanged: onChanged,
 

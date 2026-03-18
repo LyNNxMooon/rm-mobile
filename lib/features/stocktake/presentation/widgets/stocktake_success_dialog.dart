@@ -16,11 +16,17 @@ class StocktakeSuccessDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Dialog(
       insetPadding: dialogInsetPadding(context),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: isDark
+            ? const BorderSide(color: Colors.white30, width: 1)
+            : BorderSide.none,
+      ),
       elevation: 10,
-      backgroundColor: colors.surface,
+      backgroundColor: isDark ? colors.surfaceAlt : colors.surface,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
@@ -51,7 +57,7 @@ class StocktakeSuccessDialog extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: colors.onSurface,
+                color: isDark ? Colors.white : colors.onSurface,
               ),
             ),
             const SizedBox(height: 12),
@@ -62,7 +68,7 @@ class StocktakeSuccessDialog extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: colors.onSurfaceMuted,
+                color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                 height: 1.5,
               ),
             ),

@@ -22,8 +22,13 @@ class StockDetailsDialog extends StatelessWidget {
 
     return Dialog(
       insetPadding: dialogInsetPadding(context),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: isDark ? colors.surface : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: isDark
+            ? const BorderSide(color: Colors.white30, width: 1)
+            : BorderSide.none,
+      ),
+      backgroundColor: isDark ? colors.surfaceAlt : Colors.white,
       elevation: 10,
       child: Container(
         constraints: BoxConstraints(maxHeight: maxDialogHeight),
@@ -41,7 +46,7 @@ class StockDetailsDialog extends StatelessWidget {
                     Text(
                       "Fetching details...",
                       style: TextStyle(
-                        color: isDark ? colors.onSurfaceMuted : kGreyColor,
+                        color: isDark ? Colors.white70 : kGreyColor,
                       ),
                     ),
                   ],
@@ -66,7 +71,7 @@ class StockDetailsDialog extends StatelessWidget {
                       state.message,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: isDark ? colors.onSurfaceMuted : kGreyColor,
+                        color: isDark ? Colors.white70 : kGreyColor,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -225,7 +230,7 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                 widget.stock.description,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: isDark ? colors.onSurface : kThirdColor,
+                    color: isDark ? Colors.white : kThirdColor,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
@@ -236,7 +241,10 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
           ),
         ),
 
-        const Divider(height: 1),
+        Divider(
+          height: 1,
+          color: isDark ? Colors.white24 : null,
+        ),
 
         // --- SCROLLABLE DETAILS LIST ---
         Flexible(
@@ -292,7 +300,10 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
           ),
         ),
 
-        const Divider(height: 1),
+        Divider(
+          height: 1,
+          color: isDark ? Colors.white24 : null,
+        ),
 
         // --- EDIT QUANTITY SECTION (Fixed at bottom) ---
         Padding(
@@ -306,7 +317,7 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? colors.onSurfaceMuted : kGreyColor,
+                    color: isDark ? Colors.white70 : kGreyColor,
                   ),
                 ),
               ),
@@ -315,10 +326,14 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                 padding: const EdgeInsets.symmetric(horizontal: 15),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? colors.glassFill
+                      ? colors.surfaceAlt
                       : kSecondaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: kPrimaryColor.withOpacity(0.3)),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white38
+                        : kPrimaryColor.withOpacity(0.3),
+                  ),
                 ),
                 child: TextField(
                   controller: _qtyController,
@@ -330,7 +345,7 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? colors.onSurface : kThirdColor,
+                    color: isDark ? Colors.white : kThirdColor,
                   ),
                   onEditingComplete: () {
                     final trimmedValue = _qtyController.text.trim();
@@ -401,7 +416,6 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
   }
 
   Widget _buildDetailRow(IconData icon, String label, String value) {
-    final colors = context.appColors;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -425,7 +439,7 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? colors.onSurfaceMuted : kGreyColor,
+                    color: isDark ? Colors.white70 : kGreyColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -434,7 +448,7 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                   value,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? colors.onSurface : kThirdColor,
+                    color: isDark ? Colors.white : kThirdColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

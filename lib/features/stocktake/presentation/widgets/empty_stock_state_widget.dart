@@ -15,6 +15,7 @@ class EmptyStockState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final double outerSize = isTablet ? 190 : 160;
@@ -48,7 +49,9 @@ class EmptyStockState extends StatelessWidget {
                 height: innerSize,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: kPrimaryColor.withOpacity(0.1),
+                  color: isDark
+                      ? kPrimaryColor.withOpacity(0.25)
+                      : kPrimaryColor.withOpacity(0.1),
                 ),
                 child: Center(
                   // Using an "Open Box" icon usually signifies "Empty" better than a rocket

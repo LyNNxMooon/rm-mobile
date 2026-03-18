@@ -14,13 +14,19 @@ class StockDetailsReadOnlyDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     // Dynamic height constraint (max 85% of screen height)
     final double maxDialogHeight = MediaQuery.of(context).size.height * 0.85;
 
     return Dialog(
       insetPadding: dialogInsetPadding(context),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: isDark
+            ? const BorderSide(color: Colors.white30, width: 1)
+            : BorderSide.none,
+      ),
+      backgroundColor: isDark ? colors.surfaceAlt : colors.surface,
       elevation: 10,
       child: Container(
         constraints: BoxConstraints(maxHeight: maxDialogHeight),
@@ -38,7 +44,9 @@ class StockDetailsReadOnlyDialog extends StatelessWidget {
                     const SizedBox(height: 15),
                     Text(
                       "Fetching details...",
-                      style: TextStyle(color: colors.onSurfaceMuted),
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                      ),
                     ),
                   ],
                 ),
@@ -57,7 +65,9 @@ class StockDetailsReadOnlyDialog extends StatelessWidget {
                     Text(
                       state.message,
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: colors.onSurfaceMuted),
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
@@ -145,6 +155,7 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     // Format quantity cleanly (e.g. 5 instead of 5.0)
     final String formattedQty = (widget.currentQty % 1 == 0)
         ? widget.currentQty.toInt().toString()
@@ -171,7 +182,7 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
                 widget.stock.description,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: colors.onSurface,
+                    color: isDark ? Colors.white : colors.onSurface,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
@@ -182,7 +193,10 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
           ),
         ),
 
-        const Divider(height: 1),
+        Divider(
+          height: 1,
+          color: isDark ? Colors.white24 : null,
+        ),
 
         // --- SCROLLABLE DETAILS LIST ---
         Flexible(
@@ -206,7 +220,7 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
                       Text(
                         "Counted Quantity:",
                         style: TextStyle(
-                          color: colors.onSurface,
+                          color: isDark ? Colors.white : colors.onSurface,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -292,6 +306,7 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
 
   Widget _buildDetailRow(IconData icon, String label, String value) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -314,7 +329,7 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: colors.onSurfaceMuted,
+                    color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -323,7 +338,7 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
                   value,
                   style: TextStyle(
                     fontSize: 14,
-                    color: colors.onSurface,
+                    color: isDark ? Colors.white : colors.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

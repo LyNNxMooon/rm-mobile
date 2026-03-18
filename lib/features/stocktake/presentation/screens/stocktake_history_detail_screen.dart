@@ -19,7 +19,7 @@ import 'package:rmstock_scanner/features/stocktake/presentation/widgets/empty_st
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/stock_details_readonly_dialog.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
-import 'package:excel/excel.dart';
+import 'package:excel/excel.dart' hide Border;
 import 'package:share_plus/share_plus.dart';
 
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -149,6 +149,7 @@ class _StocktakeHistoryDetailsScreenState
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return WillPopScope(
       onWillPop: () async {
         if (mounted) {
@@ -178,9 +179,9 @@ class _StocktakeHistoryDetailsScreenState
                             });
                             context.navigateBack();
                           },
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.arrow_back_ios,
-                            color: kPrimaryColor,
+                            color: isDark ? Colors.white : kPrimaryColor,
                             size: 18,
                           ),
                         ),
@@ -188,7 +189,7 @@ class _StocktakeHistoryDetailsScreenState
                         Text(
                           "History Details",
                           style: getSmartTitle(
-                            color: colors.onSurface,
+                            color: isDark ? Colors.white : colors.onSurface,
                             fontSize: 16,
                           ),
                         ),
@@ -305,6 +306,7 @@ class _StocktakeHistoryDetailsScreenState
 
   Widget _itemTile(CountedStockVO stock) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return InkWell(
       onTap: () {
         context.read<StockDetailsBloc>().add(
@@ -320,8 +322,11 @@ class _StocktakeHistoryDetailsScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: colors.surface,
+          color: isDark ? colors.surfaceAlt : colors.surface,
           borderRadius: BorderRadius.circular(10),
+          border: isDark
+              ? Border.all(color: Colors.white30, width: 1)
+              : null,
           boxShadow: [
             BoxShadow(
               color: colors.cardShadow,
@@ -346,7 +351,10 @@ class _StocktakeHistoryDetailsScreenState
                     stock.description,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: getSmartTitle(color: colors.onSurface, fontSize: 14),
+                    style: getSmartTitle(
+                      color: isDark ? Colors.white : colors.onSurface,
+                      fontSize: 14,
+                    ),
                   ),
                   Text(
                     stock.barcode,

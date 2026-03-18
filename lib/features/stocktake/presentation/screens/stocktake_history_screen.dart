@@ -29,6 +29,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return Scaffold(
       backgroundColor: colors.bg,
       body: SafeArea(
@@ -41,16 +42,19 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                 children: [
                   IconButton(
                     onPressed: () => context.navigateBack(),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios,
-                      color: kPrimaryColor,
+                      color: isDark ? Colors.white : kPrimaryColor,
                       size: 18,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Text(
                     "Stocktake History",
-                    style: getSmartTitle(color: colors.onSurface, fontSize: 16),
+                    style: getSmartTitle(
+                      color: isDark ? Colors.white : colors.onSurface,
+                      fontSize: 16,
+                    ),
                   ),
                 ],
               ),
@@ -103,7 +107,9 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                                   height: 130,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: kPrimaryColor.withOpacity(0.1),
+                                    color: isDark
+                                        ? kPrimaryColor.withOpacity(0.25)
+                                        : kPrimaryColor.withOpacity(0.1),
                                   ),
                                   child: Center(
                                     // Using an "Open Box" icon usually signifies "Empty" better than a rocket
@@ -173,6 +179,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
 
   Widget _sessionTile(StocktakeHistorySessionRow s, int index) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     String fmt(DateTime dt) =>
         "${dt.day.toString().padLeft(2, '0')}/"
         "${dt.month.toString().padLeft(2, '0')}/"
@@ -192,8 +199,11 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: colors.surface,
+                color: isDark ? colors.surfaceAlt : colors.surface,
                 borderRadius: BorderRadius.circular(10),
+                border: isDark
+                    ? Border.all(color: Colors.white30, width: 1)
+                    : null,
                 boxShadow: [
                   BoxShadow(
                     color: colors.cardShadow,
@@ -221,7 +231,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                         Text(
                           "Sent ${s.totalStocks} item(s)",
                           style: getSmartTitle(
-                            color: colors.onSurface,
+                            color: isDark ? Colors.white : colors.onSurface,
                             fontSize: 14,
                           ),
                           maxLines: 1,
@@ -231,7 +241,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                         Text(
                           fmt(s.createdAt),
                           style: TextStyle(
-                            color: colors.onSurfaceMuted,
+                            color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                             fontSize: 11,
                           ),
                         ),
@@ -240,7 +250,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                   ),
                   Icon(
                     Icons.chevron_right_rounded,
-                    color: colors.onSurfaceMuted,
+                    color: isDark ? Colors.white54 : colors.onSurfaceMuted,
                   ),
                 ],
               ),
