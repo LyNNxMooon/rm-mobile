@@ -741,6 +741,14 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
         : 8) *
       uiScale;
 
+    final double titleFontSize = (isTablet ? 15 : 14) * textUiScale;
+    final double barcodeFontSize = (isTablet ? 14 : 13) * textUiScale;
+    final double infoLabelFontSize =
+      (isTablet ? 9.5 : 12) * textUiScale;
+    final double infoValueFontSize =
+      (isTablet ? 14 : 12) * textUiScale;
+    final double infoIconSize = (isTablet ? 13 : 12) * textUiScale;
+
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(
         position: index,
@@ -822,7 +830,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                   highlightColor: Colors.amber.withOpacity(0.6),
                                   style: getSmartTitle(
                                     color: isDark ? Colors.white : colors.onSurface,
-                                    fontSize: 14 * textUiScale,
+                                    fontSize: titleFontSize,
                                   ),
                                 ),
                               ],
@@ -836,7 +844,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                             highlightColor: Colors.amber.withOpacity(0.6),
                             style: TextStyle(
                               fontFamily: 'monospace',
-                              fontSize: 13 * textUiScale,
+                              fontSize: barcodeFontSize,
                               color: kPrimaryColor,
                               fontWeight: FontWeight.w600,
                             ),
@@ -845,7 +853,9 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                             isTablet: isTablet,
                             isDark: isDark,
                             colors: colors,
-                            textUiScale: textUiScale,
+                            labelFontSize: infoLabelFontSize,
+                            valueFontSize: infoValueFontSize,
+                            iconSize: infoIconSize,
                             query: query,
                             showCompany: showCompany,
                             company: customer.company,
@@ -924,7 +934,9 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     required bool isTablet,
     required bool isDark,
     required AppThemeColors colors,
-    required double textUiScale,
+    required double labelFontSize,
+    required double valueFontSize,
+    required double iconSize,
     required String query,
     required bool showCompany,
     required String company,
@@ -970,7 +982,9 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
           query: query.trim(),
           isDark: isDark,
           mutedColor: colors.onSurfaceMuted,
-          textUiScale: textUiScale,
+          labelFontSize: labelFontSize,
+          valueFontSize: valueFontSize,
+          iconSize: iconSize,
         ),
       );
     }
@@ -1002,22 +1016,24 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     required String query,
     required bool isDark,
     required Color mutedColor,
-    required double textUiScale,
+    required double labelFontSize,
+    required double valueFontSize,
+    required double iconSize,
   }) {
     final labelColor = isDark ? Colors.white70 : mutedColor;
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(
           icon,
-          size: 12 * textUiScale,
+          size: iconSize,
           color: labelColor,
         ),
         const SizedBox(width: 4),
         Text(
           '$label: ',
           style: TextStyle(
-            fontSize: 12 * textUiScale,
+            fontSize: labelFontSize,
             color: labelColor,
             fontWeight: FontWeight.w600,
           ),
@@ -1028,7 +1044,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
             query: query.trim(),
             highlightColor: Colors.amber.withOpacity(0.6),
             style: TextStyle(
-              fontSize: 12 * textUiScale,
+              fontSize: valueFontSize,
               color: labelColor,
             ),
           ),
