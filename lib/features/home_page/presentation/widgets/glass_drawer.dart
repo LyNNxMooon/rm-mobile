@@ -1,10 +1,7 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/widgets/shopfronts_dialog.dart'
-    show ShopfrontsDialog;
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
@@ -12,14 +9,15 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../../entities/vos/network_server_vo.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
 import '../BLoC/home_screen_bloc.dart';
-import '../BLoC/home_screen_events.dart';
 import '../BLoC/home_screen_states.dart';
 import '../screens/coming_soon_screen.dart';
+
+// IMPORTANT: Adjust this import to match your folder structure
+import 'action_card.dart';
 
 class GlassDrawer extends StatefulWidget {
   const GlassDrawer({
@@ -27,77 +25,27 @@ class GlassDrawer extends StatefulWidget {
     this.initialChildSize,
     this.minChildSize,
     this.maxChildSize,
+    required this.onStocktakeTap,
   });
 
   final double? initialChildSize;
   final double? minChildSize;
   final double? maxChildSize;
+  final VoidCallback onStocktakeTap;
 
   @override
   State<GlassDrawer> createState() => _GlassDrawerState();
 }
 
 class _GlassDrawerState extends State<GlassDrawer> {
-  int? _savedPort;
-  String _savedApiKey = "";
-
-  bool _isSyncInProgress(BuildContext context) {
-    return context.read<FetchStockBloc>().state is FetchStockProgress;
-  }
-
-  void _showSyncBlockedMessage(BuildContext context) {
-    showTopSnackBar(
-      Overlay.of(context),
-      const CustomSnackBar.info(
-        message: "Stock sync in progress. Please wait.",
-      ),
-    );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    context.read<StaffAuthBloc>().add(LoadConnectionInfoEvent());
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
-    final bool isPortrait = media.orientation == Orientation.portrait;
-    final bool isTabletPortrait = isTablet && isPortrait;
-
-    double initialChildSize = widget.initialChildSize ?? 0.535;
-    double minChildSize = widget.minChildSize ?? 0.535;
-    double maxChildSize = widget.maxChildSize ?? 0.88;
-
-    if (widget.initialChildSize == null ||
-        widget.minChildSize == null ||
-        widget.maxChildSize == null) {
-      if (isTabletPortrait) {
-        initialChildSize = media.size.height >= 1100 ? 0.58 : 0.56;
-        minChildSize = media.size.height >= 1100 ? 0.56 : 0.54;
-        maxChildSize = 0.91;
-      } else if (isPortrait) {
-        initialChildSize = 0.535;
-        minChildSize = 0.535;
-        maxChildSize = 0.88;
-      } else if (isTablet) {
-        initialChildSize = 0.50;
-        minChildSize = 0.48;
-        maxChildSize = 0.90;
-      } else {
-        initialChildSize = 0.49;
-        minChildSize = 0.47;
-        maxChildSize = 0.86;
-      }
-    }
 
     final sheet = DraggableScrollableSheet(
-      initialChildSize: initialChildSize,
-      minChildSize: minChildSize,
-      maxChildSize: maxChildSize,
+      initialChildSize: widget.initialChildSize ?? 0.55,
+      minChildSize: widget.minChildSize ?? 0.55,
+      maxChildSize: widget.maxChildSize ?? 0.90,
       builder: (context, scrollController) {
         return ClipRRect(
           borderRadius: const BorderRadius.only(
@@ -119,8 +67,6 @@ class _GlassDrawerState extends State<GlassDrawer> {
                 ],
               ),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(
                     child: Container(
@@ -137,13 +83,11 @@ class _GlassDrawerState extends State<GlassDrawer> {
                   ),
                   const SizedBox(height: 15),
                   Padding(
-                    padding: const EdgeInsets.only(left: 28, right: 28),
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: BlocBuilder<StaffAuthBloc, StaffAuthStates>(
                       builder: (context, staffState) {
-                        return BlocBuilder<
-                          ShopFrontConnectionBloc,
-                          ShopfrontConnectionStates
-                        >(
+                        return BlocBuilder<ShopFrontConnectionBloc,
+                            ShopfrontConnectionStates>(
                           builder: (context, state) {
                             final shop = AppGlobals.instance.shopfront;
                             final shopText = (shop == null || shop.isEmpty)
@@ -166,8 +110,8 @@ class _GlassDrawerState extends State<GlassDrawer> {
                       },
                     ),
                   ),
+                  const SizedBox(height: 15),
                   Expanded(child: dashBoardView(scrollController)),
-                  const SizedBox(height: 10),
                 ],
               ),
             ),
@@ -176,170 +120,128 @@ class _GlassDrawerState extends State<GlassDrawer> {
       },
     );
 
-    return BlocListener<StaffAuthBloc, StaffAuthStates>(
-      listener: (context, state) {
-        if (state is StaffConnectionInfoLoaded) {
-          setState(() {
-            _savedPort = state.port;
-            _savedApiKey = state.apiKey;
-          });
-        }
-      },
-      child: sheet,
+    return sheet;
+  }
+
+  Widget _buildSectionTitle(String title, BuildContext context) {
+    final colors = context.appColors;
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double fontSize = isTablet ? 18 : 16;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 28, right: 28, top: 10, bottom: 12),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          color: colors.isDark ? Colors.white : Colors.white,
+        ),
+      ),
     );
   }
 
-  Widget dashBoardView(ScrollController? scrollController) {
+  Widget dashBoardView(ScrollController scrollController) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double width = constraints.maxWidth;
-        final double height = constraints.maxHeight;
         final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
         final bool isTabletPortrait =
-            isTablet &&
-            MediaQuery.of(context).orientation == Orientation.portrait;
+            isTablet && MediaQuery.of(context).orientation == Orientation.portrait;
+        final bool isLargeTablet =
+            isTablet && MediaQuery.of(context).size.shortestSide >= 900;
 
         int crossAxisCount = 2;
-        if (width > 600 || isTabletPortrait) crossAxisCount = 3;
-        if (width > 900) crossAxisCount = 4;
-
-        const double verticalPadding = 40.0;
-        if (isTablet && crossAxisCount == 4) {
-          final int rowCount4 = (_menuItems.length / 4).ceil();
-          final double baseSpacing = width > 600 ? 20.0 : 15.0;
-          final double rawHeight4 =
-              (height - verticalPadding - ((rowCount4 - 1) * baseSpacing)) /
-              rowCount4;
-          final double maxTileHeight = isTabletPortrait ? 210.0 : 170.0;
-          if (rawHeight4 > maxTileHeight) {
-            crossAxisCount = 3;
-          }
+        if (isTabletPortrait && isLargeTablet) {
+          crossAxisCount = 2;
+        } else if (width > 600 || isTabletPortrait) {
+          crossAxisCount = 3;
         }
+        if (width > 900 && !isTabletPortrait) crossAxisCount = 4;
 
-        const double padding = 50.0;
         double spacing = width > 600 ? 20.0 : 15.0;
-        final double minSpacing = width > 600 ? 18.0 : 12.0;
-        final double maxSpacing = width > 600 ? 34.0 : 24.0;
-
-        final int rowCount = (_menuItems.length / crossAxisCount).ceil();
-        final double availableGridHeight =
-            (height - verticalPadding - ((rowCount - 1) * spacing)).clamp(
-              100.0,
-              2000.0,
-            );
-        final double minTileHeight = isTablet ? 95.0 : 85.0;
-        double maxTileHeight = isTabletPortrait ? 210.0 : 170.0;
-        final double desiredHeight = availableGridHeight / rowCount;
-        final bool isTallDrawer = isTablet && desiredHeight > maxTileHeight;
-
-        if (isTallDrawer) {
-          spacing = (spacing * 1.35).clamp(minSpacing, maxSpacing);
-        }
-
-        final double recomputedGridHeight =
-            (height - verticalPadding - ((rowCount - 1) * spacing)).clamp(
-              100.0,
-              2000.0,
-            );
-        final double recomputedHeight = recomputedGridHeight / rowCount;
-
-        if (isTablet && recomputedHeight > maxTileHeight) {
-          maxTileHeight = desiredHeight.clamp(
-            minTileHeight,
-            maxTileHeight * 1.35,
-          );
-        }
-
-        final double targetHeight = recomputedHeight.clamp(
-          minTileHeight,
-          maxTileHeight,
-        );
-
-        // Scale tile fonts/icons based on tablet screen size
-        final double screenScale = isTablet
-            ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.85, 1.3)
-            : 1.0;
-        final double tileScale = isTablet ? screenScale : 1.0;
-
-        final double totalSpacing = spacing * (crossAxisCount - 1);
-        final double availableWidth = width - padding - totalSpacing;
+        final double targetHeight = isTabletPortrait
+          ? (isLargeTablet ? 155.0 : 130.0)
+          : (isLargeTablet ? 135.0 : (isTablet ? 105.0 : 85.0));
+        final double availableWidth = width - 50 - (spacing * (crossAxisCount - 1));
         final double itemWidth = availableWidth / crossAxisCount;
         final double childAspectRatio = itemWidth / targetHeight;
 
-        return AnimationLimiter(
-          child: GridView.builder(
-            controller: scrollController,
-            physics: const ClampingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: spacing,
-              mainAxisSpacing: spacing,
-              childAspectRatio: childAspectRatio,
-            ),
-            itemCount: _menuItems.length,
-            itemBuilder: (context, index) {
-              return InkWell(
-                onTap: () {
-                  _handleNavigation(index, context);
-                },
-                child: _buildGridItem(
-                  _menuItems[index]['title'],
-                  _menuItems[index]['subTitle'],
-                  _menuItems[index]['icon'],
-                  context,
-                  index,
-                  crossAxisCount,
-                  tileScale,
+        return ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.only(top: 10, bottom: 40),
+          physics: const ClampingScrollPhysics(),
+          children: [
+            // --- SECTION 1: TRANSACTIONS ---
+            _buildSectionTitle("Transactions", context),
+            AnimationLimiter(
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
+                  childAspectRatio: childAspectRatio,
                 ),
-              );
-            },
-          ),
+                itemCount: _transactionItems.length,
+                itemBuilder: (context, index) {
+                  return _buildGridItem(
+                    _transactionItems[index],
+                    context,
+                    index,
+                    crossAxisCount,
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // --- SECTION 2: INFORMATION ---
+            _buildSectionTitle("Information", context),
+            AnimationLimiter(
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
+                  childAspectRatio: childAspectRatio,
+                ),
+                itemCount: _infoItems.length,
+                itemBuilder: (context, index) {
+                  return _buildGridItem(
+                    _infoItems[index],
+                    context,
+                    index,
+                    crossAxisCount,
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // --- SECTION 3: MANAGEMENT ---
+            _buildSectionTitle("Management", context),
+            ActionCard(
+              title: "Start Stocktaking",
+              subtitle: "Begin counting inventory items",
+              onTap: widget.onStocktakeTap,
+            ),
+          ],
         );
       },
     );
   }
 
-  Future<void> _handleNavigation(int index, BuildContext context) async {
-    if (index == 0) {
-      if (_isSyncInProgress(context)) {
-        _showSyncBlockedMessage(context);
-        return;
-      }
-
-      final String hostIp = AppGlobals.instance.currentHostIp ?? "";
-
-      if (hostIp.isEmpty || _savedApiKey.isEmpty || _savedPort == null) {
-        return;
-      }
-
-      context.read<ShopfrontBloc>().add(
-        FetchShopsFromApi(
-          ipAddress: hostIp,
-          port: _savedPort!,
-          apiKey: _savedApiKey,
-        ),
-      );
-
-      showDialog(
-        context: context,
-        builder: (context) {
-          return ShopfrontsDialog(
-            pc: NetworkServerVO(
-              ipAddress: AppGlobals.instance.currentHostIp ?? "",
-              hostName: AppGlobals.instance.hostName ?? "",
-            ),
-            previousPath: "",
-            isPairedFlow: true,
-            port: _savedPort,
-            apiKey: _savedApiKey,
-          );
-        },
-      );
-    } else if (index == 1) {
-      if (!AppGlobals.instance.hasAnyPermission(const <String>[
-        "Information_Stock",
-      ])) {
+  Future<void> _handleNavigation(String action, BuildContext context) async {
+    if (action == "stock_lookup") {
+      if (!AppGlobals.instance.hasAnyPermission(const <String>["Information_Stock"])) {
         showTopSnackBar(
           Overlay.of(context),
           const CustomSnackBar.error(
@@ -349,10 +251,8 @@ class _GlassDrawerState extends State<GlassDrawer> {
         return;
       }
       context.navigateToNext(const StockLookupScreen());
-    } else if (index == 2) {
-      if (!AppGlobals.instance.hasAnyPermission(const <String>[
-        "Information_Customer",
-      ])) {
+    } else if (action == "customer_lookup") {
+      if (!AppGlobals.instance.hasAnyPermission(const <String>["Information_Customer"])) {
         showTopSnackBar(
           Overlay.of(context),
           const CustomSnackBar.error(
@@ -368,47 +268,62 @@ class _GlassDrawerState extends State<GlassDrawer> {
   }
 
   Widget _buildGridItem(
-    String title,
-    String subTitle,
-    IconData icon,
+    Map<String, dynamic> itemData,
     BuildContext context,
     int index,
     int columnCount,
-    double scale,
   ) {
     final colors = context.appColors;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    // Scale fonts and icon only for tablets/iPads
+
+    final double scale = isTablet
+        ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.85, 1.3)
+        : 1.0;
     final double titleSize = isTablet ? (14 * scale).clamp(14.0, 19.0) : 14.0;
-    final double subTitleSize = isTablet
-        ? (11 * scale).clamp(11.0, 14.0)
-        : 13.0;
+    final double subTitleSize =
+        isTablet ? (11 * scale).clamp(11.0, 14.0) : 12.0;
     final double iconSize = isTablet ? (36 * scale).clamp(32.0, 48.0) : 22.0;
+
+    final bool isComingSoon = itemData['comingSoon'] ?? false;
+    final Color itemColor = itemData['color'] ?? kPrimaryColor;
+    
+    // Style adjustments for inactive/coming soon cards
+    final Color effectiveTitleColor = isComingSoon ? Colors.grey.shade500 : itemColor;
+    final Color effectiveSubtitleColor = isComingSoon ? Colors.grey.shade400 : colors.onSurfaceMuted;
+    final Color effectiveIconColor = isComingSoon ? Colors.grey.shade500 : itemColor;
+    final Color? bgColor = isComingSoon
+      ? (colors.isDark ? Colors.white10 : Colors.grey.shade200)
+      : null;
+    final LinearGradient? bgGradient = isComingSoon
+      ? null
+      : (colors.isDark ? colors.glassGradient : colors.glassGradient);
 
     return AnimationConfiguration.staggeredGrid(
       position: index,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1000),
       columnCount: columnCount,
       child: ScaleAnimation(
         child: FadeInAnimation(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: colors.glassGradient,
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(
-                color: colors.glassBorder,
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: colors.cardShadow,
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
+          child: InkWell(
+            onTap: () => _handleNavigation(itemData['action'] ?? "coming_soon", context),
+            borderRadius: BorderRadius.circular(15),
+            child: Container(
+              decoration: BoxDecoration(
+                color: bgColor,
+                gradient: bgGradient,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(
+                  color: isComingSoon ? Colors.transparent : colors.glassBorder,
+                  width: 1.5,
                 ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
+                boxShadow: isComingSoon ? [] : [
+                  BoxShadow(
+                    color: colors.cardShadow,
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Column(
@@ -419,9 +334,9 @@ class _GlassDrawerState extends State<GlassDrawer> {
                       children: [
                         Expanded(
                           child: Text(
-                            title,
+                            itemData['title'],
                             style: getSmartTitle(
-                              color: kPrimaryColor,
+                              color: effectiveTitleColor,
                               fontSize: titleSize,
                             ),
                             maxLines: 2,
@@ -429,7 +344,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
                           ),
                         ),
                         const SizedBox(width: 5),
-                        Icon(icon, size: iconSize, color: kPrimaryColor),
+                        Icon(itemData['icon'], size: iconSize, color: effectiveIconColor),
                       ],
                     ),
                     const SizedBox(height: 3),
@@ -437,9 +352,9 @@ class _GlassDrawerState extends State<GlassDrawer> {
                       children: [
                         Expanded(
                           child: Text(
-                            subTitle,
+                            itemData['subTitle'],
                             style: TextStyle(
-                              color: colors.onSurfaceMuted,
+                              color: effectiveSubtitleColor,
                               fontSize: subTitleSize,
                               fontWeight: FontWeight.w500,
                             ),
@@ -459,66 +374,99 @@ class _GlassDrawerState extends State<GlassDrawer> {
     );
   }
 
-  final List<Map<String, dynamic>> _menuItems = [
+  // --- DATA SOURCES ---
+
+  final List<Map<String, dynamic>> _transactionItems = [
     {
-      "title": "RM Shopfront",
-      "subTitle": "Select Shopfront",
-      "icon": Icons.shop_2_outlined,
+      "title": "Sales",
+      "subTitle": "Process sales",
+      "icon": Icons.point_of_sale_outlined,
+      "color": Colors.green.shade600,
+      "comingSoon": false,
+      "action": "coming_soon" // Change this when you have a route
     },
+    {
+      "title": "Account Sales",
+      "subTitle": "Invoice customers",
+      "icon": Icons.receipt_long_outlined,
+      "color": Colors.pink.shade400,
+      "comingSoon": false,
+      "action": "coming_soon" // Change this when you have a route
+    },
+    {
+      "title": "Sales Order",
+      "subTitle": "Create orders",
+      "icon": Icons.shopping_cart_outlined,
+      "color": Colors.blue.shade600,
+      "comingSoon": false,
+      "action": "coming_soon" // Change this when you have a route
+    },
+    {
+      "title": "Quotes",
+      "subTitle": "Issue estimates",
+      "icon": Icons.request_quote_outlined,
+      "color": Colors.orange.shade500,
+      "comingSoon": false,
+      "action": "coming_soon" // Change this when you have a route
+    },
+    {
+      "title": "Lay-bys",
+      "subTitle": "Manage lay-bys",
+      "icon": Icons.inventory_2_outlined,
+      "color": Colors.purple.shade500,
+      "comingSoon": false,
+      "action": "coming_soon" // Change this when you have a route
+    },
+    {
+      "title": "Goods Received",
+      "subTitle": "Coming soon",
+      "icon": Icons.local_shipping_outlined,
+      "color": Colors.grey,
+      "comingSoon": true,
+      "action": "coming_soon"
+    },
+    {
+      "title": "Purchase Orders",
+      "subTitle": "Coming soon",
+      "icon": Icons.shopping_bag_outlined,
+      "color": Colors.grey,
+      "comingSoon": true,
+      "action": "coming_soon"
+    },
+    {
+      "title": "Return Goods",
+      "subTitle": "Coming soon",
+      "icon": Icons.assignment_return_outlined,
+      "color": Colors.grey,
+      "comingSoon": true,
+      "action": "coming_soon"
+    },
+  ];
+
+  final List<Map<String, dynamic>> _infoItems = [
     {
       "title": "Stock-Lookup",
       "subTitle": "Search inventory",
       "icon": Icons.inventory_2_outlined,
+      "color": kPrimaryColor,
+      "comingSoon": false,
+      "action": "stock_lookup"
     },
     {
       "title": "Customers",
       "subTitle": "Search customers",
-      "icon": Icons.people,
-    },
-    {
-      "title": "Quotes & SO",
-      "subTitle": "Issue Quotes & SO",
-      "icon": Icons.request_quote_outlined,
-    },
-    {
-      "title": "Mobile Sales",
-      "subTitle": "Do Counter sales",
-      "icon": Icons.point_of_sale_outlined,
-    },
-    {
-      "title": "Purchase Orders",
-      "subTitle": "Order to supplier",
-      "icon": Icons.shopping_bag_outlined,
-    },
-    {
-      "title": "Goods Received",
-      "subTitle": "Receive arrivals",
-      "icon": Icons.local_shipping_outlined,
-    },
-    {
-      "title": "Returns",
-      "subTitle": "Return goods",
-      "icon": Icons.assignment_return_outlined,
-    },
-    {
-      "title": "Pricing Changes",
-      "subTitle": "Update pricing",
-      "icon": Icons.price_change_outlined,
-    },
-    {
-      "title": "Barcode Labels",
-      "subTitle": "Print & Adjust labels",
-      "icon": Icons.qr_code_2_outlined,
-    },
-    {
-      "title": "Reporting",
-      "subTitle": "Print Reports",
-      "icon": Icons.newspaper_outlined,
+      "icon": Icons.people_outline,
+      "color": kPrimaryColor,
+      "comingSoon": false,
+      "action": "customer_lookup"
     },
     {
       "title": "Suppliers",
       "subTitle": "Search suppliers",
-      "icon": Icons.newspaper_outlined,
+      "icon": Icons.business_outlined,
+      "color": kPrimaryColor,
+      "comingSoon": false,
+      "action": "coming_soon" // Change this when you have a route
     },
   ];
 }

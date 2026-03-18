@@ -26,7 +26,8 @@ class ActionCard extends StatelessWidget {
         ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.85, 1.3)
         : 1.0;
     final double titleSize = isTablet ? (16 * scale).clamp(16.0, 19.0) : 16.0;
-    final double subTitleSize = isTablet ? (14 * scale).clamp(12.0, 14.0) : 14.0;
+    final double subTitleSize =
+        isTablet ? (14 * scale).clamp(12.0, 14.0) : 14.0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -37,10 +38,7 @@ class ActionCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: colors.glassGradient,
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: colors.glassBorder,
-            width: 1.5,
-          ),
+          border: Border.all(color: colors.glassBorder, width: 1.5),
           boxShadow: [
             BoxShadow(
               color: colors.cardShadow,
@@ -53,7 +51,7 @@ class ActionCard extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(15), // Match container radius
+            borderRadius: BorderRadius.circular(15),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 17),
               child: Row(
@@ -84,7 +82,7 @@ class ActionCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 10), // Prevent text touching icon
+                  const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(

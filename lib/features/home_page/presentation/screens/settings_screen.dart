@@ -49,6 +49,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _selectedIp = "";
   String _selectedHostName = "";
   Timer? _autoBackupTimer;
+  int? _savedPort;
+  String _savedApiKey = "";
 
   bool _isSyncInProgress(BuildContext context) {
     return context.read<FetchStockBloc>().state is FetchStockProgress;
@@ -63,6 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    context.read<StaffAuthBloc>().add(LoadConnectionInfoEvent());
     context.read<SettingsBloc>().add(LoadSettingsEvent());
     context.read<SettingsBloc>().add(CheckAutoBackupNowEvent());
     _autoBackupTimer = Timer.periodic(const Duration(hours: 1), (_) {
@@ -84,6 +87,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showTopSnackBar(
       Overlay.of(context),
       CustomSnackBar.error(message: message),
+    );
+  }
+
+  String _getShopfrontLabel() {
+    final shop = AppGlobals.instance.shopfront;
+    if (shop == null || shop.isEmpty) {
+      return "No shopfront selected";
+    }
+    return shop.split(r'\\').last;
+  }
+
+  void _openShopfrontPicker(BuildContext context) {
+    if (_blockIfSyncing(context)) return;
+
+    final String hostIp = AppGlobals.instance.currentHostIp ?? "";
+
+    if (hostIp.isEmpty || _savedApiKey.isEmpty || _savedPort == null) {
+      _showError(context, "Connection info missing. Please reconnect to host.");
+      return;
+    }
+
+    context.read<ShopfrontBloc>().add(
+      FetchShopsFromApi(
+        ipAddress: hostIp,
+        port: _savedPort!,
+        apiKey: _savedApiKey,
+      ),
+    );
+
+    showDialog(
+      context: context,
+      builder: (_) => ShopfrontsDialog(
+        pc: NetworkServerVO(
+          ipAddress: hostIp,
+          hostName: AppGlobals.instance.hostName ?? "",
+        ),
+        previousPath: "",
+        isPairedFlow: true,
+        port: _savedPort,
+        apiKey: _savedApiKey,
+      ),
     );
   }
 
@@ -472,6 +516,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final navigator = Navigator.of(context, rootNavigator: true);
               navigator.popUntil((route) => route is! PopupRoute);
 
+              setState(() {
+                _savedPort = _selectedPort;
+                _savedApiKey = state.response.apiKey;
+              });
+
               context.read<ShopfrontBloc>().add(
                 FetchShopsFromApi(
                   ipAddress: _selectedIp,
@@ -516,6 +565,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         BlocListener<StaffAuthBloc, StaffAuthStates>(
           listener: (context, state) async {
+            if (state is StaffConnectionInfoLoaded) {
+              setState(() {
+                _savedPort = state.port;
+                _savedApiKey = state.apiKey;
+              });
+            }
+
             if (state is StaffSignedOut) {
               if (!mounted) return;
               await context.navigateToNext(const StaffLoginScreen());
@@ -547,6 +603,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       children: [
                         const SizedBox(height: 10),
+
+                        _buildSectionTitle("Shopfront"),
+                        _buildGlassContainer(
+                          child: Column(
+                            children: [
+                              _buildInfoRow(
+                                Icons.storefront_outlined,
+                                "Current Shopfront",
+                                _getShopfrontLabel(),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildActionRow(
+                                Icons.shop_2_outlined,
+                                "Change Shopfront",
+                                "Select a shopfront for this device",
+                                kPrimaryColor,
+                                () => _openShopfrontPicker(context),
+                                titleColor: Theme.of(context).brightness == Brightness.dark
+                                  ? null
+                                  : Colors.blue,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 25),
 
                         _buildSectionTitle("Staff Profile"),
                         _buildGlassContainer(
@@ -1061,6 +1146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String subtitle,
     Color color,
     VoidCallback onTap,
+    {Color? titleColor}
   ) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
@@ -1092,7 +1178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
-                      color: isDark ? Colors.white : color,
+                      color: isDark ? Colors.white : (titleColor ?? color),
                     ),
                     maxLines: 1, // Prevent overflow
                     overflow: TextOverflow.ellipsis,
