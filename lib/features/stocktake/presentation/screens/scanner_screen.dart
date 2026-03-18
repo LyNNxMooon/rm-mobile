@@ -420,8 +420,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
               horizontal: panelHorizontalPadding,
             ),
             decoration: BoxDecoration(
-              color: isDark ? colors.surface : kSecondaryColor,
+              color: isDark ? colors.surfaceAlt : kSecondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
+              border: isDark
+                  ? Border.all(color: Colors.white38, width: 1)
+                  : null,
               boxShadow: [
                 BoxShadow(
                   color: isDark
@@ -578,6 +581,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
             height: isMediumTabletPortrait
                 ? 42 * uiScale
                 : (isTablet ? 50 : 36) * uiScale * portraitBoost,
+            decoration: BoxDecoration(
+              color: isDark ? colors.surfaceAlt : Colors.transparent,
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
+              border: isDark
+                  ? Border.all(color: Colors.white38, width: 1)
+                  : null,
+            ),
             child: CustomTextField(
               focusNode: txtFieldFocusNode,
               submitFunction: (_) {
@@ -608,8 +618,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
               horizontal: isTablet ? 20 : 12,
             ),
             decoration: BoxDecoration(
-              color: isDark ? colors.surface : kSecondaryColor,
+              color: isDark ? colors.surfaceAlt : kSecondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
+              border: isDark
+                  ? Border.all(color: Colors.white38, width: 1)
+                  : null,
               boxShadow: [
                 BoxShadow(
                   color: isDark

@@ -17,8 +17,13 @@ class DuplicateStockDialog extends StatelessWidget {
     final double maxDialogHeight = MediaQuery.of(context).size.height * 0.6;
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: isDark ? colors.surface : kBgColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: isDark
+            ? const BorderSide(color: Colors.white30, width: 1)
+            : BorderSide.none,
+      ),
+      backgroundColor: isDark ? colors.surfaceAlt : kBgColor,
       elevation: 10,
       insetPadding: dialogInsetPadding(context),
       child: Padding(
@@ -139,9 +144,13 @@ class DuplicateStockDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isDark ? colors.surface : kSecondaryColor,
+              color: isDark ? colors.surfaceAlt : kSecondaryColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: kPrimaryColor.withOpacity(0.1)),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white24
+                    : kPrimaryColor.withOpacity(0.1),
+              ),
           boxShadow: [
             BoxShadow(
               color: isDark
@@ -181,7 +190,7 @@ class DuplicateStockDialog extends StatelessWidget {
                           color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: isDark ? colors.divider : Colors.grey.shade300,
+                            color: isDark ? Colors.white38 : Colors.grey.shade300,
                           ),
                         ),
                         child: Text(
@@ -189,7 +198,7 @@ class DuplicateStockDialog extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontFamily: 'monospace',
-                            color: isDark ? colors.onSurface : kThirdColor,
+                            color: isDark ? Colors.white : kThirdColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

@@ -143,14 +143,14 @@ class _ScannerState extends State<Scanner> {
               Icon(
                 CupertinoIcons.barcode_viewfinder,
                 size: 80,
-                color: isDark ? colors.onHero : kSecondaryColor,
+                color: kSecondaryColor,
               ),
               const SizedBox(height: 10),
               Text(
                 "Scan Barcode",
                 style: TextStyle(
                   fontSize: 16,
-                  color: isDark ? colors.onHero : kSecondaryColor,
+                  color:  kSecondaryColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),
