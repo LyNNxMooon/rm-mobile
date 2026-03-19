@@ -78,4 +78,12 @@ abstract class StockLookupRepo {
     String? custom2,
     PricingRules? pricingRules,
   });
+
+  Future<StockUpdateResponse> updateStockDetailsBatchFromApi({
+    required String ip,
+    required int port,
+    required String apiKey,
+    required String shopfrontId,
+    required List<Map<String, dynamic>> items,
+  });
 }

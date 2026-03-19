@@ -7,6 +7,7 @@ import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/pending_stock_updates_screen.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/stock_details_screen.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/stock_thumbnail_tile.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
@@ -39,9 +40,6 @@ class _PendingStockUpdatesTileState extends State<PendingStockUpdatesTile> {
           setState(() {
             _count = state.updates.length;
           });
-          if (state.showDialog) {
-            await _showPendingDialog(context, state.updates);
-          }
         }
       },
       builder: (context, state) {
@@ -54,8 +52,8 @@ class _PendingStockUpdatesTileState extends State<PendingStockUpdatesTile> {
           padding: const EdgeInsets.symmetric(horizontal: 15.0),
           child: InkWell(
             onTap: () {
-              context.read<PendingStockUpdatesBloc>().add(
-                LoadPendingStockUpdatesEvent(),
+              context.navigateToNext(
+                const PendingStockUpdatesScreen(showSendButton: false),
               );
             },
             borderRadius: BorderRadius.circular(8),
@@ -91,17 +89,6 @@ class _PendingStockUpdatesTileState extends State<PendingStockUpdatesTile> {
           ),
         );
       },
-    );
-  }
-
-  Future<void> _showPendingDialog(
-    BuildContext context,
-    List<PendingStockUpdateVO> updates,
-  ) async {
-    await showPendingStockUpdatesDialog(
-      context: context,
-      updates: updates,
-      showSendButton: false,
     );
   }
 

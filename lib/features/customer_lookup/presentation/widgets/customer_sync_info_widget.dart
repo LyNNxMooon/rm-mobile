@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
-import 'pending_customer_updates_tile.dart';
+import '../screens/pending_customer_queue_screen.dart';
 import '../BLoC/customer_lookup_bloc.dart';
 import '../BLoC/customer_lookup_events.dart';
 import '../BLoC/customer_lookup_states.dart';
@@ -22,110 +23,8 @@ class CustomerSyncInfoWidget extends StatelessWidget {
     if (state is! PendingCustomerUpdatesLoaded || !context.mounted) return;
     if (state.updates.isEmpty && state.creations.isEmpty) return;
 
-    await showPendingCustomerQueueDialog(
-      context: context,
-      updates: state.updates,
-      creations: state.creations,
-      showSendButton: true,
-      onSend: () async {
-        _skipNextPrompt = true;
-        await _sendPendingAll(context);
-      },
-    );
-  }
-
-  Future<void> _sendPendingUpdates(
-    BuildContext context, {
-    bool triggerSync = true,
-  }) async {
-    context.read<PendingCustomerUpdatesBloc>().add(
-      SendPendingCustomerUpdatesEvent(),
-    );
-
-    final result = await context
-        .read<PendingCustomerUpdatesBloc>()
-        .stream
-        .firstWhere(
-          (state) =>
-              state is PendingCustomerUpdatesSent ||
-              state is PendingCustomerUpdatesError,
-        );
-
-    if (!context.mounted) return;
-
-    if (result is PendingCustomerUpdatesSent) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
-      );
-      if (triggerSync) {
-        context.read<FetchCustomerBloc>().add(
-          StartCustomerSyncEvent(ipAddress: ""),
-        );
-      }
-    } else if (result is PendingCustomerUpdatesError) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
-      );
-    }
-
-    context.read<PendingCustomerUpdatesBloc>().add(
-      LoadPendingCustomerUpdatesCountEvent(),
-    );
-  }
-
-  Future<void> _sendPendingCreations(
-    BuildContext context, {
-    bool triggerSync = true,
-  }) async {
-    context.read<PendingCustomerUpdatesBloc>().add(
-      SendPendingCustomerCreationsEvent(),
-    );
-
-    final result = await context
-        .read<PendingCustomerUpdatesBloc>()
-        .stream
-        .firstWhere(
-          (state) =>
-              state is PendingCustomerCreationsSent ||
-              state is PendingCustomerCreationsError,
-        );
-
-    if (!context.mounted) return;
-
-    if (result is PendingCustomerCreationsSent) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
-      );
-      if (triggerSync) {
-        context.read<FetchCustomerBloc>().add(
-          StartCustomerSyncEvent(ipAddress: ""),
-        );
-      }
-    } else if (result is PendingCustomerCreationsError) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
-      );
-    }
-
-    context.read<PendingCustomerUpdatesBloc>().add(
-      LoadPendingCustomerUpdatesCountEvent(),
-    );
-  }
-
-  Future<void> _sendPendingAll(
-    BuildContext context,
-  ) async {
-    await _sendPendingUpdates(
-      context,
-      triggerSync: false,
-    );
-    await _sendPendingCreations(
-      context,
-      triggerSync: false,
-    );
-    if (!context.mounted) return;
-    context.read<FetchCustomerBloc>().add(
-      StartCustomerSyncEvent(ipAddress: ""),
+    await context.navigateToNext(
+      PendingCustomerQueueScreen(showSendButton: true),
     );
   }
 

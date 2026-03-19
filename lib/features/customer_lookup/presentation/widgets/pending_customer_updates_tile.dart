@@ -7,6 +7,7 @@ import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
+import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/pending_customer_queue_screen.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_create_screen.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_details_screen.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_thumbnail_tile.dart';
@@ -40,13 +41,6 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
           setState(() {
             _count = state.updates.length + state.creations.length;
           });
-          if (state.showDialog) {
-            await _showPendingDialog(
-              context,
-              state.updates,
-              state.creations,
-            );
-          }
         }
       },
       builder: (context, state) {
@@ -59,8 +53,8 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
           padding: const EdgeInsets.symmetric(horizontal: 15.0),
           child: InkWell(
             onTap: () {
-              context.read<PendingCustomerUpdatesBloc>().add(
-                LoadPendingCustomerUpdatesEvent(),
+              context.navigateToNext(
+                const PendingCustomerQueueScreen(showSendButton: false),
               );
             },
             borderRadius: BorderRadius.circular(8),
@@ -96,24 +90,6 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
           ),
         );
       },
-    );
-  }
-
-  Future<void> _showPendingDialog(
-    BuildContext context,
-    List<PendingCustomerUpdateVO> updates,
-    List<PendingCustomerCreationVO> creations,
-  ) async {
-    await showPendingCustomerQueueDialog(
-      context: context,
-      updates: updates,
-      creations: creations,
-      showSendButton: false,
-    );
-
-    if (!context.mounted) return;
-    context.read<PendingCustomerUpdatesBloc>().add(
-      LoadPendingCustomerUpdatesCountEvent(),
     );
   }
 

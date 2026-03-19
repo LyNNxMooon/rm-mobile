@@ -431,6 +431,31 @@ class StockLookupModels implements StockLookupRepo {
       return Future.error(error);
     }
   }
+
+  @override
+  Future<StockUpdateResponse> updateStockDetailsBatchFromApi({
+    required String ip,
+    required int port,
+    required String apiKey,
+    required String shopfrontId,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    try {
+      final body = {
+        "items": items,
+      };
+
+      return await DataAgentImpl.instance.updateShopfrontStock(
+        ip,
+        port,
+        shopfrontId,
+        apiKey,
+        body,
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
 }
 
 // Old setup disabled:

@@ -29,58 +29,67 @@ class SendPendingCustomerUpdates {
         };
       }
 
-      final List<int> sentIds = [];
-      int updated = 0;
-      int failed = 0;
+      final List<int> pendingIds = [];
+      final List<Map<String, dynamic>> batchItems = [];
 
       for (final entry in pending) {
+        pendingIds.add(entry.id);
         final payload = Map<String, dynamic>.from(entry.payload);
         final items = payload['items'];
-        if (items is List) {
-          for (var i = 0; i < items.length; i++) {
-            final item = Map<String, dynamic>.from(items[i] as Map);
-            item.remove('customer_id');
-            final addresses = item['addresses'];
-            if (addresses is List) {
-              for (var j = 0; j < addresses.length; j++) {
-                final addr = Map<String, dynamic>.from(addresses[j] as Map);
-                addr.remove('address_id');
-                addr.remove('customer_id');
-                addresses[j] = addr;
-              }
-              item['addresses'] = addresses;
+        if (items is! List) continue;
+        for (final raw in items) {
+          if (raw is! Map) continue;
+          final item = Map<String, dynamic>.from(raw);
+          item.remove('customer_id');
+          final addresses = item['addresses'];
+          if (addresses is List) {
+            for (var i = 0; i < addresses.length; i++) {
+              final addr = Map<String, dynamic>.from(addresses[i] as Map);
+              addr.remove('address_id');
+              addr.remove('customer_id');
+              addresses[i] = addr;
             }
-            items[i] = item;
+            item['addresses'] = addresses;
           }
-          payload['items'] = items;
+          batchItems.add(item);
         }
+      }
 
-        logger.d(
-          'Sending pending customer update payload: '
-          '${jsonEncode(payload)}',
-        );
-        final CustomerUpdateResponse response =
-            await repository.updateCustomerDetails(payload);
-        if (response.success) {
-          updated += 1;
-          sentIds.add(entry.id);
-        } else {
-          failed += 1;
+      if (batchItems.isEmpty) {
+        return {
+          'hasConflicts': false,
+          'message': 'No pending customer updates.',
+        };
+      }
+
+      final Map<String, dynamic> batchPayload = {'items': batchItems};
+      final String payloadJson = jsonEncode(batchPayload);
+      logger.d('Pending customer update items batched: ${batchItems.length}');
+      _printInChunks(
+        'Sending pending customer update payload: $payloadJson',
+      );
+
+      final CustomerUpdateResponse response =
+          await repository.updateCustomerDetails(batchPayload);
+
+      if (response.success && response.skipped == 0) {
+        await LocalDbDAO.instance.deletePendingCustomerUpdates(pendingIds);
+      } else {
+        for (final id in pendingIds) {
           await LocalDbDAO.instance.setPendingCustomerUpdateError(
-            id: entry.id,
+            id: id,
             errorMessage: response.message,
           );
         }
       }
 
-      if (sentIds.isNotEmpty) {
-        await LocalDbDAO.instance.deletePendingCustomerUpdates(sentIds);
-      }
-
+      final int failed = response.skipped > 0
+          ? response.skipped
+          : (response.success ? 0 : pendingIds.length);
       final bool hasFailures = failed > 0;
       return {
         'hasConflicts': false,
-        'updated': updated,
+        'updated': response.updated,
         'failed': failed,
         'message': hasFailures
             ? 'Some customer updates failed to send.'
@@ -89,5 +98,19 @@ class SendPendingCustomerUpdates {
     } catch (e) {
       return Future.error("Failed to send pending customer updates: $e");
     }
+  }
+}
+
+void _printInChunks(String message, {int chunkSize = 800}) {
+  if (message.length <= chunkSize) {
+    // ignore: avoid_print
+    print(message);
+    return;
+  }
+
+  for (var i = 0; i < message.length; i += chunkSize) {
+    final end = (i + chunkSize < message.length) ? i + chunkSize : message.length;
+    // ignore: avoid_print
+    print(message.substring(i, end));
   }
 }

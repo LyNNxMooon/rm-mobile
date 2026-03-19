@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/pending_stock_updates_screen.dart';
+import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 //import '../../../../constants/theme_colors.dart';
-import 'pending_stock_updates_tile.dart';
 import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
-import '../../../home_page/presentation/BLoC/home_screen_events.dart';
 import '../../../home_page/presentation/BLoC/home_screen_states.dart';
 
 class SyncInfoWidget extends StatelessWidget {
@@ -27,14 +28,14 @@ class SyncInfoWidget extends StatelessWidget {
     if (state is! PendingStockUpdatesLoaded || !context.mounted) return;
     if (state.updates.isEmpty) return;
 
-    await showPendingStockUpdatesDialog(
-      context: context,
-      updates: state.updates,
-      showSendButton: true,
-      onSend: () async {
-        _skipNextPrompt = true;
-        await _sendPendingUpdates(context);
-      },
+    await context.navigateToNext(
+      PendingStockUpdatesScreen(
+        showSendButton: true,
+        onSend: () async {
+          _skipNextPrompt = true;
+          await _sendPendingUpdates(context);
+        },
+      ),
     );
   }
 
@@ -58,20 +59,26 @@ class SyncInfoWidget extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message)),
       );
+      final loadedState = await context
+          .read<PendingStockUpdatesBloc>()
+          .stream
+          .firstWhere((state) => state is PendingStockUpdatesLoaded);
+      if (loadedState is PendingStockUpdatesLoaded &&
+          loadedState.updates.isEmpty) {
+        await context
+            .read<PendingStockUpdatesBloc>()
+            .stream
+            .firstWhere((state) => state is PendingStockUpdatesSyncReady);
+        if (!context.mounted) return;
+        await Future<void>.delayed(const Duration(seconds: 2));
+        if (context.read<FetchStockBloc>().state is! FetchStockProgress) {
+          context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
+        }
+      }
     } else if (result is PendingStockUpdatesError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message)),
       );
-    }
-
-    if (result is PendingStockUpdatesSent) {
-      final syncState = await context
-          .read<PendingStockUpdatesBloc>()
-          .stream
-          .firstWhere((state) => state is PendingStockUpdatesSyncReady);
-      if (syncState is PendingStockUpdatesSyncReady && context.mounted) {
-        context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-      }
     }
 
     context.read<PendingStockUpdatesBloc>().add(
@@ -110,7 +117,6 @@ class SyncInfoWidget extends StatelessWidget {
             );
             if (_skipNextPrompt) {
               _skipNextPrompt = false;
-              return;
             }
             _promptSendPendingStockUpdates(context);
           }

@@ -40,11 +40,12 @@ class SendPendingStockUpdates {
         );
       }
 
-      final List<int> sentIds = [];
-      int updated = 0;
-      int skipped = 0;
+      final List<int> pendingIds = [];
+      final List<Map<String, dynamic>> items = [];
+      final String now = DateTime.now().toIso8601String();
 
       for (final entry in pending) {
+        pendingIds.add(entry.id);
         final payload = entry.payload;
         final int stockId = (payload['stock_id'] as num?)?.toInt() ??
             (payload['stockId'] as num?)?.toInt() ??
@@ -57,42 +58,56 @@ class SendPendingStockUpdates {
           payload['pricing_rules'],
         );
 
-        final response = await repository.updateStockDetailsFromApi(
-          ip: ip,
-          port: port,
-          apiKey: apiKey,
-          shopfrontId: shopfrontId,
-          stockId: stockId,
-          description: description,
-          sell: sell,
-          custom1: custom1,
-          custom2: custom2,
-          pricingRules: pricingRules,
-        );
+        final Map<String, dynamic> itemData = {
+          "stock_id": stockId,
+          "description": description,
+          "sell": sell,
+          "date_modified": now,
+        };
 
-        if (response.success) {
-          updated += 1;
-          sentIds.add(entry.id);
-        } else {
-          skipped += 1;
+        if (custom1 != null) {
+          itemData["custom1"] = custom1;
+        }
+        if (custom2 != null) {
+          itemData["custom2"] = custom2;
+        }
+        if (pricingRules != null) {
+          itemData["pricing_rules"] = pricingRules.toJson();
+        }
+
+        items.add(itemData);
+      }
+
+      final response = await repository.updateStockDetailsBatchFromApi(
+        ip: ip,
+        port: port,
+        apiKey: apiKey,
+        shopfrontId: shopfrontId,
+        items: items,
+      );
+
+      if (response.success && response.skipped == 0) {
+        await LocalDbDAO.instance.deletePendingStockUpdates(pendingIds);
+      } else {
+        for (final id in pendingIds) {
           await LocalDbDAO.instance.setPendingStockUpdateError(
-            id: entry.id,
+            id: id,
             errorMessage: response.message,
           );
         }
       }
 
-      if (sentIds.isNotEmpty) {
-        await LocalDbDAO.instance.deletePendingStockUpdates(sentIds);
-      }
+      final int skipped = response.skipped > 0
+          ? response.skipped
+          : (response.success ? 0 : pendingIds.length);
 
       return StockUpdateResponse(
-        success: skipped == 0,
-        message: skipped == 0
+        success: response.success && skipped == 0,
+        message: response.success && skipped == 0
             ? "Pending stock updates sent."
             : "Some stock updates failed to send.",
-        updated: updated,
-        missing: 0,
+        updated: response.updated,
+        missing: response.missing,
         skipped: skipped,
       );
     } catch (e) {
