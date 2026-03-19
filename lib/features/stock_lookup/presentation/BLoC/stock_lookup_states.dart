@@ -211,6 +211,8 @@ class PendingStockUpdatesSent extends PendingStockUpdatesState {
   PendingStockUpdatesSent(this.message);
 }
 
+class PendingStockUpdatesSyncReady extends PendingStockUpdatesState {}
+
 class PendingStockUpdatesError extends PendingStockUpdatesState {
   final String message;
   PendingStockUpdatesError(this.message);

@@ -86,6 +86,19 @@ abstract class PendingStockUpdatesEvent {}
 
 class LoadPendingStockUpdatesCountEvent extends PendingStockUpdatesEvent {}
 
-class LoadPendingStockUpdatesEvent extends PendingStockUpdatesEvent {}
+class LoadPendingStockUpdatesEvent extends PendingStockUpdatesEvent {
+  final bool showDialog;
+  LoadPendingStockUpdatesEvent({this.showDialog = true});
+}
 
 class SendPendingStockUpdatesEvent extends PendingStockUpdatesEvent {}
+
+class DeletePendingStockUpdateEvent extends PendingStockUpdatesEvent {
+  final int id;
+  DeletePendingStockUpdateEvent({required this.id});
+}
+
+class DeleteAllPendingStockUpdatesEvent extends PendingStockUpdatesEvent {
+  final List<int> ids;
+  DeleteAllPendingStockUpdatesEvent({required this.ids});
+}

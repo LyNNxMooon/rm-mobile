@@ -1,5 +1,6 @@
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
+import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
 import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/utils/enums.dart';
@@ -177,20 +178,36 @@ class PendingCustomerUpdatesLoading extends PendingCustomerUpdatesState {}
 
 class PendingCustomerUpdatesCountLoaded extends PendingCustomerUpdatesState {
   final int count;
-  PendingCustomerUpdatesCountLoaded(this.count);
+  final int creationsCount;
+  PendingCustomerUpdatesCountLoaded(this.count, {this.creationsCount = 0});
 }
 
 class PendingCustomerUpdatesLoaded extends PendingCustomerUpdatesState {
   final List<PendingCustomerUpdateVO> updates;
+  final List<PendingCustomerCreationVO> creations;
   final bool showDialog;
 
-  PendingCustomerUpdatesLoaded(this.updates, {this.showDialog = true});
+  PendingCustomerUpdatesLoaded(
+    this.updates,
+    this.creations, {
+    this.showDialog = true,
+  });
 }
 
 class PendingCustomerUpdatesSent extends PendingCustomerUpdatesState {
   final String message;
   final bool hasConflicts;
   PendingCustomerUpdatesSent({required this.message, required this.hasConflicts});
+}
+
+class PendingCustomerCreationsSent extends PendingCustomerUpdatesState {
+  final String message;
+  PendingCustomerCreationsSent({required this.message});
+}
+
+class PendingCustomerCreationsError extends PendingCustomerUpdatesState {
+  final String message;
+  PendingCustomerCreationsError(this.message);
 }
 
 class PendingCustomerUpdatesError extends PendingCustomerUpdatesState {

@@ -9,7 +9,6 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lo
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/stock_details_screen.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/stock_thumbnail_tile.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
@@ -468,18 +467,19 @@ Future<void> showPendingStockUpdatesDialog({
                                   ),
                                 ),
                                 onDismissed: (direction) async {
-                                  await LocalDbDAO.instance.deletePendingStockUpdates(
-                                    [entry.update.id],
-                                  );
+                                  dialogContext
+                                      .read<PendingStockUpdatesBloc>()
+                                      .add(
+                                        DeletePendingStockUpdateEvent(
+                                          id: entry.update.id,
+                                        ),
+                                      );
                                   setDialogState(() {
                                     dialogEntries.removeWhere(
                                       (item) => item.update.id == entry.update.id,
                                     );
                                   });
                                   if (!dialogContext.mounted) return;
-                                  dialogContext
-                                      .read<PendingStockUpdatesBloc>()
-                                      .add(LoadPendingStockUpdatesCountEvent());
                                   if (dialogEntries.isEmpty) {
                                     Navigator.of(dialogContext).pop();
                                   }
@@ -519,12 +519,14 @@ Future<void> showPendingStockUpdatesDialog({
                                   final ids = dialogEntries
                                       .map((entry) => entry.update.id)
                                       .toList();
-                                  await LocalDbDAO.instance
-                                      .deletePendingStockUpdates(ids);
-                                  if (!dialogContext.mounted) return;
                                   dialogContext
                                       .read<PendingStockUpdatesBloc>()
-                                      .add(LoadPendingStockUpdatesCountEvent());
+                                      .add(
+                                        DeleteAllPendingStockUpdatesEvent(
+                                          ids: ids,
+                                        ),
+                                      );
+                                  if (!dialogContext.mounted) return;
                                   Navigator.of(dialogContext).pop();
                                 },
                           style: OutlinedButton.styleFrom(

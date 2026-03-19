@@ -8,7 +8,12 @@ import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_st
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/update_customer_details.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_pending_customer_updates.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_pending_customer_updates_count.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_pending_customer_creations.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_pending_customer_creations_count.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/send_pending_customer_updates.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/send_pending_customer_creations.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/delete_pending_customer_updates.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/delete_pending_customer_creations.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/resolve_customer_create_conflicts.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
@@ -272,20 +277,34 @@ class PendingCustomerUpdatesBloc
     extends Bloc<PendingCustomerUpdatesEvent, PendingCustomerUpdatesState> {
   final GetPendingCustomerUpdatesCount getPendingCustomerUpdatesCount;
   final GetPendingCustomerUpdates getPendingCustomerUpdates;
+  final GetPendingCustomerCreationsCount getPendingCustomerCreationsCount;
+  final GetPendingCustomerCreations getPendingCustomerCreations;
   final SendPendingCustomerUpdates sendPendingCustomerUpdates;
+  final SendPendingCustomerCreations sendPendingCustomerCreations;
   final ResolveCustomerCreateConflicts resolveCustomerCreateConflicts;
+  final DeletePendingCustomerUpdates deletePendingCustomerUpdates;
+  final DeletePendingCustomerCreations deletePendingCustomerCreations;
   bool _isSending = false;
 
   PendingCustomerUpdatesBloc({
     required this.getPendingCustomerUpdatesCount,
     required this.getPendingCustomerUpdates,
+    required this.getPendingCustomerCreationsCount,
+    required this.getPendingCustomerCreations,
     required this.sendPendingCustomerUpdates,
+    required this.sendPendingCustomerCreations,
     required this.resolveCustomerCreateConflicts,
+    required this.deletePendingCustomerUpdates,
+    required this.deletePendingCustomerCreations,
   }) : super(PendingCustomerUpdatesInitial()) {
     on<LoadPendingCustomerUpdatesCountEvent>(_onLoadCount);
     on<LoadPendingCustomerUpdatesEvent>(_onLoadList);
     on<SendPendingCustomerUpdatesEvent>(_onSend);
+    on<SendPendingCustomerCreationsEvent>(_onSendCreations);
     on<ResolveCustomerCreateConflictsEvent>(_onResolveConflicts);
+    on<DeletePendingCustomerUpdateEvent>(_onDeleteUpdate);
+    on<DeletePendingCustomerCreationEvent>(_onDeleteCreation);
+    on<DeleteAllPendingCustomerItemsEvent>(_onDeleteAll);
   }
 
   Future<String> _resolveShopfront() async {
@@ -302,11 +321,12 @@ class PendingCustomerUpdatesBloc
       if (_isSending) return;
       final shopfront = await _resolveShopfront();
       if (shopfront.isEmpty) {
-        emit(PendingCustomerUpdatesCountLoaded(0));
+        emit(PendingCustomerUpdatesCountLoaded(0, creationsCount: 0));
         return;
       }
       final count = await getPendingCustomerUpdatesCount(shopfront);
-      emit(PendingCustomerUpdatesCountLoaded(count));
+      final creationsCount = await getPendingCustomerCreationsCount(shopfront);
+      emit(PendingCustomerUpdatesCountLoaded(count, creationsCount: creationsCount));
     } catch (e) {
       emit(PendingCustomerUpdatesError(e.toString()));
     }
@@ -321,7 +341,7 @@ class PendingCustomerUpdatesBloc
     try {
       final shopfront = await _resolveShopfront();
       if (shopfront.isEmpty) {
-        emit(PendingCustomerUpdatesLoaded([]));
+        emit(PendingCustomerUpdatesLoaded([], []));
         return;
       }
       final updates = await getPendingCustomerUpdates(
@@ -329,7 +349,53 @@ class PendingCustomerUpdatesBloc
         action: 'update',
         conflictOnly: false,
       );
-      emit(PendingCustomerUpdatesLoaded(updates));
+      final creations = await getPendingCustomerCreations(shopfront);
+      emit(PendingCustomerUpdatesLoaded(
+        updates,
+        creations,
+        showDialog: event.showDialog,
+      ));
+    } catch (e) {
+      emit(PendingCustomerUpdatesError(e.toString()));
+    }
+  }
+
+  Future<void> _onDeleteUpdate(
+    DeletePendingCustomerUpdateEvent event,
+    Emitter<PendingCustomerUpdatesState> emit,
+  ) async {
+    try {
+      await deletePendingCustomerUpdates([event.id]);
+      add(LoadPendingCustomerUpdatesCountEvent());
+    } catch (e) {
+      emit(PendingCustomerUpdatesError(e.toString()));
+    }
+  }
+
+  Future<void> _onDeleteCreation(
+    DeletePendingCustomerCreationEvent event,
+    Emitter<PendingCustomerUpdatesState> emit,
+  ) async {
+    try {
+      await deletePendingCustomerCreations([event.id]);
+      add(LoadPendingCustomerUpdatesCountEvent());
+    } catch (e) {
+      emit(PendingCustomerUpdatesError(e.toString()));
+    }
+  }
+
+  Future<void> _onDeleteAll(
+    DeleteAllPendingCustomerItemsEvent event,
+    Emitter<PendingCustomerUpdatesState> emit,
+  ) async {
+    try {
+      if (event.updateIds.isNotEmpty) {
+        await deletePendingCustomerUpdates(event.updateIds);
+      }
+      if (event.creationIds.isNotEmpty) {
+        await deletePendingCustomerCreations(event.creationIds);
+      }
+      add(LoadPendingCustomerUpdatesCountEvent());
     } catch (e) {
       emit(PendingCustomerUpdatesError(e.toString()));
     }
@@ -368,6 +434,30 @@ class PendingCustomerUpdatesBloc
     }
   }
 
+  Future<void> _onSendCreations(
+    SendPendingCustomerCreationsEvent event,
+    Emitter<PendingCustomerUpdatesState> emit,
+  ) async {
+    _isSending = true;
+    emit(PendingCustomerUpdatesLoading());
+    try {
+      final shopfront = await _resolveShopfront();
+      if (shopfront.isEmpty) {
+        _isSending = false;
+        emit(PendingCustomerCreationsError("Missing shopfront setup."));
+        return;
+      }
+      final result = await sendPendingCustomerCreations(shopfront);
+      final String message = result['message']?.toString() ??
+          'Pending customer creations sent.';
+      emit(PendingCustomerCreationsSent(message: message));
+      _isSending = false;
+    } catch (e) {
+      _isSending = false;
+      emit(PendingCustomerCreationsError(e.toString()));
+    }
+  }
+
   Future<void> _onResolveConflicts(
     ResolveCustomerCreateConflictsEvent event,
     Emitter<PendingCustomerUpdatesState> emit,
@@ -385,7 +475,12 @@ class PendingCustomerUpdatesBloc
       );
 
       final updates = await getPendingCustomerUpdates(shopfront);
-      emit(PendingCustomerUpdatesLoaded(updates, showDialog: false));
+      final creations = await getPendingCustomerCreations(shopfront);
+      emit(PendingCustomerUpdatesLoaded(
+        updates,
+        creations,
+        showDialog: false,
+      ));
     } catch (e) {
       emit(PendingCustomerUpdatesError(e.toString()));
     }

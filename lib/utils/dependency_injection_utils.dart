@@ -57,6 +57,7 @@ import '../features/stock_lookup/domain/use_cases/get_paginated_stock.dart';
 import '../features/stock_lookup/domain/use_cases/get_pending_stock_updates.dart';
 import '../features/stock_lookup/domain/use_cases/get_pending_stock_updates_count.dart';
 import '../features/stock_lookup/domain/use_cases/send_pending_stock_updates.dart';
+import '../features/stock_lookup/domain/use_cases/delete_pending_stock_updates.dart';
 import '../features/stock_lookup/domain/use_cases/update_single_stock.dart';
 import '../features/stock_lookup/models/stock_lookup_models.dart';
 import '../features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
@@ -76,8 +77,12 @@ import '../features/customer_lookup/domain/use_cases/get_staff_detail.dart';
 import '../features/customer_lookup/domain/use_cases/update_customer_details.dart';
 import '../features/customer_lookup/domain/use_cases/get_pending_customer_updates.dart';
 import '../features/customer_lookup/domain/use_cases/get_pending_customer_updates_count.dart';
+import '../features/customer_lookup/domain/use_cases/get_pending_customer_creations.dart';
+import '../features/customer_lookup/domain/use_cases/get_pending_customer_creations_count.dart';
 import '../features/customer_lookup/domain/use_cases/send_pending_customer_updates.dart';
 import '../features/customer_lookup/domain/use_cases/send_pending_customer_creations.dart';
+import '../features/customer_lookup/domain/use_cases/delete_pending_customer_updates.dart';
+import '../features/customer_lookup/domain/use_cases/delete_pending_customer_creations.dart';
 import '../features/customer_lookup/domain/use_cases/resolve_customer_create_conflicts.dart';
 import '../features/customer_lookup/models/customer_lookup_models.dart';
 import '../features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
@@ -209,14 +214,20 @@ Future<void> init() async {
       getPendingStockUpdatesCount: sl(),
       getPendingStockUpdates: sl(),
       sendPendingStockUpdates: sl(),
+      deletePendingStockUpdates: sl(),
     ),
   );
   sl.registerFactory(
     () => PendingCustomerUpdatesBloc(
       getPendingCustomerUpdatesCount: sl(),
       getPendingCustomerUpdates: sl(),
+      getPendingCustomerCreationsCount: sl(),
+      getPendingCustomerCreations: sl(),
       sendPendingCustomerUpdates: sl(),
+      sendPendingCustomerCreations: sl(),
       resolveCustomerCreateConflicts: sl(),
+      deletePendingCustomerUpdates: sl(),
+      deletePendingCustomerCreations: sl(),
     ),
   );
   sl.registerFactory(() => StocktakeDeleteBloc(deleteStocktakeItem: sl()));
@@ -307,11 +318,16 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetPendingStockUpdates());
   sl.registerLazySingleton(() => GetPendingStockUpdatesCount());
   sl.registerLazySingleton(() => SendPendingStockUpdates(sl()));
+  sl.registerLazySingleton(() => DeletePendingStockUpdates());
   sl.registerLazySingleton(() => GetTermsAccepted(sl()));
   sl.registerLazySingleton(() => SetTermsAccepted(sl()));
   sl.registerLazySingleton(() => GetPendingCustomerUpdates());
   sl.registerLazySingleton(() => GetPendingCustomerUpdatesCount());
+  sl.registerLazySingleton(() => GetPendingCustomerCreations());
+  sl.registerLazySingleton(() => GetPendingCustomerCreationsCount());
   sl.registerLazySingleton(() => SendPendingCustomerUpdates(sl()));
   sl.registerLazySingleton(() => SendPendingCustomerCreations(sl()));
   sl.registerLazySingleton(() => ResolveCustomerCreateConflicts());
+  sl.registerLazySingleton(() => DeletePendingCustomerUpdates());
+  sl.registerLazySingleton(() => DeletePendingCustomerCreations());
 }

@@ -14,6 +14,7 @@ import '../../domain/use_cases/get_filter_options.dart';
 import '../../domain/use_cases/get_paginated_stock.dart';
 import '../../domain/use_cases/get_pending_stock_updates.dart';
 import '../../domain/use_cases/get_pending_stock_updates_count.dart';
+import '../../domain/use_cases/delete_pending_stock_updates.dart';
 import '../../domain/use_cases/send_pending_stock_updates.dart';
 import '../../domain/use_cases/update_single_stock.dart';
 
@@ -367,16 +368,20 @@ class PendingStockUpdatesBloc
   final GetPendingStockUpdatesCount getPendingStockUpdatesCount;
   final GetPendingStockUpdates getPendingStockUpdates;
   final SendPendingStockUpdates sendPendingStockUpdates;
+  final DeletePendingStockUpdates deletePendingStockUpdates;
   bool _isSending = false;
 
   PendingStockUpdatesBloc({
     required this.getPendingStockUpdatesCount,
     required this.getPendingStockUpdates,
     required this.sendPendingStockUpdates,
+    required this.deletePendingStockUpdates,
   }) : super(PendingStockUpdatesInitial()) {
     on<LoadPendingStockUpdatesCountEvent>(_onLoadCount);
     on<LoadPendingStockUpdatesEvent>(_onLoadList);
     on<SendPendingStockUpdatesEvent>(_onSend);
+    on<DeletePendingStockUpdateEvent>(_onDelete);
+    on<DeleteAllPendingStockUpdatesEvent>(_onDeleteAll);
   }
 
   Future<String> _resolveShopfront() async {
@@ -416,9 +421,26 @@ class PendingStockUpdatesBloc
         return;
       }
       final updates = await getPendingStockUpdates(shopfront);
-      emit(PendingStockUpdatesLoaded(updates));
+      emit(PendingStockUpdatesLoaded(
+        updates,
+        showDialog: event.showDialog,
+      ));
     } catch (e) {
       emit(PendingStockUpdatesError(e.toString()));
+    }
+  }
+
+  Future<void> _seedStockSyncTimestamp() async {
+    final shopfrontId =
+        (await LocalDbDAO.instance.getShopfrontId() ?? '').trim();
+    if (shopfrontId.isEmpty) return;
+    final syncKey = 'stock_sync_timestamp_$shopfrontId';
+    final lastSync = await LocalDbDAO.instance.getAppConfig(syncKey);
+    if (lastSync == null || lastSync.trim().isEmpty) {
+      await LocalDbDAO.instance.saveAppConfig(
+        syncKey,
+        DateTime.now().toIso8601String(),
+      );
     }
   }
 
@@ -439,9 +461,38 @@ class PendingStockUpdatesBloc
       emit(PendingStockUpdatesSent(response.message));
       final updates = await getPendingStockUpdates(shopfront);
       emit(PendingStockUpdatesLoaded(updates, showDialog: false));
+      await _seedStockSyncTimestamp();
+      await Future<void>.delayed(const Duration(seconds: 1));
+      emit(PendingStockUpdatesSyncReady());
       _isSending = false;
     } catch (e) {
       _isSending = false;
+      emit(PendingStockUpdatesError(e.toString()));
+    }
+  }
+
+  Future<void> _onDelete(
+    DeletePendingStockUpdateEvent event,
+    Emitter<PendingStockUpdatesState> emit,
+  ) async {
+    try {
+      await deletePendingStockUpdates([event.id]);
+      add(LoadPendingStockUpdatesCountEvent());
+    } catch (e) {
+      emit(PendingStockUpdatesError(e.toString()));
+    }
+  }
+
+  Future<void> _onDeleteAll(
+    DeleteAllPendingStockUpdatesEvent event,
+    Emitter<PendingStockUpdatesState> emit,
+  ) async {
+    try {
+      if (event.ids.isNotEmpty) {
+        await deletePendingStockUpdates(event.ids);
+      }
+      add(LoadPendingStockUpdatesCountEvent());
+    } catch (e) {
       emit(PendingStockUpdatesError(e.toString()));
     }
   }

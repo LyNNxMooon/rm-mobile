@@ -10,7 +10,6 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_create_screen.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_details_screen.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_thumbnail_tile.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
@@ -33,27 +32,20 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
     return BlocConsumer<PendingCustomerUpdatesBloc, PendingCustomerUpdatesState>(
       listener: (context, state) async {
         if (state is PendingCustomerUpdatesCountLoaded) {
-          final shopfront =
-              (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
-          final int creationsCount = shopfront.isEmpty
-              ? 0
-              : await LocalDbDAO.instance
-                  .getPendingCustomerCreationsCount(shopfront);
           setState(() {
-            _count = state.count + creationsCount;
+            _count = state.count + state.creationsCount;
           });
         }
         if (state is PendingCustomerUpdatesLoaded) {
-          final shopfront =
-              (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
-          final creations = shopfront.isEmpty
-              ? <PendingCustomerCreationVO>[]
-              : await LocalDbDAO.instance.getPendingCustomerCreations(shopfront);
           setState(() {
-            _count = state.updates.length + creations.length;
+            _count = state.updates.length + state.creations.length;
           });
           if (state.showDialog) {
-            await _showPendingDialog(context, state.updates, creations);
+            await _showPendingDialog(
+              context,
+              state.updates,
+              state.creations,
+            );
           }
         }
       },
@@ -544,15 +536,21 @@ Future<void> showPendingCustomerQueueDialog({
                                 ),
                                 onDismissed: (direction) async {
                                   if (isCreation) {
-                                    await LocalDbDAO.instance
-                                        .deletePendingCustomerCreations(
-                                      [entry.creation!.id],
-                                    );
+                                    dialogContext
+                                        .read<PendingCustomerUpdatesBloc>()
+                                        .add(
+                                          DeletePendingCustomerCreationEvent(
+                                            id: entry.creation!.id,
+                                          ),
+                                        );
                                   } else {
-                                    await LocalDbDAO.instance
-                                        .deletePendingCustomerUpdates(
-                                      [entry.update!.id],
-                                    );
+                                    dialogContext
+                                        .read<PendingCustomerUpdatesBloc>()
+                                        .add(
+                                          DeletePendingCustomerUpdateEvent(
+                                            id: entry.update!.id,
+                                          ),
+                                        );
                                   }
                                   setDialogState(() {
                                     dialogEntries.removeWhere(
@@ -562,13 +560,6 @@ Future<void> showPendingCustomerQueueDialog({
                                     );
                                   });
                                   if (!dialogContext.mounted) return;
-                                  if (!isCreation) {
-                                    dialogContext
-                                        .read<PendingCustomerUpdatesBloc>()
-                                        .add(
-                                          LoadPendingCustomerUpdatesCountEvent(),
-                                        );
-                                  }
                                   if (dialogEntries.isEmpty) {
                                     Navigator.of(dialogContext).pop();
                                   }
@@ -629,24 +620,15 @@ Future<void> showPendingCustomerQueueDialog({
                                       .where((entry) => entry.creation != null)
                                       .map((entry) => entry.creation!.id)
                                       .toList();
-                                  if (updateIds.isNotEmpty) {
-                                    await LocalDbDAO.instance
-                                        .deletePendingCustomerUpdates(updateIds);
-                                  }
-                                  if (creationIds.isNotEmpty) {
-                                    await LocalDbDAO.instance
-                                        .deletePendingCustomerCreations(
-                                      creationIds,
-                                    );
-                                  }
+                                  dialogContext
+                                      .read<PendingCustomerUpdatesBloc>()
+                                      .add(
+                                        DeleteAllPendingCustomerItemsEvent(
+                                          updateIds: updateIds,
+                                          creationIds: creationIds,
+                                        ),
+                                      );
                                   if (!dialogContext.mounted) return;
-                                  if (updateIds.isNotEmpty) {
-                                    dialogContext
-                                        .read<PendingCustomerUpdatesBloc>()
-                                        .add(
-                                          LoadPendingCustomerUpdatesCountEvent(),
-                                        );
-                                  }
                                   Navigator.of(dialogContext).pop();
                                 },
                           style: OutlinedButton.styleFrom(

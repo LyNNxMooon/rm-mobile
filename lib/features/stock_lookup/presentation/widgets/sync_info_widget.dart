@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 
 import '../../../../constants/colors.dart';
 //import '../../../../constants/theme_colors.dart';
@@ -18,22 +17,19 @@ class SyncInfoWidget extends StatelessWidget {
   static bool _skipNextPrompt = false;
 
   Future<void> _promptSendPendingStockUpdates(BuildContext context) async {
-    final shopfront =
-        (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
-    if (shopfront.isEmpty) return;
-
-    final pendingCount =
-        await LocalDbDAO.instance.getPendingStockUpdatesCount(shopfront);
-    if (pendingCount <= 0) return;
-
-    final pendingUpdates = await LocalDbDAO.instance.getPendingStockUpdates(
-      shopfront,
+    context.read<PendingStockUpdatesBloc>().add(
+      LoadPendingStockUpdatesEvent(showDialog: false),
     );
-    if (pendingUpdates.isEmpty || !context.mounted) return;
+    final state = await context
+        .read<PendingStockUpdatesBloc>()
+        .stream
+        .firstWhere((state) => state is PendingStockUpdatesLoaded);
+    if (state is! PendingStockUpdatesLoaded || !context.mounted) return;
+    if (state.updates.isEmpty) return;
 
     await showPendingStockUpdatesDialog(
       context: context,
-      updates: pendingUpdates,
+      updates: state.updates,
       showSendButton: true,
       onSend: () async {
         _skipNextPrompt = true;
@@ -62,25 +58,20 @@ class SyncInfoWidget extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message)),
       );
-      final shopfrontId =
-          (await LocalDbDAO.instance.getShopfrontId() ?? '').trim();
-      if (shopfrontId.isNotEmpty) {
-        final syncKey = 'stock_sync_timestamp_$shopfrontId';
-        final lastSync = await LocalDbDAO.instance.getAppConfig(syncKey);
-        if (lastSync == null || lastSync.trim().isEmpty) {
-          await LocalDbDAO.instance.saveAppConfig(
-            syncKey,
-            DateTime.now().toIso8601String(),
-          );
-        }
-      }
-      await Future<void>.delayed(const Duration(seconds: 1));
-      if (!context.mounted) return;
-      context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
     } else if (result is PendingStockUpdatesError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message)),
       );
+    }
+
+    if (result is PendingStockUpdatesSent) {
+      final syncState = await context
+          .read<PendingStockUpdatesBloc>()
+          .stream
+          .firstWhere((state) => state is PendingStockUpdatesSyncReady);
+      if (syncState is PendingStockUpdatesSyncReady && context.mounted) {
+        context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
+      }
     }
 
     context.read<PendingStockUpdatesBloc>().add(

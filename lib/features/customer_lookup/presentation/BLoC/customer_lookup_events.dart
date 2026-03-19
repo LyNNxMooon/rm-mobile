@@ -59,9 +59,34 @@ abstract class PendingCustomerUpdatesEvent {}
 
 class LoadPendingCustomerUpdatesCountEvent extends PendingCustomerUpdatesEvent {}
 
-class LoadPendingCustomerUpdatesEvent extends PendingCustomerUpdatesEvent {}
+class LoadPendingCustomerUpdatesEvent extends PendingCustomerUpdatesEvent {
+  final bool showDialog;
+  LoadPendingCustomerUpdatesEvent({this.showDialog = true});
+}
 
 class SendPendingCustomerUpdatesEvent extends PendingCustomerUpdatesEvent {}
+
+class SendPendingCustomerCreationsEvent extends PendingCustomerUpdatesEvent {}
+
+class DeletePendingCustomerUpdateEvent extends PendingCustomerUpdatesEvent {
+  final int id;
+  DeletePendingCustomerUpdateEvent({required this.id});
+}
+
+class DeletePendingCustomerCreationEvent extends PendingCustomerUpdatesEvent {
+  final int id;
+  DeletePendingCustomerCreationEvent({required this.id});
+}
+
+class DeleteAllPendingCustomerItemsEvent extends PendingCustomerUpdatesEvent {
+  final List<int> updateIds;
+  final List<int> creationIds;
+
+  DeleteAllPendingCustomerItemsEvent({
+    required this.updateIds,
+    required this.creationIds,
+  });
+}
 
 class ResolveCustomerCreateConflictsEvent extends PendingCustomerUpdatesEvent {
   final bool duplicate;

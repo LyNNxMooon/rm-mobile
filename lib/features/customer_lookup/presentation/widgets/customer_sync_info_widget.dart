@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
-import 'package:rmstock_scanner/utils/dependency_injection_utils.dart' as di;
-import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/send_pending_customer_creations.dart';
-
 import '../../../../constants/colors.dart';
 import 'pending_customer_updates_tile.dart';
 import '../BLoC/customer_lookup_bloc.dart';
@@ -16,46 +12,32 @@ class CustomerSyncInfoWidget extends StatelessWidget {
   static bool _skipNextPrompt = false;
 
   Future<void> _promptSendPendingCustomerUpdates(BuildContext context) async {
-    final shopfront =
-        (await LocalDbDAO.instance.getShopfrontName() ?? '').trim();
-    if (shopfront.isEmpty) return;
-
-    final pendingUpdateCount =
-        await LocalDbDAO.instance.getPendingCustomerUpdatesCount(shopfront);
-    final pendingCreationCount =
-        await LocalDbDAO.instance.getPendingCustomerCreationsCount(shopfront);
-    if (pendingUpdateCount + pendingCreationCount <= 0) return;
-
-    final pendingUpdates = await LocalDbDAO.instance.getPendingCustomerUpdates(
-      shopfront,
-      action: 'update',
-      conflictOnly: false,
+    context.read<PendingCustomerUpdatesBloc>().add(
+      LoadPendingCustomerUpdatesEvent(showDialog: false),
     );
-    final pendingCreations =
-        await LocalDbDAO.instance.getPendingCustomerCreations(shopfront);
-    if ((pendingUpdates.isEmpty && pendingCreations.isEmpty) ||
-        !context.mounted) {
-      return;
-    }
+    final state = await context
+        .read<PendingCustomerUpdatesBloc>()
+        .stream
+        .firstWhere((state) => state is PendingCustomerUpdatesLoaded);
+    if (state is! PendingCustomerUpdatesLoaded || !context.mounted) return;
+    if (state.updates.isEmpty && state.creations.isEmpty) return;
 
     await showPendingCustomerQueueDialog(
       context: context,
-      updates: pendingUpdates,
-      creations: pendingCreations,
+      updates: state.updates,
+      creations: state.creations,
       showSendButton: true,
       onSend: () async {
         _skipNextPrompt = true;
-        await _sendPendingAll(context, shopfront);
+        await _sendPendingAll(context);
       },
     );
   }
 
   Future<void> _sendPendingUpdates(
-    BuildContext context,
-    String shopfront,
-    {
-      bool triggerSync = true,
-    }) async {
+    BuildContext context, {
+    bool triggerSync = true,
+  }) async {
     context.read<PendingCustomerUpdatesBloc>().add(
       SendPendingCustomerUpdatesEvent(),
     );
@@ -92,42 +74,53 @@ class CustomerSyncInfoWidget extends StatelessWidget {
   }
 
   Future<void> _sendPendingCreations(
-    BuildContext context,
-    String shopfront,
-    {
-      bool triggerSync = true,
-    }) async {
-    try {
-      final result = await di.sl<SendPendingCustomerCreations>()(shopfront);
-      if (!context.mounted) return;
-      final message = (result['message'] ?? '').toString();
-      if (message.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
+    BuildContext context, {
+    bool triggerSync = true,
+  }) async {
+    context.read<PendingCustomerUpdatesBloc>().add(
+      SendPendingCustomerCreationsEvent(),
+    );
+
+    final result = await context
+        .read<PendingCustomerUpdatesBloc>()
+        .stream
+        .firstWhere(
+          (state) =>
+              state is PendingCustomerCreationsSent ||
+              state is PendingCustomerCreationsError,
         );
-      }
+
+    if (!context.mounted) return;
+
+    if (result is PendingCustomerCreationsSent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message)),
+      );
       if (triggerSync) {
         context.read<FetchCustomerBloc>().add(
           StartCustomerSyncEvent(ipAddress: ""),
         );
       }
-    } catch (e) {
-      if (!context.mounted) return;
+    } else if (result is PendingCustomerCreationsError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message)),
+      );
     }
+
+    context.read<PendingCustomerUpdatesBloc>().add(
+      LoadPendingCustomerUpdatesCountEvent(),
+    );
   }
 
   Future<void> _sendPendingAll(
     BuildContext context,
-    String shopfront,
   ) async {
     await _sendPendingUpdates(
       context,
-      shopfront,
       triggerSync: false,
     );
     await _sendPendingCreations(
       context,
-      shopfront,
       triggerSync: false,
     );
     if (!context.mounted) return;
