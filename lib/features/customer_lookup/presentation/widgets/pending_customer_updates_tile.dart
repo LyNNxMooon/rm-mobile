@@ -743,7 +743,7 @@ String _pendingCustomerCreationBarcode(PendingCustomerCreationVO creation) {
   final item = _firstCustomerPayloadItem(creation.payload);
   final barcode = _payloadString(item, 'barcode');
   if (barcode.isEmpty) return 'Pending create';
-  return creation.barcodeMissing ? '$barcode (new)' : barcode;
+  return barcode;
 }
 
 class _PendingCustomerCreationTile extends StatelessWidget {

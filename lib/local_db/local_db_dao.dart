@@ -112,7 +112,6 @@ abstract class LocalDbDAO {
   Future<String> getNextNumericBarcode(String shopfront);
 
   Future<bool> checkBarcodeExists(String barcode, String shopfront);
-  Future<bool> checkBarcodeExistsInCustomers(String barcode, String shopfront);
 
   // Customer transactions
   Future<void> replaceCustomerTransactions({
@@ -298,11 +297,6 @@ abstract class LocalDbDAO {
     required int id,
     String? errorMessage,
   });
-  Future<void> setPendingCustomerCreationBarcodeMissing({
-    required int id,
-    required bool isMissing,
-  });
-  Future<void> resolvePendingCustomerCreationBarcodes(String shopfront);
   Future<void> renewPendingCustomerCreationIds(String shopfront);
 
   //Removing data

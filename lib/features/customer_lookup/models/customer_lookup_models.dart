@@ -188,9 +188,6 @@ class CustomerLookupModels implements CustomerLookupRepo {
       await LocalDbDAO.instance.renewPendingCustomerCreationIds(
         resolvedShopfrontName,
       );
-      await LocalDbDAO.instance.resolvePendingCustomerCreationBarcodes(
-        resolvedShopfrontName,
-      );
       await LocalDbDAO.instance.saveAppConfig(syncKey, latestSyncTimestamp);
       yield CustomerSyncStatus(1, 1, "Customer sync completed.");
     } on Exception catch (error) {

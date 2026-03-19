@@ -63,6 +63,8 @@ class CreateCustomer {
         failed: 0,
         addressesCreated: 0,
         customerIds: customerId > 0 ? [customerId] : [],
+        results: const [],
+        failureDetails: const [],
       );
     } catch (e) {
       return CustomerCreateResponse(
@@ -72,6 +74,8 @@ class CreateCustomer {
         failed: 0,
         addressesCreated: 0,
         customerIds: customerId > 0 ? [customerId] : [],
+        results: const [],
+        failureDetails: const [],
       );
     }
   }

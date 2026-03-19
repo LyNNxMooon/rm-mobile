@@ -5,7 +5,6 @@ class PendingCustomerCreationVO {
   final Map<String, dynamic> payload;
   final String createdAt;
   final String? errorMessage;
-  final bool barcodeMissing;
 
   PendingCustomerCreationVO({
     required this.id,
@@ -14,6 +13,5 @@ class PendingCustomerCreationVO {
     required this.payload,
     required this.createdAt,
     this.errorMessage,
-    this.barcodeMissing = false,
   });
 }

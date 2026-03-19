@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import '../../../../entities/response/customer_update_response.dart';
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/internet_connection_utils.dart';
+import '../../../../utils/log_utils.dart';
 import '../repositories/customer_lookup_repo.dart';
 
 class SendPendingCustomerUpdates {
@@ -31,8 +34,33 @@ class SendPendingCustomerUpdates {
       int failed = 0;
 
       for (final entry in pending) {
+        final payload = Map<String, dynamic>.from(entry.payload);
+        final items = payload['items'];
+        if (items is List) {
+          for (var i = 0; i < items.length; i++) {
+            final item = Map<String, dynamic>.from(items[i] as Map);
+            item.remove('customer_id');
+            final addresses = item['addresses'];
+            if (addresses is List) {
+              for (var j = 0; j < addresses.length; j++) {
+                final addr = Map<String, dynamic>.from(addresses[j] as Map);
+                addr.remove('address_id');
+                addr.remove('customer_id');
+                addresses[j] = addr;
+              }
+              item['addresses'] = addresses;
+            }
+            items[i] = item;
+          }
+          payload['items'] = items;
+        }
+
+        logger.d(
+          'Sending pending customer update payload: '
+          '${jsonEncode(payload)}',
+        );
         final CustomerUpdateResponse response =
-            await repository.updateCustomerDetails(entry.payload);
+            await repository.updateCustomerDetails(payload);
         if (response.success) {
           updated += 1;
           sentIds.add(entry.id);

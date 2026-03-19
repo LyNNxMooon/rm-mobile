@@ -389,7 +389,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "title": "Account Sales",
       "subTitle": "Invoice customers",
       "icon": Icons.receipt_long_outlined,
-      "color": Colors.pink.shade400,
+      "color": const Color.fromARGB(255, 238, 130, 166),
       "comingSoon": false,
       "action": "coming_soon" // Change this when you have a route
     },
@@ -397,7 +397,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "title": "Sales Order",
       "subTitle": "Create orders",
       "icon": Icons.shopping_cart_outlined,
-      "color": Colors.blue.shade600,
+      "color": const Color.fromARGB(255, 44, 133, 211),
       "comingSoon": false,
       "action": "coming_soon" // Change this when you have a route
     },
@@ -413,7 +413,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "title": "Lay-bys",
       "subTitle": "Manage lay-bys",
       "icon": Icons.inventory_2_outlined,
-      "color": Colors.purple.shade500,
+      "color": const Color.fromARGB(255, 152, 86, 165),
       "comingSoon": false,
       "action": "coming_soon" // Change this when you have a route
     },

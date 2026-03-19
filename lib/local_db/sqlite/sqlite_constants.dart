@@ -348,6 +348,28 @@ const pendingCustomerUpdatesTableCreationQuery = '''
   )
 ''';
 
+const pendingCustomerUpdateAddressesTableCreationQuery = '''
+  CREATE TABLE pending_customer_update_addresses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pending_update_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    customer_id INTEGER NOT NULL,
+    address_id INTEGER NOT NULL,
+    address_number INTEGER NOT NULL,
+    addr1 TEXT,
+    addr2 TEXT,
+    addr3 TEXT,
+    suburb TEXT,
+    state TEXT,
+    postcode TEXT,
+    country TEXT,
+    phone TEXT,
+    fax TEXT,
+    mobile TEXT,
+    email TEXT
+  )
+''';
+
 const pendingCustomerCreationsTableCreationQuery = '''
   CREATE TABLE PendingCustomerCreations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -356,8 +378,29 @@ const pendingCustomerCreationsTableCreationQuery = '''
     payload_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
     status INTEGER NOT NULL DEFAULT 0,
-    error_message TEXT,
-    barcode_missing INTEGER NOT NULL DEFAULT 0
+    error_message TEXT
+  )
+''';
+
+const pendingCustomerCreationAddressesTableCreationQuery = '''
+  CREATE TABLE pending_customer_creation_addresses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pending_creation_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    customer_id INTEGER NOT NULL,
+    address_id INTEGER NOT NULL,
+    address_number INTEGER NOT NULL,
+    addr1 TEXT,
+    addr2 TEXT,
+    addr3 TEXT,
+    suburb TEXT,
+    state TEXT,
+    postcode TEXT,
+    country TEXT,
+    phone TEXT,
+    fax TEXT,
+    mobile TEXT,
+    email TEXT
   )
 ''';
 
