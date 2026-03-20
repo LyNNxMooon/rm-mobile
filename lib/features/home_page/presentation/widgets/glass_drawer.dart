@@ -387,42 +387,42 @@ class _GlassDrawerState extends State<GlassDrawer> {
                     ),
                   ),
                 ),
-                // Vertical line indicator for transaction items (commented out for testing)
-                // if (isTransaction && !isComingSoon)
-                //   Positioned(
-                //     top: 0,
-                //     bottom: 0,
-                //     left: 0,
-                //     child: Container(
-                //       width: 7.5,
-                //       decoration: BoxDecoration(
-                //         color: itemColor,
-                //         borderRadius: const BorderRadius.only(
-                //           topLeft: Radius.circular(15),
-                //           bottomLeft: Radius.circular(15),
-                //         ),
-                //       ),
-                //     ),
-                //   ),
-                // Corner badge for transaction items
+                // Vertical line indicator for transaction items
                 if (isTransaction && !isComingSoon)
                   Positioned(
                     top: 0,
+                    bottom: 0,
                     left: 0,
-                    child: ClipPath(
-                      clipper: _CornerTriangleClipper(),
-                      child: Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: itemColor,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(15),
-                          ),
+                    child: Container(
+                      width: 7.5,
+                      decoration: BoxDecoration(
+                        color: itemColor,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(15),
+                          bottomLeft: Radius.circular(15),
                         ),
                       ),
                     ),
                   ),
+                // Corner badge for transaction items (commented out)
+                // if (isTransaction && !isComingSoon)
+                //   Positioned(
+                //     top: 0,
+                //     left: 0,
+                //     child: ClipPath(
+                //       clipper: _CornerTriangleClipper(),
+                //       child: Container(
+                //         width: 30,
+                //         height: 30,
+                //         decoration: BoxDecoration(
+                //           color: itemColor,
+                //           borderRadius: const BorderRadius.only(
+                //             topLeft: Radius.circular(15),
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //   ),
               ],
             ),
           ),
