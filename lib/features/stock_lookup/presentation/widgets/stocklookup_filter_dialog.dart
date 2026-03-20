@@ -12,11 +12,6 @@ import '../../../../entities/vos/filter_criteria.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../BLoC/stock_lookup_events.dart';
 
-//Common Variables
-final custom1Controller = TextEditingController();
-final custom2Controller = TextEditingController();
-final supplierController = TextEditingController();
-
 class StocklookupFilterDialog extends StatefulWidget {
   const StocklookupFilterDialog({super.key});
 
@@ -36,11 +31,6 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
       selectedCat1 = filters.cat1;
       selectedCat2 = filters.cat2;
       selectedCat3 = filters.cat3;
-
-      //Populate text controllers from active filters
-      supplierController.text = filters.supplier ?? "";
-      custom1Controller.text = filters.custom1 ?? "";
-      custom2Controller.text = filters.custom2 ?? "";
       super.initState();
     }
   }
@@ -71,7 +61,6 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
         : 400.0;
     final double panelPadding = (isTablet ? 28 : 24) * uiScale;
     final double sectionGap = (isTablet ? 14 : 12) * uiScale;
-    final double fieldHeight = (isTablet ? 52 : 46) * uiScale;
     final double buttonHeight = (isTablet ? 54 : 50) * uiScale;
 
     return Dialog(
@@ -233,36 +222,6 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
                           (val) => setState(() => selectedCat3 = val),
                           colors,
                         ),
-
-                        SizedBox(height: panelPadding),
-                        _buildSectionHeader("Sourcing", colors),
-                        SizedBox(height: sectionGap),
-                        SizedBox(
-                          height: fieldHeight,
-                          child: CustomTextField(
-                            controller: supplierController,
-                            hintText: 'Supplier',
-                          ),
-                        ),
-
-                        SizedBox(height: panelPadding),
-                        _buildSectionHeader("Custom Data", colors),
-                        SizedBox(height: sectionGap),
-                        SizedBox(
-                          height: fieldHeight,
-                          child: CustomTextField(
-                            controller: custom1Controller,
-                            hintText: 'Custom1',
-                          ),
-                        ),
-                        SizedBox(height: sectionGap),
-                        SizedBox(
-                          height: fieldHeight,
-                          child: CustomTextField(
-                            controller: custom2Controller,
-                            hintText: 'Custom2',
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -285,9 +244,6 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
                             selectedCat2 = null;
                             selectedCat3 = null;
                           });
-                          supplierController.clear();
-                          custom1Controller.clear();
-                          custom2Controller.clear();
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -315,9 +271,6 @@ class _StocklookupFilterDialogState extends State<StocklookupFilterDialog> {
                             cat1: selectedCat1,
                             cat2: selectedCat2,
                             cat3: selectedCat3,
-                            supplier: supplierController.text.trim(),
-                            custom1: custom1Controller.text.trim(),
-                            custom2: custom2Controller.text.trim(),
                           );
 
                           // 2. Dispatch Event to Main Bloc
