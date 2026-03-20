@@ -26,6 +26,7 @@ import '../../../../entities/vos/filter_criteria.dart';
 import '../BLoC/stock_lookup_bloc.dart';
 import '../BLoC/stock_lookup_events.dart';
 import '../widgets/filter_chip_row.dart';
+import '../widgets/filter_tree_sidebar.dart';
 import '../widgets/search_filter.dart';
 import '../widgets/stock_lookup_appbar.dart';
 import '../widgets/stock_lookup_scanner.dart';
@@ -42,6 +43,35 @@ class Debouncer {
   void run(VoidCallback action) {
     _timer?.cancel();
     _timer = Timer(Duration(milliseconds: milliseconds), action);
+  }
+}
+
+/// View mode options for stock list (tablet only)
+enum StockViewMode {
+  list,
+  gridMedium,
+  largeIcons;
+
+  String get displayName {
+    switch (this) {
+      case StockViewMode.list:
+        return 'List';
+      case StockViewMode.gridMedium:
+        return 'Grid';
+      case StockViewMode.largeIcons:
+        return 'Large Icons';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case StockViewMode.list:
+        return Icons.view_list;
+      case StockViewMode.gridMedium:
+        return Icons.grid_view;
+      case StockViewMode.largeIcons:
+        return Icons.view_module;
+    }
   }
 }
 
@@ -69,6 +99,14 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   final _beepSource = AssetSource('audio/beep.mp3');
 
   bool isScanner = false;
+
+  // Tablet sidebar width (resizable)
+  double _sidebarWidth = 280.0;
+  static const double _minSidebarWidth = 200.0;
+  static const double _maxSidebarWidth = 600.0;
+
+  // View mode (tablet only)
+  StockViewMode _viewMode = StockViewMode.list;
 
   bool _isSyncInProgress() {
     return context.read<FetchStockBloc>().state is FetchStockProgress;
@@ -136,188 +174,249 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: isDark ? colors.bg : kBgColor,
       body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              // shrinkWrap: true,
-              // physics: const BouncingScrollPhysics(),
-              children: [
-                const SizedBox(height: 25),
-                const StockLookupAppbar(), // Added const
-                const SizedBox(height: 5),
-                const PendingStockUpdatesTile(),
-                //const SizedBox(height: 10),
-                Divider(
-                  indent: 15,
-                  endIndent: 15,
-                  thickness: 0.5,
-                  color: isDark ? Colors.white30 : kGreyColor,
-                ),
-                const SyncInfoWidget(), // Added const
-                // Chip states and Count Text
-                BlocBuilder<StockListBloc, StockListState>(
-                  builder: (context, state) {
-                    final isAscending = state is StockListLoaded
-                        ? state.isAscending
-                        : true;
-                    if (state is StockListLoaded) {
-                      return Padding(
-                        padding: const EdgeInsets.only(
-                          left: 15,
-                          right: 15,
-                          bottom: 18,
-                          top: 10,
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: FilterChipRow(
-                                selectedFilter: _selectedFilterChip,
-                                isAscending: isAscending,
-                                onFilterChanged: (newLabel) {
-                                  setState(() {
-                                    _selectedFilterChip = newLabel;
-                                    _dbFilterCol = _mapChipToColumn(newLabel);
-                                  });
+        child: isTablet
+            ? _buildTabletLayout(colors, isDark, isPortrait)
+            : _buildMobileLayout(colors, isDark),
+      ),
+    );
+  }
 
-                                  final currentState = context
-                                      .read<StockListBloc>()
-                                      .state;
-                                  FilterCriteria? currentFilters;
-                                  if (currentState is StockListLoaded) {
-                                    currentFilters = currentState.activeFilters;
-                                  }
+  Widget _buildTabletLayout(AppThemeColors colors, bool isDark, bool isPortrait) {
+    return Row(
+      children: [
+        // Left sidebar - File Explorer style (resizable)
+        SizedBox(
+          width: _sidebarWidth,
+          child: const FilterTreeSidebar(),
+        ),
 
-                                  context.read<StockListBloc>().add(
-                                    FetchFirstPageEvent(
-                                      query: _searchQuery,
-                                      filterColumn: _searchColumn,
-                                      sortColumn: _dbFilterCol,
-                                      filters: currentFilters,
-                                      shouldToggleSort: true,
-                                      searchMode: _searchMode,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              "${state.stocks.length} of ${NumberFormat('#,###').format(state.totalCount)}",
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.white70
-                                    : kGreyColor,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(
-                        left: 15,
-                        right: 15,
-                        bottom: 18,
-                        top: 10,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: FilterChipRow(
-                              selectedFilter: _selectedFilterChip,
-                              isAscending: isAscending,
-                              onFilterChanged: (newLabel) {},
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            "0 of ${NumberFormat('#,###').format(0)}",
-                            style: TextStyle(
-                              color: isDark
-                                  ? Colors.white70
-                                  : kGreyColor,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-
-                //Lookup Scanner
-                scanner(),
-
-                //Item lists state
-                itemsList(),
-              ],
-            ),
-
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: AnimatedPadding(
-                duration: const Duration(milliseconds: 170),
-                curve: Curves.easeOut,
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                ),
-                child: Stack(
-                  alignment: Alignment.bottomCenter,
-                  children: [
-                    // Glass blur background
-                    ClipRect(
-                      child: BackdropFilter(
-                        filter: ui.ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
-                        child: Container(
-                          height: 100,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                (isDark
-                                        ? colors.surface
-                                        : kSecondaryColor)
-                                    .withOpacity(0.0),
-                                (isDark
-                                        ? colors.surface
-                                        : kSecondaryColor)
-                                    .withOpacity(0.5),
-                                (isDark
-                                        ? colors.surface
-                                        : kSecondaryColor)
-                                    .withOpacity(0.9),
-                              ],
-                              stops: const [0.0, 0.4, 1.0],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: 15,
-                        right: 15,
-                        bottom: 42,
-                      ),
-                      child: _buildGlassSearchBar(),
-                    ),
-                  ],
+        // Resize handle
+        GestureDetector(
+          onHorizontalDragUpdate: (details) {
+            setState(() {
+              _sidebarWidth += details.delta.dx;
+              _sidebarWidth = _sidebarWidth.clamp(_minSidebarWidth, _maxSidebarWidth);
+            });
+          },
+          child: MouseRegion(
+            cursor: SystemMouseCursors.resizeColumn,
+            child: Container(
+              width: 20,
+              color: Colors.transparent,
+              child: Center(
+                child: Container(
+                  width: 5,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white24
+                        : kGreyColor.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
                 ),
               ),
             ),
+          ),
+        ),
+
+        // Right side - Stock list
+        Expanded(
+          child: _buildMainContent(colors, isDark, isTablet: true),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout(AppThemeColors colors, bool isDark) {
+    return _buildMainContent(colors, isDark, isTablet: false);
+  }
+
+  Widget _buildMainContent(AppThemeColors colors, bool isDark, {required bool isTablet}) {
+    return Stack(
+      children: [
+        Column(
+          children: [
+            const SizedBox(height: 25),
+            const StockLookupAppbar(), // Added const
+            const SizedBox(height: 5),
+            const PendingStockUpdatesTile(),
+            Divider(
+              indent: 15,
+              endIndent: 15,
+              thickness: 0.5,
+              color: isDark ? Colors.white30 : kGreyColor,
+            ),
+            const SyncInfoWidget(), // Added const
+            // Chip states and Count Text
+            BlocBuilder<StockListBloc, StockListState>(
+              builder: (context, state) {
+                final isAscending = state is StockListLoaded
+                    ? state.isAscending
+                    : true;
+                if (state is StockListLoaded) {
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      left: 15,
+                      right: 15,
+                      bottom: 18,
+                      top: 10,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: FilterChipRow(
+                            selectedFilter: _selectedFilterChip,
+                            isAscending: isAscending,
+                            onFilterChanged: (newLabel) {
+                              setState(() {
+                                _selectedFilterChip = newLabel;
+                                _dbFilterCol = _mapChipToColumn(newLabel);
+                              });
+
+                              final currentState = context
+                                  .read<StockListBloc>()
+                                  .state;
+                              FilterCriteria? currentFilters;
+                              if (currentState is StockListLoaded) {
+                                currentFilters = currentState.activeFilters;
+                              }
+
+                              context.read<StockListBloc>().add(
+                                FetchFirstPageEvent(
+                                  query: _searchQuery,
+                                  filterColumn: _searchColumn,
+                                  sortColumn: _dbFilterCol,
+                                  filters: currentFilters,
+                                  shouldToggleSort: true,
+                                  searchMode: _searchMode,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        // View mode dropdown (tablet only)
+                        if (isTablet) ...[
+                          const SizedBox(width: 12),
+                          _buildViewModeDropdown(isDark),
+                        ],
+                        const SizedBox(width: 8),
+                        Text(
+                          "${state.stocks.length} of ${NumberFormat('#,###').format(state.totalCount)}",
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white70
+                                : kGreyColor,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(
+                    left: 15,
+                    right: 15,
+                    bottom: 18,
+                    top: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: FilterChipRow(
+                          selectedFilter: _selectedFilterChip,
+                          isAscending: isAscending,
+                          onFilterChanged: (newLabel) {},
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "0 of ${NumberFormat('#,###').format(0)}",
+                        style: TextStyle(
+                          color: isDark
+                              ? Colors.white70
+                              : kGreyColor,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+            //Lookup Scanner
+            scanner(),
+
+            //Item lists state
+            itemsList(),
           ],
         ),
-      ),
+
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: AnimatedPadding(
+            duration: const Duration(milliseconds: 170),
+            curve: Curves.easeOut,
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                // Glass blur background
+                ClipRect(
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
+                    child: Container(
+                      height: 100,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            (isDark
+                                    ? colors.surface
+                                    : kSecondaryColor)
+                                .withOpacity(0.0),
+                            (isDark
+                                    ? colors.surface
+                                    : kSecondaryColor)
+                                .withOpacity(0.5),
+                            (isDark
+                                    ? colors.surface
+                                    : kSecondaryColor)
+                                .withOpacity(0.9),
+                          ],
+                          stops: const [0.0, 0.4, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 15,
+                    right: 15,
+                    bottom: 42,
+                  ),
+                  child: _buildGlassSearchBar(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -380,6 +479,72 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 },
               )
             : const SizedBox(key: ValueKey('empty')),
+      ),
+    );
+  }
+
+  Widget _buildViewModeDropdown(bool isDark) {
+    final colors = context.appColors;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isDark
+            ? colors.surface.withOpacity(0.8)
+            : kSecondaryColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? Colors.white24 : kGreyColor.withOpacity(0.3),
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<StockViewMode>(
+          value: _viewMode,
+          isDense: true,
+          icon: Icon(
+            Icons.keyboard_arrow_down,
+            size: 18,
+            color: isDark ? Colors.white70 : kGreyColor,
+          ),
+          dropdownColor: isDark ? colors.surface : kSecondaryColor,
+          items: StockViewMode.values.map((mode) {
+            return DropdownMenuItem<StockViewMode>(
+              value: mode,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    mode.icon,
+                    size: 16,
+                    color: _viewMode == mode
+                        ? kPrimaryColor
+                        : (isDark ? Colors.white70 : kThirdColor),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    mode.displayName,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _viewMode == mode
+                          ? kPrimaryColor
+                          : (isDark ? Colors.white : kThirdColor),
+                      fontWeight: _viewMode == mode
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (newMode) {
+            if (newMode != null) {
+              setState(() {
+                _viewMode = newMode;
+              });
+            }
+          },
+        ),
       ),
     );
   }
@@ -523,6 +688,11 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           if (state is StockListLoaded) {
             if (state.stocks.isEmpty) return emptyOrErrorWidget();
 
+            // Use grid view for tablet non-list modes
+            if (isTablet && _viewMode != StockViewMode.list) {
+              return _buildGridView(state, isTablet);
+            }
+
             return AnimationLimiter(
               child: ListView.separated(
                 controller: _scrollController,
@@ -563,6 +733,222 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildGridView(StockListLoaded state, bool isTablet) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+
+    // Grid configuration based on view mode
+    final int crossAxisCount;
+    final double thumbnailSize;
+    final double childAspectRatio;
+
+    switch (_viewMode) {
+      case StockViewMode.gridMedium:
+        crossAxisCount = 4;
+        thumbnailSize = 80.0;
+        childAspectRatio = 0.85;
+        break;
+      case StockViewMode.largeIcons:
+        crossAxisCount = 3;
+        thumbnailSize = 100.0;
+        childAspectRatio = 0.75;
+        break;
+      default:
+        crossAxisCount = 4;
+        thumbnailSize = 80.0;
+        childAspectRatio = 0.85;
+    }
+
+    return AnimationLimiter(
+      child: GridView.builder(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(
+          left: 15,
+          right: 15,
+          top: 0,
+          bottom: 100,
+        ),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: childAspectRatio,
+        ),
+        itemCount: state.hasReachedMax
+            ? state.stocks.length
+            : state.stocks.length + 1,
+        itemBuilder: (context, index) {
+          if (index >= state.stocks.length) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: CupertinoActivityIndicator(),
+              ),
+            );
+          }
+          final stock = state.stocks[index];
+          return _buildGridTile(stock, index, thumbnailSize, isDark, colors);
+        },
+      ),
+    );
+  }
+
+  Widget _buildGridTile(
+    StockVO stock,
+    int index,
+    double thumbnailSize,
+    bool isDark,
+    AppThemeColors colors,
+  ) {
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
+    
+    // Base font sizes
+    final double descFontSize = (_viewMode == StockViewMode.largeIcons ? 14 : 12) * uiScale;
+    final double barcodeFontSize = (_viewMode == StockViewMode.largeIcons ? 12 : 10) * uiScale;
+
+    return AnimationConfiguration.staggeredGrid(
+      position: index,
+      duration: const Duration(milliseconds: 400),
+      columnCount: _viewMode == StockViewMode.largeIcons ? 3 : 4,
+      child: ScaleAnimation(
+        child: FadeInAnimation(
+          child: GestureDetector(
+            onTap: () {
+              if (_isSyncInProgress()) {
+                _showSyncBlockedMessage();
+                return;
+              }
+              context.navigateToNext(StockDetailsScreen(stock: stock));
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Color.lerp(colors.surface, Colors.white, 0.06)
+                    : kSecondaryColor,
+                borderRadius: BorderRadius.circular(12),
+                border: isDark
+                    ? Border.all(color: Colors.white.withOpacity(0.18))
+                    : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark
+                        ? Colors.black.withOpacity(0.35)
+                        : kThirdColor.withOpacity(0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Thumbnail
+                  Expanded(
+                    flex: 13,
+                    child: Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withOpacity(0.05)
+                            : kBgColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Hero(
+                          tag: 'stock_image_${stock.stockID}',
+                          child: StockThumbnailTile(stock: stock),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Info
+                  Expanded(
+                    flex: 7,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 6),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                        Text(
+                          stock.description,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : kThirdColor,
+                            fontSize: descFontSize,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 2),
+                        // Barcode
+                        Text(
+                          stock.barcode,
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: barcodeFontSize,
+                            color: kPrimaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        // Sell Price for Large Icons
+                        if (_viewMode == StockViewMode.largeIcons) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '\$${_formatSellPrice(stock)}',
+                            style: TextStyle(
+                              fontSize: barcodeFontSize,
+                              color: Colors.green[700],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                        // Custom1 for Large Icons
+                        if (_viewMode == StockViewMode.largeIcons &&
+                            stock.custom1 != null &&
+                            stock.custom1!.isNotEmpty) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            stock.custom1!,
+                            style: TextStyle(
+                              fontSize: 9 * uiScale,
+                              color: isDark ? Colors.white54 : kGreyColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatSellPrice(StockVO stock) {
+    double sell = stock.sell;
+    // Include GST if applicable
+    if ((stock.salesTax ?? "") == "GST") {
+      sell = stock.sell * 1.1;
+    }
+    return sell.toStringAsFixed(2);
   }
 
   Widget emptyOrErrorWidget() {

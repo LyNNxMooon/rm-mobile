@@ -24,7 +24,6 @@ class FilterChipRow extends StatelessWidget {
     "Cat1",
     "Cat2",
     "Cat3",
-    "Custom2",
   ];
 
   @override
