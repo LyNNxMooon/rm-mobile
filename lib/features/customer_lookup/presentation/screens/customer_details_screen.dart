@@ -2839,13 +2839,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     padding: const EdgeInsets.all(4.0),
                     child: isSaving
                         ? SizedBox(
-                            width: _editIconSize(context, 16),
-                            height: _editIconSize(context, 16),
+                            width: _editIconSize(context, 22),
+                            height: _editIconSize(context, 22),
                             child: const CupertinoActivityIndicator(),
                           )
                         : Icon(
                             isEditing ? Icons.save_rounded : Icons.edit,
-                            size: _editIconSize(context, 18),
+                            size: _editIconSize(context, 24),
                             color: isEditing ? Colors.green : kPrimaryColor,
                           ),
                   ),

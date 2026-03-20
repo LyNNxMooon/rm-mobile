@@ -606,28 +606,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         _buildSectionTitle("Shopfront"),
                         _buildGlassContainer(
-                          child: Column(
-                            children: [
-                              _buildInfoRow(
-                                Icons.storefront_outlined,
-                                "Current Shopfront",
-                                _getShopfrontLabel(),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                            child: InkWell(
+                              onTap: () => _openShopfrontPicker(context),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      Icons.storefront_outlined,
+                                      size: 20,
+                                      color: context.appColors.isDark ? Colors.white : context.appColors.onHero,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 15),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Current Shopfront",
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: context.appColors.isDark ? Colors.white70 : context.appColors.onHero,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _getShopfrontLabel(),
+                                          style: getSmartTitle(
+                                            fontSize: 16,
+                                            color: context.appColors.isDark ? Colors.white : context.appColors.onHero,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: kPrimaryColor.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.settings,
+                                      size: 26,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
-                              _buildActionRow(
-                                Icons.shop_2_outlined,
-                                "Change Shopfront",
-                                "Select a shopfront for this device",
-                                kPrimaryColor,
-                                () => _openShopfrontPicker(context),
-                                titleColor: Theme.of(context).brightness == Brightness.dark
-                                  ? null
-                                  : Colors.blue,
-                              ),
-                            ],
+                            ),
                           ),
                         ),
 
@@ -879,53 +917,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(8),
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: isDark ? Colors.white : colors.onHero,
+              ),
             ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: isDark ? Colors.white : colors.onHero,
-            ),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? Colors.white70 : colors.onHero,
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white70 : colors.onHero,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: getSmartTitle(
-                    fontSize: 16,
-                    color: isDark ? Colors.white : colors.onHero,
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: getSmartTitle(
+                      fontSize: 16,
+                      color: isDark ? Colors.white : colors.onHero,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            if (trailing != null) trailing,
+          ],
+        ),
       ),
     );
   }

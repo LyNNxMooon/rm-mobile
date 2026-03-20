@@ -27,7 +27,16 @@ class DummyCartItem {
 }
 
 class SalesScreen extends StatefulWidget {
-  const SalesScreen({super.key});
+  const SalesScreen({
+    super.key,
+    this.title = "Sales",
+    this.themeColor = Colors.green,
+    this.icon = Icons.point_of_sale_outlined,
+  });
+
+  final String title;
+  final Color themeColor;
+  final IconData icon;
 
   @override
   State<SalesScreen> createState() => _SalesScreenState();
@@ -154,13 +163,13 @@ class _SalesScreenState extends State<SalesScreen> {
   PreferredSizeWidget _buildAppBar(AppThemeColors colors, bool isDark) {
     return AppBar(
       elevation: 0,
-      backgroundColor: isDark ? colors.surfaceAlt : Colors.white,
+      backgroundColor: widget.themeColor,
       centerTitle: true,
       leading: IconButton(
-        icon: Icon(
+        icon: const Icon(
           Icons.arrow_back_ios_new,
           size: 20,
-          color: isDark ? Colors.white : Colors.black87,
+          color: Colors.white,
         ),
         onPressed: () => context.navigateBack(),
       ),
@@ -170,20 +179,20 @@ class _SalesScreenState extends State<SalesScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.15),
+              color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.point_of_sale_rounded,
-              color: Colors.green,
+            child: Icon(
+              widget.icon,
+              color: Colors.white,
               size: 20,
             ),
           ),
           const SizedBox(width: 10),
           Text(
-            "New Transaction",
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black87,
+            widget.title,
+            style: const TextStyle(
+              color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 17,
             ),
@@ -192,9 +201,9 @@ class _SalesScreenState extends State<SalesScreen> {
       ),
       actions: [
         IconButton(
-          icon: Icon(
+          icon: const Icon(
             Icons.more_vert,
-            color: isDark ? Colors.white : Colors.black87,
+            color: Colors.white,
           ),
           onPressed: () {
             // Options menu (e.g., Clear Sale, Suspend Sale)

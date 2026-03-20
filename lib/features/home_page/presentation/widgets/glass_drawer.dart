@@ -230,9 +230,9 @@ class _GlassDrawerState extends State<GlassDrawer> {
             const SizedBox(height: 24),
 
             // --- SECTION 3: MANAGEMENT ---
-            _buildSectionTitle("Management", context),
+            _buildSectionTitle("Stock Management", context),
             ActionCard(
-              title: "Start Stocktaking",
+              title: "Stocktake",
               subtitle: "Begin counting inventory items",
               onTap: widget.onStocktakeTap,
             ),
@@ -265,12 +265,36 @@ class _GlassDrawerState extends State<GlassDrawer> {
         return;
       }
       context.navigateToNext(const CustomerLookupScreen());
-    } else if (action == "sales" ||
-        action == "account_sales" ||
-        action == "sales_order" ||
-        action == "quotes" ||
-        action == "lay_bys") {
-      context.navigateToNext(const SalesScreen());
+    } else if (action == "sales") {
+      context.navigateToNext(const SalesScreen(
+        title: "Sales",
+        themeColor: Colors.green,
+        icon: Icons.point_of_sale_outlined,
+      ));
+    } else if (action == "account_sales") {
+      context.navigateToNext(const SalesScreen(
+        title: "Account Sales",
+        themeColor: Color.fromARGB(255, 238, 130, 166),
+        icon: Icons.receipt_long_outlined,
+      ));
+    } else if (action == "sales_order") {
+      context.navigateToNext(const SalesScreen(
+        title: "Sales Order",
+        themeColor: Color.fromARGB(255, 44, 133, 211),
+        icon: Icons.shopping_cart_outlined,
+      ));
+    } else if (action == "quotes") {
+      context.navigateToNext(const SalesScreen(
+        title: "Quotes",
+        themeColor: Colors.orange,
+        icon: Icons.request_quote_outlined,
+      ));
+    } else if (action == "lay_bys") {
+      context.navigateToNext(const SalesScreen(
+        title: "Lay-bys",
+        themeColor: Color.fromARGB(255, 152, 86, 165),
+        icon: Icons.inventory_2_outlined,
+      ));
     } else {
       context.navigateToNext(const ComingSoonScreen());
     }
@@ -344,7 +368,10 @@ class _GlassDrawerState extends State<GlassDrawer> {
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: EdgeInsets.only(
+                      left: (isTransaction && !isComingSoon) ? 20 : 12,
+                      right: 12,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -390,16 +417,16 @@ class _GlassDrawerState extends State<GlassDrawer> {
                 // Vertical line indicator for transaction items
                 if (isTransaction && !isComingSoon)
                   Positioned(
-                    top: 0,
-                    bottom: 0,
+                    top: 1.5,
+                    bottom: 1.5,
                     left: 0,
                     child: Container(
-                      width: 7.5,
+                      width: 10.5,
                       decoration: BoxDecoration(
                         color: itemColor,
                         borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(15),
-                          bottomLeft: Radius.circular(15),
+                          topLeft: Radius.circular(14),
+                          bottomLeft: Radius.circular(14),
                         ),
                       ),
                     ),
