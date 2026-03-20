@@ -12,6 +12,7 @@ import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
+import '../../../transactions/presentation/screens/sales_screen.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_states.dart';
 import '../screens/coming_soon_screen.dart';
@@ -262,6 +263,12 @@ class _GlassDrawerState extends State<GlassDrawer> {
         return;
       }
       context.navigateToNext(const CustomerLookupScreen());
+    } else if (action == "sales" ||
+        action == "account_sales" ||
+        action == "sales_order" ||
+        action == "quotes" ||
+        action == "lay_bys") {
+      context.navigateToNext(const SalesScreen());
     } else {
       context.navigateToNext(const ComingSoonScreen());
     }
@@ -383,7 +390,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "icon": Icons.point_of_sale_outlined,
       "color": Colors.green.shade600,
       "comingSoon": false,
-      "action": "coming_soon" // Change this when you have a route
+      "action": "sales"
     },
     {
       "title": "Account Sales",
@@ -391,7 +398,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "icon": Icons.receipt_long_outlined,
       "color": const Color.fromARGB(255, 238, 130, 166),
       "comingSoon": false,
-      "action": "coming_soon" // Change this when you have a route
+      "action": "account_sales"
     },
     {
       "title": "Sales Order",
@@ -399,7 +406,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "icon": Icons.shopping_cart_outlined,
       "color": const Color.fromARGB(255, 44, 133, 211),
       "comingSoon": false,
-      "action": "coming_soon" // Change this when you have a route
+      "action": "sales_order"
     },
     {
       "title": "Quotes",
@@ -407,7 +414,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "icon": Icons.request_quote_outlined,
       "color": Colors.orange.shade500,
       "comingSoon": false,
-      "action": "coming_soon" // Change this when you have a route
+      "action": "quotes"
     },
     {
       "title": "Lay-bys",
@@ -415,7 +422,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "icon": Icons.inventory_2_outlined,
       "color": const Color.fromARGB(255, 152, 86, 165),
       "comingSoon": false,
-      "action": "coming_soon" // Change this when you have a route
+      "action": "lay_bys"
     },
     {
       "title": "Goods Received",
