@@ -743,22 +743,27 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final int crossAxisCount;
     final double thumbnailSize;
     final double childAspectRatio;
+    final bool hasSearchQuery = state.currentQuery.trim().isNotEmpty;
 
     switch (_viewMode) {
       case StockViewMode.gridMedium:
         crossAxisCount = 2;
-        thumbnailSize = 115.0;
-        childAspectRatio = 5.5; // Wide and short
+        // Expand image when searching to fit matched fields
+        thumbnailSize = hasSearchQuery ? 145.0 : 115.0;
+        // Expand height when searching to fit matched fields
+        childAspectRatio = hasSearchQuery ? 3.5 : 5.5;
         break;
       case StockViewMode.largeIcons:
         crossAxisCount = 3;
-        thumbnailSize = 100.0;
-        childAspectRatio = 0.75;
+        // Expand image when searching to fit matched fields
+        thumbnailSize = hasSearchQuery ? 120.0 : 100.0;
+        // Expand height when searching to fit matched fields
+        childAspectRatio = hasSearchQuery ? 0.58 : 0.75;
         break;
       default:
         crossAxisCount = 2;
-        thumbnailSize = 115.0;
-        childAspectRatio = 5.5;
+        thumbnailSize = hasSearchQuery ? 145.0 : 115.0;
+        childAspectRatio = hasSearchQuery ? 3.5 : 5.5;
     }
 
     return AnimationLimiter(
@@ -791,9 +796,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           }
           final stock = state.stocks[index];
           if (_viewMode == StockViewMode.gridMedium) {
-            return _buildHorizontalGridTile(stock, index, thumbnailSize, isDark, colors);
+            return _buildHorizontalGridTile(stock, index, thumbnailSize, isDark, colors, state.currentQuery);
           }
-          return _buildGridTile(stock, index, thumbnailSize, isDark, colors);
+          return _buildGridTile(stock, index, thumbnailSize, isDark, colors, state.currentQuery);
         },
       ),
     );
@@ -805,13 +810,28 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     double thumbnailSize,
     bool isDark,
     AppThemeColors colors,
+    String query,
   ) {
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
+    final String trimmedQuery = query.trim();
+    final String lowerQuery = trimmedQuery.toLowerCase();
+    final bool hasQuery = trimmedQuery.isNotEmpty;
+    
+    bool matchesQuery(String? value) {
+      if (!hasQuery || value == null) return false;
+      final normalized = value.trim();
+      if (normalized.isEmpty) return false;
+      return normalized.toLowerCase().contains(lowerQuery);
+    }
+    
+    //final bool showCustom1 = matchesQuery(stock.custom1);
+    final bool showCustom2 = matchesQuery(stock.custom2);
     
     // Base font sizes
     final double descFontSize = (_viewMode == StockViewMode.largeIcons ? 14 : 12) * uiScale;
     final double barcodeFontSize = (_viewMode == StockViewMode.largeIcons ? 12 : 10) * uiScale;
+    final double customFontSize = (_viewMode == StockViewMode.largeIcons ? 11 : 10) * uiScale;
 
     return AnimationConfiguration.staggeredGrid(
       position: index,
@@ -874,14 +894,17 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                   // Info
                   Expanded(
                     flex: 7,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 6),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                        Text(
-                          stock.description,
+                    child: ClipRect(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 8, right: 8, bottom: 6),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                        HighlightedText(
+                          text: stock.description,
+                          query: trimmedQuery,
+                          highlightColor: Colors.amber.withOpacity(0.6),
                           style: TextStyle(
                             color: isDark ? Colors.white : kThirdColor,
                             fontSize: descFontSize,
@@ -889,12 +912,14 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
+                          applyTextScaler: true,
                         ),
                         const SizedBox(height: 2),
                         // Barcode
-                        Text(
-                          stock.barcode,
+                        HighlightedText(
+                          text: stock.barcode,
+                          query: trimmedQuery,
+                          highlightColor: Colors.amber.withOpacity(0.6),
                           style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: barcodeFontSize,
@@ -903,6 +928,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                          applyTextScaler: true,
                         ),
                         // Sell Price for Large Icons
                         if (_viewMode == StockViewMode.largeIcons) ...[
@@ -916,25 +942,46 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             ),
                           ),
                         ],
-                        // Custom1 for Large Icons
+                        // Custom1 for Large Icons (always show if non-empty, highlight when matched)
                         if (_viewMode == StockViewMode.largeIcons &&
                             stock.custom1 != null &&
                             stock.custom1!.isNotEmpty) ...[
-                          const SizedBox(height: 1),
-                          Text(
-                            stock.custom1!,
+                          const SizedBox(height: 2),
+                          HighlightedText(
+                            text: stock.custom1!,
+                            query: trimmedQuery,
+                            highlightColor: Colors.amber.withOpacity(0.6),
                             style: TextStyle(
-                              fontSize: 9 * uiScale,
-                              color: isDark ? Colors.white54 : kGreyColor,
+                              fontSize: customFontSize,
+                              color: isDark ? Colors.white70 : kGreyColor,
+                              fontStyle: FontStyle.italic,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
+                            applyTextScaler: true,
+                          ),
+                        ],
+                        // Custom2 for Large Icons (only when matched)
+                        if (_viewMode == StockViewMode.largeIcons && showCustom2) ...[
+                          const SizedBox(height: 2),
+                          HighlightedText(
+                            text: stock.custom2!,
+                            query: trimmedQuery,
+                            highlightColor: Colors.amber.withOpacity(0.6),
+                            style: TextStyle(
+                              fontSize: customFontSize,
+                              color: isDark ? Colors.white70 : kGreyColor,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            applyTextScaler: true,
                           ),
                         ],
                       ],
                     ),
                   ),
+                    ),
                   ),
                 ],
               ),
@@ -952,12 +999,27 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     double thumbnailSize,
     bool isDark,
     AppThemeColors colors,
+    String query,
   ) {
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
+    final String trimmedQuery = query.trim();
+    final String lowerQuery = trimmedQuery.toLowerCase();
+    final bool hasQuery = trimmedQuery.isNotEmpty;
+    
+    bool matchesQuery(String? value) {
+      if (!hasQuery || value == null) return false;
+      final normalized = value.trim();
+      if (normalized.isEmpty) return false;
+      return normalized.toLowerCase().contains(lowerQuery);
+    }
+    
+    final bool showCustom1 = matchesQuery(stock.custom1);
+    final bool showCustom2 = matchesQuery(stock.custom2);
     
     final double descFontSize = 13 * uiScale;
     final double barcodeFontSize = 11 * uiScale;
+    final double customFontSize = 11 * uiScale;
 
     return AnimationConfiguration.staggeredGrid(
       position: index,
@@ -1016,14 +1078,17 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
                   // Description & Barcode on the right
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 10, right: 12, top: 8, bottom: 8),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            stock.description,
+                    child: ClipRect(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 10, right: 12, top: 8, bottom: 8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                          HighlightedText(
+                            text: stock.description,
+                            query: trimmedQuery,
+                            highlightColor: Colors.amber.withOpacity(0.6),
                             style: TextStyle(
                               color: isDark ? Colors.white : kThirdColor,
                               fontSize: descFontSize,
@@ -1031,10 +1096,13 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            applyTextScaler: true,
                           ),
                           const SizedBox(height: 3),
-                          Text(
-                            stock.barcode,
+                          HighlightedText(
+                            text: stock.barcode,
+                            query: trimmedQuery,
+                            highlightColor: Colors.amber.withOpacity(0.6),
                             style: TextStyle(
                               fontFamily: 'monospace',
                               fontSize: barcodeFontSize,
@@ -1043,9 +1111,45 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            applyTextScaler: true,
                           ),
+                          // Custom1 for Grid view (only when matched)
+                          if (showCustom1) ...[
+                            const SizedBox(height: 2),
+                            HighlightedText(
+                              text: stock.custom1!,
+                              query: trimmedQuery,
+                              highlightColor: Colors.amber.withOpacity(0.6),
+                              style: TextStyle(
+                                fontSize: customFontSize,
+                                color: isDark ? Colors.white70 : kGreyColor,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              applyTextScaler: true,
+                            ),
+                          ],
+                          // Custom2 for Grid view (only when matched)
+                          if (showCustom2) ...[
+                            const SizedBox(height: 2),
+                            HighlightedText(
+                              text: stock.custom2!,
+                              query: trimmedQuery,
+                              highlightColor: Colors.amber.withOpacity(0.6),
+                              style: TextStyle(
+                                fontSize: customFontSize,
+                                color: isDark ? Colors.white70 : kGreyColor,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              applyTextScaler: true,
+                            ),
+                          ],
                         ],
                       ),
+                    ),
                     ),
                   ),
                 ],

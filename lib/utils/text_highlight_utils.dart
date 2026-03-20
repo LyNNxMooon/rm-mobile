@@ -8,6 +8,7 @@ class HighlightedText extends StatelessWidget {
   final Color highlightColor;
   final int? maxLines;
   final TextOverflow? overflow;
+  final bool applyTextScaler;
 
   const HighlightedText({
     super.key,
@@ -17,6 +18,7 @@ class HighlightedText extends StatelessWidget {
     required this.highlightColor,
     this.maxLines,
     this.overflow,
+    this.applyTextScaler = false,
   });
 
   @override
@@ -36,6 +38,7 @@ class HighlightedText extends StatelessWidget {
       text: TextSpan(children: spans, style: style),
       maxLines: maxLines,
       overflow: overflow ?? TextOverflow.clip,
+      textScaler: applyTextScaler ? MediaQuery.textScalerOf(context) : TextScaler.noScaling,
     );
   }
 
@@ -60,11 +63,12 @@ class HighlightedText extends StatelessWidget {
         spans.add(TextSpan(text: text.substring(currentIndex, matchIndex)));
       }
       
-      // Add highlighted match
+      // Add highlighted match - only set background, inherit everything else
       spans.add(
         TextSpan(
           text: text.substring(matchIndex, matchIndex + query.length),
           style: TextStyle(
+            inherit: true,
             backgroundColor: highlightColor,
             fontWeight: FontWeight.w700,
           ),
