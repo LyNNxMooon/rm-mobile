@@ -189,42 +189,48 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   }
 
   Widget _buildTabletLayout(AppThemeColors colors, bool isDark, bool isPortrait) {
+    final screenSize = MediaQuery.of(context).size;
+    final shortestSide = screenSize.shortestSide;
+    // Medium tablets/iPads: shortestSide between 600-900px
+    final bool isLargeTablet = shortestSide >= 900;
+
     return Row(
       children: [
-        // Left sidebar - File Explorer style (resizable)
+        // Left sidebar - File Explorer style (resizable on large tablets only)
         SizedBox(
-          width: _sidebarWidth,
+          width: isLargeTablet ? _sidebarWidth : 280.0,
           child: const FilterTreeSidebar(),
         ),
 
-        // Resize handle
-        GestureDetector(
-          onHorizontalDragUpdate: (details) {
-            setState(() {
-              _sidebarWidth += details.delta.dx;
-              _sidebarWidth = _sidebarWidth.clamp(_minSidebarWidth, _maxSidebarWidth);
-            });
-          },
-          child: MouseRegion(
-            cursor: SystemMouseCursors.resizeColumn,
-            child: Container(
-              width: 20,
-              color: Colors.transparent,
-              child: Center(
-                child: Container(
-                  width: 5,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white24
-                        : kGreyColor.withOpacity(0.4),
-                    borderRadius: BorderRadius.circular(3),
+        // Resize handle (large tablets only)
+        if (isLargeTablet)
+          GestureDetector(
+            onHorizontalDragUpdate: (details) {
+              setState(() {
+                _sidebarWidth += details.delta.dx;
+                _sidebarWidth = _sidebarWidth.clamp(_minSidebarWidth, _maxSidebarWidth);
+              });
+            },
+            child: MouseRegion(
+              cursor: SystemMouseCursors.resizeColumn,
+              child: Container(
+                width: 20,
+                color: Colors.transparent,
+                child: Center(
+                  child: Container(
+                    width: 5,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white24
+                          : kGreyColor.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
 
         // Right side - Stock list
         Expanded(
