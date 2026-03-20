@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/utils/dependency_injection_utils.dart' as di;
-
 import 'app.dart';
 import 'local_db/sqlite/sqlite_dao_impl.dart';
 

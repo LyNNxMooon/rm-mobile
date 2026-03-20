@@ -37,7 +37,19 @@ class _SalesScreenState extends State<SalesScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  bool _isPaymentMode = false;
+  bool _showScanner = false;
   String _selectedPaymentMethod = "Cash";
+  String? _selectedOption;
+
+  final List<String> _optionItems = [
+    "Add Survey",
+    "Add Comment",
+    "Add Delivery",
+    "View Tax",
+    "View Profit",
+  ];
+
   final List<String> _paymentMethods = [
     "Cash",
     "Account",
@@ -74,12 +86,31 @@ class _SalesScreenState extends State<SalesScreen> {
       sellPrice: 85.50,
       qty: 1,
     ),
+    DummyCartItem(
+      code: "LAMP-LED",
+      description: "LED Desk Lamp Adjustable",
+      sellPrice: 45.99,
+      qty: 1,
+    ),
+    DummyCartItem(
+      code: "HDPH-BT5",
+      description: "Bluetooth Headphones Pro",
+      sellPrice: 89.00,
+      qty: 1,
+    ),
+    DummyCartItem(
+      code: "WATER-BTL",
+      description: "Stainless Steel Water Bottle 1L",
+      sellPrice: 18.50,
+      qty: 3,
+    ),
   ];
 
   double get _subtotal =>
       _cartItems.fold(0, (sum, item) => sum + item.extension);
   double get _discount => 0.00; // Placeholder
-  double get _total => _subtotal - _discount;
+  double get _rounding => 0.00; // Placeholder
+  double get _total => _subtotal - _discount + _rounding;
 
   @override
   void dispose() {
@@ -100,11 +131,17 @@ class _SalesScreenState extends State<SalesScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Section: Customer, Staff, Date & Barcode Input
+            // Top Section: Customer, Staff, Date
             _buildTopHeader(colors, isDark, isTablet),
+
+            // Scanner Area (shown when scanner icon tapped)
+            if (_showScanner) _buildScannerArea(colors, isDark),
 
             // Middle Section: Cart Items
             Expanded(child: _buildCartArea(colors, isDark, isTablet)),
+
+            // Search Bar (moved to bottom)
+            _buildSearchBar(colors, isDark, isTablet),
 
             // Bottom Section: Summary, Payment & Commit
             _buildBottomSummary(colors, isDark, isTablet),
@@ -172,8 +209,12 @@ class _SalesScreenState extends State<SalesScreen> {
       'EEEE, dd MMM yyyy',
     ).format(DateTime.now());
 
+    // Dummy customer data - replace with actual
+    const String customerBarcode = "CUST001";
+    const String customerName = "Walk-in Customer";
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       decoration: BoxDecoration(
         color: isDark ? colors.surfaceAlt : Colors.white,
         border: Border(
@@ -181,13 +222,6 @@ class _SalesScreenState extends State<SalesScreen> {
             color: isDark ? Colors.white12 : Colors.grey.shade200,
           ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -199,14 +233,14 @@ class _SalesScreenState extends State<SalesScreen> {
                 children: [
                   Icon(
                     Icons.badge_outlined,
-                    size: 16,
+                    size: 14,
                     color: colors.onSurfaceMuted,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   Text(
-                    "Staff: David Bates", // Replace with AppGlobals.instance.staffName
+                    "Staff: David Bates",
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
                     ),
@@ -215,11 +249,11 @@ class _SalesScreenState extends State<SalesScreen> {
               ),
               Text(
                 currentDate,
-                style: TextStyle(fontSize: 12, color: colors.onSurfaceMuted),
+                style: TextStyle(fontSize: 11, color: colors.onSurfaceMuted),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           // Customer Selection Button
           InkWell(
@@ -228,7 +262,7 @@ class _SalesScreenState extends State<SalesScreen> {
             },
             borderRadius: BorderRadius.circular(8),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
                 color: isDark ? colors.surface : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(8),
@@ -238,70 +272,113 @@ class _SalesScreenState extends State<SalesScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.person_outline, size: 20, color: kPrimaryColor),
-                  const SizedBox(width: 10),
+                  Icon(Icons.person_outline, size: 18, color: kPrimaryColor),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "Walk-in Customer", // Or selected customer name
+                      "$customerBarcode | $customerName",
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: isDark ? Colors.white : Colors.black87,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                  Icon(Icons.search, size: 18, color: colors.onSurfaceMuted),
+                  Icon(Icons.search, size: 16, color: colors.onSurfaceMuted),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 12),
-
-          // Barcode / Product Search Input
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: isTablet ? 56 : 50,
-                  decoration: BoxDecoration(
-                    color: isDark ? colors.surface : Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.white24
-                          : kPrimaryColor.withOpacity(0.5),
-                    ),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : Colors.black87,
-                      fontSize: 14,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Scan barcode or type to search (F2)',
-                      hintStyle: TextStyle(
-                        color: colors.onSurfaceMuted,
-                        fontSize: 13,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.qr_code_scanner,
-                        color: kPrimaryColor,
-                        size: 20,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    onSubmitted: (value) {
-                      // Trigger Add to Cart logic
-                      _searchController.clear();
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(AppThemeColors colors, bool isDark, bool isTablet) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Container(
+        height: isTablet ? 50 : 44,
+        decoration: BoxDecoration(
+          color: isDark ? colors.surface : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5),
+          ),
+        ),
+        child: TextField(
+          controller: _searchController,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontSize: 14,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Scan barcode or type to search (F2)',
+            hintStyle: TextStyle(
+              color: colors.onSurfaceMuted,
+              fontSize: 13,
+            ),
+            suffixIcon: GestureDetector(
+              onTap: () => setState(() => _showScanner = !_showScanner),
+              child: Icon(
+                Icons.qr_code_scanner,
+                color: _showScanner ? Colors.green : kPrimaryColor,
+                size: 20,
+              ),
+            ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
+          ),
+          onSubmitted: (value) {
+            // Trigger Add to Cart logic
+            _searchController.clear();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScannerArea(AppThemeColors colors, bool isDark) {
+    return Container(
+      height: 200,
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark ? colors.surface : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.white24 : Colors.grey.shade300,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.qr_code_scanner,
+              size: 48,
+              color: kPrimaryColor.withOpacity(0.5),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Scanner Area",
+              style: TextStyle(
+                color: colors.onSurfaceMuted,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "Camera preview will appear here",
+              style: TextStyle(
+                color: colors.onSurfaceMuted.withOpacity(0.7),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -344,7 +421,7 @@ class _SalesScreenState extends State<SalesScreen> {
         // Optional Tablet Header Row mimicking the desktop grid
         if (isTablet)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
               color: isDark ? colors.surface : Colors.grey.shade200,
               border: Border(
@@ -382,9 +459,9 @@ class _SalesScreenState extends State<SalesScreen> {
           child: AnimationLimiter(
             child: ListView.separated(
               controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               itemCount: _cartItems.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 8),
+              separatorBuilder: (context, index) => const SizedBox(height: 4),
               itemBuilder: (context, index) {
                 final item = _cartItems[index];
                 return AnimationConfiguration.staggeredList(
@@ -430,23 +507,27 @@ class _SalesScreenState extends State<SalesScreen> {
     bool isDark,
   ) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? colors.surfaceAlt : Colors.white,
+        color: isDark
+            ? Color.lerp(colors.surface, Colors.white, 0.06)
+            : kSecondaryColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isDark ? Colors.white12 : Colors.grey.shade200,
-        ),
+        border: isDark
+            ? Border.all(color: Colors.white.withOpacity(0.18))
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: isDark
+                ? Colors.black.withOpacity(0.35)
+                : kThirdColor.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Item Details
           Expanded(
@@ -456,79 +537,72 @@ class _SalesScreenState extends State<SalesScreen> {
                 Text(
                   item.description,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   item.code,
                   style: TextStyle(
                     fontFamily: 'monospace',
-                    fontSize: 12,
+                    fontSize: 11,
                     color: kPrimaryColor,
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  "\$${item.sellPrice.toStringAsFixed(2)}",
-                  style: TextStyle(fontSize: 13, color: colors.onSurfaceMuted),
                 ),
               ],
             ),
           ),
 
           // Quantity & Pricing Controls
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Extension Total
-              Text(
-                "\$${item.extension.toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
+              // Qty Stepper
+              _buildQtyBtn(
+                Icons.remove,
+                () {
+                  if (item.qty > 1) setState(() => item.qty--);
+                },
+                isDark,
+                colors,
+              ),
+              Container(
+                width: 32,
+                alignment: Alignment.center,
+                child: Text(
+                  item.qty.toString(),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-
-              // Qty Stepper
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildQtyBtn(
-                    Icons.remove,
-                    () {
-                      if (item.qty > 1) setState(() => item.qty--);
-                    },
-                    isDark,
-                    colors,
+              _buildQtyBtn(
+                Icons.add,
+                () {
+                  setState(() => item.qty++);
+                },
+                isDark,
+                colors,
+              ),
+              const SizedBox(width: 12),
+              // Extension Total
+              SizedBox(
+                width: 70,
+                child: Text(
+                  "\$${item.extension.toStringAsFixed(2)}",
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
-                  Container(
-                    width: 36,
-                    alignment: Alignment.center,
-                    child: Text(
-                      item.qty.toString(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  ),
-                  _buildQtyBtn(
-                    Icons.add,
-                    () {
-                      setState(() => item.qty++);
-                    },
-                    isDark,
-                    colors,
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -544,13 +618,24 @@ class _SalesScreenState extends State<SalesScreen> {
     bool isDark,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? colors.surfaceAlt : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isDark ? Colors.white12 : Colors.grey.shade200,
-        ),
+        color: isDark
+            ? Color.lerp(colors.surface, Colors.white, 0.06)
+            : kSecondaryColor,
+        borderRadius: BorderRadius.circular(10),
+        border: isDark
+            ? Border.all(color: Colors.white.withOpacity(0.18))
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.35)
+                : kThirdColor.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -657,23 +742,23 @@ class _SalesScreenState extends State<SalesScreen> {
     AppThemeColors colors, {
     bool small = false,
   }) {
-    final size = small ? 26.0 : 32.0;
+    final size = small ? 24.0 : 28.0;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(5),
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
           color: isDark ? colors.surface : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(5),
           border: Border.all(
             color: isDark ? Colors.white24 : Colors.grey.shade300,
           ),
         ),
         child: Icon(
           icon,
-          size: small ? 14 : 16,
+          size: small ? 12 : 14,
           color: isDark ? Colors.white : Colors.black87,
         ),
       ),
@@ -685,45 +770,56 @@ class _SalesScreenState extends State<SalesScreen> {
     bool isDark,
     bool isTablet,
   ) {
+    final items = _isPaymentMode ? _paymentMethods : _optionItems;
+    final selectedItem = _isPaymentMode ? _selectedPaymentMethod : _selectedOption;
+
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E2733) : Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
           ),
         ],
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
         ),
       ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Payment Methods
+              // Options / Payment Methods
               SizedBox(
-                height: 38,
+                height: 34,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _paymentMethods.length,
+                  itemCount: items.length,
                   separatorBuilder: (context, index) =>
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                   itemBuilder: (context, index) {
-                    final method = _paymentMethods[index];
-                    final isSelected = _selectedPaymentMethod == method;
+                    final item = items[index];
+                    final isSelected = selectedItem == item;
                     return InkWell(
-                      onTap: () =>
-                          setState(() => _selectedPaymentMethod = method),
-                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        setState(() {
+                          if (_isPaymentMode) {
+                            _selectedPaymentMethod = item;
+                          } else {
+                            _selectedOption = item;
+                            // Handle option actions here
+                          }
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(17),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: isSelected
@@ -731,7 +827,7 @@ class _SalesScreenState extends State<SalesScreen> {
                               : (isDark
                                     ? colors.surface
                                     : Colors.grey.shade100),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(17),
                           border: Border.all(
                             color: isSelected
                                 ? kPrimaryColor
@@ -741,7 +837,7 @@ class _SalesScreenState extends State<SalesScreen> {
                           ),
                         ),
                         child: Text(
-                          method,
+                          item,
                           style: TextStyle(
                             color: isSelected
                                 ? Colors.white
@@ -751,7 +847,7 @@ class _SalesScreenState extends State<SalesScreen> {
                             fontWeight: isSelected
                                 ? FontWeight.bold
                                 : FontWeight.w500,
-                            fontSize: 13,
+                            fontSize: 12,
                           ),
                         ),
                       ),
@@ -759,7 +855,7 @@ class _SalesScreenState extends State<SalesScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
 
               // Totals Row
               Row(
@@ -773,21 +869,28 @@ class _SalesScreenState extends State<SalesScreen> {
                         "Subtotal: \$${_subtotal.toStringAsFixed(2)}",
                         style: TextStyle(
                           color: colors.onSurfaceMuted,
-                          fontSize: 12,
+                          fontSize: 11,
                         ),
                       ),
-                      const SizedBox(height: 4),
                       Text(
-                        "Total to Pay",
+                        "Discount: \$${_discount.toStringAsFixed(2)}",
                         style: TextStyle(
-                          color: isDark ? Colors.white70 : Colors.black54,
-                          fontSize: 13,
+                          color: colors.onSurfaceMuted,
+                          fontSize: 11,
                         ),
                       ),
+                      Text(
+                        "Rounding: \$${_rounding.toStringAsFixed(2)}",
+                        style: TextStyle(
+                          color: colors.onSurfaceMuted,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
                       Text(
                         "\$${_total.toStringAsFixed(2)}",
                         style: TextStyle(
-                          fontSize: 28,
+                          fontSize: 26,
                           fontWeight: FontWeight.w900,
                           color: isDark ? Colors.white : Colors.black87,
                           letterSpacing: -0.5,
@@ -796,12 +899,16 @@ class _SalesScreenState extends State<SalesScreen> {
                     ],
                   ),
 
-                  // Commit Button (Mimics Desktop F10 Green Button)
+                  // Payment Button
                   ElevatedButton(
                     onPressed: _cartItems.isEmpty
                         ? null
                         : () {
-                            // Dispatch Commit Sale Event
+                            if (!_isPaymentMode) {
+                              setState(() => _isPaymentMode = true);
+                            } else {
+                              // Dispatch Commit Sale Event
+                            }
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green.shade600,
@@ -811,7 +918,7 @@ class _SalesScreenState extends State<SalesScreen> {
                         horizontal: isTablet ? 32 : 24,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     child: Row(
@@ -819,19 +926,19 @@ class _SalesScreenState extends State<SalesScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "COMMIT",
+                          _isPaymentMode ? "COMMIT" : "PAYMENT",
                           style: TextStyle(
                             color: colors.onHero,
-                            fontSize: isTablet ? 15 : 13,
+                            fontSize: isTablet ? 14 : 12,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
+                            letterSpacing: 1.0,
                           ),
                         ),
                         if (isTablet) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
+                              horizontal: 5,
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
@@ -841,7 +948,7 @@ class _SalesScreenState extends State<SalesScreen> {
                             child: const Text(
                               "F10",
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 9,
                                 color: Colors.white,
                               ),
                             ),
