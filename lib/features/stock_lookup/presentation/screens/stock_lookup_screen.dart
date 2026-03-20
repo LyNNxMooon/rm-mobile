@@ -228,17 +228,17 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
         // Right side - Stock list
         Expanded(
-          child: _buildMainContent(colors, isDark, isTablet: true),
+          child: _buildMainContent(colors, isDark, isTablet: true, isPortrait: isPortrait),
         ),
       ],
     );
   }
 
   Widget _buildMobileLayout(AppThemeColors colors, bool isDark) {
-    return _buildMainContent(colors, isDark, isTablet: false);
+    return _buildMainContent(colors, isDark, isTablet: false, isPortrait: false);
   }
 
-  Widget _buildMainContent(AppThemeColors colors, bool isDark, {required bool isTablet}) {
+  Widget _buildMainContent(AppThemeColors colors, bool isDark, {required bool isTablet, required bool isPortrait}) {
     return Stack(
       children: [
         Column(
@@ -301,8 +301,8 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             },
                           ),
                         ),
-                        // View mode dropdown (tablet only)
-                        if (isTablet) ...[
+                        // View mode dropdown (tablet landscape only)
+                        if (isTablet && !isPortrait) ...[
                           const SizedBox(width: 12),
                           _buildViewModeDropdown(isDark),
                         ],
