@@ -29,7 +29,7 @@ import '../widgets/filter_chip_row.dart';
 import '../widgets/search_filter.dart';
 import '../widgets/stock_lookup_appbar.dart';
 import '../widgets/stock_lookup_scanner.dart';
-import '../widgets/stocklookup_filter_dialog.dart';
+import 'filter_screen.dart';
 import '../widgets/sync_info_widget.dart';
 import '../widgets/pending_stock_updates_tile.dart';
 
@@ -473,10 +473,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 return;
               }
 
-              showDialog(
-                context: context,
-                builder: (_) => const StocklookupFilterDialog(),
-              );
+              context.navigateToNext(const FilterScreen());
             },
             onScannerTap: () {
               if (_isSyncInProgress()) {
