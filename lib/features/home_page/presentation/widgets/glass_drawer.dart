@@ -193,6 +193,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
                     context,
                     index,
                     crossAxisCount,
+                    isTransaction: true,
                   );
                 },
               ),
@@ -220,6 +221,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
                     context,
                     index,
                     crossAxisCount,
+                    isTransaction: false,
                   );
                 },
               ),
@@ -278,8 +280,9 @@ class _GlassDrawerState extends State<GlassDrawer> {
     Map<String, dynamic> itemData,
     BuildContext context,
     int index,
-    int columnCount,
-  ) {
+    int columnCount, {
+    bool isTransaction = false,
+  }) {
     final colors = context.appColors;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
 
@@ -295,9 +298,16 @@ class _GlassDrawerState extends State<GlassDrawer> {
     final Color itemColor = itemData['color'] ?? kPrimaryColor;
     
     // Style adjustments for inactive/coming soon cards
-    final Color effectiveTitleColor = isComingSoon ? Colors.grey.shade500 : itemColor;
-    final Color effectiveSubtitleColor = isComingSoon ? Colors.grey.shade400 : colors.onSurfaceMuted;
-    final Color effectiveIconColor = isComingSoon ? Colors.grey.shade500 : itemColor;
+    // For transaction items (non-coming-soon), use kPrimaryColor like info items
+    final Color effectiveTitleColor = isComingSoon 
+        ? Colors.grey.shade500 
+        : kPrimaryColor;
+    final Color effectiveSubtitleColor = isComingSoon 
+        ? Colors.grey.shade400 
+        : colors.onSurfaceMuted;
+    final Color effectiveIconColor = isComingSoon 
+        ? Colors.grey.shade500 
+        : kPrimaryColor;
     final Color? bgColor = isComingSoon
       ? (colors.isDark ? Colors.white10 : Colors.grey.shade200)
       : null;
@@ -314,66 +324,106 @@ class _GlassDrawerState extends State<GlassDrawer> {
           child: InkWell(
             onTap: () => _handleNavigation(itemData['action'] ?? "coming_soon", context),
             borderRadius: BorderRadius.circular(15),
-            child: Container(
-              decoration: BoxDecoration(
-                color: bgColor,
-                gradient: bgGradient,
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(
-                  color: isComingSoon ? Colors.transparent : colors.glassBorder,
-                  width: 1.5,
-                ),
-                boxShadow: isComingSoon ? [] : [
-                  BoxShadow(
-                    color: colors.cardShadow,
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    gradient: bgGradient,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: isComingSoon ? Colors.transparent : colors.glassBorder,
+                      width: 1.5,
+                    ),
+                    boxShadow: isComingSoon ? [] : [
+                      BoxShadow(
+                        color: colors.cardShadow,
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Expanded(
-                          child: Text(
-                            itemData['title'],
-                            style: getSmartTitle(
-                              color: effectiveTitleColor,
-                              fontSize: titleSize,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                itemData['title'],
+                                style: getSmartTitle(
+                                  color: effectiveTitleColor,
+                                  fontSize: titleSize,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                            const SizedBox(width: 5),
+                            Icon(itemData['icon'], size: iconSize, color: effectiveIconColor),
+                          ],
                         ),
-                        const SizedBox(width: 5),
-                        Icon(itemData['icon'], size: iconSize, color: effectiveIconColor),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                itemData['subTitle'],
+                                style: TextStyle(
+                                  color: effectiveSubtitleColor,
+                                  fontSize: subTitleSize,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            itemData['subTitle'],
-                            style: TextStyle(
-                              color: effectiveSubtitleColor,
-                              fontSize: subTitleSize,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                // Vertical line indicator for transaction items (commented out for testing)
+                // if (isTransaction && !isComingSoon)
+                //   Positioned(
+                //     top: 0,
+                //     bottom: 0,
+                //     left: 0,
+                //     child: Container(
+                //       width: 7.5,
+                //       decoration: BoxDecoration(
+                //         color: itemColor,
+                //         borderRadius: const BorderRadius.only(
+                //           topLeft: Radius.circular(15),
+                //           bottomLeft: Radius.circular(15),
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                // Corner badge for transaction items
+                if (isTransaction && !isComingSoon)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    child: ClipPath(
+                      clipper: _CornerTriangleClipper(),
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: itemColor,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(15),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -476,4 +526,19 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "action": "coming_soon" // Change this when you have a route
     },
   ];
+}
+
+class _CornerTriangleClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.moveTo(0, 0);
+    path.lineTo(size.width, 0);
+    path.lineTo(0, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
