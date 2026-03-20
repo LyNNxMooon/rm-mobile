@@ -262,7 +262,7 @@ class _SalesScreenState extends State<SalesScreen> {
             children: [
               Expanded(
                 child: Container(
-                  height: 44,
+                  height: isTablet ? 56 : 50,
                   decoration: BoxDecoration(
                     color: isDark ? colors.surface : Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -797,57 +797,57 @@ class _SalesScreenState extends State<SalesScreen> {
                   ),
 
                   // Commit Button (Mimics Desktop F10 Green Button)
-                  SizedBox(
-                    height: 54,
-                    width: isTablet ? 200 : 150,
-                    child: ElevatedButton(
-                      onPressed: _cartItems.isEmpty
-                          ? null
-                          : () {
-                              // Dispatch Commit Sale Event
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade600,
-                        disabledBackgroundColor: Colors.grey.shade400,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
+                  ElevatedButton(
+                    onPressed: _cartItems.isEmpty
+                        ? null
+                        : () {
+                            // Dispatch Commit Sale Event
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade600,
+                      disabledBackgroundColor: Colors.grey.shade400,
+                      padding: EdgeInsets.symmetric(
+                        vertical: isTablet ? 14 : 12,
+                        horizontal: isTablet ? 32 : 24,
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "COMMIT",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isTablet ? 16 : 14,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "COMMIT",
+                          style: TextStyle(
+                            color: colors.onHero,
+                            fontSize: isTablet ? 15 : 13,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        if (isTablet) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black26,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              "F10",
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                          if (isTablet) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black26,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                "F10",
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
-                      ),
+                      ],
                     ),
                   ),
                 ],
