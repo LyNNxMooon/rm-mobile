@@ -746,9 +746,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
     switch (_viewMode) {
       case StockViewMode.gridMedium:
-        crossAxisCount = 4;
-        thumbnailSize = 80.0;
-        childAspectRatio = 0.85;
+        crossAxisCount = 2;
+        thumbnailSize = 115.0;
+        childAspectRatio = 5.5; // Wide and short
         break;
       case StockViewMode.largeIcons:
         crossAxisCount = 3;
@@ -756,9 +756,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         childAspectRatio = 0.75;
         break;
       default:
-        crossAxisCount = 4;
-        thumbnailSize = 80.0;
-        childAspectRatio = 0.85;
+        crossAxisCount = 2;
+        thumbnailSize = 115.0;
+        childAspectRatio = 5.5;
     }
 
     return AnimationLimiter(
@@ -790,6 +790,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
             );
           }
           final stock = state.stocks[index];
+          if (_viewMode == StockViewMode.gridMedium) {
+            return _buildHorizontalGridTile(stock, index, thumbnailSize, isDark, colors);
+          }
           return _buildGridTile(stock, index, thumbnailSize, isDark, colors);
         },
       ),
@@ -932,6 +935,118 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                       ],
                     ),
                   ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Horizontal grid tile for Grid view (2 columns, row layout)
+  Widget _buildHorizontalGridTile(
+    StockVO stock,
+    int index,
+    double thumbnailSize,
+    bool isDark,
+    AppThemeColors colors,
+  ) {
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
+    
+    final double descFontSize = 13 * uiScale;
+    final double barcodeFontSize = 11 * uiScale;
+
+    return AnimationConfiguration.staggeredGrid(
+      position: index,
+      duration: const Duration(milliseconds: 400),
+      columnCount: 2,
+      child: ScaleAnimation(
+        child: FadeInAnimation(
+          child: GestureDetector(
+            onTap: () {
+              if (_isSyncInProgress()) {
+                _showSyncBlockedMessage();
+                return;
+              }
+              context.navigateToNext(StockDetailsScreen(stock: stock));
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Color.lerp(colors.surface, Colors.white, 0.06)
+                    : kSecondaryColor,
+                borderRadius: BorderRadius.circular(12),
+                border: isDark
+                    ? Border.all(color: Colors.white.withOpacity(0.18))
+                    : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark
+                        ? Colors.black.withOpacity(0.35)
+                        : kThirdColor.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Thumbnail on the left
+                  Container(
+                    width: thumbnailSize,
+                    height: double.infinity,
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.05)
+                          : kBgColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Hero(
+                        tag: 'stock_image_${stock.stockID}',
+                        child: StockThumbnailTile(stock: stock),
+                      ),
+                    ),
+                  ),
+
+                  // Description & Barcode on the right
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 10, right: 12, top: 8, bottom: 8),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            stock.description,
+                            style: TextStyle(
+                              color: isDark ? Colors.white : kThirdColor,
+                              fontSize: descFontSize,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            stock.barcode,
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: barcodeFontSize,
+                              color: kPrimaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
