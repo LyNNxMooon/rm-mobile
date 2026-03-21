@@ -66,11 +66,11 @@ enum StockViewMode {
   IconData get icon {
     switch (this) {
       case StockViewMode.list:
-        return Icons.view_list;
+        return Icons.table_rows;
       case StockViewMode.gridMedium:
-        return Icons.grid_view;
+        return Icons.view_list;
       case StockViewMode.largeIcons:
-        return Icons.view_module;
+        return Icons.grid_view;
     }
   }
 }
@@ -312,7 +312,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           const SizedBox(width: 12),
                           _buildViewModeDropdown(isDark),
                         ],
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 16),
                         Text(
                           "${state.stocks.length} of ${NumberFormat('#,###').format(state.totalCount)}",
                           style: TextStyle(
@@ -493,7 +493,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final colors = context.appColors;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
         color: isDark
             ? colors.surface.withOpacity(0.8)
@@ -503,54 +503,34 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           color: isDark ? Colors.white24 : kGreyColor.withOpacity(0.3),
         ),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<StockViewMode>(
-          value: _viewMode,
-          isDense: true,
-          icon: Icon(
-            Icons.keyboard_arrow_down,
-            size: 18,
-            color: isDark ? Colors.white70 : kGreyColor,
-          ),
-          dropdownColor: isDark ? colors.surface : kSecondaryColor,
-          items: StockViewMode.values.map((mode) {
-            return DropdownMenuItem<StockViewMode>(
-              value: mode,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    mode.icon,
-                    size: 16,
-                    color: _viewMode == mode
-                        ? kPrimaryColor
-                        : (isDark ? Colors.white70 : kThirdColor),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    mode.displayName,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: _viewMode == mode
-                          ? kPrimaryColor
-                          : (isDark ? Colors.white : kThirdColor),
-                      fontWeight: _viewMode == mode
-                          ? FontWeight.w600
-                          : FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-          onChanged: (newMode) {
-            if (newMode != null) {
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: StockViewMode.values.map((mode) {
+          final isSelected = _viewMode == mode;
+          return GestureDetector(
+            onTap: () {
               setState(() {
-                _viewMode = newMode;
+                _viewMode = mode;
               });
-            }
-          },
-        ),
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? kPrimaryColor.withOpacity(0.2)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                mode.icon,
+                size: 28,
+                color: isSelected
+                    ? kPrimaryColor
+                    : (isDark ? Colors.white70 : kThirdColor),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

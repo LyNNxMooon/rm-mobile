@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'dart:ui';
 import 'dart:async';
 import 'package:alert_info/alert_info.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart' as p;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -769,11 +773,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 Icons.settings_ethernet_outlined,
                                 "Manual Connection",
                                 "Connect with host IP and pairing code",
-                                kPrimaryColor,
+                                const Color.fromARGB(255, 34, 255, 5),
                                 () {
                                   if (_blockIfSyncing(context)) return;
                                   _showManualConnectionDialog(context);
                                 },
+                                titleColor:Color.fromARGB(255, 33, 211, 10),
                               ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
@@ -783,7 +788,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 Icons.restore_page_outlined,
                                 "Restore Data",
                                 "Recover deleted stocktake from server",
-                                Colors.blue,
+                                const Color.fromARGB(255, 40, 248, 255),
                                 () {
                                   if (_blockIfSyncing(context)) return;
                                   context.read<BackupRestoreBloc>().add(
@@ -808,6 +813,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   if (_blockIfSyncing(context)) return;
                                   _showDeleteConfirmation(context);
                                 },
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildActionRow(
+                                Icons.storage_outlined,
+                                "Export Database",
+                                "Share the raw database file for support",
+                                Colors.orange,
+                                () => _exportAndShareDatabase(context),
                               ),
                             ],
                           ),
@@ -1273,5 +1289,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _exportAndShareDatabase(BuildContext context) async {
+    try {
+      final dbPath = await getDatabasesPath();
+      final path = p.join(dbPath, 'rm-mobile.db');
+      final dbFile = File(path);
+
+      if (!await dbFile.exists()) {
+        if (context.mounted) {
+          showTopSnackBar(
+            Overlay.of(context),
+            const CustomSnackBar.error(message: "Database file not found"),
+          );
+        }
+        return;
+      }
+
+      final xFile = XFile(path);
+      await Share.shareXFiles(
+        [xFile],
+        subject: 'RM Mobile Database Export',
+        text: 'Exported database file from RM Mobile app',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        showTopSnackBar(
+          Overlay.of(context),
+          CustomSnackBar.error(message: "Failed to export database: $e"),
+        );
+      }
+    }
   }
 }

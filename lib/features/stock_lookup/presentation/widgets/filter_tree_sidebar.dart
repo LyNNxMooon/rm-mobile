@@ -400,79 +400,105 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
     required bool isDark,
     required double uiScale,
   }) {
-    final leftPadding = 12.0 + (level * 20.0);
+    final leftPadding = 8.0 + (level * 16.0);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.only(
-            left: leftPadding * uiScale,
-            right: 12 * uiScale,
-            top: 10 * uiScale,
-            bottom: 10 * uiScale,
-          ),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? kPrimaryColor.withOpacity(isDark ? 0.2 : 0.12)
-                : Colors.transparent,
-            border: isSelected
-                ? Border(
-                    left: BorderSide(
-                      color: kPrimaryColor,
-                      width: 3,
-                    ),
-                  )
-                : null,
-          ),
-          child: Row(
-            children: [
-              // Expand/collapse button
-              if (hasChildren)
-                GestureDetector(
-                  onTap: onExpandTap,
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: EdgeInsets.only(right: 6 * uiScale),
-                    child: Icon(
-                      isExpanded
-                          ? Icons.keyboard_arrow_down
-                          : Icons.keyboard_arrow_right,
-                      size: 18 * uiScale,
-                      color: isDark ? Colors.white54 : kGreyColor,
-                    ),
-                  ),
-                )
-              else
-                SizedBox(width: 24 * uiScale),
-
-              // Icon
-              Icon(
-                icon,
-                size: 18 * uiScale,
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: 8 * uiScale,
+        vertical: 5 * uiScale,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            onTap();
+            if (hasChildren && onExpandTap != null) {
+              onExpandTap();
+            }
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: EdgeInsets.only(
+              left: leftPadding * uiScale,
+              right: 12 * uiScale,
+              top: 16 * uiScale,
+              bottom: 16 * uiScale,
+            ),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? kPrimaryColor.withOpacity(isDark ? 0.3 : 0.18)
+                  : (isDark
+                      ? colors.surface.withOpacity(0.5)
+                      : Colors.white),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
                 color: isSelected
-                    ? kPrimaryColor
-                    : (isDark ? Colors.white70 : kThirdColor.withOpacity(0.7)),
+                    ? kPrimaryColor.withOpacity(0.6)
+                    : (isDark ? Colors.white24 : kGreyColor.withOpacity(0.25)),
+                width: isSelected ? 1.5 : 1,
               ),
-              SizedBox(width: 10 * uiScale),
-
-              // Label
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.1),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // Icon
+                Container(
+                  padding: EdgeInsets.all(6 * uiScale),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? kPrimaryColor.withOpacity(0.2)
+                        : (isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : kGreyColor.withOpacity(0.1)),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 16 * uiScale,
                     color: isSelected
                         ? kPrimaryColor
-                        : (isDark ? Colors.white : kThirdColor),
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        : (isDark ? Colors.white70 : kThirdColor.withOpacity(0.7)),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+                SizedBox(width: 10 * uiScale),
+
+                // Label
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: isSelected
+                          ? kPrimaryColor
+                          : (isDark ? Colors.white : kThirdColor),
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+
+                // Expand/collapse arrow (for items with children)
+                if (hasChildren)
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_down
+                        : Icons.keyboard_arrow_right,
+                    size: 20 * uiScale,
+                    color: isSelected
+                        ? kPrimaryColor
+                        : (isDark ? Colors.white54 : kGreyColor),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
