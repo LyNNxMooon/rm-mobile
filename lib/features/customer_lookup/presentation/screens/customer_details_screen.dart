@@ -626,6 +626,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final Map<String, dynamic> item = <String, dynamic>{
       'customerId': widget.customer.customerId,
       'barcode': widget.customer.barcode,
+      'date_modified': widget.customer.dateModified,
       'surname': _surnameController.text.trim(),
       'givenNames': _givenNamesController.text.trim(),
       'grade': _parseInt(_gradeController.text, widget.customer.grade),

@@ -330,6 +330,7 @@ const pendingStockUpdatesTableCreationQuery = '''
     payload_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
     status INTEGER NOT NULL DEFAULT 0,
+    has_conflict INTEGER NOT NULL DEFAULT 0,
     error_message TEXT
   )
 ''';

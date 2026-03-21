@@ -4,6 +4,7 @@ class PendingStockUpdateVO {
   final int stockId;
   final Map<String, dynamic> payload;
   final String createdAt;
+  final bool hasConflict;
   final String? errorMessage;
 
   PendingStockUpdateVO({
@@ -12,6 +13,7 @@ class PendingStockUpdateVO {
     required this.stockId,
     required this.payload,
     required this.createdAt,
+    this.hasConflict = false,
     this.errorMessage,
   });
 }

@@ -20,7 +20,6 @@ class SendPendingCustomerUpdates {
       final pending = await LocalDbDAO.instance.getPendingCustomerUpdates(
         shopfront,
         action: 'update',
-        conflictOnly: false,
       );
       if (pending.isEmpty) {
         return {
@@ -29,10 +28,37 @@ class SendPendingCustomerUpdates {
         };
       }
 
+      // Detect conflicts before sending
+      await LocalDbDAO.instance.detectPendingCustomerConflicts(shopfront);
+      
+      // Re-fetch to get updated conflict status (null = get all, regardless of conflict)
+      final refreshedPending = await LocalDbDAO.instance.getPendingCustomerUpdates(
+        shopfront,
+        action: 'update',
+      );
+      
+      // Split into conflicting and non-conflicting
+      final conflicting = refreshedPending.where((e) => e.hasConflict).toList();
+      final toSend = refreshedPending.where((e) => !e.hasConflict).toList();
+      
+      logger.d('After conflict detection: ${refreshedPending.length} total, ${conflicting.length} conflicts, ${toSend.length} to send');
+      for (final entry in refreshedPending) {
+        logger.d('  - Customer #${entry.customerId}: hasConflict=${entry.hasConflict}');
+      }
+      
+      if (toSend.isEmpty) {
+        logger.d('All items have conflicts, returning early');
+        return {
+          'hasConflicts': true,
+          'conflicts': conflicting.length,
+          'message': '${conflicting.length} update(s) have conflicts. Please review them.',
+        };
+      }
+
       final List<int> pendingIds = [];
       final List<Map<String, dynamic>> batchItems = [];
 
-      for (final entry in pending) {
+      for (final entry in toSend) {
         pendingIds.add(entry.id);
         final payload = Map<String, dynamic>.from(entry.payload);
         final items = payload['items'];

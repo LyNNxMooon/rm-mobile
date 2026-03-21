@@ -656,6 +656,18 @@ class _PendingCustomerTile extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                if (update.hasConflict)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      "This record has been modified in RetailManager, please review and decide whether you still want to update it.",
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: Colors.orange.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 if (update.errorMessage != null &&
                     update.errorMessage!.trim().isNotEmpty)
                   Padding(

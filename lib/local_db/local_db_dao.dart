@@ -254,6 +254,8 @@ abstract class LocalDbDAO {
   Future<List<PendingStockUpdateVO>> getPendingStockUpdates(String shopfront);
   Future<void> deletePendingStockUpdates(List<int> ids);
   Future<void> setPendingStockUpdateError({required int id, String? errorMessage});
+  Future<void> setPendingStockConflict(List<int> ids, bool hasConflict);
+  Future<void> detectPendingStockConflicts(String shopfront);
   Future<void> applyPendingStockUpdates(String shopfront);
 
   Future<int> addPendingCustomerUpdate({
@@ -270,6 +272,7 @@ abstract class LocalDbDAO {
   });
   Future<void> deletePendingCustomerUpdates(List<int> ids);
   Future<void> setPendingCustomerConflict(List<int> ids, bool hasConflict);
+  Future<void> detectPendingCustomerConflicts(String shopfront);
   Future<void> updatePendingCustomerPayload({
     required int id,
     required int customerId,

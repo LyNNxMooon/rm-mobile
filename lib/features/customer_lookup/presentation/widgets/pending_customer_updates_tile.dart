@@ -12,6 +12,7 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/cu
 import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_details_screen.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_thumbnail_tile.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmstock_scanner/utils/log_utils.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
@@ -32,18 +33,20 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
   Widget build(BuildContext context) {
     return BlocConsumer<PendingCustomerUpdatesBloc, PendingCustomerUpdatesState>(
       listener: (context, state) async {
+        logger.d('PendingCustomerUpdatesTile listener: state=$state');
         if (state is PendingCustomerUpdatesCountLoaded) {
+          logger.d('PendingCustomerUpdatesTile: CountLoaded - count=${state.count}, creationsCount=${state.creationsCount}');
           setState(() {
             _count = state.count + state.creationsCount;
           });
+          logger.d('PendingCustomerUpdatesTile: _count updated to $_count');
         }
-        if (state is PendingCustomerUpdatesLoaded) {
-          setState(() {
-            _count = state.updates.length + state.creations.length;
-          });
-        }
+        // Note: We intentionally do NOT update _count from PendingCustomerUpdatesLoaded
+        // because that state filters out conflicting items, which would reset count to 0
+        // when all items have conflicts. The count should come from CountLoaded only.
       },
       builder: (context, state) {
+        logger.d('PendingCustomerUpdatesTile builder: state=$state, _count=$_count');
         if (state is PendingCustomerUpdatesLoading) {
           return _buildLoadingTile();
         }

@@ -40,11 +40,32 @@ class SendPendingStockUpdates {
         );
       }
 
+      // Detect conflicts before sending
+      await LocalDbDAO.instance.detectPendingStockConflicts(shopfront);
+      
+      // Re-fetch to get updated conflict status
+      final refreshedPending =
+          await LocalDbDAO.instance.getPendingStockUpdates(shopfront);
+      
+      // Split into conflicting and non-conflicting
+      final conflicting = refreshedPending.where((e) => e.hasConflict).toList();
+      final toSend = refreshedPending.where((e) => !e.hasConflict).toList();
+      
+      if (toSend.isEmpty) {
+        return StockUpdateResponse(
+          success: false,
+          message: "${conflicting.length} update(s) have conflicts. Please review them.",
+          updated: 0,
+          missing: 0,
+          skipped: conflicting.length,
+        );
+      }
+
       final List<int> pendingIds = [];
       final List<Map<String, dynamic>> items = [];
       final String now = DateTime.now().toIso8601String();
 
-      for (final entry in pending) {
+      for (final entry in toSend) {
         pendingIds.add(entry.id);
         final payload = entry.payload;
         final int stockId = (payload['stock_id'] as num?)?.toInt() ??

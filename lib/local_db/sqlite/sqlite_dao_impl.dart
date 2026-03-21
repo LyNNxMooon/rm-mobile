@@ -31,7 +31,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       _database = await openDatabase(
         path,
-        version: 9,
+        version: 10,
         onConfigure: (db) async {
           await db.rawQuery('PRAGMA journal_mode=WAL');
           await db.rawQuery('PRAGMA foreign_keys=ON');
@@ -1555,6 +1555,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           stockId: row['stock_id'] as int,
           payload: Map<String, dynamic>.from(payload as Map),
           createdAt: row['created_at'] as String,
+          hasConflict: (row['has_conflict'] as int? ?? 0) == 1,
           errorMessage: row['error_message'] as String?,
         );
       }).toList();
@@ -1597,6 +1598,115 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error updating pending stock update error: $error');
       return Future.error("Error updating pending stock update error: $error");
+    }
+  }
+
+  @override
+  Future<void> setPendingStockConflict(List<int> ids, bool hasConflict) async {
+    try {
+      if (ids.isEmpty) return;
+      final db = _database!;
+      final placeholders = List.filled(ids.length, '?').join(',');
+      await db.update(
+        'PendingStockUpdates',
+        {'has_conflict': hasConflict ? 1 : 0},
+        where: 'id IN ($placeholders)',
+        whereArgs: ids,
+      );
+    } catch (error) {
+      logger.e('Error setting pending stock conflict: $error');
+      return Future.error("Error setting pending stock conflict: $error");
+    }
+  }
+
+  @override
+  Future<void> detectPendingStockConflicts(String shopfront) async {
+    try {
+      final pending = await getPendingStockUpdates(shopfront);
+      if (pending.isEmpty) return;
+
+      logger.d('Detecting conflicts for ${pending.length} pending stock updates');
+
+      final List<int> conflictIds = [];
+      final List<int> noConflictIds = [];
+
+      for (final entry in pending) {
+        final payload = entry.payload;
+        final int stockId = (payload['stock_id'] as num?)?.toInt() ??
+            (payload['stockId'] as num?)?.toInt() ??
+            entry.stockId;
+
+        // Get the pending update's date_modified from payload
+        final String? pendingDateModified = payload['date_modified'] as String?;
+        logger.d('Stock #$stockId - Pending date_modified: $pendingDateModified');
+        
+        if (pendingDateModified == null || pendingDateModified.isEmpty) {
+          // No date_modified in pending update, skip conflict detection
+          logger.d('Stock #$stockId - No date_modified in pending, skipping');
+          noConflictIds.add(entry.id);
+          continue;
+        }
+
+        // Get the current stock from DB
+        final db = _database!;
+        final rows = await db.query(
+          'Stocks',
+          columns: ['date_modified'],
+          where: 'stock_id = ? AND shopfront = ?',
+          whereArgs: [stockId, shopfront],
+          limit: 1,
+        );
+
+        if (rows.isEmpty) {
+          // Stock not found in DB, no conflict
+          logger.d('Stock #$stockId - Not found in DB, no conflict');
+          noConflictIds.add(entry.id);
+          continue;
+        }
+
+        final String? dbDateModified = rows.first['date_modified'] as String?;
+        logger.d('Stock #$stockId - DB date_modified: $dbDateModified');
+        
+        if (dbDateModified == null || dbDateModified.isEmpty) {
+          // No date_modified in DB, no conflict
+          logger.d('Stock #$stockId - No date_modified in DB, no conflict');
+          noConflictIds.add(entry.id);
+          continue;
+        }
+
+        // Parse and compare dates
+        final DateTime? pendingDate = DateTime.tryParse(pendingDateModified);
+        final DateTime? dbDate = DateTime.tryParse(dbDateModified);
+
+        if (pendingDate == null || dbDate == null) {
+          logger.d('Stock #$stockId - Failed to parse dates, no conflict');
+          noConflictIds.add(entry.id);
+          continue;
+        }
+
+        // If DB record was modified after the pending update was created,
+        // mark as conflict
+        if (dbDate.isAfter(pendingDate)) {
+          logger.d('Stock #$stockId - CONFLICT: DB ($dbDateModified) is newer than pending ($pendingDateModified)');
+          conflictIds.add(entry.id);
+        } else {
+          logger.d('Stock #$stockId - No conflict: pending is newer or equal');
+          noConflictIds.add(entry.id);
+        }
+      }
+
+      logger.d('Conflict detection complete: ${conflictIds.length} conflicts, ${noConflictIds.length} ok');
+
+      // Update conflict status
+      if (conflictIds.isNotEmpty) {
+        await setPendingStockConflict(conflictIds, true);
+      }
+      if (noConflictIds.isNotEmpty) {
+        await setPendingStockConflict(noConflictIds, false);
+      }
+    } catch (error) {
+      logger.e('Error detecting pending stock conflicts: $error');
+      // Don't throw - conflict detection failure shouldn't break sync
     }
   }
 
@@ -1976,6 +2086,123 @@ class SQLiteDAOImpl extends LocalDbDAO {
       return Future.error(
         "Error updating pending customer update error: $error",
       );
+    }
+  }
+
+  @override
+  Future<void> detectPendingCustomerConflicts(String shopfront) async {
+    try {
+      final pending = await getPendingCustomerUpdates(shopfront, action: 'update');
+      if (pending.isEmpty) return;
+
+      logger.d('Detecting conflicts for ${pending.length} pending customer updates');
+
+      final List<int> conflictIds = [];
+      final List<int> noConflictIds = [];
+
+      for (final entry in pending) {
+        final payload = entry.payload;
+        
+        // Extract item from payload - date_modified is inside items[0]
+        final items = payload['items'];
+        final Map<String, dynamic>? item = (items is List && items.isNotEmpty)
+            ? Map<String, dynamic>.from(items.first as Map)
+            : null;
+        
+        final int customerId = (item?['customer_id'] as num?)?.toInt() ??
+          (item?['customerId'] as num?)?.toInt() ??
+          (payload['customer_id'] as num?)?.toInt() ??
+          (payload['customerId'] as num?)?.toInt() ??
+          entry.customerId;
+        final String barcode =
+          (item?['barcode'] as String?) ??
+          (payload['barcode'] as String?) ??
+          '';
+
+        // Get the pending update's date_modified from payload item
+        final String? pendingDateModified = item?['date_modified'] as String?;
+        logger.d('Customer #$customerId - Pending date_modified: $pendingDateModified');
+        
+        if (pendingDateModified == null || pendingDateModified.isEmpty) {
+          // No date_modified in pending update, skip conflict detection
+          logger.d('Customer #$customerId - No date_modified in pending, skipping');
+          noConflictIds.add(entry.id);
+          continue;
+        }
+
+        // Get the current customer from DB
+        final db = _database!;
+        final List<Map<String, Object?>> rows;
+        if (customerId > 0) {
+          rows = await db.query(
+            'Customers',
+            columns: ['date_modified'],
+            where: 'customer_id = ? AND shopfront = ?',
+            whereArgs: [customerId, shopfront],
+            limit: 1,
+          );
+        } else if (barcode.trim().isNotEmpty) {
+          rows = await db.query(
+            'Customers',
+            columns: ['date_modified'],
+            where: 'barcode = ? AND shopfront = ?',
+            whereArgs: [barcode.trim(), shopfront],
+            limit: 1,
+          );
+        } else {
+          rows = const [];
+        }
+
+        if (rows.isEmpty) {
+          // Customer not found in DB, no conflict
+          logger.d('Customer #$customerId - Not found in DB, no conflict');
+          noConflictIds.add(entry.id);
+          continue;
+        }
+
+        final String? dbDateModified = rows.first['date_modified'] as String?;
+        logger.d('Customer #$customerId - DB date_modified: $dbDateModified');
+        
+        if (dbDateModified == null || dbDateModified.isEmpty) {
+          // No date_modified in DB, no conflict
+          logger.d('Customer #$customerId - No date_modified in DB, no conflict');
+          noConflictIds.add(entry.id);
+          continue;
+        }
+
+        // Parse and compare dates
+        final DateTime? pendingDate = DateTime.tryParse(pendingDateModified);
+        final DateTime? dbDate = DateTime.tryParse(dbDateModified);
+
+        if (pendingDate == null || dbDate == null) {
+          logger.d('Customer #$customerId - Failed to parse dates, no conflict');
+          noConflictIds.add(entry.id);
+          continue;
+        }
+
+        // If DB record was modified after the pending update was created,
+        // mark as conflict
+        if (dbDate.isAfter(pendingDate)) {
+          logger.d('Customer #$customerId - CONFLICT: DB ($dbDateModified) is newer than pending ($pendingDateModified)');
+          conflictIds.add(entry.id);
+        } else {
+          logger.d('Customer #$customerId - No conflict: pending is newer or equal');
+          noConflictIds.add(entry.id);
+        }
+      }
+
+      logger.d('Conflict detection complete: ${conflictIds.length} conflicts, ${noConflictIds.length} ok');
+
+      // Update conflict status
+      if (conflictIds.isNotEmpty) {
+        await setPendingCustomerConflict(conflictIds, true);
+      }
+      if (noConflictIds.isNotEmpty) {
+        await setPendingCustomerConflict(noConflictIds, false);
+      }
+    } catch (error) {
+      logger.e('Error detecting pending customer conflicts: $error');
+      // Don't throw - conflict detection failure shouldn't break sync
     }
   }
 
@@ -2370,6 +2597,15 @@ class SQLiteDAOImpl extends LocalDbDAO {
       return;
     }
 
+    final dynamic rawDateModified =
+      item['date_modified'] ?? item['dateModified'];
+    final String incomingDateModified = rawDateModified == null
+      ? ''
+      : rawDateModified.toString().trim();
+    final String resolvedDateModified = incomingDateModified.isNotEmpty
+      ? incomingDateModified
+      : existing.dateModified;
+
     final Map<String, dynamic> updateData = {
       'surname': item['surname'] ?? existing.surname,
       'given_names': item['givenNames'] ?? item['given_names'] ?? existing.givenNames,
@@ -2406,7 +2642,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
       'custom2': item['custom2'] ?? existing.custom2,
       'notes': item['notes'] ?? existing.notes,
       'comments': item['comments'] ?? existing.comments,
-      'date_modified': DateTime.now().toIso8601String(),
+      // Preserve server date_modified to avoid flagging local edits as newer.
+      'date_modified': resolvedDateModified,
     };
 
     final db = _database!;

@@ -17,6 +17,7 @@ import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/delete
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/resolve_customer_create_conflicts.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
+import 'package:rmstock_scanner/utils/log_utils.dart';
 
 import '../../../../utils/global_var_utils.dart';
 import '../../../../local_db/local_db_dao.dart';
@@ -318,16 +319,23 @@ class PendingCustomerUpdatesBloc
     Emitter<PendingCustomerUpdatesState> emit,
   ) async {
     try {
-      if (_isSending) return;
+      logger.d('_onLoadCount called, _isSending=$_isSending');
+      if (_isSending) {
+        logger.d('_onLoadCount: skipping because _isSending=true');
+        return;
+      }
       final shopfront = await _resolveShopfront();
       if (shopfront.isEmpty) {
+        logger.d('_onLoadCount: shopfront empty, emitting 0');
         emit(PendingCustomerUpdatesCountLoaded(0, creationsCount: 0));
         return;
       }
       final count = await getPendingCustomerUpdatesCount(shopfront);
       final creationsCount = await getPendingCustomerCreationsCount(shopfront);
+      logger.d('_onLoadCount: emitting count=$count, creationsCount=$creationsCount');
       emit(PendingCustomerUpdatesCountLoaded(count, creationsCount: creationsCount));
     } catch (e) {
+      logger.e('_onLoadCount error: $e');
       emit(PendingCustomerUpdatesError(e.toString()));
     }
   }
@@ -344,10 +352,10 @@ class PendingCustomerUpdatesBloc
         emit(PendingCustomerUpdatesLoaded([], []));
         return;
       }
+      // Don't pass conflictOnly - we want ALL items (including conflicts) for the queue
       final updates = await getPendingCustomerUpdates(
         shopfront,
         action: 'update',
-        conflictOnly: false,
       );
       final creations = await getPendingCustomerCreations(shopfront);
       emit(PendingCustomerUpdatesLoaded(
@@ -421,6 +429,7 @@ class PendingCustomerUpdatesBloc
               ? 'Customer create conflicts need review.'
               : 'Pending customer updates sent.');
 
+      logger.d('_onSend: emitting PendingCustomerUpdatesSent hasConflicts=$hasConflicts');
       emit(
         PendingCustomerUpdatesSent(
           message: message,
@@ -428,8 +437,13 @@ class PendingCustomerUpdatesBloc
         ),
       );
       _isSending = false;
+      
+      // Reload count after send (especially important when conflicts exist)
+      logger.d('_onSend: adding LoadPendingCustomerUpdatesCountEvent');
+      add(LoadPendingCustomerUpdatesCountEvent());
     } catch (e) {
       _isSending = false;
+      logger.e('_onSend error: $e');
       emit(PendingCustomerUpdatesError(e.toString()));
     }
   }
