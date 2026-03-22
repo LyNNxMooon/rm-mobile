@@ -7,6 +7,7 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfr
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_session.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_connection_info.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_credentials.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_auto_backup_enabled.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/connect_to_shopfront_api.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/get_pair_codes.dart';
@@ -549,17 +550,20 @@ class StaffAuthBloc extends Bloc<StaffAuthEvents, StaffAuthStates> {
   final AuthenticateStaff authenticateStaff;
   final LoadSavedStaffSession loadSavedStaffSession;
   final LoadSavedConnectionInfo loadSavedConnectionInfo;
+  final LoadSavedStaffCredentials loadSavedStaffCredentials;
   final SignOutStaff signOutStaff;
 
   StaffAuthBloc({
     required this.authenticateStaff,
     required this.loadSavedStaffSession,
     required this.loadSavedConnectionInfo,
+    required this.loadSavedStaffCredentials,
     required this.signOutStaff,
   }) : super(StaffAuthInitial()) {
     on<AuthenticateStaffEvent>(_onAuthenticateStaff);
     on<LoadSavedStaffSessionEvent>(_onLoadSavedStaffSession);
     on<LoadConnectionInfoEvent>(_onLoadConnectionInfo);
+    on<LoadSavedStaffCredentialsEvent>(_onLoadSavedStaffCredentials);
     on<SignOutStaffEvent>(_onSignOutStaff);
   }
 
@@ -648,6 +652,23 @@ class StaffAuthBloc extends Bloc<StaffAuthEvents, StaffAuthStates> {
       );
     } catch (error) {
       emit(StaffConnectionInfoError(error.toString()));
+    }
+  }
+
+  Future<void> _onLoadSavedStaffCredentials(
+    LoadSavedStaffCredentialsEvent event,
+    Emitter<StaffAuthStates> emit,
+  ) async {
+    try {
+      final creds = await loadSavedStaffCredentials();
+      emit(
+        StaffCredentialsLoaded(
+          staffNo: creds.staffNo,
+          password: creds.password,
+        ),
+      );
+    } catch (error) {
+      emit(StaffCredentialsError(error.toString()));
     }
   }
 }

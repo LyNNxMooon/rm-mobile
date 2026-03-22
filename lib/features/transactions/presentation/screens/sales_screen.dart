@@ -351,15 +351,25 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Widget _buildScannerArea(AppThemeColors colors, bool isDark) {
+    final scannerHeight = MediaQuery.of(context).size.height * 0.18;
     return Container(
-      height: 200,
+      height: scannerHeight,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isDark ? colors.surface : Colors.grey.shade100,
+        color: isDark ? colors.surface : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.white24 : Colors.grey.shade300,
+          color: isDark ? Colors.white24 : Colors.grey.shade400,
         ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: kThirdColor.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Center(
         child: Column(
@@ -367,7 +377,7 @@ class _SalesScreenState extends State<SalesScreen> {
           children: [
             Icon(
               Icons.qr_code_scanner,
-              size: 48,
+              size: 55,
               color: kPrimaryColor.withOpacity(0.5),
             ),
             const SizedBox(height: 8),

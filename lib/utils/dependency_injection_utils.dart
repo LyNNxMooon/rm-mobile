@@ -6,6 +6,7 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/authenticate
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_dark_mode_enabled.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_session.dart';
+import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_credentials.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_connection_info.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/pair_device.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/run_auto_backup_if_due.dart';
@@ -59,6 +60,8 @@ import '../features/stock_lookup/domain/use_cases/get_pending_stock_updates_coun
 import '../features/stock_lookup/domain/use_cases/send_pending_stock_updates.dart';
 import '../features/stock_lookup/domain/use_cases/delete_pending_stock_updates.dart';
 import '../features/stock_lookup/domain/use_cases/update_single_stock.dart';
+import '../features/stock_lookup/domain/use_cases/get_shopfront_name.dart' as stock_lookup;
+import '../features/stock_lookup/domain/use_cases/seed_stock_sync_timestamp.dart';
 import '../features/stock_lookup/models/stock_lookup_models.dart';
 import '../features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import '../features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
@@ -84,6 +87,7 @@ import '../features/customer_lookup/domain/use_cases/send_pending_customer_creat
 import '../features/customer_lookup/domain/use_cases/delete_pending_customer_updates.dart';
 import '../features/customer_lookup/domain/use_cases/delete_pending_customer_creations.dart';
 import '../features/customer_lookup/domain/use_cases/resolve_customer_create_conflicts.dart';
+import '../features/customer_lookup/domain/use_cases/get_shopfront_name.dart' as customer_lookup;
 import '../features/customer_lookup/models/customer_lookup_models.dart';
 import '../features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
@@ -198,6 +202,7 @@ Future<void> init() async {
       authenticateStaff: sl(),
       loadSavedStaffSession: sl(),
       loadSavedConnectionInfo: sl(),
+      loadSavedStaffCredentials: sl(),
       signOutStaff: sl(),
     ),
   );
@@ -215,6 +220,8 @@ Future<void> init() async {
       getPendingStockUpdates: sl(),
       sendPendingStockUpdates: sl(),
       deletePendingStockUpdates: sl(),
+      getShopfrontName: sl(),
+      seedStockSyncTimestamp: sl(),
     ),
   );
   sl.registerFactory(
@@ -228,6 +235,7 @@ Future<void> init() async {
       resolveCustomerCreateConflicts: sl(),
       deletePendingCustomerUpdates: sl(),
       deletePendingCustomerCreations: sl(),
+      getShopfrontName: sl(),
     ),
   );
   sl.registerFactory(() => StocktakeDeleteBloc(deleteStocktakeItem: sl()));
@@ -305,6 +313,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => PairDevice(sl()));
   sl.registerLazySingleton(() => AuthenticateStaff(sl()));
   sl.registerLazySingleton(() => LoadSavedConnectionInfo(sl()));
+  sl.registerLazySingleton(() => LoadSavedStaffCredentials(sl()));
   sl.registerLazySingleton(() => LoadSavedStaffSession(sl()));
   sl.registerLazySingleton(() => SignOutStaff(sl()));
   sl.registerLazySingleton(() => FetchCountedStockById(sl()));
@@ -317,6 +326,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateSingleStock(sl()));
   sl.registerLazySingleton(() => GetPendingStockUpdates());
   sl.registerLazySingleton(() => GetPendingStockUpdatesCount());
+  sl.registerLazySingleton(() => stock_lookup.GetShopfrontName(sl()));
+  sl.registerLazySingleton(() => SeedStockSyncTimestamp(sl()));
   sl.registerLazySingleton(() => SendPendingStockUpdates(sl()));
   sl.registerLazySingleton(() => DeletePendingStockUpdates());
   sl.registerLazySingleton(() => GetTermsAccepted(sl()));
@@ -325,6 +336,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetPendingCustomerUpdatesCount());
   sl.registerLazySingleton(() => GetPendingCustomerCreations());
   sl.registerLazySingleton(() => GetPendingCustomerCreationsCount());
+  sl.registerLazySingleton(() => customer_lookup.GetShopfrontName(sl()));
   sl.registerLazySingleton(() => SendPendingCustomerUpdates(sl()));
   sl.registerLazySingleton(() => SendPendingCustomerCreations(sl()));
   sl.registerLazySingleton(() => ResolveCustomerCreateConflicts());

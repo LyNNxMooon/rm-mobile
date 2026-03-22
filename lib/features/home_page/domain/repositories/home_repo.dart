@@ -112,6 +112,8 @@ abstract class HomeRepo {
   Future<void> signOutStaff();
 
   Future<SavedConnectionInfo> loadSavedConnectionInfo();
+
+  Future<SavedStaffCredentials> loadSavedStaffCredentials();
 }
 
 class SavedConnectionInfo {
@@ -125,5 +127,15 @@ class SavedConnectionInfo {
     required this.apiKey,
     required this.shopfrontId,
     required this.shopfrontName,
+  });
+}
+
+class SavedStaffCredentials {
+  final String staffNo;
+  final String password;
+
+  SavedStaffCredentials({
+    required this.staffNo,
+    required this.password,
   });
 }

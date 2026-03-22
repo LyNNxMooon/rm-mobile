@@ -196,4 +196,6 @@ class LoadSavedStaffSessionEvent extends StaffAuthEvents {}
 
 class LoadConnectionInfoEvent extends StaffAuthEvents {}
 
+class LoadSavedStaffCredentialsEvent extends StaffAuthEvents {}
+
 class SignOutStaffEvent extends StaffAuthEvents {}

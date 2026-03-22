@@ -124,16 +124,20 @@ class _ScannerState extends State<Scanner> {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: sidePadding),
       decoration: BoxDecoration(
-        gradient: isDark ? colors.heroGradient : kGColor,
+        color: isDark ? colors.surface : Colors.grey.shade50,
         borderRadius: const BorderRadius.all(Radius.circular(10)),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? colors.cardShadow : kThirdColor.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-        ],
+        border: Border.all(
+          color: isDark ? Colors.white38 : Colors.grey.shade400,
+        ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: kThirdColor.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Center(
         child: SingleChildScrollView(
@@ -141,17 +145,24 @@ class _ScannerState extends State<Scanner> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                CupertinoIcons.barcode_viewfinder,
-                size: 80,
-                color: kSecondaryColor,
+                Icons.qr_code_scanner,
+                size: 55,
+                color: kPrimaryColor.withOpacity(0.5),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
-                "Scan Barcode",
+                "Scanner Area",
                 style: TextStyle(
-                  fontSize: 16,
-                  color:  kSecondaryColor,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: colors.onSurfaceMuted,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Camera preview will appear here",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colors.onSurfaceMuted.withOpacity(0.7),
                 ),
               ),
             ],
@@ -160,4 +171,51 @@ class _ScannerState extends State<Scanner> {
       ),
     );
   }
+
+  // Original _scannerPlaceHolder (commented out for comparison)
+  // Widget _scannerPlaceHolderOriginal() {
+  //   final colors = context.appColors;
+  //   final bool isDark = Theme.of(context).brightness == Brightness.dark;
+  //   final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+  //   final double sidePadding = isTablet ? widget.horizontalPadding : 15.0;
+  //
+  //   return Container(
+  //     margin: EdgeInsets.symmetric(horizontal: sidePadding),
+  //     decoration: BoxDecoration(
+  //       gradient: isDark ? colors.heroGradient : kGColor,
+  //       borderRadius: const BorderRadius.all(Radius.circular(10)),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: isDark ? colors.cardShadow : kThirdColor.withOpacity(0.05),
+  //           blurRadius: 10,
+  //           offset: const Offset(0, 4),
+  //           spreadRadius: 0,
+  //         ),
+  //       ],
+  //     ),
+  //     child: Center(
+  //       child: SingleChildScrollView(
+  //         child: Column(
+  //           mainAxisAlignment: MainAxisAlignment.center,
+  //           children: [
+  //             Icon(
+  //               CupertinoIcons.barcode_viewfinder,
+  //               size: 80,
+  //               color: kSecondaryColor,
+  //             ),
+  //             const SizedBox(height: 10),
+  //             Text(
+  //               "Scan Barcode",
+  //               style: TextStyle(
+  //                 fontSize: 16,
+  //                 color: kSecondaryColor,
+  //                 fontWeight: FontWeight.w600,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 }

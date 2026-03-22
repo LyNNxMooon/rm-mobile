@@ -15,12 +15,12 @@ import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/send_p
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/delete_pending_customer_updates.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/delete_pending_customer_creations.dart';
 import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/resolve_customer_create_conflicts.dart';
+import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_shopfront_name.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
 
 import '../../../../utils/global_var_utils.dart';
-import '../../../../local_db/local_db_dao.dart';
 
 class CustomerListBloc extends Bloc<CustomerListEvent, CustomerListState> {
   final GetPaginatedCustomers getPaginatedCustomers;
@@ -285,6 +285,7 @@ class PendingCustomerUpdatesBloc
   final ResolveCustomerCreateConflicts resolveCustomerCreateConflicts;
   final DeletePendingCustomerUpdates deletePendingCustomerUpdates;
   final DeletePendingCustomerCreations deletePendingCustomerCreations;
+  final GetShopfrontName getShopfrontName;
   bool _isSending = false;
 
   PendingCustomerUpdatesBloc({
@@ -297,6 +298,7 @@ class PendingCustomerUpdatesBloc
     required this.resolveCustomerCreateConflicts,
     required this.deletePendingCustomerUpdates,
     required this.deletePendingCustomerCreations,
+    required this.getShopfrontName,
   }) : super(PendingCustomerUpdatesInitial()) {
     on<LoadPendingCustomerUpdatesCountEvent>(_onLoadCount);
     on<LoadPendingCustomerUpdatesEvent>(_onLoadList);
@@ -309,9 +311,7 @@ class PendingCustomerUpdatesBloc
   }
 
   Future<String> _resolveShopfront() async {
-    final fromGlobals = AppGlobals.instance.shopfront ?? "";
-    if (fromGlobals.trim().isNotEmpty) return fromGlobals.trim();
-    return (await LocalDbDAO.instance.getShopfrontName() ?? "").trim();
+    return (await getShopfrontName()).trim();
   }
 
   Future<void> _onLoadCount(

@@ -299,3 +299,19 @@ class StaffConnectionInfoError extends StaffAuthStates {
 
   StaffConnectionInfoError(this.message);
 }
+
+class StaffCredentialsLoaded extends StaffAuthStates {
+  final String staffNo;
+  final String password;
+
+  StaffCredentialsLoaded({
+    required this.staffNo,
+    required this.password,
+  });
+}
+
+class StaffCredentialsError extends StaffAuthStates {
+  final String message;
+
+  StaffCredentialsError(this.message);
+}

@@ -682,4 +682,15 @@ class CustomerLookupModels implements CustomerLookupRepo {
       return Future.error(error);
     }
   }
+
+  @override
+  Future<String?> getShopfrontName() async {
+    try {
+      final fromGlobals = (AppGlobals.instance.shopfront ?? "").trim();
+      if (fromGlobals.isNotEmpty) return fromGlobals;
+      return (await LocalDbDAO.instance.getShopfrontName())?.trim();
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
 }

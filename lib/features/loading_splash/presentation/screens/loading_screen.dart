@@ -7,8 +7,6 @@ import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/screens/staff_login_screen.dart';
 import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
-import 'package:rmstock_scanner/local_db/sqlite/sqlite_constants.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
@@ -54,25 +52,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
     });
   }
 
-  Future<void> _loadConnectionInfo() async {
-    final portStr = await LocalDbDAO.instance.getHostPort();
-    final apiKey = await LocalDbDAO.instance.getApiKey();
-    final shopfrontId = await LocalDbDAO.instance.getShopfrontId();
-    final shopfrontName = await LocalDbDAO.instance.getShopfrontName();
-    final staffNo = await LocalDbDAO.instance.getAppConfig(kStaffNoKey);
-    final staffPassword = await LocalDbDAO.instance.getAppConfig(
-      kStaffPasswordKey,
-    );
-
-    if (!mounted) return;
-    setState(() {
-      _port = int.tryParse(portStr ?? "");
-      _apiKey = apiKey ?? "";
-      _shopfrontId = shopfrontId ?? "";
-      _shopfrontName = shopfrontName ?? "";
-      _savedStaffNo = (staffNo ?? "").trim();
-      _savedPassword = (staffPassword ?? "").trim();
-    });
+  void _requestSavedInfo() {
+    context.read<StaffAuthBloc>().add(LoadConnectionInfoEvent());
+    context.read<StaffAuthBloc>().add(LoadSavedStaffCredentialsEvent());
   }
 
   void _attemptAutoAuth() {
@@ -190,10 +172,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
                   _loadingMessage = "Loading...";
                 });
               }
-              _loadConnectionInfo().then((_) {
-                if (!mounted) return;
-                _attemptAutoShopfrontConnect();
-              });
+              _requestSavedInfo();
             }
 
             if (state is ErrorCheckingConnection ||
@@ -215,14 +194,28 @@ class _LoadingScreenState extends State<LoadingScreen> {
                   _loadingMessage = "Authenticating...";
                 });
               }
-              _loadConnectionInfo().then((_) {
-                _attemptAutoAuth();
-              });
+              _requestSavedInfo();
             }
           },
         ),
         BlocListener<StaffAuthBloc, StaffAuthStates>(
           listener: (context, state) {
+            if (state is StaffConnectionInfoLoaded) {
+              setState(() {
+                _port = state.port;
+                _apiKey = state.apiKey;
+                _shopfrontId = state.shopfrontId;
+                _shopfrontName = state.shopfrontName;
+              });
+              _attemptAutoShopfrontConnect();
+            }
+            if (state is StaffCredentialsLoaded) {
+              setState(() {
+                _savedStaffNo = state.staffNo.trim();
+                _savedPassword = state.password.trim();
+              });
+              _attemptAutoAuth();
+            }
             if (state is StaffAuthenticated) {
               setState(() {
                 _loadingMessage = "Syncing Data...";

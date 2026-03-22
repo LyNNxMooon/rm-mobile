@@ -86,4 +86,12 @@ abstract class StockLookupRepo {
     required String shopfrontId,
     required List<Map<String, dynamic>> items,
   });
+
+  Future<String?> getShopfrontName();
+
+  Future<String?> getShopfrontId();
+
+  Future<String?> getAppConfig(String key);
+
+  Future<void> saveAppConfig(String key, String value);
 }

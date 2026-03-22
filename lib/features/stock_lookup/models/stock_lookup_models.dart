@@ -456,6 +456,44 @@ class StockLookupModels implements StockLookupRepo {
       return Future.error(error);
     }
   }
+
+  @override
+  Future<String?> getShopfrontName() async {
+    try {
+      final fromGlobals = (AppGlobals.instance.shopfront ?? "").trim();
+      if (fromGlobals.isNotEmpty) return fromGlobals;
+      return (await LocalDbDAO.instance.getShopfrontName())?.trim();
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<String?> getShopfrontId() async {
+    try {
+      return (await LocalDbDAO.instance.getShopfrontId())?.trim();
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<String?> getAppConfig(String key) async {
+    try {
+      return await LocalDbDAO.instance.getAppConfig(key);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<void> saveAppConfig(String key, String value) async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(key, value);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
 }
 
 // Old setup disabled:

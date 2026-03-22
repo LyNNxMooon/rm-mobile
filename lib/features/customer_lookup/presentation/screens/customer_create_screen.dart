@@ -13,7 +13,6 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 
 class CustomerCreateScreen extends StatefulWidget {
   final PendingCustomerCreationVO? pendingCreation;
@@ -1093,8 +1092,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               });
               final pending = widget.pendingCreation;
               if (pending != null) {
-                await LocalDbDAO.instance
-                    .deletePendingCustomerCreations([pending.id]);
+                context.read<PendingCustomerUpdatesBloc>().add(
+                  DeletePendingCustomerCreationEvent(id: pending.id),
+                );
               }
               ScaffoldMessenger.of(
                 context,

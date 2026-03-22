@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
+import 'package:rmstock_scanner/entities/vos/pending_customer_payload_utils.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
@@ -41,9 +42,17 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
           });
           logger.d('PendingCustomerUpdatesTile: _count updated to $_count');
         }
-        // Note: We intentionally do NOT update _count from PendingCustomerUpdatesLoaded
-        // because that state filters out conflicting items, which would reset count to 0
-        // when all items have conflicts. The count should come from CountLoaded only.
+        if (state is PendingCustomerUpdatesLoaded) {
+          final int total = state.updates.length + state.creations.length;
+          if (total > _count) {
+            setState(() {
+              _count = total;
+            });
+            logger.d('PendingCustomerUpdatesTile: _count updated from loaded list to $_count');
+          }
+        }
+        // Note: We only increase _count from PendingCustomerUpdatesLoaded.
+        // The list can exclude conflicting items, so we avoid lowering the count here.
       },
       builder: (context, state) {
         logger.d('PendingCustomerUpdatesTile builder: state=$state, _count=$_count');
@@ -159,55 +168,6 @@ class _PendingCustomerQueueEntry {
   bool get isCreation => creation != null;
 }
 
-Map<String, dynamic> _firstCustomerPayloadItem(Map<String, dynamic> payload) {
-  final items = payload['items'];
-  if (items is List && items.isNotEmpty) {
-    final raw = items.first;
-    if (raw is Map<String, dynamic>) return raw;
-    if (raw is Map) return Map<String, dynamic>.from(raw);
-  }
-  return <String, dynamic>{};
-}
-
-String _payloadString(Map<String, dynamic> item, String key) {
-  final value = item[key];
-  return value is String ? value.trim() : '';
-}
-
-String _pendingCustomerName(PendingCustomerUpdateVO update) {
-  final item = _firstCustomerPayloadItem(update.payload);
-  final given = _payloadString(item, 'givenNames').isNotEmpty
-      ? _payloadString(item, 'givenNames')
-      : _payloadString(item, 'given_names');
-  final surname = _payloadString(item, 'surname');
-  final company = _payloadString(item, 'company');
-  final baseName = [given, surname].where((s) => s.isNotEmpty).join(' ');
-  final name = baseName.isNotEmpty
-      ? baseName
-      : (update.customerId > 0 ? 'Customer #${update.customerId}' : 'New customer');
-  return company.isNotEmpty ? '$name ($company)' : name;
-}
-
-String _pendingCustomerBarcode(PendingCustomerUpdateVO update) {
-  final item = _firstCustomerPayloadItem(update.payload);
-  final barcode = _payloadString(item, 'barcode');
-  return barcode.isNotEmpty ? barcode : 'Pending update';
-}
-
-CustomerVO? _customerFromPendingUpdate(PendingCustomerUpdateVO update) {
-  final item = _firstCustomerPayloadItem(update.payload);
-  if (item.isEmpty) return null;
-  return CustomerVO.fromApiItem(item);
-}
-
-String _initialsFromName(String name) {
-  final parts = name.split(' ').where((part) => part.trim().isNotEmpty).toList();
-  if (parts.isEmpty) return 'C';
-  if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-  return (parts.first.substring(0, 1) + parts[1].substring(0, 1))
-      .toUpperCase();
-}
-
 class _PendingCustomerTile extends StatelessWidget {
   final PendingCustomerUpdateVO update;
   final CustomerVO? customer;
@@ -234,9 +194,9 @@ class _PendingCustomerTile extends StatelessWidget {
     final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
 
     final String title =
-        customer?.displayName ?? _pendingCustomerName(update);
+      customer?.displayName ?? pendingCustomerName(update);
     final String barcode =
-        customer?.barcode ?? _pendingCustomerBarcode(update);
+      customer?.barcode ?? pendingCustomerBarcode(update);
     final bool canNavigate = onTap != null;
 
     final tile = Container(
@@ -267,7 +227,7 @@ class _PendingCustomerTile extends StatelessWidget {
                       color: kPrimaryColor.withOpacity(0.1),
                       alignment: Alignment.center,
                       child: Text(
-                        _initialsFromName(title),
+                        initialsFromName(title),
                         style: TextStyle(
                           color: kPrimaryColor.withOpacity(0.9),
                           fontWeight: FontWeight.w700,
@@ -369,7 +329,7 @@ Future<void> showPendingCustomerQueueDialog({
   if (updates.isEmpty && creations.isEmpty) return;
   final entries = <_PendingCustomerQueueEntry>[];
   for (final update in updates) {
-    final customer = _customerFromPendingUpdate(update);
+    final customer = customerFromPendingUpdate(update);
     entries.add(
       _PendingCustomerQueueEntry(
         update: update,
@@ -684,29 +644,6 @@ class _PendingCustomerCreationEntry {
   const _PendingCustomerCreationEntry({required this.creation});
 }
 
-String _pendingCustomerCreationName(PendingCustomerCreationVO creation) {
-  final item = _firstCustomerPayloadItem(creation.payload);
-  final given = _payloadString(item, 'givenNames').isNotEmpty
-      ? _payloadString(item, 'givenNames')
-      : _payloadString(item, 'given_names');
-  final surname = _payloadString(item, 'surname');
-  final company = _payloadString(item, 'company');
-  final baseName = [given, surname].where((s) => s.isNotEmpty).join(' ');
-  final name = baseName.isNotEmpty
-      ? baseName
-      : (creation.customerId > 0
-          ? 'Customer #${creation.customerId}'
-          : 'New customer');
-  return company.isNotEmpty ? '$name ($company)' : name;
-}
-
-String _pendingCustomerCreationBarcode(PendingCustomerCreationVO creation) {
-  final item = _firstCustomerPayloadItem(creation.payload);
-  final barcode = _payloadString(item, 'barcode');
-  if (barcode.isEmpty) return 'Pending create';
-  return barcode;
-}
-
 class _PendingCustomerCreationTile extends StatelessWidget {
   final PendingCustomerCreationVO creation;
   final VoidCallback? onTap;
@@ -730,8 +667,8 @@ class _PendingCustomerCreationTile extends StatelessWidget {
         : 1.0;
     final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
 
-    final String title = _pendingCustomerCreationName(creation);
-    final String barcode = _pendingCustomerCreationBarcode(creation);
+    final String title = pendingCustomerCreationName(creation);
+    final String barcode = pendingCustomerCreationBarcode(creation);
     final bool canNavigate = onTap != null;
 
     final tile = Container(
@@ -761,7 +698,7 @@ class _PendingCustomerCreationTile extends StatelessWidget {
                 color: kPrimaryColor.withOpacity(0.1),
                 alignment: Alignment.center,
                 child: Text(
-                  _initialsFromName(title),
+                  initialsFromName(title),
                   style: TextStyle(
                     color: kPrimaryColor.withOpacity(0.9),
                     fontWeight: FontWeight.w700,

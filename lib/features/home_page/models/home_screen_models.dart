@@ -606,6 +606,21 @@ class HomeScreenModels implements HomeRepo {
       return Future.error(error);
     }
   }
+
+  @override
+  Future<SavedStaffCredentials> loadSavedStaffCredentials() async {
+    try {
+      final String staffNo =
+          (await LocalDbDAO.instance.getAppConfig(kStaffNoKey) ?? "").trim();
+      final String password =
+          (await LocalDbDAO.instance.getAppConfig(kStaffPasswordKey) ?? "")
+              .trim();
+
+      return SavedStaffCredentials(staffNo: staffNo, password: password);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
 }
 
 class _StockRequestJsonBuilder {

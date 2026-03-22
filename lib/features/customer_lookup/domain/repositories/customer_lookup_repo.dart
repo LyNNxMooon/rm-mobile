@@ -54,4 +54,6 @@ abstract class CustomerLookupRepo {
   Future<int> getNextCustomerAddressId({required String shopfront});
 
   Future<String?> getHostIpAddress();
+
+  Future<String?> getShopfrontName();
 }

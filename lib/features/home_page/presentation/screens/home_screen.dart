@@ -6,8 +6,6 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
-import '../../../../local_db/local_db_dao.dart';
-import '../../../../local_db/sqlite/sqlite_constants.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
 
@@ -37,6 +35,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _autoAuthAttempted = false;
   bool _autoConnectAttempted = false;
+  int? _savedPort;
+  String _savedApiKey = "";
+  String _savedShopfrontId = "";
+  String _savedShopfrontName = "";
+  String _savedStaffNo = "";
+  String _savedStaffPassword = "";
 
   _DrawerSizes _resolveDrawerSizes(MediaQueryData media) {
     final bool isTablet = media.size.shortestSide >= 600;
@@ -89,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
 
     context.read<SettingsBloc>().add(RunHistoryCleanupEvent());
+    _requestSavedInfo();
 
     final currentParamState = context.read<NetworkSavedPathValidationBloc>().state;
 
@@ -110,6 +115,11 @@ class _HomeScreenState extends State<HomeScreen> {
         _promptStaffLoginIfNeeded();
       }
     });
+  }
+
+  void _requestSavedInfo() {
+    context.read<StaffAuthBloc>().add(LoadConnectionInfoEvent());
+    context.read<StaffAuthBloc>().add(LoadSavedStaffCredentialsEvent());
   }
 
   Future<void> _promptStaffLoginIfNeeded({bool force = false}) async {
@@ -134,20 +144,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final ip = (AppGlobals.instance.currentHostIp ?? "").trim();
-    final portStr = await LocalDbDAO.instance.getHostPort();
-    final apiKey = await LocalDbDAO.instance.getApiKey();
-    final shopfrontId = await LocalDbDAO.instance.getShopfrontId();
-    final shopfrontName = await LocalDbDAO.instance.getShopfrontName();
-    final staffNo =
-        (await LocalDbDAO.instance.getAppConfig(kStaffNoKey) ?? "").trim();
-    final staffPassword =
-        (await LocalDbDAO.instance.getAppConfig(kStaffPasswordKey) ?? "").trim();
-
-    final int? port = int.tryParse(portStr ?? "");
+    final int? port = _savedPort;
+    final String apiKey = _savedApiKey;
+    final String shopfrontId = _savedShopfrontId;
+    final String shopfrontName = _savedShopfrontName;
+    final String staffNo = _savedStaffNo;
+    final String staffPassword = _savedStaffPassword;
     final bool missingConnection =
-        ip.isEmpty || port == null || apiKey == null || apiKey.isEmpty;
+      ip.isEmpty || port == null || apiKey.isEmpty;
     final bool missingShopfront =
-        (shopfrontId ?? "").trim().isEmpty || (shopfrontName ?? "").trim().isEmpty;
+      shopfrontId.trim().isEmpty || shopfrontName.trim().isEmpty;
 
     if (missingConnection || missingShopfront) {
       logger.d("Auto-auth skipped: missing connection/shopfront info.");
@@ -168,8 +174,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ip: ip,
         port: port,
         apiKey: apiKey,
-        shopfrontId: shopfrontId!.trim(),
-        shopfrontName: shopfrontName!.trim(),
+        shopfrontId: shopfrontId.trim(),
+        shopfrontName: shopfrontName.trim(),
         staffNo: staffNo,
         password: staffPassword,
       ),
@@ -183,16 +189,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final savedIp = (AppGlobals.instance.currentHostIp ?? "").trim();
-    final portStr = await LocalDbDAO.instance.getHostPort();
-    final apiKey = await LocalDbDAO.instance.getApiKey();
-    final shopfrontId = await LocalDbDAO.instance.getShopfrontId();
-    final shopfrontName = await LocalDbDAO.instance.getShopfrontName();
-
-    final int? port = int.tryParse(portStr ?? "");
+    final int? port = _savedPort;
+    final String apiKey = _savedApiKey;
+    final String shopfrontId = _savedShopfrontId;
+    final String shopfrontName = _savedShopfrontName;
     final bool missingConnection =
-        savedIp.isEmpty || port == null || apiKey == null || apiKey.isEmpty;
+      savedIp.isEmpty || port == null || apiKey.isEmpty;
     final bool missingShopfront =
-        (shopfrontId ?? "").trim().isEmpty || (shopfrontName ?? "").trim().isEmpty;
+      shopfrontId.trim().isEmpty || shopfrontName.trim().isEmpty;
 
     if (missingConnection || missingShopfront) {
       logger.d("Auto-connect skipped: missing connection/shopfront info.");
@@ -206,8 +210,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ip: savedIp,
         port: port,
         apiKey: apiKey,
-        shopfrontId: shopfrontId!.trim(),
-        shopfrontName: shopfrontName!.trim(),
+        shopfrontId: shopfrontId.trim(),
+        shopfrontName: shopfrontName.trim(),
       ),
     );
   }
@@ -292,6 +296,18 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         BlocListener<StaffAuthBloc, StaffAuthStates>(
           listener: (context, state) {
+            if (state is StaffConnectionInfoLoaded) {
+              _savedPort = state.port;
+              _savedApiKey = state.apiKey;
+              _savedShopfrontId = state.shopfrontId;
+              _savedShopfrontName = state.shopfrontName;
+              _attemptAutoShopfrontConnect();
+            }
+            if (state is StaffCredentialsLoaded) {
+              _savedStaffNo = state.staffNo.trim();
+              _savedStaffPassword = state.password.trim();
+              _attemptAutoAuthIfPossible();
+            }
             if (state is StaffSignedOut ||
                 state is StaffUnauthenticated ||
                 state is StaffAuthError) {

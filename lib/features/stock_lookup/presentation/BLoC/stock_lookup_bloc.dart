@@ -9,7 +9,6 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lo
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 
 import '../../../../utils/global_var_utils.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../domain/use_cases/get_filter_options.dart';
 import '../../domain/use_cases/get_paginated_stock.dart';
 import '../../domain/use_cases/get_pending_stock_updates.dart';
@@ -17,6 +16,8 @@ import '../../domain/use_cases/get_pending_stock_updates_count.dart';
 import '../../domain/use_cases/delete_pending_stock_updates.dart';
 import '../../domain/use_cases/send_pending_stock_updates.dart';
 import '../../domain/use_cases/update_single_stock.dart';
+import '../../domain/use_cases/get_shopfront_name.dart';
+import '../../domain/use_cases/seed_stock_sync_timestamp.dart';
 
 class StockListBloc extends Bloc<StockListEvent, StockListState> {
   final GetPaginatedStock getPaginatedStock;
@@ -369,6 +370,8 @@ class PendingStockUpdatesBloc
   final GetPendingStockUpdates getPendingStockUpdates;
   final SendPendingStockUpdates sendPendingStockUpdates;
   final DeletePendingStockUpdates deletePendingStockUpdates;
+  final GetShopfrontName getShopfrontName;
+  final SeedStockSyncTimestamp seedStockSyncTimestamp;
   bool _isSending = false;
 
   PendingStockUpdatesBloc({
@@ -376,6 +379,8 @@ class PendingStockUpdatesBloc
     required this.getPendingStockUpdates,
     required this.sendPendingStockUpdates,
     required this.deletePendingStockUpdates,
+    required this.getShopfrontName,
+    required this.seedStockSyncTimestamp,
   }) : super(PendingStockUpdatesInitial()) {
     on<LoadPendingStockUpdatesCountEvent>(_onLoadCount);
     on<LoadPendingStockUpdatesEvent>(_onLoadList);
@@ -385,9 +390,7 @@ class PendingStockUpdatesBloc
   }
 
   Future<String> _resolveShopfront() async {
-    final fromGlobals = AppGlobals.instance.shopfront ?? "";
-    if (fromGlobals.trim().isNotEmpty) return fromGlobals.trim();
-    return (await LocalDbDAO.instance.getShopfrontName() ?? "").trim();
+    return (await getShopfrontName()).trim();
   }
 
   Future<void> _onLoadCount(
@@ -431,17 +434,7 @@ class PendingStockUpdatesBloc
   }
 
   Future<void> _seedStockSyncTimestamp() async {
-    final shopfrontId =
-        (await LocalDbDAO.instance.getShopfrontId() ?? '').trim();
-    if (shopfrontId.isEmpty) return;
-    final syncKey = 'stock_sync_timestamp_$shopfrontId';
-    final lastSync = await LocalDbDAO.instance.getAppConfig(syncKey);
-    if (lastSync == null || lastSync.trim().isEmpty) {
-      await LocalDbDAO.instance.saveAppConfig(
-        syncKey,
-        DateTime.now().toIso8601String(),
-      );
-    }
+    await seedStockSyncTimestamp();
   }
 
   Future<void> _onSend(
