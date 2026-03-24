@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:path/path.dart';
+import 'package:rmstock_scanner/entities/response/customer_search_response.dart';
 import 'package:rmstock_scanner/entities/response/paginated_customer_response.dart';
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
 import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
@@ -352,16 +353,55 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return StockSearchResult.duplicates(matches);
       }
 
-      // 2) Fallback to description LIKE
+      // 2) Description LIKE match (ALL matches)
       final descriptionRows = await db.query(
         'Stocks',
         where: 'description LIKE ? AND shopfront = ?',
         whereArgs: ['%$query%', shopfront],
-        limit: 1,
       );
 
       if (descriptionRows.isNotEmpty) {
-        return StockSearchResult.found(StockVO.fromJson(descriptionRows.first));
+        final matches = descriptionRows.map((e) => StockVO.fromJson(e)).toList();
+        
+        if (matches.length == 1) {
+          return StockSearchResult.found(matches.first);
+        }
+        
+        return StockSearchResult.duplicates(matches);
+      }
+
+      // 3) Custom1 LIKE match (ALL matches)
+      final custom1Rows = await db.query(
+        'Stocks',
+        where: 'custom1 LIKE ? AND shopfront = ?',
+        whereArgs: ['%$query%', shopfront],
+      );
+
+      if (custom1Rows.isNotEmpty) {
+        final matches = custom1Rows.map((e) => StockVO.fromJson(e)).toList();
+        
+        if (matches.length == 1) {
+          return StockSearchResult.found(matches.first);
+        }
+        
+        return StockSearchResult.duplicates(matches);
+      }
+
+      // 4) Custom2 LIKE match (ALL matches)
+      final custom2Rows = await db.query(
+        'Stocks',
+        where: 'custom2 LIKE ? AND shopfront = ?',
+        whereArgs: ['%$query%', shopfront],
+      );
+
+      if (custom2Rows.isNotEmpty) {
+        final matches = custom2Rows.map((e) => StockVO.fromJson(e)).toList();
+        
+        if (matches.length == 1) {
+          return StockSearchResult.found(matches.first);
+        }
+        
+        return StockSearchResult.duplicates(matches);
       }
 
       return StockSearchResult.none();
@@ -3043,6 +3083,112 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error getting customer by ID in $shopfront: $error');
       return Future.error("Error getting customer: $error");
+    }
+  }
+
+  @override
+  Future<CustomerSearchResult> getCustomerBySearch(
+    String query,
+    String shopfront,
+  ) async {
+    try {
+      final db = _database!;
+      final String q = query.trim();
+
+      if (q.isEmpty) {
+        return CustomerSearchResult.none();
+      }
+
+      // Search priority: barcode → surname+givenNames → company → phone/mobile/fax → email → addr1/suburb/postcode
+
+      // 1. Exact barcode match
+      var results = await db.query(
+        'Customers',
+        where: 'shopfront = ? AND barcode = ?',
+        whereArgs: [shopfront, q],
+        limit: 10,
+      );
+
+      // 2. Partial barcode match
+      if (results.isEmpty) {
+        results = await db.query(
+          'Customers',
+          where: 'shopfront = ? AND barcode LIKE ?',
+          whereArgs: [shopfront, '%$q%'],
+          limit: 10,
+        );
+      }
+
+      // 3. Name search (surname or given_names)
+      if (results.isEmpty) {
+        results = await db.query(
+          'Customers',
+          where: 'shopfront = ? AND (surname LIKE ? OR given_names LIKE ?)',
+          whereArgs: [shopfront, '%$q%', '%$q%'],
+          limit: 10,
+        );
+      }
+
+      // 4. Company search
+      if (results.isEmpty) {
+        results = await db.query(
+          'Customers',
+          where: 'shopfront = ? AND company LIKE ?',
+          whereArgs: [shopfront, '%$q%'],
+          limit: 10,
+        );
+      }
+
+      // 5. Phone/Mobile/Fax search
+      if (results.isEmpty) {
+        results = await db.query(
+          'Customers',
+          where: 'shopfront = ? AND (phone LIKE ? OR mobile LIKE ? OR fax LIKE ?)',
+          whereArgs: [shopfront, '%$q%', '%$q%', '%$q%'],
+          limit: 10,
+        );
+      }
+
+      // 6. Email search
+      if (results.isEmpty) {
+        results = await db.query(
+          'Customers',
+          where: 'shopfront = ? AND email LIKE ?',
+          whereArgs: [shopfront, '%$q%'],
+          limit: 10,
+        );
+      }
+
+      // 7. Address search (addr1, suburb, postcode)
+      if (results.isEmpty) {
+        results = await db.query(
+          'Customers',
+          where: 'shopfront = ? AND (addr1 LIKE ? OR suburb LIKE ? OR postcode LIKE ?)',
+          whereArgs: [shopfront, '%$q%', '%$q%', '%$q%'],
+          limit: 10,
+        );
+      }
+
+      if (results.isEmpty) {
+        return CustomerSearchResult.none();
+      }
+
+      // Convert results to CustomerVO list
+      final List<CustomerVO> customers = [];
+      for (final row in results) {
+        final customerId = row['customer_id'] as int;
+        final addresses = await _getCustomerAddresses(db, customerId, shopfront);
+        customers.add(_customerFromRow(row, addresses));
+      }
+
+      if (customers.length == 1) {
+        return CustomerSearchResult.found(customers.first);
+      }
+
+      return CustomerSearchResult.duplicates(customers);
+    } catch (error) {
+      logger.e('Error searching customer in $shopfront: $error');
+      return Future.error("Error searching customer: $error");
     }
   }
 

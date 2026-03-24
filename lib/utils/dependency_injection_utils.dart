@@ -99,6 +99,11 @@ import '../features/stocktake/domain/use_cases/count_and_save_to_localdb.dart';
 import '../features/stocktake/domain/use_cases/fetch_counting_stock.dart';
 import '../features/stocktake/models/stocktake_model.dart';
 import '../features/stocktake/presentation/BLoC/stocktake_bloc.dart';
+import '../features/transactions/domain/repositories/sales_repo.dart';
+import '../features/transactions/domain/use_cases/search_stock_for_sale.dart';
+import '../features/transactions/domain/use_cases/search_customer_for_sale.dart';
+import '../features/transactions/models/sales_model.dart';
+import '../features/transactions/presentation/BLoC/sales_bloc.dart';
 import '../features/onboarding/domain/repositories/onboarding_repo.dart';
 import '../features/onboarding/models/onboarding_models.dart';
 import '../features/onboarding/domain/use_cases/get_terms_accepted.dart';
@@ -113,6 +118,10 @@ Future<void> init() async {
   // registering dependencies
 
   //Blocs
+  sl.registerFactory(() => SalesBloc(
+    searchStockForSale: sl(),
+    searchCustomerForSale: sl(),
+  ));
   sl.registerFactory(() => StocktakeBloc(countAndSaveToLocaldb: sl()));
   sl.registerFactory(() => FetchingNetworkServerBloc(fetchNetworkPcs: sl()));
   sl.registerFactory(() => GettingDirectoryBloc(getToSharedFolder: sl()));
@@ -253,8 +262,11 @@ Future<void> init() async {
   sl.registerLazySingleton<LoadingSplashRepo>(() => LoadingSplashModels());
   sl.registerLazySingleton<StockLookupRepo>(() => StockLookupModels());
   sl.registerLazySingleton<OnboardingRepo>(() => OnboardingModels());
+  sl.registerLazySingleton<SalesRepo>(() => SalesModel());
 
   //Use cases
+  sl.registerLazySingleton(() => SearchStockForSale(sl()));
+  sl.registerLazySingleton(() => SearchCustomerForSale(sl()));
   sl.registerLazySingleton(() => CountAndSaveToLocaldb(sl()));
   sl.registerLazySingleton(() => FetchNetworkPcs(sl()));
   sl.registerLazySingleton(() => GetToSharedFolder(sl()));

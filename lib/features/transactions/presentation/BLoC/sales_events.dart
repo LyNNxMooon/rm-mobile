@@ -1,0 +1,86 @@
+import '../../../../entities/vos/stock_vo.dart';
+import '../../../../entities/vos/customer_vo.dart';
+
+/// Base class for all sales events
+abstract class SalesEvent {}
+
+/// Search for stock by barcode, description, custom1, or custom2
+class SearchStock extends SalesEvent {
+  final String query;
+  SearchStock({required this.query});
+}
+
+/// User selected a stock from duplicate matches dialog
+class SelectStock extends SalesEvent {
+  final StockVO stock;
+  SelectStock({required this.stock});
+}
+
+/// Add stock to cart
+class AddToCart extends SalesEvent {
+  final StockVO stock;
+  final int qty;
+  AddToCart({required this.stock, this.qty = 1});
+}
+
+/// Update cart item quantity
+class UpdateCartItemQty extends SalesEvent {
+  final int index;
+  final int qty;
+  UpdateCartItemQty({required this.index, required this.qty});
+}
+
+/// Update cart item sell price
+class UpdateCartItemPrice extends SalesEvent {
+  final int index;
+  final double price;
+  UpdateCartItemPrice({required this.index, required this.price});
+}
+
+/// Update cart item serial number
+class UpdateCartItemSerial extends SalesEvent {
+  final int index;
+  final String serialNumber;
+  UpdateCartItemSerial({required this.index, required this.serialNumber});
+}
+
+/// Save cart item (exit edit mode)
+class SaveCartItem extends SalesEvent {
+  final int index;
+  SaveCartItem({required this.index});
+}
+
+/// Enter edit mode for cart item
+class EditCartItem extends SalesEvent {
+  final int index;
+  EditCartItem({required this.index});
+}
+
+/// Remove cart item
+class RemoveCartItem extends SalesEvent {
+  final int index;
+  RemoveCartItem({required this.index});
+}
+
+/// Clear all cart items
+class ClearCart extends SalesEvent {}
+
+/// Reset search state (e.g., after dialog dismissed)
+class ResetSearchState extends SalesEvent {}
+
+// ==================== CUSTOMER EVENTS ====================
+
+/// Search for customer by barcode, name, company, phone, email, etc.
+class SearchCustomer extends SalesEvent {
+  final String query;
+  SearchCustomer({required this.query});
+}
+
+/// User selected a customer from duplicate matches dialog
+class SelectCustomer extends SalesEvent {
+  final CustomerVO customer;
+  SelectCustomer({required this.customer});
+}
+
+/// Clear selected customer (reset to walk-in)
+class ClearCustomer extends SalesEvent {}

@@ -1,4 +1,5 @@
 import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
+import 'package:rmstock_scanner/entities/response/customer_search_response.dart';
 import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
@@ -104,6 +105,9 @@ abstract class LocalDbDAO {
   );
 
   Future<CustomerVO?> getCustomerById(int customerId, String shopfront);
+
+  /// Search for customer by priority: barcode → name → company → phone → email → address
+  Future<CustomerSearchResult> getCustomerBySearch(String query, String shopfront);
 
   Future<int> getNextCustomerId(String shopfront);
 

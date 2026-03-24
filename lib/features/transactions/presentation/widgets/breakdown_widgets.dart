@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../constants/colors.dart';
-import '../../../../../constants/theme_colors.dart';
+import '../../../../constants/colors.dart';
+import '../../../../constants/theme_colors.dart';
 
 /// Tax breakdown widget showing Ex Tax, Tax Amount, Inc Tax
 class TaxBreakdownWidget extends StatelessWidget {
@@ -25,7 +25,8 @@ class TaxBreakdownWidget extends StatelessWidget {
     final double taxAmount = incTaxTotal - exTaxTotal;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      constraints: const BoxConstraints(maxWidth: 120),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E2733) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
@@ -35,11 +36,12 @@ class TaxBreakdownWidget extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildTaxRow("Ex:", exTaxTotal, highlight: false),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           _buildTaxRow("Tax:", taxAmount, highlight: true),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           _buildTaxRow("Inc:", incTaxTotal, highlight: false),
         ],
       ),
@@ -56,19 +58,22 @@ class TaxBreakdownWidget extends StatelessWidget {
             color: highlight
                 ? kPrimaryColor
                 : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
-        const SizedBox(width: 6),
-        Text(
-          "\$${amount.toStringAsFixed(2)}",
-          style: TextStyle(
-            color: highlight
-                ? kPrimaryColor
-                : (isDark ? Colors.white : Colors.black87),
-            fontSize: 11.5,
-            fontWeight: FontWeight.bold,
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            "\$${amount.toStringAsFixed(2)}",
+            style: TextStyle(
+              color: highlight
+                  ? kPrimaryColor
+                  : (isDark ? Colors.white : Colors.black87),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -100,7 +105,8 @@ class ProfitBreakdownWidget extends StatelessWidget {
     final double egpPercent = subtotal > 0 ? (egp / subtotal) * 100 : 0;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      constraints: const BoxConstraints(maxWidth: 120),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E2733) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
@@ -110,11 +116,12 @@ class ProfitBreakdownWidget extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildProfitRow("Cost:", totalCost, highlight: false),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           _buildProfitRow("eGP:", egp, highlight: true),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           _buildPercentRow("eGP%:", egpPercent, highlight: true),
         ],
       ),
@@ -131,19 +138,22 @@ class ProfitBreakdownWidget extends StatelessWidget {
             color: highlight
                 ? const Color(0xFF30B24C)
                 : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
-        const SizedBox(width: 6),
-        Text(
-          "\$${amount.toStringAsFixed(2)}",
-          style: TextStyle(
-            color: highlight
-                ? const Color(0xFF30B24C)
-                : (isDark ? Colors.white : Colors.black87),
-            fontSize: 11.5,
-            fontWeight: FontWeight.bold,
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            "\$${amount.toStringAsFixed(2)}",
+            style: TextStyle(
+              color: highlight
+                  ? const Color(0xFF30B24C)
+                  : (isDark ? Colors.white : Colors.black87),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -160,19 +170,22 @@ class ProfitBreakdownWidget extends StatelessWidget {
             color: highlight
                 ? const Color(0xFF30B24C)
                 : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
-        const SizedBox(width: 6),
-        Text(
-          "${percent.toStringAsFixed(1)}%",
-          style: TextStyle(
-            color: highlight
-                ? const Color(0xFF30B24C)
-                : (isDark ? Colors.white : Colors.black87),
-            fontSize: 11.5,
-            fontWeight: FontWeight.bold,
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            "${percent.toStringAsFixed(1)}%",
+            style: TextStyle(
+              color: highlight
+                  ? const Color(0xFF30B24C)
+                  : (isDark ? Colors.white : Colors.black87),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
