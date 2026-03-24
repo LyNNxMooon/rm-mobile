@@ -1,30 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:intl/intl.dart';
 
-// IMPORTANT: Adjust these imports to match your project structure
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
-
 import '../../../../utils/navigation_extension.dart';
-
-/// Dummy model for UI demonstration purposes.
-/// Replace with your actual CartItemVO / StockVO
-class DummyCartItem {
-  final String code;
-  final String description;
-  int qty;
-  final double sellPrice;
-
-  DummyCartItem({
-    required this.code,
-    required this.description,
-    this.qty = 1,
-    required this.sellPrice,
-  });
-
-  double get extension => qty * sellPrice;
-}
+import '../../domain/models/cart_item.dart';
+import '../widgets/sales/sales_widgets.dart';
+import 'delivery_details_screen.dart';
 
 class SalesScreen extends StatefulWidget {
   const SalesScreen({
@@ -42,14 +24,33 @@ class SalesScreen extends StatefulWidget {
   State<SalesScreen> createState() => _SalesScreenState();
 }
 
-class _SalesScreenState extends State<SalesScreen> {
+class _SalesScreenState extends State<SalesScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _discountController = TextEditingController(text: "0.00");
 
-  bool _isPaymentMode = false;
+  final bool _isPaymentMode = false;
   bool _showScanner = false;
+  bool _showActions = false;
+  bool _isIncTax = true;
+  bool _isCompactView = false;
+  bool _showTaxDetails = false;
+  bool _showProfitDetails = false;
   String _selectedPaymentMethod = "Cash";
   String? _selectedOption;
+  double _discountValue = 0.00;
+  
+  // Payment amounts for each payment type
+  final Map<String, double> _paymentAmounts = {};
+  
+  // Survey and Comment values
+  String _surveyValue = '';
+  String _commentValue = '';
+  final TextEditingController _surveyController = TextEditingController();
+
+  late AnimationController _actionsAnimationController;
+  late Animation<double> _actionsAnimation;
 
   final List<String> _optionItems = [
     "Add Survey",
@@ -61,11 +62,7 @@ class _SalesScreenState extends State<SalesScreen> {
 
   final List<String> _paymentMethods = [
     "Cash",
-    "Account",
     "EFTPOS",
-    "Sales Order",
-    "Quote",
-    "Lay-by",
     "Cheque",
     "Bank Card",
     "Master Card",
@@ -76,38 +73,38 @@ class _SalesScreenState extends State<SalesScreen> {
   ];
 
   // Dummy data to populate the UI
-  final List<DummyCartItem> _cartItems = [
-    DummyCartItem(
+  final List<CartItem> _cartItems = [
+    CartItem(
       code: "AAA LYNN T",
       description: "AAA Lynn T-Shirt Large",
       sellPrice: 25.00,
       qty: 2,
     ),
-    DummyCartItem(
+    CartItem(
       code: "COF-PERC",
       description: "Coffee Percolator Pro",
       sellPrice: 120.00,
       qty: 1,
     ),
-    DummyCartItem(
+    CartItem(
       code: "SAUCE-NS",
       description: "Saucepan Set - Non Stick",
       sellPrice: 85.50,
       qty: 1,
     ),
-    DummyCartItem(
+    CartItem(
       code: "LAMP-LED",
       description: "LED Desk Lamp Adjustable",
       sellPrice: 45.99,
       qty: 1,
     ),
-    DummyCartItem(
+    CartItem(
       code: "HDPH-BT5",
       description: "Bluetooth Headphones Pro",
       sellPrice: 89.00,
       qty: 1,
     ),
-    DummyCartItem(
+    CartItem(
       code: "WATER-BTL",
       description: "Stainless Steel Water Bottle 1L",
       sellPrice: 18.50,
@@ -117,14 +114,30 @@ class _SalesScreenState extends State<SalesScreen> {
 
   double get _subtotal =>
       _cartItems.fold(0, (sum, item) => sum + item.extension);
-  double get _discount => 0.00; // Placeholder
+  double get _discount => _discountValue;
   double get _rounding => 0.00; // Placeholder
   double get _total => _subtotal - _discount + _rounding;
+  double get _totalPaid => _paymentAmounts.values.fold(0.0, (sum, amount) => sum + amount);
+
+  @override
+  void initState() {
+    super.initState();
+    _actionsAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _actionsAnimation = CurvedAnimation(
+      parent: _actionsAnimationController,
+      curve: Curves.easeOutCubic,
+    );
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
+    _discountController.dispose();
+    _actionsAnimationController.dispose();
     super.dispose();
   }
 
@@ -182,11 +195,7 @@ class _SalesScreenState extends State<SalesScreen> {
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              widget.icon,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: Icon(widget.icon, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 10),
           Text(
@@ -200,24 +209,51 @@ class _SalesScreenState extends State<SalesScreen> {
         ],
       ),
       actions: [
-        IconButton(
-          icon: const Icon(
-            Icons.more_vert,
-            color: Colors.white,
-          ),
-          onPressed: () {
-            // Options menu (e.g., Clear Sale, Suspend Sale)
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          onSelected: (value) {
+            if (value == 'default') {
+              setState(() => _isCompactView = false);
+            } else if (value == 'compact') {
+              setState(() => _isCompactView = true);
+            }
           },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'default',
+              child: Row(
+                children: [
+                  Icon(
+                    _isCompactView ? Icons.radio_button_off : Icons.radio_button_checked,
+                    size: 18,
+                    color: _isCompactView ? Colors.grey : kPrimaryColor,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('Default View'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'compact',
+              child: Row(
+                children: [
+                  Icon(
+                    _isCompactView ? Icons.radio_button_checked : Icons.radio_button_off,
+                    size: 18,
+                    color: _isCompactView ? kPrimaryColor : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('Compact View'),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
   Widget _buildTopHeader(AppThemeColors colors, bool isDark, bool isTablet) {
-    final String currentDate = DateFormat(
-      'EEEE, dd MMM yyyy',
-    ).format(DateTime.now());
-
     // Dummy customer data - replace with actual
     const String customerBarcode = "CUST001";
     const String customerName = "Walk-in Customer";
@@ -234,7 +270,7 @@ class _SalesScreenState extends State<SalesScreen> {
       ),
       child: Column(
         children: [
-          // Info Row (Staff, Date)
+          // Info Row (Staff, Tax Toggle)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -256,9 +292,67 @@ class _SalesScreenState extends State<SalesScreen> {
                   ),
                 ],
               ),
-              Text(
-                currentDate,
-                style: TextStyle(fontSize: 11, color: colors.onSurfaceMuted),
+              // Ex Tax / Inc Tax Toggle
+              Container(
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isDark ? colors.surface : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : Colors.grey.shade300,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => setState(() => _isIncTax = false),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: !_isIncTax
+                              ? kPrimaryColor
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          "Ex Tax",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: !_isIncTax
+                                ? Colors.white
+                                : colors.onSurfaceMuted,
+                          ),
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => setState(() => _isIncTax = true),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: _isIncTax
+                              ? kPrimaryColor
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          "Inc Tax",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: _isIncTax
+                                ? Colors.white
+                                : colors.onSurfaceMuted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -323,10 +417,7 @@ class _SalesScreenState extends State<SalesScreen> {
           ),
           decoration: InputDecoration(
             hintText: 'Scan barcode or type to search (F2)',
-            hintStyle: TextStyle(
-              color: colors.onSurfaceMuted,
-              fontSize: 13,
-            ),
+            hintStyle: TextStyle(color: colors.onSurfaceMuted, fontSize: 13),
             suffixIcon: GestureDetector(
               onTap: () => setState(() => _showScanner = !_showScanner),
               child: Icon(
@@ -383,10 +474,7 @@ class _SalesScreenState extends State<SalesScreen> {
             const SizedBox(height: 8),
             Text(
               "Scanner Area",
-              style: TextStyle(
-                color: colors.onSurfaceMuted,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: colors.onSurfaceMuted, fontSize: 14),
             ),
             const SizedBox(height: 4),
             Text(
@@ -478,9 +566,13 @@ class _SalesScreenState extends State<SalesScreen> {
           child: AnimationLimiter(
             child: ListView.separated(
               controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: _isCompactView ? 2 : 6,
+              ),
               itemCount: _cartItems.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 4),
+              separatorBuilder: (context, index) => 
+                  SizedBox(height: _isCompactView ? 0 : 4),
               itemBuilder: (context, index) {
                 final item = _cartItems[index];
                 return AnimationConfiguration.staggeredList(
@@ -489,9 +581,11 @@ class _SalesScreenState extends State<SalesScreen> {
                   child: SlideAnimation(
                     verticalOffset: 20.0,
                     child: FadeInAnimation(
-                      child: isTablet
-                          ? _buildTabletCartTile(item, index, colors, isDark)
-                          : _buildMobileCartTile(item, index, colors, isDark),
+                      child: _isCompactView
+                          ? _buildCompactCartTile(item, index, colors, isDark)
+                          : isTablet
+                              ? _buildTabletCartTile(item, index, colors, isDark)
+                              : _buildMobileCartTile(item, index, colors, isDark),
                     ),
                   ),
                 );
@@ -520,267 +614,45 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Widget _buildMobileCartTile(
-    DummyCartItem item,
+    CartItem item,
     int index,
     AppThemeColors colors,
     bool isDark,
   ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Color.lerp(colors.surface, Colors.white, 0.06)
-            : kSecondaryColor,
-        borderRadius: BorderRadius.circular(10),
-        border: isDark
-            ? Border.all(color: Colors.white.withOpacity(0.18))
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.35)
-                : kThirdColor.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Item Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.description,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  item.code,
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 11,
-                    color: kPrimaryColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Quantity & Pricing Controls
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Qty Stepper
-              _buildQtyBtn(
-                Icons.remove,
-                () {
-                  if (item.qty > 1) setState(() => item.qty--);
-                },
-                isDark,
-                colors,
-              ),
-              Container(
-                width: 32,
-                alignment: Alignment.center,
-                child: Text(
-                  item.qty.toString(),
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-              ),
-              _buildQtyBtn(
-                Icons.add,
-                () {
-                  setState(() => item.qty++);
-                },
-                isDark,
-                colors,
-              ),
-              const SizedBox(width: 12),
-              // Extension Total
-              SizedBox(
-                width: 70,
-                child: Text(
-                  "\$${item.extension.toStringAsFixed(2)}",
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return MobileCartTile(
+      item: item,
+      index: index,
+      colors: colors,
+      isDark: isDark,
     );
   }
 
   Widget _buildTabletCartTile(
-    DummyCartItem item,
+    CartItem item,
     int index,
     AppThemeColors colors,
     bool isDark,
   ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Color.lerp(colors.surface, Colors.white, 0.06)
-            : kSecondaryColor,
-        borderRadius: BorderRadius.circular(10),
-        border: isDark
-            ? Border.all(color: Colors.white.withOpacity(0.18))
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.35)
-                : kThirdColor.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              item.code,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                color: kPrimaryColor,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 4,
-            child: Text(
-              item.description,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.black87,
-                fontSize: 14,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          SizedBox(
-            width: 100,
-            child: Text(
-              "\$${item.sellPrice.toStringAsFixed(2)}",
-              textAlign: TextAlign.right,
-              style: TextStyle(color: colors.onSurfaceMuted, fontSize: 13),
-            ),
-          ),
-          SizedBox(
-            width: 120,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildQtyBtn(
-                  Icons.remove,
-                  () {
-                    if (item.qty > 1) setState(() => item.qty--);
-                  },
-                  isDark,
-                  colors,
-                  small: true,
-                ),
-                Container(
-                  width: 30,
-                  alignment: Alignment.center,
-                  child: Text(
-                    item.qty.toString(),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                _buildQtyBtn(
-                  Icons.add,
-                  () {
-                    setState(() => item.qty++);
-                  },
-                  isDark,
-                  colors,
-                  small: true,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: 100,
-            child: Text(
-              "\$${item.extension.toStringAsFixed(2)}",
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 40,
-            child: IconButton(
-              icon: const Icon(
-                Icons.delete_outline,
-                color: Colors.redAccent,
-                size: 20,
-              ),
-              onPressed: () {
-                setState(() => _cartItems.removeAt(index));
-              },
-            ),
-          ),
-        ],
-      ),
+    return TabletCartTile(
+      item: item,
+      index: index,
+      colors: colors,
+      isDark: isDark,
+      onDelete: () => setState(() => _cartItems.removeAt(index)),
     );
   }
 
-  Widget _buildQtyBtn(
-    IconData icon,
-    VoidCallback onTap,
+  Widget _buildCompactCartTile(
+    CartItem item,
+    int index,
+    AppThemeColors colors,
     bool isDark,
-    AppThemeColors colors, {
-    bool small = false,
-  }) {
-    final size = small ? 24.0 : 28.0;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(5),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: isDark ? colors.surface : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(5),
-          border: Border.all(
-            color: isDark ? Colors.white24 : Colors.grey.shade300,
-          ),
-        ),
-        child: Icon(
-          icon,
-          size: small ? 12 : 14,
-          color: isDark ? Colors.white : Colors.black87,
-        ),
-      ),
+  ) {
+    return CompactCartTile(
+      item: item,
+      index: index,
+      colors: colors,
+      isDark: isDark,
     );
   }
 
@@ -789,9 +661,6 @@ class _SalesScreenState extends State<SalesScreen> {
     bool isDark,
     bool isTablet,
   ) {
-    final items = _isPaymentMode ? _paymentMethods : _optionItems;
-    final selectedItem = _isPaymentMode ? _selectedPaymentMethod : _selectedOption;
-
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E2733) : Colors.white,
@@ -814,95 +683,215 @@ class _SalesScreenState extends State<SalesScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Options / Payment Methods
-              SizedBox(
-                height: 34,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: items.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 6),
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    final isSelected = selectedItem == item;
-                    return InkWell(
-                      onTap: () {
-                        setState(() {
-                          if (_isPaymentMode) {
+              // Payment Methods Chips (only visible on Sales Screen)
+              if (widget.title == "Sales") ...[
+                SizedBox(
+                  height: 34,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _paymentMethods.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 6),
+                    itemBuilder: (context, index) {
+                      final item = _paymentMethods[index];
+                      final isSelected = _selectedPaymentMethod == item;
+                      final hasAmount = _paymentAmounts.containsKey(item) && _paymentAmounts[item]! > 0;
+                      final amount = _paymentAmounts[item] ?? 0;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
                             _selectedPaymentMethod = item;
-                          } else {
-                            _selectedOption = item;
-                            // Handle option actions here
-                          }
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(17),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? kPrimaryColor
-                              : (isDark
-                                    ? colors.surface
-                                    : Colors.grey.shade100),
-                          borderRadius: BorderRadius.circular(17),
-                          border: Border.all(
-                            color: isSelected
+                          });
+                          _showPaymentAmountDialog(context, item, colors, isDark);
+                        },
+                        onLongPress: hasAmount ? () {
+                          setState(() {
+                            _paymentAmounts.remove(item);
+                          });
+                        } : null,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: hasAmount
                                 ? kPrimaryColor
-                                : (isDark
-                                      ? Colors.white24
-                                      : Colors.grey.shade300),
+                                : (isSelected
+                                    ? kPrimaryColor.withOpacity(0.3)
+                                    : (isDark
+                                          ? colors.surface
+                                          : Colors.grey.shade100)),
+                            borderRadius: BorderRadius.circular(17),
+                            border: Border.all(
+                              color: hasAmount || isSelected
+                                  ? kPrimaryColor
+                                  : (isDark
+                                        ? Colors.white24
+                                        : Colors.grey.shade300),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                item,
+                                style: TextStyle(
+                                  color: hasAmount
+                                      ? Colors.white
+                                      : (isSelected
+                                          ? kPrimaryColor
+                                          : (isDark
+                                                ? Colors.white70
+                                                : Colors.blueGrey.shade700)),
+                                  fontWeight: hasAmount || isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              if (hasAmount) ...[
+                                const SizedBox(width: 4),
+                                Text(
+                                  "\$${amount.toStringAsFixed(0)}",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
-                        child: Text(
-                          item,
-                          style: TextStyle(
-                            color: isSelected
-                                ? Colors.white
-                                : (isDark
-                                      ? Colors.white70
-                                      : Colors.blueGrey.shade700),
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.w500,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
+
+                const SizedBox(height: 10),
+              ],
 
               // Totals Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Subtotal: \$${_subtotal.toStringAsFixed(2)}",
-                        style: TextStyle(
-                          color: colors.onSurfaceMuted,
-                          fontSize: 11,
-                        ),
+              IntrinsicHeight(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Actions Button and Profit breakdown (left column)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Profit breakdown display (above Actions button)
+                        if (_showProfitDetails) ...[                          
+                          _buildProfitBreakdown(colors, isDark),
+                          const SizedBox(height: 8),
+                        ],
+                        // Actions Button
+                        _buildActionsButton(colors, isDark, isTablet),
+                      ],
+                    ),
+
+                    // Change/Remain amount display and Tax breakdown
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Change/Remain display
+                          if (_totalPaid > _total)
+                            Text(
+                              "Change: \$${(_totalPaid - _total).toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                color: Color(0xFF30B24C),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12.5,
+                              ),
+                            )
+                          else if (_totalPaid > 0 && _totalPaid < _total)
+                            Text(
+                              "Remain: \$${(_total - _totalPaid).toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                          
+                          // Tax breakdown display
+                          if (_showTaxDetails) ...[
+                            const SizedBox(height: 6),
+                            _buildTaxBreakdown(colors, isDark),
+                          ],
+                        ],
                       ),
-                      Text(
-                        "Discount: \$${_discount.toStringAsFixed(2)}",
-                        style: TextStyle(
-                          color: colors.onSurfaceMuted,
-                          fontSize: 11,
+                    ),
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          "Subtotal: \$${_subtotal.toStringAsFixed(2)}",
+                          style: TextStyle(
+                            color: colors.onSurfaceMuted,
+                            fontSize: 12.5,
+                          ),
                         ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Discount: \$",
+                              style: TextStyle(
+                                color: colors.onSurfaceMuted,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                            SizedBox(
+                              width: 55,
+                              height: 20,
+                              child: TextField(
+                                controller: _discountController,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: colors.onSurfaceMuted,
+                                  fontSize: 12.5,
+                              ),
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                  borderSide: BorderSide(
+                                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                  borderSide: BorderSide(
+                                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                  borderSide: BorderSide(
+                                    color: kPrimaryColor,
+                                  ),
+                                ),
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  _discountValue = double.tryParse(value) ?? 0.00;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                       Text(
                         "Rounding: \$${_rounding.toStringAsFixed(2)}",
                         style: TextStyle(
                           color: colors.onSurfaceMuted,
-                          fontSize: 11,
+                          fontSize: 12.5,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -917,60 +906,368 @@ class _SalesScreenState extends State<SalesScreen> {
                       ),
                     ],
                   ),
+                ],
+              ),
+            ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                  // Payment Button
-                  ElevatedButton(
-                    onPressed: _cartItems.isEmpty
-                        ? null
-                        : () {
-                            if (!_isPaymentMode) {
-                              setState(() => _isPaymentMode = true);
-                            } else {
-                              // Dispatch Commit Sale Event
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade600,
-                      disabledBackgroundColor: Colors.grey.shade400,
-                      padding: EdgeInsets.symmetric(
-                        vertical: isTablet ? 14 : 12,
-                        horizontal: isTablet ? 32 : 24,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+  void _showPaymentAmountDialog(
+    BuildContext context,
+    String paymentMethod,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    final existingAmount = _paymentAmounts[paymentMethod] ?? 0.0;
+    final controller = TextEditingController(
+      text: existingAmount > 0 ? existingAmount.toStringAsFixed(2) : '',
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (dialogContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
+          ),
+          child: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "$paymentMethod Amount",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _isPaymentMode ? "COMMIT" : "PAYMENT",
-                          style: TextStyle(
-                            color: colors.onHero,
-                            fontSize: isTablet ? 14 : 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
+                    if (existingAmount > 0)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _paymentAmounts.remove(paymentMethod);
+                          });
+                          Navigator.of(dialogContext).pop();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            "Remove",
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                        if (isTablet) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        autofocus: true,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        decoration: InputDecoration(
+                          prefixText: "\$ ",
+                          prefixStyle: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                          hintText: "0.00",
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.white30 : Colors.grey.shade400,
+                          ),
+                          filled: true,
+                          fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
+                        ),
+                        onSubmitted: (value) {
+                          final amount = double.tryParse(value) ?? 0.0;
+                          if (amount > 0) {
+                            setState(() {
+                              _paymentAmounts[paymentMethod] = amount;
+                            });
+                          } else {
+                            setState(() {
+                              _paymentAmounts.remove(paymentMethod);
+                            });
+                          }
+                          Navigator.of(dialogContext).pop();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: () {
+                        final amount = double.tryParse(controller.text) ?? 0.0;
+                        if (amount > 0) {
+                          setState(() {
+                            _paymentAmounts[paymentMethod] = amount;
+                          });
+                        } else {
+                          setState(() {
+                            _paymentAmounts.remove(paymentMethod);
+                          });
+                        }
+                        Navigator.of(dialogContext).pop();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF30B24C), Color(0xFF60D394)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSurveyMenuItem(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+    bool expanded,
+    Function(bool) onExpandChanged,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E2733) : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: expanded
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    onExpandChanged(false);
+                  },
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.poll_outlined,
+                        size: 18,
+                        color: kPrimaryColor,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        "Add Survey",
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.blueGrey.shade800,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 32,
+                        child: TextField(
+                          controller: _surveyController,
+                          autofocus: true,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: "Survey code...",
+                            hintStyle: TextStyle(
+                              color: isDark ? Colors.white30 : Colors.grey.shade400,
+                              fontSize: 12,
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.black26,
-                              borderRadius: BorderRadius.circular(4),
+                            filled: true,
+                            fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: BorderSide.none,
                             ),
-                            child: const Text(
-                              "F10",
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: Colors.white,
-                              ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
                             ),
+                          ),
+                          onSubmitted: (value) {
+                            setState(() {
+                              _surveyValue = value.trim();
+                            });
+                            onExpandChanged(false);
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _surveyValue = _surveyController.text.trim();
+                        });
+                        onExpandChanged(false);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF30B24C), Color(0xFF60D394)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    if (_surveyValue.isNotEmpty) ...[
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _surveyValue = '';
+                            _surveyController.clear();
+                          });
+                          onExpandChanged(false);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.redAccent,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            )
+          : GestureDetector(
+              onTap: () {
+                onExpandChanged(true);
+              },
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.poll_outlined,
+                    size: 18,
+                    color: kPrimaryColor,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Add Survey",
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.blueGrey.shade800,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                        if (_surveyValue.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            _surveyValue,
+                            style: TextStyle(
+                              color: kPrimaryColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ],
@@ -978,10 +1275,533 @@ class _SalesScreenState extends State<SalesScreen> {
                   ),
                 ],
               ),
+            ),
+    );
+  }
+
+  void _showCommentDialog(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    final controller = TextEditingController(text: _commentValue);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (dialogContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
+          ),
+          child: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Add Comment",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    if (_commentValue.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _commentValue = '';
+                          });
+                          Navigator.of(dialogContext).pop();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            "Remove",
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  maxLines: 4,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: "Enter comment...",
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.white30 : Colors.grey.shade400,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _commentValue = controller.text.trim();
+                      });
+                      Navigator.of(dialogContext).pop();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF30B24C), Color(0xFF60D394)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        "Save",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showActionsMenu(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+    final buttonPosition = button.localToGlobal(Offset.zero, ancestor: overlay);
+    
+    bool surveyExpanded = false;
+    _surveyController.text = _surveyValue;
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Actions Menu",
+      barrierColor: Colors.black12,
+      transitionDuration: const Duration(milliseconds: 550),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return const SizedBox.shrink();
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInQuart,
+        );
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Stack(
+              children: [
+                Positioned(
+                  left: 12,
+                  bottom:
+                      MediaQuery.of(context).size.height - buttonPosition.dy + 8,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: SizedBox(
+                      width: 220,
+                      child: AnimatedBuilder(
+                          animation: curvedAnimation,
+                          builder: (context, child) {
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ..._optionItems.reversed.toList().asMap().entries.map((entry) {
+                                final reverseIndex = entry.key;
+                                final index = _optionItems.length - 1 - reverseIndex;
+                                final item = entry.value;
+                                final isFirst = index == 0;
+                                
+                                // Stagger the reveal: bottom items appear first, slower rollout
+                                final staggerFactor = _optionItems.length + 3;
+                                final itemProgress = ((curvedAnimation.value * staggerFactor) - reverseIndex).clamp(0.0, 1.0);
+
+                            return ClipRect(
+                              child: Align(
+                                alignment: Alignment.bottomCenter,
+                                heightFactor: itemProgress,
+                                child: Opacity(
+                                  opacity: itemProgress,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      left: 0,
+                                      right: 40,
+                                      top: isFirst ? 8 : 4,
+                                      bottom: index == _optionItems.length - 1 ? 8 : 4,
+                                    ),
+                                    child: item == "Add Survey"
+                                        ? _buildSurveyMenuItem(
+                                            context,
+                                            colors,
+                                            isDark,
+                                            surveyExpanded,
+                                            (expanded) {
+                                              setDialogState(() {
+                                                surveyExpanded = expanded;
+                                              });
+                                            },
+                                          )
+                                        : InkWell(
+                                      onTap: () {
+                                        if (item == "Add Comment") {
+                                          Navigator.of(context).pop();
+                                          // Use a microtask to show dialog after pop completes
+                                          Future.microtask(() {
+                                            if (mounted) {
+                                              _showCommentDialog(this.context, colors, isDark);
+                                            }
+                                          });
+                                        } else if (item == "Add Delivery") {
+                                          Navigator.of(context).pop();
+                                          setState(() {
+                                            _showActions = false;
+                                            _actionsAnimationController.reverse();
+                                          });
+                                          // Navigate to Delivery Details screen
+                                          Future.microtask(() {
+                                            if (mounted) {
+                                              Navigator.of(this.context).push(
+                                                MaterialPageRoute(
+                                                  builder: (context) => const DeliveryDetailsScreen(),
+                                                ),
+                                              );
+                                            }
+                                          });
+                                        } else if (item == "View Tax") {
+                                          Navigator.of(context).pop();
+                                          setState(() {
+                                            _showTaxDetails = !_showTaxDetails;
+                                            _showActions = false;
+                                            _actionsAnimationController.reverse();
+                                          });
+                                        } else if (item == "View Profit") {
+                                          Navigator.of(context).pop();
+                                          setState(() {
+                                            _showProfitDetails = !_showProfitDetails;
+                                            _showActions = false;
+                                            _actionsAnimationController.reverse();
+                                          });
+                                        } else {
+                                          Navigator.of(context).pop();
+                                          setState(() {
+                                            _selectedOption = item;
+                                            _showActions = false;
+                                            _actionsAnimationController.reverse();
+                                          });
+                                        }
+                                      },
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 10,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                                          borderRadius: BorderRadius.circular(10),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              _getActionIcon(item),
+                                              size: 18,
+                                              color: kPrimaryColor,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                      item,
+                                                      style: TextStyle(
+                                                        color: isDark
+                                                            ? Colors.white
+                                                            : Colors.blueGrey.shade800,
+                                                        fontWeight: FontWeight.w500,
+                                                        fontSize: 13,
+                                                      ),
+                                                    ),
+                                            ),
+                                            // Arrow icon for Comment when has value
+                                            if (item == "Add Comment" && _commentValue.isNotEmpty)
+                                              Icon(
+                                                Icons.arrow_forward_ios,
+                                                size: 14,
+                                                color: kPrimaryColor,
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList().reversed,
+                          // Finalise button - appears at bottom, animated last
+                          Builder(
+                            builder: (context) {
+                              final finaliseProgress = ((curvedAnimation.value * (_optionItems.length + 4)) - _optionItems.length).clamp(0.0, 1.0);
+                              return ClipRect(
+                                child: Align(
+                                  alignment: Alignment.bottomCenter,
+                                  heightFactor: finaliseProgress,
+                                  child: Opacity(
+                                    opacity: finaliseProgress,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 0,
+                                        right: 0,
+                                        top: 4,
+                                        bottom: 8,
+                                      ),
+                                      child: InkWell(
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          setState(() {
+                                            _selectedOption = "Finalise";
+                                            _showActions = false;
+                                            _actionsAnimationController.reverse();
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [Color(0xFF30B24C), Color(0xFF60D394)],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ),
+                                            borderRadius: BorderRadius.circular(10),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: const Color(0xFF30B24C).withOpacity(0.4),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                Icons.check_circle_outline,
+                                                size: 18,
+                                                color: Colors.white,
+                                              ),
+                                              const SizedBox(width: 10),
+                                              const Text(
+                                                "Finalise",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+      },
+    ).then((_) {
+      if (mounted) {
+        setState(() {
+          _showActions = false;
+          _actionsAnimationController.reverse();
+        });
+      }
+    });
+  }
+
+  Widget _buildActionsButton(
+    AppThemeColors colors,
+    bool isDark,
+    bool isTablet,
+  ) {
+    return Builder(
+      builder: (context) => GestureDetector(
+        onTap: () {
+          setState(() {
+            _showActions = !_showActions;
+            if (_showActions) {
+              _actionsAnimationController.forward();
+              _showActionsMenu(context, colors, isDark);
+            } else {
+              _actionsAnimationController.reverse();
+            }
+          });
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            vertical: isTablet ? 10 : 8,
+            horizontal: isTablet ? 16 : 14,
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: _showActions
+                  ? [Colors.green.shade400, Colors.green.shade600]
+                  : [Colors.green.shade500, Colors.green.shade700],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.green.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "ACTIONS",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isTablet ? 13 : 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(width: 6),
+              AnimatedRotation(
+                turns: _showActions ? 0.5 : 0,
+                duration: const Duration(milliseconds: 300),
+                child: Icon(
+                  Icons.keyboard_arrow_up_rounded,
+                  color: Colors.white,
+                  size: isTablet ? 20 : 18,
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
+  IconData _getActionIcon(String action) {
+    switch (action) {
+      case "Add Survey":
+        return Icons.poll_outlined;
+      case "Add Comment":
+        return Icons.comment_outlined;
+      case "Add Delivery":
+        return Icons.local_shipping_outlined;
+      case "View Tax":
+        return Icons.receipt_long_outlined;
+      case "View Profit":
+        return Icons.trending_up_outlined;
+      case "Finalise":
+        return Icons.check_circle_outline;
+      default:
+        return Icons.more_horiz;
+    }
+  }
+
+  Widget _buildTaxBreakdown(AppThemeColors colors, bool isDark) {
+    return TaxBreakdownWidget(
+      total: _total,
+      colors: colors,
+      isDark: isDark,
+    );
+  }
+
+  Widget _buildProfitBreakdown(AppThemeColors colors, bool isDark) {
+    return ProfitBreakdownWidget(
+      subtotal: _subtotal,
+      discount: _discount,
+      colors: colors,
+      isDark: isDark,
+    );
+  }
 }
+
