@@ -221,19 +221,21 @@ class TabletCartTile extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width: 60,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: isDark ? colors.surface : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                "x${item.qty}",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+            width: 80,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? colors.surface : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  "x${item.qty}",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+                  ),
                 ),
               ),
             ),
@@ -248,17 +250,6 @@ class TabletCartTile extends StatelessWidget {
                 fontSize: 14,
                 color: isDark ? Colors.white : Colors.black87,
               ),
-            ),
-          ),
-          SizedBox(
-            width: 40,
-            child: IconButton(
-              icon: const Icon(
-                Icons.delete_outline,
-                color: Colors.redAccent,
-                size: 20,
-              ),
-              onPressed: onDelete,
             ),
           ),
         ],
@@ -284,32 +275,38 @@ class CompactCartTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 16 : 10, 
+            vertical: isTablet ? 8 : 4,
+          ),
           child: Row(
             children: [
               // Code
               SizedBox(
-                width: 85,
+                width: isTablet ? 140 : 75,
                 child: Text(
                   item.code,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'monospace',
-                    fontSize: 11,
+                    fontSize: isTablet ? 13 : 11,
                     color: kPrimaryColor,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              SizedBox(width: isTablet ? 48 : 0),
               // Description
               Expanded(
                 child: Text(
                   item.description,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isTablet ? 14 : 12,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
                   maxLines: 1,
@@ -318,12 +315,12 @@ class CompactCartTile extends StatelessWidget {
               ),
               // Qty
               SizedBox(
-                width: 30,
+                width: isTablet ? 50 : 30,
                 child: Text(
                   "${item.qty}",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isTablet ? 14 : 12,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
                   ),
@@ -331,12 +328,12 @@ class CompactCartTile extends StatelessWidget {
               ),
               // Price
               SizedBox(
-                width: 65,
+                width: isTablet ? 90 : 65,
                 child: Text(
                   "\$${item.extension.toStringAsFixed(2)}",
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isTablet ? 14 : 12,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
@@ -365,12 +362,13 @@ class CartGridHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        // Space for thumbnail
+        const SizedBox(width: 57),
         Expanded(flex: 2, child: _buildHeader("Code")),
         Expanded(flex: 4, child: _buildHeader("Description")),
         SizedBox(width: 100, child: _buildHeader("Price", alignRight: true)),
-        SizedBox(width: 120, child: Center(child: _buildHeader("Qty"))),
+        SizedBox(width: 80, child: Center(child: _buildHeader("Qty"))),
         SizedBox(width: 100, child: _buildHeader("Ext", alignRight: true)),
-        const SizedBox(width: 40), // Space for delete button
       ],
     );
   }

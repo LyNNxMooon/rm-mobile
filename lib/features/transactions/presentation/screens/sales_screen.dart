@@ -259,7 +259,7 @@ class _SalesScreenState extends State<SalesScreen>
     const String customerName = "Walk-in Customer";
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: EdgeInsets.fromLTRB(16, isTablet ? 12 : 8, 16, isTablet ? 12 : 8),
       decoration: BoxDecoration(
         color: isDark ? colors.surfaceAlt : Colors.white,
         border: Border(
@@ -278,14 +278,14 @@ class _SalesScreenState extends State<SalesScreen>
                 children: [
                   Icon(
                     Icons.badge_outlined,
-                    size: 14,
+                    size: isTablet ? 18 : 14,
                     color: colors.onSurfaceMuted,
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: isTablet ? 8 : 4),
                   Text(
                     "Staff: David Bates",
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: isTablet ? 15 : 12,
                       fontWeight: FontWeight.w600,
                       color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
                     ),
@@ -294,10 +294,10 @@ class _SalesScreenState extends State<SalesScreen>
               ),
               // Ex Tax / Inc Tax Toggle
               Container(
-                height: 24,
+                height: isTablet ? 34 : 24,
                 decoration: BoxDecoration(
                   color: isDark ? colors.surface : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isTablet ? 17 : 12),
                   border: Border.all(
                     color: isDark ? Colors.white12 : Colors.grey.shade300,
                   ),
@@ -308,18 +308,18 @@ class _SalesScreenState extends State<SalesScreen>
                     GestureDetector(
                       onTap: () => setState(() => _isIncTax = false),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 10),
                         decoration: BoxDecoration(
                           color: !_isIncTax
                               ? kPrimaryColor
                               : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(isTablet ? 17 : 12),
                         ),
                         alignment: Alignment.center,
                         child: Text(
                           "Ex Tax",
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: isTablet ? 13 : 10,
                             fontWeight: FontWeight.w800,
                             color: !_isIncTax
                                 ? Colors.white
@@ -331,18 +331,18 @@ class _SalesScreenState extends State<SalesScreen>
                     GestureDetector(
                       onTap: () => setState(() => _isIncTax = true),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 10),
                         decoration: BoxDecoration(
                           color: _isIncTax
                               ? kPrimaryColor
                               : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(isTablet ? 17 : 12),
                         ),
                         alignment: Alignment.center,
                         child: Text(
                           "Inc Tax",
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: isTablet ? 13 : 10,
                             fontWeight: FontWeight.w800,
                             color: _isIncTax
                                 ? Colors.white
@@ -356,7 +356,7 @@ class _SalesScreenState extends State<SalesScreen>
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 12 : 8),
 
           // Customer Selection Button
           InkWell(
@@ -365,7 +365,10 @@ class _SalesScreenState extends State<SalesScreen>
             },
             borderRadius: BorderRadius.circular(8),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 14 : 10, 
+                vertical: isTablet ? 12 : 8,
+              ),
               decoration: BoxDecoration(
                 color: isDark ? colors.surface : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(8),
@@ -375,19 +378,19 @@ class _SalesScreenState extends State<SalesScreen>
               ),
               child: Row(
                 children: [
-                  Icon(Icons.person_outline, size: 18, color: kPrimaryColor),
-                  const SizedBox(width: 8),
+                  Icon(Icons.person_outline, size: isTablet ? 22 : 18, color: kPrimaryColor),
+                  SizedBox(width: isTablet ? 12 : 8),
                   Expanded(
                     child: Text(
                       "$customerBarcode | $customerName",
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: isTablet ? 15 : 13,
                         color: isDark ? Colors.white : Colors.black87,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                  Icon(Icons.search, size: 16, color: colors.onSurfaceMuted),
+                  Icon(Icons.search, size: isTablet ? 20 : 16, color: colors.onSurfaceMuted),
                 ],
               ),
             ),
@@ -525,8 +528,8 @@ class _SalesScreenState extends State<SalesScreen>
 
     return Column(
       children: [
-        // Optional Tablet Header Row mimicking the desktop grid
-        if (isTablet)
+        // Optional Tablet Header Row mimicking the desktop grid (not shown in compact view)
+        if (isTablet && !_isCompactView)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
@@ -539,6 +542,8 @@ class _SalesScreenState extends State<SalesScreen>
             ),
             child: Row(
               children: [
+                // Space for thumbnail
+                const SizedBox(width: 57),
                 Expanded(flex: 2, child: _buildGridHeader("Code", colors)),
                 Expanded(
                   flex: 4,
@@ -549,14 +554,13 @@ class _SalesScreenState extends State<SalesScreen>
                   child: _buildGridHeader("Price", colors, alignRight: true),
                 ),
                 SizedBox(
-                  width: 120,
+                  width: 80,
                   child: Center(child: _buildGridHeader("Qty", colors)),
                 ),
                 SizedBox(
                   width: 100,
                   child: _buildGridHeader("Ext", colors, alignRight: true),
                 ),
-                const SizedBox(width: 40), // Space for delete button
               ],
             ),
           ),
@@ -832,80 +836,143 @@ class _SalesScreenState extends State<SalesScreen>
                           "Subtotal: \$${_subtotal.toStringAsFixed(2)}",
                           style: TextStyle(
                             color: colors.onSurfaceMuted,
-                            fontSize: 12.5,
+                            fontSize: isTablet ? 14 : 12.5,
                           ),
                         ),
+                        SizedBox(height: isTablet ? 12 : 4),
                         Row(
                           mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment:
+                              isTablet ? CrossAxisAlignment.baseline : CrossAxisAlignment.center,
+                          textBaseline: TextBaseline.alphabetic,
                           children: [
                             Text(
                               "Discount: \$",
                               style: TextStyle(
                                 color: colors.onSurfaceMuted,
-                                fontSize: 12.5,
+                                fontSize: isTablet ? 14 : 12.5,
                               ),
                             ),
                             SizedBox(
-                              width: 55,
-                              height: 20,
-                              child: TextField(
-                                controller: _discountController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                textAlign: TextAlign.right,
-                                style: TextStyle(
-                                  color: colors.onSurfaceMuted,
-                                  fontSize: 12.5,
-                              ),
-                              decoration: InputDecoration(
-                                isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                  borderSide: BorderSide(
-                                    color: isDark ? Colors.white24 : Colors.grey.shade300,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                  borderSide: BorderSide(
-                                    color: isDark ? Colors.white24 : Colors.grey.shade300,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                  borderSide: BorderSide(
-                                    color: kPrimaryColor,
-                                  ),
-                                ),
-                              ),
-                              onChanged: (value) {
-                                setState(() {
-                                  _discountValue = double.tryParse(value) ?? 0.00;
-                                });
-                              },
+                              width: isTablet ? 120 : 55,
+                              height: isTablet ? 56 : 20,
+                              child: isTablet
+                                  ? MediaQuery(
+                                      data: MediaQuery.of(context).copyWith(
+                                        textScaler: TextScaler.noScaling,
+                                      ),
+                                      child: TextField(
+                                        controller: _discountController,
+                                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                        maxLines: 1,
+                                        minLines: 1,
+                                        textAlignVertical: TextAlignVertical.center,
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          color: isDark ? Colors.white : Colors.black87,
+                                          fontSize: 18,
+                                        ),
+                                        decoration: InputDecoration(
+                                          isDense: true,
+                                          hintText: "0.00",
+                                          hintStyle: TextStyle(
+                                            color: colors.onSurfaceMuted,
+                                            fontSize: 18,
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 0,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(4),
+                                            borderSide: BorderSide(
+                                              color: isDark ? Colors.white24 : Colors.grey.shade300,
+                                            ),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(4),
+                                            borderSide: BorderSide(
+                                              color: isDark ? Colors.white24 : Colors.grey.shade300,
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(4),
+                                            borderSide: BorderSide(
+                                              color: kPrimaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _discountValue = double.tryParse(value) ?? 0.00;
+                                          });
+                                        },
+                                      ),
+                                    )
+                                  : TextField(
+                                      controller: _discountController,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      maxLines: 1,
+                                      minLines: 1,
+                                      textAlign: TextAlign.right,
+                                      style: TextStyle(
+                                        color: isDark ? Colors.white : Colors.black87,
+                                        fontSize: 12.5,
+                                      ),
+                                      decoration: InputDecoration(
+                                        isDense: true,
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                          vertical: 2,
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(4),
+                                          borderSide: BorderSide(
+                                            color: isDark ? Colors.white24 : Colors.grey.shade300,
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(4),
+                                          borderSide: BorderSide(
+                                            color: isDark ? Colors.white24 : Colors.grey.shade300,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(4),
+                                          borderSide: BorderSide(
+                                            color: kPrimaryColor,
+                                          ),
+                                        ),
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _discountValue = double.tryParse(value) ?? 0.00;
+                                        });
+                                      },
+                                    ),
                             ),
+                          ],
+                        ),
+                        SizedBox(height: isTablet ? 0 : 0),
+                        Text(
+                          "Rounding: \$${_rounding.toStringAsFixed(2)}",
+                          style: TextStyle(
+                            color: colors.onSurfaceMuted,
+                            fontSize: isTablet ? 14 : 12.5,
                           ),
-                        ],
-                      ),
-                      Text(
-                        "Rounding: \$${_rounding.toStringAsFixed(2)}",
-                        style: TextStyle(
-                          color: colors.onSurfaceMuted,
-                          fontSize: 12.5,
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        "\$${_total.toStringAsFixed(2)}",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? Colors.white : Colors.black87,
-                          letterSpacing: -0.5,
+                        SizedBox(height: isTablet ? 4 : 2),
+                        Text(
+                          "\$${_total.toStringAsFixed(2)}",
+                          style: TextStyle(
+                            fontSize: isTablet ? 32 : 26,
+                            fontWeight: FontWeight.w900,
+                            color: isDark ? Colors.white : Colors.black87,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -1096,10 +1163,12 @@ class _SalesScreenState extends State<SalesScreen>
     bool expanded,
     Function(bool) onExpandChanged,
   ) {
+    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 10,
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 16 : 12,
+        vertical: isTablet ? 14 : 10,
       ),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E2733) : Colors.white,
@@ -1125,39 +1194,39 @@ class _SalesScreenState extends State<SalesScreen>
                     children: [
                       Icon(
                         Icons.poll_outlined,
-                        size: 18,
+                        size: isTablet ? 22 : 18,
                         color: kPrimaryColor,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: isTablet ? 16 : 12),
                       Text(
                         "Add Survey",
                         style: TextStyle(
                           color: isDark ? Colors.white : Colors.blueGrey.shade800,
                           fontWeight: FontWeight.w500,
-                          fontSize: 13,
+                          fontSize: isTablet ? 15 : 13,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: isTablet ? 12 : 8),
                 Row(
                   children: [
                     Expanded(
                       child: SizedBox(
-                        height: 32,
+                        height: isTablet ? 42 : 32,
                         child: TextField(
                           controller: _surveyController,
                           autofocus: true,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: isTablet ? 14 : 12,
                             color: isDark ? Colors.white : Colors.black87,
                           ),
                           decoration: InputDecoration(
                             hintText: "Survey code...",
                             hintStyle: TextStyle(
                               color: isDark ? Colors.white30 : Colors.grey.shade400,
-                              fontSize: 12,
+                              fontSize: isTablet ? 14 : 12,
                             ),
                             filled: true,
                             fillColor: isDark ? colors.surface : Colors.grey.shade100,
@@ -1165,9 +1234,9 @@ class _SalesScreenState extends State<SalesScreen>
                               borderRadius: BorderRadius.circular(6),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 8,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: isTablet ? 14 : 10,
+                              vertical: isTablet ? 12 : 8,
                             ),
                           ),
                           onSubmitted: (value) {
@@ -1179,7 +1248,7 @@ class _SalesScreenState extends State<SalesScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: isTablet ? 12 : 8),
                     GestureDetector(
                       onTap: () {
                         setState(() {
@@ -1188,7 +1257,7 @@ class _SalesScreenState extends State<SalesScreen>
                         onExpandChanged(false);
                       },
                       child: Container(
-                        padding: const EdgeInsets.all(6),
+                        padding: EdgeInsets.all(isTablet ? 10 : 6),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFF30B24C), Color(0xFF60D394)],
@@ -1197,15 +1266,15 @@ class _SalesScreenState extends State<SalesScreen>
                           ),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.check,
                           color: Colors.white,
-                          size: 16,
+                          size: isTablet ? 20 : 16,
                         ),
                       ),
                     ),
                     if (_surveyValue.isNotEmpty) ...[
-                      const SizedBox(width: 4),
+                      SizedBox(width: isTablet ? 8 : 4),
                       GestureDetector(
                         onTap: () {
                           setState(() {
@@ -1215,15 +1284,15 @@ class _SalesScreenState extends State<SalesScreen>
                           onExpandChanged(false);
                         },
                         child: Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: EdgeInsets.all(isTablet ? 10 : 6),
                           decoration: BoxDecoration(
                             color: Colors.redAccent.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.close,
                             color: Colors.redAccent,
-                            size: 16,
+                            size: isTablet ? 20 : 16,
                           ),
                         ),
                       ),
@@ -1240,10 +1309,10 @@ class _SalesScreenState extends State<SalesScreen>
                 children: [
                   Icon(
                     Icons.poll_outlined,
-                    size: 18,
+                    size: isTablet ? 22 : 18,
                     color: kPrimaryColor,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: isTablet ? 16 : 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1254,17 +1323,17 @@ class _SalesScreenState extends State<SalesScreen>
                           style: TextStyle(
                             color: isDark ? Colors.white : Colors.blueGrey.shade800,
                             fontWeight: FontWeight.w500,
-                            fontSize: 13,
+                            fontSize: isTablet ? 15 : 13,
                           ),
                         ),
                         if (_surveyValue.isNotEmpty) ...[
-                          const SizedBox(height: 2),
+                          SizedBox(height: isTablet ? 4 : 2),
                           Text(
                             _surveyValue,
                             style: TextStyle(
                               color: kPrimaryColor,
                               fontWeight: FontWeight.w600,
-                              fontSize: 11,
+                              fontSize: isTablet ? 13 : 11,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1458,7 +1527,7 @@ class _SalesScreenState extends State<SalesScreen>
                   child: Material(
                     color: Colors.transparent,
                     child: SizedBox(
-                      width: 220,
+                      width: MediaQuery.of(context).size.shortestSide >= 600 ? 280 : 220,
                       child: AnimatedBuilder(
                           animation: curvedAnimation,
                           builder: (context, child) {
@@ -1552,9 +1621,9 @@ class _SalesScreenState extends State<SalesScreen>
                                       },
                                       borderRadius: BorderRadius.circular(10),
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 10,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: MediaQuery.of(context).size.shortestSide >= 600 ? 16 : 12,
+                                          vertical: MediaQuery.of(context).size.shortestSide >= 600 ? 14 : 10,
                                         ),
                                         decoration: BoxDecoration(
                                           color: isDark ? const Color(0xFF1E2733) : Colors.white,
@@ -1571,10 +1640,10 @@ class _SalesScreenState extends State<SalesScreen>
                                           children: [
                                             Icon(
                                               _getActionIcon(item),
-                                              size: 18,
+                                              size: MediaQuery.of(context).size.shortestSide >= 600 ? 22 : 18,
                                               color: kPrimaryColor,
                                             ),
-                                            const SizedBox(width: 12),
+                                            SizedBox(width: MediaQuery.of(context).size.shortestSide >= 600 ? 16 : 12),
                                             Expanded(
                                               child: Text(
                                                       item,
@@ -1583,7 +1652,7 @@ class _SalesScreenState extends State<SalesScreen>
                                                             ? Colors.white
                                                             : Colors.blueGrey.shade800,
                                                         fontWeight: FontWeight.w500,
-                                                        fontSize: 13,
+                                                        fontSize: MediaQuery.of(context).size.shortestSide >= 600 ? 15 : 13,
                                                       ),
                                                     ),
                                             ),
@@ -1591,7 +1660,7 @@ class _SalesScreenState extends State<SalesScreen>
                                             if (item == "Add Comment" && _commentValue.isNotEmpty)
                                               Icon(
                                                 Icons.arrow_forward_ios,
-                                                size: 14,
+                                                size: MediaQuery.of(context).size.shortestSide >= 600 ? 16 : 14,
                                                 color: kPrimaryColor,
                                               ),
                                           ],
@@ -1606,6 +1675,7 @@ class _SalesScreenState extends State<SalesScreen>
                           // Finalise button - appears at bottom, animated last
                           Builder(
                             builder: (context) {
+                              final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
                               final finaliseProgress = ((curvedAnimation.value * (_optionItems.length + 4)) - _optionItems.length).clamp(0.0, 1.0);
                               return ClipRect(
                                 child: Align(
@@ -1631,9 +1701,9 @@ class _SalesScreenState extends State<SalesScreen>
                                         },
                                         borderRadius: BorderRadius.circular(10),
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 10,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                            vertical: isTablet ? 14 : 10,
                                           ),
                                           decoration: BoxDecoration(
                                             gradient: const LinearGradient(
@@ -1641,12 +1711,12 @@ class _SalesScreenState extends State<SalesScreen>
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                             ),
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(12),
                                             boxShadow: [
                                               BoxShadow(
                                                 color: const Color(0xFF30B24C).withOpacity(0.4),
-                                                blurRadius: 8,
-                                                offset: const Offset(0, 2),
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 3),
                                               ),
                                             ],
                                           ),
@@ -1655,16 +1725,16 @@ class _SalesScreenState extends State<SalesScreen>
                                             children: [
                                               const Icon(
                                                 Icons.check_circle_outline,
-                                                size: 18,
+                                                size: 22,
                                                 color: Colors.white,
                                               ),
-                                              const SizedBox(width: 10),
+                                              const SizedBox(width: 12),
                                               const Text(
                                                 "Finalise",
                                                 style: TextStyle(
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.w600,
-                                                  fontSize: 14,
+                                                  fontSize: 16,
                                                 ),
                                               ),
                                             ],
