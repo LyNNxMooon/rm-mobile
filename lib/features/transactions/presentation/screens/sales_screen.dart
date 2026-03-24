@@ -953,7 +953,7 @@ class _SalesScreenState extends State<SalesScreen>
                             ),
                           ],
                         ),
-                        SizedBox(height: isTablet ? 0 : 0),
+                        SizedBox(height: isTablet ? 0 : 6),
                         Text(
                           "Rounding: \$${_rounding.toStringAsFixed(2)}",
                           style: TextStyle(
