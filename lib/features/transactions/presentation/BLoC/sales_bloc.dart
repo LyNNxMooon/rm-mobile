@@ -67,7 +67,6 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         _addStockToCart(result.stock!);
         emit(CartUpdated(
           cartItems: List.from(_cartItems),
-          message: "Added: ${result.stock!.description}",
           selectedCustomer: _selectedCustomer,
         ));
         return;
@@ -91,7 +90,6 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     _addStockToCart(event.stock);
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
-      message: "Added: ${event.stock.description}",
       selectedCustomer: _selectedCustomer,
     ));
   }
@@ -100,7 +98,6 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     _addStockToCart(event.stock, qty: event.qty);
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
-      message: "Added: ${event.stock.description}",
       selectedCustomer: _selectedCustomer,
     ));
   }
@@ -185,10 +182,9 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   void _onRemoveCartItem(RemoveCartItem event, Emitter<SalesState> emit) {
     if (event.index < 0 || event.index >= _cartItems.length) return;
 
-    final removed = _cartItems.removeAt(event.index);
+    _cartItems.removeAt(event.index);
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
-      message: "Removed: ${removed.description}",
       selectedCustomer: _selectedCustomer,
     ));
   }

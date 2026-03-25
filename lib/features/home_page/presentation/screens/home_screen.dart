@@ -63,14 +63,14 @@ class _HomeScreenState extends State<HomeScreen> {
         maxChildSize = 0.90;
       }
     } else {
-      // Phone
+      // Phone - drawer takes 65% of screen from bottom
       if (isPortrait) {
-        initialChildSize = 0.63;
-        minChildSize = 0.63;
+        initialChildSize = 0.65;
+        minChildSize = 0.65;
         maxChildSize = 0.88;
       } else {
-        initialChildSize = 0.52;
-        minChildSize = 0.50;
+        initialChildSize = 0.65;
+        minChildSize = 0.63;
         maxChildSize = 0.86;
       }
     }
@@ -266,13 +266,16 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool isPortrait = media.orientation == Orientation.portrait;
     final drawerSizes = _resolveDrawerSizes(media);
 
-    // Calculate available space between AppBarSession and drawer edge
-    final double drawerTopY =
-        media.size.height * (1.0 - drawerSizes.initialChildSize);
-    final double safeTopPadding = media.padding.top;
+    // Calculate available space between AppBarSession end and drawer top edge
+    // SafeArea content height (screen height minus top safe padding)
+    final double safeAreaContentHeight = media.size.height - media.padding.top;
+    // Drawer top position from SafeArea top (drawer takes initialChildSize from bottom)
+    final double drawerTopFromSafeTop =
+        safeAreaContentHeight * (1.0 - drawerSizes.initialChildSize);
+    // AppBarSession height
     const double appBarSessionHeight = 60.0;
-    final double contentAreaHeight =
-        drawerTopY - safeTopPadding - appBarSessionHeight;
+    // Content area = space between AppBarSession bottom and drawer top edge
+    final double contentAreaHeight = drawerTopFromSafeTop - appBarSessionHeight;
 
     return MultiBlocListener(
       listeners: [
