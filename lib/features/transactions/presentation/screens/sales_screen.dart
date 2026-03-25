@@ -10,6 +10,7 @@ import 'package:alert_info/alert_info.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/customer_vo.dart';
+import '../../../../utils/global_var_utils.dart';
 import '../../../../entities/vos/stock_vo.dart';
 import '../../../../utils/navigation_extension.dart';
 import '../../../stocktake/presentation/widgets/duplicate_stock_dialog.dart';
@@ -18,7 +19,9 @@ import '../BLoC/sales_bloc.dart';
 import '../BLoC/sales_events.dart';
 import '../BLoC/sales_states.dart';
 import '../widgets/duplicate_customer_dialog.dart';
+import '../widgets/finalise_sale_dialog.dart';
 import '../widgets/sales_widgets.dart';
+import '../models/delivery_info.dart';
 import 'delivery_details_screen.dart';
 
 final _sl = GetIt.instance;
@@ -43,12 +46,15 @@ class _SalesScreenState extends State<SalesScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final TextEditingController _discountController = TextEditingController(text: "0.00");
+  final TextEditingController _discountController = TextEditingController(
+    text: "0.00",
+  );
   final FocusNode _searchFocusNode = FocusNode();
 
   // Scanner controller
   late MobileScannerController _scannerController;
-  final AudioPlayer _audioPlayer = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
+  final AudioPlayer _audioPlayer = AudioPlayer()
+    ..setReleaseMode(ReleaseMode.stop);
   final _beepSource = AssetSource('audio/beep.mp3');
   String? _lastScannedBarcode;
   DateTime? _lastScanTime;
@@ -60,6 +66,9 @@ class _SalesScreenState extends State<SalesScreen>
   // Selected customer
   CustomerVO? _selectedCustomer;
 
+  // Delivery info (stored until user leaves screen)
+  DeliveryInfo? _deliveryInfo;
+
   final bool _isPaymentMode = false;
   bool _showScanner = false;
   bool _showActions = false;
@@ -70,10 +79,10 @@ class _SalesScreenState extends State<SalesScreen>
   String _selectedPaymentMethod = "Cash";
   String? _selectedOption;
   double _discountValue = 0.00;
-  
+
   // Payment amounts for each payment type
   final Map<String, double> _paymentAmounts = {};
-  
+
   // Survey and Comment values
   String _surveyValue = '';
   String _commentValue = '';
@@ -110,7 +119,8 @@ class _SalesScreenState extends State<SalesScreen>
   double get _discount => _discountValue;
   double get _rounding => 0.00; // Placeholder
   double get _total => _subtotal - _discount + _rounding;
-  double get _totalPaid => _paymentAmounts.values.fold(0.0, (sum, amount) => sum + amount);
+  double get _totalPaid =>
+      _paymentAmounts.values.fold(0.0, (sum, amount) => sum + amount);
 
   @override
   void initState() {
@@ -175,11 +185,11 @@ class _SalesScreenState extends State<SalesScreen>
     final parts = <String>[];
     if (customer.givenNames.isNotEmpty) parts.add(customer.givenNames);
     if (customer.surname.isNotEmpty) parts.add(customer.surname);
-    
+
     if (parts.isEmpty && customer.company.isNotEmpty) {
       return customer.company;
     }
-    
+
     return parts.isEmpty ? "Unknown Customer" : parts.join(' ');
   }
 
@@ -255,7 +265,8 @@ class _SalesScreenState extends State<SalesScreen>
             setState(() => _selectedCustomer = state.selectedCustomer);
             AlertInfo.show(
               context: context,
-              text: "Customer selected: ${state.selectedCustomer?.surname ?? ''}",
+              text:
+                  "Customer selected: ${state.selectedCustomer?.surname ?? ''}",
               typeInfo: TypeInfo.success,
               backgroundColor: isDark ? colors.surface : kSecondaryColor,
               iconColor: kPrimaryColor,
@@ -298,10 +309,13 @@ class _SalesScreenState extends State<SalesScreen>
                     // Top Section: Customer, Staff, Date
                     SalesTopHeader(
                       isIncTax: _isIncTax,
-                      onTaxModeChanged: (value) => setState(() => _isIncTax = value),
+                      onTaxModeChanged: (value) =>
+                          setState(() => _isIncTax = value),
+                      staffName:
+                          AppGlobals.instance.staffName ?? "Unknown Staff",
                       hasCustomer: _selectedCustomer != null,
                       customerBarcode: _selectedCustomer?.barcode,
-                      customerName: _selectedCustomer != null 
+                      customerName: _selectedCustomer != null
                           ? _buildCustomerDisplayName(_selectedCustomer!)
                           : null,
                       onCustomerSearch: (query) {
@@ -411,7 +425,9 @@ class _SalesScreenState extends State<SalesScreen>
               child: Row(
                 children: [
                   Icon(
-                    _isCompactView ? Icons.radio_button_off : Icons.radio_button_checked,
+                    _isCompactView
+                        ? Icons.radio_button_off
+                        : Icons.radio_button_checked,
                     size: 18,
                     color: _isCompactView ? Colors.grey : kPrimaryColor,
                   ),
@@ -425,7 +441,9 @@ class _SalesScreenState extends State<SalesScreen>
               child: Row(
                 children: [
                   Icon(
-                    _isCompactView ? Icons.radio_button_checked : Icons.radio_button_off,
+                    _isCompactView
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
                     size: 18,
                     color: _isCompactView ? kPrimaryColor : Colors.grey,
                   ),
@@ -532,7 +550,7 @@ class _SalesScreenState extends State<SalesScreen>
                 vertical: _isCompactView ? 2 : 6,
               ),
               itemCount: _cartItems.length,
-              separatorBuilder: (context, index) => 
+              separatorBuilder: (context, index) =>
                   SizedBox(height: _isCompactView ? 0 : 4),
               itemBuilder: (context, index) {
                 final item = _cartItems[index];
@@ -543,7 +561,11 @@ class _SalesScreenState extends State<SalesScreen>
                     verticalOffset: 20.0,
                     child: FadeInAnimation(
                       child: _buildCartTileWithEditMode(
-                        item, index, colors, isDark, isTablet,
+                        item,
+                        index,
+                        colors,
+                        isDark,
+                        isTablet,
                       ),
                     ),
                   ),
@@ -596,7 +618,9 @@ class _SalesScreenState extends State<SalesScreen>
           _salesBloc.add(UpdateCartItemPrice(index: index, price: price));
         },
         onSerialChanged: (serial) {
-          _salesBloc.add(UpdateCartItemSerial(index: index, serialNumber: serial));
+          _salesBloc.add(
+            UpdateCartItemSerial(index: index, serialNumber: serial),
+          );
         },
         onSave: () {
           _salesBloc.add(SaveCartItem(index: index));
@@ -717,20 +741,29 @@ class _SalesScreenState extends State<SalesScreen>
                     itemBuilder: (context, index) {
                       final item = _paymentMethods[index];
                       final isSelected = _selectedPaymentMethod == item;
-                      final hasAmount = _paymentAmounts.containsKey(item) && _paymentAmounts[item]! > 0;
+                      final hasAmount =
+                          _paymentAmounts.containsKey(item) &&
+                          _paymentAmounts[item]! > 0;
                       final amount = _paymentAmounts[item] ?? 0;
                       return GestureDetector(
                         onTap: () {
                           setState(() {
                             _selectedPaymentMethod = item;
                           });
-                          _showPaymentAmountDialog(context, item, colors, isDark);
+                          _showPaymentAmountDialog(
+                            context,
+                            item,
+                            colors,
+                            isDark,
+                          );
                         },
-                        onLongPress: hasAmount ? () {
-                          setState(() {
-                            _paymentAmounts.remove(item);
-                          });
-                        } : null,
+                        onLongPress: hasAmount
+                            ? () {
+                                setState(() {
+                                  _paymentAmounts.remove(item);
+                                });
+                              }
+                            : null,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14),
                           alignment: Alignment.center,
@@ -738,10 +771,10 @@ class _SalesScreenState extends State<SalesScreen>
                             color: hasAmount
                                 ? kPrimaryColor
                                 : (isSelected
-                                    ? kPrimaryColor.withOpacity(0.3)
-                                    : (isDark
-                                          ? colors.surface
-                                          : Colors.grey.shade100)),
+                                      ? kPrimaryColor.withOpacity(0.3)
+                                      : (isDark
+                                            ? colors.surface
+                                            : Colors.grey.shade100)),
                             borderRadius: BorderRadius.circular(17),
                             border: Border.all(
                               color: hasAmount || isSelected
@@ -760,10 +793,10 @@ class _SalesScreenState extends State<SalesScreen>
                                   color: hasAmount
                                       ? Colors.white
                                       : (isSelected
-                                          ? kPrimaryColor
-                                          : (isDark
-                                                ? Colors.white70
-                                                : Colors.blueGrey.shade700)),
+                                            ? kPrimaryColor
+                                            : (isDark
+                                                  ? Colors.white70
+                                                  : Colors.blueGrey.shade700)),
                                   fontWeight: hasAmount || isSelected
                                       ? FontWeight.bold
                                       : FontWeight.w500,
@@ -804,7 +837,7 @@ class _SalesScreenState extends State<SalesScreen>
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         // Profit breakdown display (above Actions button)
-                        if (_showProfitDetails) ...[                          
+                        if (_showProfitDetails) ...[
                           _buildProfitBreakdown(colors, isDark),
                           const SizedBox(height: 8),
                         ],
@@ -837,7 +870,7 @@ class _SalesScreenState extends State<SalesScreen>
                                 fontSize: 12.5,
                               ),
                             ),
-                          
+
                           // Tax breakdown display
                           if (_showTaxDetails) ...[
                             const SizedBox(height: 6),
@@ -860,8 +893,9 @@ class _SalesScreenState extends State<SalesScreen>
                         SizedBox(height: isTablet ? 12 : 4),
                         Row(
                           mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment:
-                              isTablet ? CrossAxisAlignment.baseline : CrossAxisAlignment.center,
+                          crossAxisAlignment: isTablet
+                              ? CrossAxisAlignment.baseline
+                              : CrossAxisAlignment.center,
                           textBaseline: TextBaseline.alphabetic,
                           children: [
                             Text(
@@ -881,13 +915,19 @@ class _SalesScreenState extends State<SalesScreen>
                                       ),
                                       child: TextField(
                                         controller: _discountController,
-                                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                        keyboardType:
+                                            const TextInputType.numberWithOptions(
+                                              decimal: true,
+                                            ),
                                         maxLines: 1,
                                         minLines: 1,
-                                        textAlignVertical: TextAlignVertical.center,
+                                        textAlignVertical:
+                                            TextAlignVertical.center,
                                         textAlign: TextAlign.right,
                                         style: TextStyle(
-                                          color: isDark ? Colors.white : Colors.black87,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black87,
                                           fontSize: 18,
                                         ),
                                         decoration: InputDecoration(
@@ -897,24 +937,35 @@ class _SalesScreenState extends State<SalesScreen>
                                             color: colors.onSurfaceMuted,
                                             fontSize: 18,
                                           ),
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 0,
-                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 0,
+                                              ),
                                           border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                             borderSide: BorderSide(
-                                              color: isDark ? Colors.white24 : Colors.grey.shade300,
+                                              color: isDark
+                                                  ? Colors.white24
+                                                  : Colors.grey.shade300,
                                             ),
                                           ),
                                           enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                             borderSide: BorderSide(
-                                              color: isDark ? Colors.white24 : Colors.grey.shade300,
+                                              color: isDark
+                                                  ? Colors.white24
+                                                  : Colors.grey.shade300,
                                             ),
                                           ),
                                           focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                             borderSide: BorderSide(
                                               color: kPrimaryColor,
                                             ),
@@ -922,41 +973,58 @@ class _SalesScreenState extends State<SalesScreen>
                                         ),
                                         onChanged: (value) {
                                           setState(() {
-                                            _discountValue = double.tryParse(value) ?? 0.00;
+                                            _discountValue =
+                                                double.tryParse(value) ?? 0.00;
                                           });
                                         },
                                       ),
                                     )
                                   : TextField(
                                       controller: _discountController,
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                            decimal: true,
+                                          ),
                                       maxLines: 1,
                                       minLines: 1,
                                       textAlign: TextAlign.right,
                                       style: TextStyle(
-                                        color: isDark ? Colors.white : Colors.black87,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
                                         fontSize: 12.5,
                                       ),
                                       decoration: InputDecoration(
                                         isDense: true,
-                                        contentPadding: const EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                          vertical: 2,
-                                        ),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 2,
+                                            ),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                           borderSide: BorderSide(
-                                            color: isDark ? Colors.white24 : Colors.grey.shade300,
+                                            color: isDark
+                                                ? Colors.white24
+                                                : Colors.grey.shade300,
                                           ),
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                           borderSide: BorderSide(
-                                            color: isDark ? Colors.white24 : Colors.grey.shade300,
+                                            color: isDark
+                                                ? Colors.white24
+                                                : Colors.grey.shade300,
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                           borderSide: BorderSide(
                                             color: kPrimaryColor,
                                           ),
@@ -964,7 +1032,8 @@ class _SalesScreenState extends State<SalesScreen>
                                       ),
                                       onChanged: (value) {
                                         setState(() {
-                                          _discountValue = double.tryParse(value) ?? 0.00;
+                                          _discountValue =
+                                              double.tryParse(value) ?? 0.00;
                                         });
                                       },
                                     ),
@@ -991,9 +1060,9 @@ class _SalesScreenState extends State<SalesScreen>
                         ),
                       ],
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
             ],
           ),
         ),
@@ -1086,7 +1155,9 @@ class _SalesScreenState extends State<SalesScreen>
                       child: TextField(
                         controller: controller,
                         autofocus: true,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -1101,10 +1172,14 @@ class _SalesScreenState extends State<SalesScreen>
                           ),
                           hintText: "0.00",
                           hintStyle: TextStyle(
-                            color: isDark ? Colors.white30 : Colors.grey.shade400,
+                            color: isDark
+                                ? Colors.white30
+                                : Colors.grey.shade400,
                           ),
                           filled: true,
-                          fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                          fillColor: isDark
+                              ? colors.surface
+                              : Colors.grey.shade100,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide.none,
@@ -1174,6 +1249,47 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
+  Future<void> _showFinaliseDialog() async {
+    final result = await FinaliseSaleDialog.show(
+      context: context,
+      customer: _selectedCustomer,
+    );
+
+    if (result == null || result.result == FinaliseSaleResult.cancelled) {
+      return;
+    }
+
+    // Handle the result
+    if (result.result == FinaliseSaleResult.email) {
+      final emailData = result.emailData;
+      // TODO: Wire up with real API endpoint to send email
+      debugPrint('Sending receipt to: ${emailData?.email}');
+    }
+
+    // Clear everything for now
+    _clearSale();
+
+    if (mounted) {
+      AlertInfo.show(
+        padding: 80,
+        context: context,
+        text: "Committed to RM",
+        typeInfo: TypeInfo.success,
+      );
+    }
+  }
+
+  void _clearSale() {
+    setState(() {
+      _salesBloc.add(ClearCart());
+      _selectedCustomer = null;
+      _deliveryInfo = null;
+      _paymentAmounts.clear();
+      _discountController.text = "0.00";
+      _searchController.clear();
+    });
+  }
+
   Widget _buildSurveyMenuItem(
     BuildContext context,
     AppThemeColors colors,
@@ -1182,7 +1298,7 @@ class _SalesScreenState extends State<SalesScreen>
     Function(bool) onExpandChanged,
   ) {
     final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isTablet ? 16 : 12,
@@ -1219,7 +1335,9 @@ class _SalesScreenState extends State<SalesScreen>
                       Text(
                         "Add Survey",
                         style: TextStyle(
-                          color: isDark ? Colors.white : Colors.blueGrey.shade800,
+                          color: isDark
+                              ? Colors.white
+                              : Colors.blueGrey.shade800,
                           fontWeight: FontWeight.w500,
                           fontSize: isTablet ? 15 : 13,
                         ),
@@ -1243,11 +1361,15 @@ class _SalesScreenState extends State<SalesScreen>
                           decoration: InputDecoration(
                             hintText: "Survey code...",
                             hintStyle: TextStyle(
-                              color: isDark ? Colors.white30 : Colors.grey.shade400,
+                              color: isDark
+                                  ? Colors.white30
+                                  : Colors.grey.shade400,
                               fontSize: isTablet ? 14 : 12,
                             ),
                             filled: true,
-                            fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                            fillColor: isDark
+                                ? colors.surface
+                                : Colors.grey.shade100,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(6),
                               borderSide: BorderSide.none,
@@ -1339,7 +1461,9 @@ class _SalesScreenState extends State<SalesScreen>
                         Text(
                           "Add Survey",
                           style: TextStyle(
-                            color: isDark ? Colors.white : Colors.blueGrey.shade800,
+                            color: isDark
+                                ? Colors.white
+                                : Colors.blueGrey.shade800,
                             fontWeight: FontWeight.w500,
                             fontSize: isTablet ? 15 : 13,
                           ),
@@ -1514,7 +1638,7 @@ class _SalesScreenState extends State<SalesScreen>
     final RenderBox overlay =
         Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
     final buttonPosition = button.localToGlobal(Offset.zero, ancestor: overlay);
-    
+
     bool surveyExpanded = false;
     _surveyController.text = _surveyValue;
 
@@ -1541,241 +1665,432 @@ class _SalesScreenState extends State<SalesScreen>
                 Positioned(
                   left: 12,
                   bottom:
-                      MediaQuery.of(context).size.height - buttonPosition.dy + 8,
+                      MediaQuery.of(context).size.height -
+                      buttonPosition.dy +
+                      8,
                   child: Material(
                     color: Colors.transparent,
                     child: SizedBox(
-                      width: MediaQuery.of(context).size.shortestSide >= 600 ? 280 : 220,
+                      width: MediaQuery.of(context).size.shortestSide >= 600
+                          ? 280
+                          : 220,
                       child: AnimatedBuilder(
-                          animation: curvedAnimation,
-                          builder: (context, child) {
-                            return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                ..._optionItems.reversed.toList().asMap().entries.map((entry) {
-                                final reverseIndex = entry.key;
-                                final index = _optionItems.length - 1 - reverseIndex;
-                                final item = entry.value;
-                                final isFirst = index == 0;
-                                
-                                // Stagger the reveal: bottom items appear first, slower rollout
-                                final staggerFactor = _optionItems.length + 3;
-                                final itemProgress = ((curvedAnimation.value * staggerFactor) - reverseIndex).clamp(0.0, 1.0);
+                        animation: curvedAnimation,
+                        builder: (context, child) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              ..._optionItems.reversed
+                                  .toList()
+                                  .asMap()
+                                  .entries
+                                  .map((entry) {
+                                    final reverseIndex = entry.key;
+                                    final index =
+                                        _optionItems.length - 1 - reverseIndex;
+                                    final item = entry.value;
+                                    final isFirst = index == 0;
 
-                            return ClipRect(
-                              child: Align(
-                                alignment: Alignment.bottomCenter,
-                                heightFactor: itemProgress,
-                                child: Opacity(
-                                  opacity: itemProgress,
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      left: 0,
-                                      right: 40,
-                                      top: isFirst ? 8 : 4,
-                                      bottom: index == _optionItems.length - 1 ? 8 : 4,
-                                    ),
-                                    child: item == "Add Survey"
-                                        ? _buildSurveyMenuItem(
-                                            context,
-                                            colors,
-                                            isDark,
-                                            surveyExpanded,
-                                            (expanded) {
-                                              setDialogState(() {
-                                                surveyExpanded = expanded;
-                                              });
-                                            },
-                                          )
-                                        : InkWell(
-                                      onTap: () {
-                                        if (item == "Add Comment") {
-                                          Navigator.of(context).pop();
-                                          // Use a microtask to show dialog after pop completes
-                                          Future.microtask(() {
-                                            if (mounted) {
-                                              _showCommentDialog(this.context, colors, isDark);
-                                            }
-                                          });
-                                        } else if (item == "Add Delivery") {
-                                          Navigator.of(context).pop();
-                                          setState(() {
-                                            _showActions = false;
-                                            _actionsAnimationController.reverse();
-                                          });
-                                          // Navigate to Delivery Details screen
-                                          Future.microtask(() {
-                                            if (mounted) {
-                                              Navigator.of(this.context).push(
-                                                MaterialPageRoute(
-                                                  builder: (context) => const DeliveryDetailsScreen(),
-                                                ),
-                                              );
-                                            }
-                                          });
-                                        } else if (item == "View Tax") {
-                                          Navigator.of(context).pop();
-                                          setState(() {
-                                            _showTaxDetails = !_showTaxDetails;
-                                            _showActions = false;
-                                            _actionsAnimationController.reverse();
-                                          });
-                                        } else if (item == "View Profit") {
-                                          Navigator.of(context).pop();
-                                          setState(() {
-                                            _showProfitDetails = !_showProfitDetails;
-                                            _showActions = false;
-                                            _actionsAnimationController.reverse();
-                                          });
-                                        } else {
-                                          Navigator.of(context).pop();
-                                          setState(() {
-                                            _selectedOption = item;
-                                            _showActions = false;
-                                            _actionsAnimationController.reverse();
-                                          });
-                                        }
-                                      },
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: MediaQuery.of(context).size.shortestSide >= 600 ? 16 : 12,
-                                          vertical: MediaQuery.of(context).size.shortestSide >= 600 ? 14 : 10,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isDark ? const Color(0xFF1E2733) : Colors.white,
-                                          borderRadius: BorderRadius.circular(10),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
+                                    // Stagger the reveal: bottom items appear first, slower rollout
+                                    final staggerFactor =
+                                        _optionItems.length + 3;
+                                    final itemProgress =
+                                        ((curvedAnimation.value *
+                                                    staggerFactor) -
+                                                reverseIndex)
+                                            .clamp(0.0, 1.0);
+
+                                    return ClipRect(
+                                      child: Align(
+                                        alignment: Alignment.bottomCenter,
+                                        heightFactor: itemProgress,
+                                        child: Opacity(
+                                          opacity: itemProgress,
+                                          child: Padding(
+                                            padding: EdgeInsets.only(
+                                              left: 0,
+                                              right: 40,
+                                              top: isFirst ? 8 : 4,
+                                              bottom:
+                                                  index ==
+                                                      _optionItems.length - 1
+                                                  ? 8
+                                                  : 4,
                                             ),
-                                          ],
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              _getActionIcon(item),
-                                              size: MediaQuery.of(context).size.shortestSide >= 600 ? 22 : 18,
-                                              color: kPrimaryColor,
-                                            ),
-                                            SizedBox(width: MediaQuery.of(context).size.shortestSide >= 600 ? 16 : 12),
-                                            Expanded(
-                                              child: Text(
-                                                      item,
-                                                      style: TextStyle(
+                                            child: item == "Add Survey"
+                                                ? _buildSurveyMenuItem(
+                                                    context,
+                                                    colors,
+                                                    isDark,
+                                                    surveyExpanded,
+                                                    (expanded) {
+                                                      setDialogState(() {
+                                                        surveyExpanded =
+                                                            expanded;
+                                                      });
+                                                    },
+                                                  )
+                                                : InkWell(
+                                                    onTap: () {
+                                                      if (item ==
+                                                          "Add Comment") {
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop();
+                                                        // Use a microtask to show dialog after pop completes
+                                                        Future.microtask(() {
+                                                          if (mounted) {
+                                                            _showCommentDialog(
+                                                              this.context,
+                                                              colors,
+                                                              isDark,
+                                                            );
+                                                          }
+                                                        });
+                                                      } else if (item ==
+                                                          "Add Delivery") {
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop();
+                                                        setState(() {
+                                                          _showActions = false;
+                                                          _actionsAnimationController
+                                                              .reverse();
+                                                        });
+                                                        // Check if customer is selected
+                                                        if (_selectedCustomer ==
+                                                            null) {
+                                                          Future.microtask(() {
+                                                            if (mounted) {
+                                                              AlertInfo.show(
+                                                                context: this
+                                                                    .context,
+                                                                text:
+                                                                    "Please select a customer before adding delivery details",
+                                                                typeInfo:
+                                                                    TypeInfo
+                                                                        .warning,
+                                                                backgroundColor:
+                                                                    isDark
+                                                                    ? colors
+                                                                          .surface
+                                                                    : kSecondaryColor,
+                                                                iconColor:
+                                                                    Colors
+                                                                        .orange,
+                                                                textColor:
+                                                                    Colors
+                                                                        .orange,
+                                                                position:
+                                                                    MessagePosition
+                                                                        .top,
+                                                                padding: 70,
+                                                              );
+                                                            }
+                                                          });
+                                                          return;
+                                                        }
+                                                        // Navigate to Delivery Details screen
+                                                        Future.microtask(() async {
+                                                          if (mounted) {
+                                                            final result =
+                                                                await Navigator.of(
+                                                                  this.context,
+                                                                ).push<
+                                                                  DeliveryInfo
+                                                                >(
+                                                                  MaterialPageRoute(
+                                                                    builder: (ctx) => DeliveryDetailsScreen(
+                                                                      initialCustomer:
+                                                                          _selectedCustomer,
+                                                                      existingDelivery:
+                                                                          _deliveryInfo,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                            if (result !=
+                                                                    null &&
+                                                                mounted) {
+                                                              setState(
+                                                                () =>
+                                                                    _deliveryInfo =
+                                                                        result,
+                                                              );
+                                                            }
+                                                          }
+                                                        });
+                                                      } else if (item ==
+                                                          "View Tax") {
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop();
+                                                        setState(() {
+                                                          _showTaxDetails =
+                                                              !_showTaxDetails;
+                                                          _showActions = false;
+                                                          _actionsAnimationController
+                                                              .reverse();
+                                                        });
+                                                      } else if (item ==
+                                                          "View Profit") {
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop();
+                                                        setState(() {
+                                                          _showProfitDetails =
+                                                              !_showProfitDetails;
+                                                          _showActions = false;
+                                                          _actionsAnimationController
+                                                              .reverse();
+                                                        });
+                                                      } else {
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop();
+                                                        setState(() {
+                                                          _selectedOption =
+                                                              item;
+                                                          _showActions = false;
+                                                          _actionsAnimationController
+                                                              .reverse();
+                                                        });
+                                                      }
+                                                    },
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          10,
+                                                        ),
+                                                    child: Container(
+                                                      padding: EdgeInsets.symmetric(
+                                                        horizontal:
+                                                            MediaQuery.of(
+                                                                      context,
+                                                                    )
+                                                                    .size
+                                                                    .shortestSide >=
+                                                                600
+                                                            ? 16
+                                                            : 12,
+                                                        vertical:
+                                                            MediaQuery.of(
+                                                                      context,
+                                                                    )
+                                                                    .size
+                                                                    .shortestSide >=
+                                                                600
+                                                            ? 14
+                                                            : 10,
+                                                      ),
+                                                      decoration: BoxDecoration(
                                                         color: isDark
-                                                            ? Colors.white
-                                                            : Colors.blueGrey.shade800,
-                                                        fontWeight: FontWeight.w500,
-                                                        fontSize: MediaQuery.of(context).size.shortestSide >= 600 ? 15 : 13,
+                                                            ? const Color(
+                                                                0xFF1E2733,
+                                                              )
+                                                            : Colors.white,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              10,
+                                                            ),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                  isDark
+                                                                      ? 0.3
+                                                                      : 0.1,
+                                                                ),
+                                                            blurRadius: 8,
+                                                            offset:
+                                                                const Offset(
+                                                                  0,
+                                                                  2,
+                                                                ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      child: Row(
+                                                        children: [
+                                                          Icon(
+                                                            _getActionIcon(
+                                                              item,
+                                                            ),
+                                                            size:
+                                                                MediaQuery.of(
+                                                                      context,
+                                                                    ).size.shortestSide >=
+                                                                    600
+                                                                ? 22
+                                                                : 18,
+                                                            color:
+                                                                kPrimaryColor,
+                                                          ),
+                                                          SizedBox(
+                                                            width:
+                                                                MediaQuery.of(
+                                                                      context,
+                                                                    ).size.shortestSide >=
+                                                                    600
+                                                                ? 16
+                                                                : 12,
+                                                          ),
+                                                          Expanded(
+                                                            child: Text(
+                                                              item,
+                                                              style: TextStyle(
+                                                                color: isDark
+                                                                    ? Colors
+                                                                          .white
+                                                                    : Colors
+                                                                          .blueGrey
+                                                                          .shade800,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                                fontSize:
+                                                                    MediaQuery.of(
+                                                                          context,
+                                                                        ).size.shortestSide >=
+                                                                        600
+                                                                    ? 15
+                                                                    : 13,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          // Arrow icon for Comment when has value
+                                                          if (item ==
+                                                                  "Add Comment" &&
+                                                              _commentValue
+                                                                  .isNotEmpty)
+                                                            Icon(
+                                                              Icons
+                                                                  .arrow_forward_ios,
+                                                              size:
+                                                                  MediaQuery.of(
+                                                                        context,
+                                                                      ).size.shortestSide >=
+                                                                      600
+                                                                  ? 16
+                                                                  : 14,
+                                                              color:
+                                                                  kPrimaryColor,
+                                                            ),
+                                                        ],
                                                       ),
                                                     ),
-                                            ),
-                                            // Arrow icon for Comment when has value
-                                            if (item == "Add Comment" && _commentValue.isNotEmpty)
-                                              Icon(
-                                                Icons.arrow_forward_ios,
-                                                size: MediaQuery.of(context).size.shortestSide >= 600 ? 16 : 14,
-                                                color: kPrimaryColor,
-                                              ),
-                                          ],
+                                                  ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList().reversed,
-                          // Finalise button - appears at bottom, animated last
-                          Builder(
-                            builder: (context) {
-                              final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-                              final finaliseProgress = ((curvedAnimation.value * (_optionItems.length + 4)) - _optionItems.length).clamp(0.0, 1.0);
-                              return ClipRect(
-                                child: Align(
-                                  alignment: Alignment.bottomCenter,
-                                  heightFactor: finaliseProgress,
-                                  child: Opacity(
-                                    opacity: finaliseProgress,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(
-                                        left: 0,
-                                        right: 0,
-                                        top: 4,
-                                        bottom: 8,
-                                      ),
-                                      child: InkWell(
-                                        onTap: () {
-                                          Navigator.of(context).pop();
-                                          setState(() {
-                                            _selectedOption = "Finalise";
-                                            _showActions = false;
-                                            _actionsAnimationController.reverse();
-                                          });
-                                        },
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                            vertical: isTablet ? 14 : 10,
+                                    );
+                                  })
+                                  .toList()
+                                  .reversed,
+                              // Finalise button - appears at bottom, animated last
+                              Builder(
+                                builder: (context) {
+                                  final isTablet =
+                                      MediaQuery.of(
+                                        context,
+                                      ).size.shortestSide >=
+                                      600;
+                                  final finaliseProgress =
+                                      ((curvedAnimation.value *
+                                                  (_optionItems.length + 4)) -
+                                              _optionItems.length)
+                                          .clamp(0.0, 1.0);
+                                  return ClipRect(
+                                    child: Align(
+                                      alignment: Alignment.bottomCenter,
+                                      heightFactor: finaliseProgress,
+                                      child: Opacity(
+                                        opacity: finaliseProgress,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 0,
+                                            right: 0,
+                                            top: 4,
+                                            bottom: 8,
                                           ),
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [Color(0xFF30B24C), Color(0xFF60D394)],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
+                                          child: InkWell(
+                                            onTap: () {
+                                              Navigator.of(context).pop();
+                                              setState(() {
+                                                _showActions = false;
+                                                _actionsAnimationController
+                                                    .reverse();
+                                              });
+                                              _showFinaliseDialog();
+                                            },
+                                            borderRadius: BorderRadius.circular(
+                                              10,
                                             ),
-                                            borderRadius: BorderRadius.circular(12),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: const Color(0xFF30B24C).withOpacity(0.4),
-                                                blurRadius: 10,
-                                                offset: const Offset(0, 3),
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 20,
+                                                vertical: isTablet ? 14 : 10,
                                               ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              const Icon(
-                                                Icons.check_circle_outline,
-                                                size: 22,
-                                                color: Colors.white,
-                                              ),
-                                              const SizedBox(width: 12),
-                                              const Text(
-                                                "Finalise",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 16,
+                                              decoration: BoxDecoration(
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFF30B24C),
+                                                    Color(0xFF60D394),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
                                                 ),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: const Color(
+                                                      0xFF30B24C,
+                                                    ).withOpacity(0.4),
+                                                    blurRadius: 10,
+                                                    offset: const Offset(0, 3),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.check_circle_outline,
+                                                    size: 22,
+                                                    color: Colors.white,
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  const Text(
+                                                    "Finalise",
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      );
-                      },
+                                  );
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
-      );
+              ],
+            );
+          },
+        );
       },
     ).then((_) {
       if (mounted) {
@@ -1876,11 +2191,7 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Widget _buildTaxBreakdown(AppThemeColors colors, bool isDark) {
-    return TaxBreakdownWidget(
-      total: _total,
-      colors: colors,
-      isDark: isDark,
-    );
+    return TaxBreakdownWidget(total: _total, colors: colors, isDark: isDark);
   }
 
   Widget _buildProfitBreakdown(AppThemeColors colors, bool isDark) {
@@ -1892,4 +2203,3 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 }
-

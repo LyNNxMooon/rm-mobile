@@ -289,7 +289,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
               // Action buttons
               if (widget.item.trackSerial) ...[
                 _buildIconButton(
-                  icon: Icons.qr_code,
+                  icon: Icons.label_important_outline,
                   onTap: () => _showSerialDialog(context),
                   isTablet: isTablet,
                   hasValue: widget.item.serialNumber?.isNotEmpty == true,
@@ -472,7 +472,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   }
 
   void _showSerialDialog(BuildContext context) async {
-    // TODO: In production, fetch available serials from database
+
     // For now, generate sample serials for demonstration
     final sampleSerials = List.generate(
       10,

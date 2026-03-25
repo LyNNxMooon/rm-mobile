@@ -197,7 +197,6 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     _cartItems.clear();
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
-      message: "Cart cleared",
       selectedCustomer: _selectedCustomer,
     ));
   }

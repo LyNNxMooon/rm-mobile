@@ -546,11 +546,11 @@ class _GlassDrawerState extends State<GlassDrawer> {
     },
     {
       "title": "Suppliers",
-      "subTitle": "Search suppliers",
+      "subTitle": "Coming soon",
       "icon": Icons.business_outlined,
-      "color": kPrimaryColor,
-      "comingSoon": false,
-      "action": "coming_soon" // Change this when you have a route
+      "color": Colors.grey,
+      "comingSoon": true,
+      "action": "coming_soon"
     },
   ];
 }

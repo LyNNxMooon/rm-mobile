@@ -18,11 +18,11 @@ class SalesTopHeader extends StatefulWidget {
     super.key,
     required this.isIncTax,
     required this.onTaxModeChanged,
+    required this.staffName,
     this.onCustomerSearch,
     this.onCustomerClear,
     this.customerBarcode,
     this.customerName,
-    this.staffName = "David Bates",
     this.hasCustomer = false,
   });
 
