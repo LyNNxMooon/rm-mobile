@@ -518,22 +518,23 @@ class _SalesScreenState extends State<SalesScreen>
             child: Row(
               children: [
                 // Space for thumbnail
-                const SizedBox(width: 57),
+                const SizedBox(width: 40),
                 Expanded(flex: 2, child: _buildGridHeader("Code", colors)),
+                const SizedBox(width: 30),
                 Expanded(
                   flex: 4,
                   child: _buildGridHeader("Description", colors),
                 ),
                 SizedBox(
-                  width: 100,
+                  width: 120,
                   child: _buildGridHeader("Price", colors, alignRight: true),
                 ),
                 SizedBox(
-                  width: 80,
+                  width: 140,
                   child: Center(child: _buildGridHeader("Qty", colors)),
                 ),
                 SizedBox(
-                  width: 100,
+                  width: 130,
                   child: _buildGridHeader("Ext", colors, alignRight: true),
                 ),
               ],
@@ -1262,7 +1263,6 @@ class _SalesScreenState extends State<SalesScreen>
     // Handle the result
     if (result.result == FinaliseSaleResult.email) {
       final emailData = result.emailData;
-      // TODO: Wire up with real API endpoint to send email
       debugPrint('Sending receipt to: ${emailData?.email}');
     }
 
@@ -1350,42 +1350,85 @@ class _SalesScreenState extends State<SalesScreen>
                   children: [
                     Expanded(
                       child: SizedBox(
-                        height: isTablet ? 42 : 32,
-                        child: TextField(
-                          controller: _surveyController,
-                          autofocus: true,
-                          style: TextStyle(
-                            fontSize: isTablet ? 14 : 12,
-                            color: isDark ? Colors.white : Colors.black87,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: "Survey code...",
-                            hintStyle: TextStyle(
-                              color: isDark
-                                  ? Colors.white30
-                                  : Colors.grey.shade400,
-                              fontSize: isTablet ? 14 : 12,
-                            ),
-                            filled: true,
-                            fillColor: isDark
-                                ? colors.surface
-                                : Colors.grey.shade100,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: isTablet ? 14 : 10,
-                              vertical: isTablet ? 12 : 8,
-                            ),
-                          ),
-                          onSubmitted: (value) {
-                            setState(() {
-                              _surveyValue = value.trim();
-                            });
-                            onExpandChanged(false);
-                          },
-                        ),
+                        height: isTablet ? 48 : 32,
+                        child: isTablet
+                            ? MediaQuery(
+                                data: MediaQuery.of(
+                                  context,
+                                ).copyWith(textScaler: TextScaler.noScaling),
+                                child: TextField(
+                                  controller: _surveyController,
+                                  autofocus: true,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: isDark
+                                        ? Colors.white
+                                        : Colors.black87,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: "Survey code...",
+                                    hintStyle: TextStyle(
+                                      color: isDark
+                                          ? Colors.white30
+                                          : Colors.grey.shade400,
+                                      fontSize: 16,
+                                    ),
+                                    filled: true,
+                                    fillColor: isDark
+                                        ? colors.surface
+                                        : Colors.grey.shade100,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 0,
+                                    ),
+                                  ),
+                                  onSubmitted: (value) {
+                                    setState(() {
+                                      _surveyValue = value.trim();
+                                    });
+                                    onExpandChanged(false);
+                                  },
+                                ),
+                              )
+                            : TextField(
+                                controller: _surveyController,
+                                autofocus: true,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: "Survey code...",
+                                  hintStyle: TextStyle(
+                                    color: isDark
+                                        ? Colors.white30
+                                        : Colors.grey.shade400,
+                                    fontSize: 12,
+                                  ),
+                                  filled: true,
+                                  fillColor: isDark
+                                      ? colors.surface
+                                      : Colors.grey.shade100,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                onSubmitted: (value) {
+                                  setState(() {
+                                    _surveyValue = value.trim();
+                                  });
+                                  onExpandChanged(false);
+                                },
+                              ),
                       ),
                     ),
                     SizedBox(width: isTablet ? 12 : 8),

@@ -60,5 +60,12 @@
         <string>_smb._tcp</string> 
         <string>_dartobservatory._tcp</string>
     </array>
+	<key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
 </dict>
 </plist>

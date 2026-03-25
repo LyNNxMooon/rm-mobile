@@ -282,6 +282,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = context.appColors;
+    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
 
     return Scaffold(
       backgroundColor: isDark ? colors.bg : Colors.grey.shade50,
@@ -343,6 +344,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                           },
                           isDark: isDark,
                           colors: colors,
+                          isTablet: isTablet,
                         ),
                         const SizedBox(height: 12),
 
@@ -350,7 +352,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         Row(
                           children: [
                             SizedBox(
-                              width: 80,
+                              width: isTablet ? 120 : 80,
                               child: Text(
                                 "Customer",
                                 style: TextStyle(
@@ -390,6 +392,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                           isDark: isDark,
                           colors: colors,
                           enabled: _deliverTo != "Other Address",
+                          isTablet: isTablet,
                         ),
                       ],
                     ),
@@ -423,6 +426,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                           _attentionController,
                           isDark,
                           colors,
+                          isTablet: isTablet,
                         ),
                         const SizedBox(height: 12),
                         _buildFieldRow(
@@ -430,11 +434,24 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                           _address1Controller,
                           isDark,
                           colors,
+                          isTablet: isTablet,
                         ),
                         const SizedBox(height: 6),
-                        _buildFieldRow("", _address2Controller, isDark, colors),
+                        _buildFieldRow(
+                          "",
+                          _address2Controller,
+                          isDark,
+                          colors,
+                          isTablet: isTablet,
+                        ),
                         const SizedBox(height: 6),
-                        _buildFieldRow("", _address3Controller, isDark, colors),
+                        _buildFieldRow(
+                          "",
+                          _address3Controller,
+                          isDark,
+                          colors,
+                          isTablet: isTablet,
+                        ),
 
                         const SizedBox(height: 16),
 
@@ -444,6 +461,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                           _suburbController,
                           isDark,
                           colors,
+                          isTablet: isTablet,
                         ),
                         const SizedBox(height: 12),
 
@@ -457,6 +475,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                                 _stateController,
                                 isDark,
                                 colors,
+                                isTablet: isTablet,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -497,6 +516,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                                 _phoneController,
                                 isDark,
                                 colors,
+                                isTablet: isTablet,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -538,7 +558,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                               child: Row(
                                 children: [
                                   SizedBox(
-                                    width: 80,
+                                    width: isTablet ? 120 : 80,
                                     child: Text(
                                       "Delivery Date",
                                       style: TextStyle(
@@ -587,6 +607,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                           _notesController,
                           isDark,
                           colors,
+                          isTablet: isTablet,
                         ),
                       ],
                     ),
@@ -794,11 +815,13 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
     required bool isDark,
     required AppThemeColors colors,
     bool enabled = true,
+    bool isTablet = false,
   }) {
+    final labelWidth = isTablet ? 120.0 : 80.0;
     return Row(
       children: [
         SizedBox(
-          width: 80,
+          width: labelWidth,
           child: Text(
             label,
             style: TextStyle(
@@ -856,20 +879,22 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
     String label,
     TextEditingController controller,
     bool isDark,
-    AppThemeColors colors,
-  ) {
+    AppThemeColors colors, {
+    bool isTablet = false,
+  }) {
+    final labelWidth = isTablet ? 120.0 : 80.0;
     return Row(
       children: [
         if (label.isNotEmpty)
           SizedBox(
-            width: 80,
+            width: labelWidth,
             child: Text(
               label,
               style: TextStyle(color: colors.onSurfaceMuted, fontSize: 13),
             ),
           )
         else
-          const SizedBox(width: 80),
+          SizedBox(width: labelWidth),
         Expanded(
           child: _buildTextField(
             controller: controller,

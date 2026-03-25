@@ -45,40 +45,34 @@ class _HomeScreenState extends State<HomeScreen> {
   _DrawerSizes _resolveDrawerSizes(MediaQueryData media) {
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isPortrait = media.orientation == Orientation.portrait;
-    final bool isTabletPortrait = isTablet && isPortrait;
-    final bool isLargeTablet = isTablet && media.size.shortestSide >= 900;
 
-    double initialChildSize = 0.535;
-    double minChildSize = 0.535;
-    double maxChildSize = 0.88;
+    double initialChildSize;
+    double minChildSize;
+    double maxChildSize;
 
-    if (isTabletPortrait) {
-      if (isLargeTablet) {
-        initialChildSize = 0.73;
-        minChildSize = 0.71;
+    if (isTablet) {
+      if (isPortrait) {
+        // Tablet portrait: drawer starts at 60% of screen height
+        initialChildSize = 0.60;
+        minChildSize = 0.58;
+        maxChildSize = 0.91;
       } else {
-        initialChildSize = media.size.height >= 1100 ? 0.72 : 0.69;
-        minChildSize = media.size.height >= 1100 ? 0.70 : 0.67;
+        // Tablet landscape: drawer starts at 55% of screen height
+        initialChildSize = 0.55;
+        minChildSize = 0.53;
+        maxChildSize = 0.90;
       }
-      maxChildSize = 0.91;
-    } else if (isPortrait) {
-      initialChildSize = 0.63;
-      minChildSize = 0.63;
-      maxChildSize = 0.88;
-    } else if (isTablet) {
-      final double pxOffset = 30 / media.size.height;
-      if (isLargeTablet) {
-        initialChildSize = 0.63 - pxOffset;
-        minChildSize = 0.61 - pxOffset;
-      } else {
-        initialChildSize = 0.62 - pxOffset;
-        minChildSize = 0.60 - pxOffset;
-      }
-      maxChildSize = 0.90;
     } else {
-      initialChildSize = 0.52;
-      minChildSize = 0.50;
-      maxChildSize = 0.86;
+      // Phone
+      if (isPortrait) {
+        initialChildSize = 0.63;
+        minChildSize = 0.63;
+        maxChildSize = 0.88;
+      } else {
+        initialChildSize = 0.52;
+        minChildSize = 0.50;
+        maxChildSize = 0.86;
+      }
     }
 
     return _DrawerSizes(
@@ -95,13 +89,16 @@ class _HomeScreenState extends State<HomeScreen> {
     context.read<SettingsBloc>().add(RunHistoryCleanupEvent());
     _requestSavedInfo();
 
-    final currentParamState = context.read<NetworkSavedPathValidationBloc>().state;
+    final currentParamState = context
+        .read<NetworkSavedPathValidationBloc>()
+        .state;
 
     if (currentParamState is ErrorFetchingSavedPaths ||
         currentParamState is ErrorCheckingConnection) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final hasSavedShopfront =
-            (AppGlobals.instance.shopfront ?? "").trim().isNotEmpty;
+        final hasSavedShopfront = (AppGlobals.instance.shopfront ?? "")
+            .trim()
+            .isNotEmpty;
         if (!hasSavedShopfront || !AppGlobals.instance.isStaffSignedIn) {
           _showNetworkDialog();
         }
@@ -123,8 +120,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _promptStaffLoginIfNeeded({bool force = false}) async {
-    final hasShopfront =
-        (AppGlobals.instance.shopfront ?? "").trim().isNotEmpty;
+    final hasShopfront = (AppGlobals.instance.shopfront ?? "")
+        .trim()
+        .isNotEmpty;
     if (!force && !hasShopfront) return;
 
     if (!AppGlobals.instance.isStaffSignedIn || force) {
@@ -150,10 +148,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final String shopfrontName = _savedShopfrontName;
     final String staffNo = _savedStaffNo;
     final String staffPassword = _savedStaffPassword;
-    final bool missingConnection =
-      ip.isEmpty || port == null || apiKey.isEmpty;
+    final bool missingConnection = ip.isEmpty || port == null || apiKey.isEmpty;
     final bool missingShopfront =
-      shopfrontId.trim().isEmpty || shopfrontName.trim().isEmpty;
+        shopfrontId.trim().isEmpty || shopfrontName.trim().isEmpty;
 
     if (missingConnection || missingShopfront) {
       logger.d("Auto-auth skipped: missing connection/shopfront info.");
@@ -194,9 +191,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final String shopfrontId = _savedShopfrontId;
     final String shopfrontName = _savedShopfrontName;
     final bool missingConnection =
-      savedIp.isEmpty || port == null || apiKey.isEmpty;
+        savedIp.isEmpty || port == null || apiKey.isEmpty;
     final bool missingShopfront =
-      shopfrontId.trim().isEmpty || shopfrontName.trim().isEmpty;
+        shopfrontId.trim().isEmpty || shopfrontName.trim().isEmpty;
 
     if (missingConnection || missingShopfront) {
       logger.d("Auto-connect skipped: missing connection/shopfront info.");
@@ -254,7 +251,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (currentState is! FetchStockProgress) {
       context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-      context.read<FetchCustomerBloc>().add(StartCustomerSyncEvent(ipAddress: ""));
+      context.read<FetchCustomerBloc>().add(
+        StartCustomerSyncEvent(ipAddress: ""),
+      );
     }
 
     context.navigateToNext(const ScannerScreen());
@@ -264,11 +263,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
-    final bool isLargeTablet = isTablet && media.size.shortestSide >= 900;
-    final bool isMediumTablet = isTablet && !isLargeTablet;
-    final bool isLandscape = media.orientation == Orientation.landscape;
-    final bool isMediumTabletLandscape = isMediumTablet && isLandscape;
+    final bool isPortrait = media.orientation == Orientation.portrait;
     final drawerSizes = _resolveDrawerSizes(media);
+
+    // Calculate available space between AppBarSession and drawer edge
+    final double drawerTopY =
+        media.size.height * (1.0 - drawerSizes.initialChildSize);
+    final double safeTopPadding = media.padding.top;
+    const double appBarSessionHeight = 60.0;
+    final double contentAreaHeight =
+        drawerTopY - safeTopPadding - appBarSessionHeight;
 
     return MultiBlocListener(
       listeners: [
@@ -279,8 +283,9 @@ class _HomeScreenState extends State<HomeScreen> {
             }
             if (state is ErrorFetchingSavedPaths ||
                 state is ErrorCheckingConnection) {
-              final hasSavedShopfront =
-                  (AppGlobals.instance.shopfront ?? "").trim().isNotEmpty;
+              final hasSavedShopfront = (AppGlobals.instance.shopfront ?? "")
+                  .trim()
+                  .isNotEmpty;
               if (!hasSavedShopfront || !AppGlobals.instance.isStaffSignedIn) {
                 _showNetworkDialog();
               }
@@ -328,35 +333,31 @@ class _HomeScreenState extends State<HomeScreen> {
             top: true,
             child: Stack(
               children: [
-                SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      SizedBox(height: isTablet ? 4 : 10),
-                      const AppBarSession(),
-                      SizedBox(
-                        height: isLargeTablet
-                          ? 105
-                          : (isMediumTabletLandscape ? 50 : (isTablet ? 75 : 50)),
+                Column(
+                  children: [
+                    const AppBarSession(),
+                    SizedBox(
+                      height: contentAreaHeight,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          logo(),
+                          SizedBox(
+                            height: isTablet ? (isPortrait ? 24 : 16) : 22,
+                          ),
+                          headerTitle(),
+                          syncWatcher(),
+                        ],
                       ),
-                      logo(),
-                      SizedBox(
-                        height: isLargeTablet
-                          ? 38
-                          : (isMediumTabletLandscape ? 12 : (isTablet ? 24 : 22)),
-                      ),
-                      headerTitle(),
-                      syncWatcher(),
-                      const SizedBox(height: 120),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 GlassDrawer(
                   initialChildSize: drawerSizes.initialChildSize,
                   minChildSize: drawerSizes.minChildSize,
                   maxChildSize: drawerSizes.maxChildSize,
                   onStocktakeTap: _handleStocktakeTap,
-                )
+                ),
               ],
             ),
           ),
@@ -370,12 +371,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isLargeTablet = isTablet && media.size.shortestSide >= 900;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final double tabletScale =
-        isTablet ? (media.size.shortestSide / 768).clamp(0.85, 1.3) : 1.0;
+    final double tabletScale = isTablet
+        ? (media.size.shortestSide / 768).clamp(0.85, 1.3)
+        : 1.0;
     final double horizontalPad = isTablet ? 40 : 25;
     final double logoHeight = isLargeTablet
-      ? (112 * tabletScale)
-      : (isTablet ? (98 * tabletScale) : 75);
+        ? (112 * tabletScale)
+        : (isTablet ? (98 * tabletScale) : 75);
     final String logoAsset = isDark
         ? "assets/images/trademark_dark.png"
         : "assets/images/trademark.png";
@@ -392,8 +394,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget headerTitle() {
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
-    final double tabletScale =
-        isTablet ? (media.size.shortestSide / 768).clamp(0.85, 1.3) : 1.0;
+    final double tabletScale = isTablet
+        ? (media.size.shortestSide / 768).clamp(0.85, 1.3)
+        : 1.0;
     final double fontSize = isTablet ? (22 * tabletScale) : 22;
 
     return ShaderMask(
@@ -427,7 +430,9 @@ class _HomeScreenState extends State<HomeScreen> {
       listener: (context, state) {
         if (state is ConnectedToShopfront) {
           context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-          context.read<FetchCustomerBloc>().add(StartCustomerSyncEvent(ipAddress: ""));
+          context.read<FetchCustomerBloc>().add(
+            StartCustomerSyncEvent(ipAddress: ""),
+          );
         }
         if (state is ShopfrontConnectionError) {
           showTopSnackBar(

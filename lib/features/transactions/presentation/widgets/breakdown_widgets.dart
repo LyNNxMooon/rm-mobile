@@ -23,10 +23,14 @@ class TaxBreakdownWidget extends StatelessWidget {
     final double incTaxTotal = total;
     final double exTaxTotal = total / (1 + taxRate);
     final double taxAmount = incTaxTotal - exTaxTotal;
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      constraints: const BoxConstraints(maxWidth: 120),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 16 : 8,
+        vertical: isTablet ? 12 : 6,
+      ),
+      constraints: BoxConstraints(maxWidth: isTablet ? 220 : 120),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E2733) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
@@ -38,17 +42,27 @@ class TaxBreakdownWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildTaxRow("Ex:", exTaxTotal, highlight: false),
-          const SizedBox(height: 3),
-          _buildTaxRow("Tax:", taxAmount, highlight: true),
-          const SizedBox(height: 3),
-          _buildTaxRow("Inc:", incTaxTotal, highlight: false),
+          _buildTaxRow("Ex:", exTaxTotal, highlight: false, isTablet: isTablet),
+          SizedBox(height: isTablet ? 8 : 3),
+          _buildTaxRow("Tax:", taxAmount, highlight: true, isTablet: isTablet),
+          SizedBox(height: isTablet ? 8 : 3),
+          _buildTaxRow(
+            "Inc:",
+            incTaxTotal,
+            highlight: false,
+            isTablet: isTablet,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTaxRow(String label, double amount, {bool highlight = false}) {
+  Widget _buildTaxRow(
+    String label,
+    double amount, {
+    bool highlight = false,
+    bool isTablet = false,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -58,11 +72,11 @@ class TaxBreakdownWidget extends StatelessWidget {
             color: highlight
                 ? kPrimaryColor
                 : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
-            fontSize: 11,
+            fontSize: isTablet ? 13 : 11,
             fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: isTablet ? 10 : 4),
         Flexible(
           child: Text(
             "\$${amount.toStringAsFixed(2)}",
@@ -70,7 +84,7 @@ class TaxBreakdownWidget extends StatelessWidget {
               color: highlight
                   ? kPrimaryColor
                   : (isDark ? Colors.white : Colors.black87),
-              fontSize: 11,
+              fontSize: isTablet ? 13 : 11,
               fontWeight: FontWeight.bold,
             ),
             overflow: TextOverflow.ellipsis,
@@ -103,10 +117,14 @@ class ProfitBreakdownWidget extends StatelessWidget {
     final double totalCost = subtotal * costRatio;
     final double egp = subtotal - totalCost - discount;
     final double egpPercent = subtotal > 0 ? (egp / subtotal) * 100 : 0;
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      constraints: const BoxConstraints(maxWidth: 120),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 16 : 8,
+        vertical: isTablet ? 12 : 6,
+      ),
+      constraints: BoxConstraints(maxWidth: isTablet ? 220 : 120),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E2733) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
@@ -118,17 +136,32 @@ class ProfitBreakdownWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildProfitRow("Cost:", totalCost, highlight: false),
-          const SizedBox(height: 3),
-          _buildProfitRow("eGP:", egp, highlight: true),
-          const SizedBox(height: 3),
-          _buildPercentRow("eGP%:", egpPercent, highlight: true),
+          _buildProfitRow(
+            "Cost:",
+            totalCost,
+            highlight: false,
+            isTablet: isTablet,
+          ),
+          SizedBox(height: isTablet ? 8 : 3),
+          _buildProfitRow("eGP:", egp, highlight: true, isTablet: isTablet),
+          SizedBox(height: isTablet ? 8 : 3),
+          _buildPercentRow(
+            "eGP%:",
+            egpPercent,
+            highlight: true,
+            isTablet: isTablet,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildProfitRow(String label, double amount, {bool highlight = false}) {
+  Widget _buildProfitRow(
+    String label,
+    double amount, {
+    bool highlight = false,
+    bool isTablet = false,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -138,11 +171,11 @@ class ProfitBreakdownWidget extends StatelessWidget {
             color: highlight
                 ? const Color(0xFF30B24C)
                 : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
-            fontSize: 11,
+            fontSize: isTablet ? 13 : 11,
             fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: isTablet ? 10 : 4),
         Flexible(
           child: Text(
             "\$${amount.toStringAsFixed(2)}",
@@ -150,7 +183,7 @@ class ProfitBreakdownWidget extends StatelessWidget {
               color: highlight
                   ? const Color(0xFF30B24C)
                   : (isDark ? Colors.white : Colors.black87),
-              fontSize: 11,
+              fontSize: isTablet ? 13 : 11,
               fontWeight: FontWeight.bold,
             ),
             overflow: TextOverflow.ellipsis,
@@ -160,7 +193,12 @@ class ProfitBreakdownWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildPercentRow(String label, double percent, {bool highlight = false}) {
+  Widget _buildPercentRow(
+    String label,
+    double percent, {
+    bool highlight = false,
+    bool isTablet = false,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -170,11 +208,11 @@ class ProfitBreakdownWidget extends StatelessWidget {
             color: highlight
                 ? const Color(0xFF30B24C)
                 : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
-            fontSize: 11,
+            fontSize: isTablet ? 13 : 11,
             fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: isTablet ? 10 : 4),
         Flexible(
           child: Text(
             "${percent.toStringAsFixed(1)}%",
@@ -182,7 +220,7 @@ class ProfitBreakdownWidget extends StatelessWidget {
               color: highlight
                   ? const Color(0xFF30B24C)
                   : (isDark ? Colors.white : Colors.black87),
-              fontSize: 11,
+              fontSize: isTablet ? 13 : 11,
               fontWeight: FontWeight.bold,
             ),
             overflow: TextOverflow.ellipsis,

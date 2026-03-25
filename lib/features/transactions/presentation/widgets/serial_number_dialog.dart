@@ -125,7 +125,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
         : 1.0;
 
     final dialogWidth = isTablet ? 720.0 : MediaQuery.of(context).size.width * 0.98;
-    final dialogHeight = isTablet ? 550.0 : MediaQuery.of(context).size.height * 0.7;
+    final dialogHeight = isTablet ? 750.0 : MediaQuery.of(context).size.height * 0.7;
 
     return Dialog(
       insetPadding: EdgeInsets.symmetric(horizontal: 15),

@@ -113,8 +113,8 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     super.dispose();
   }
 
-  double get _displayExtension => widget.isIncTax 
-      ? widget.item.extension 
+  double get _displayExtension => widget.isIncTax
+      ? widget.item.extension
       : widget.item.extension / (1 + widget.taxRate);
 
   void _incrementQty() {
@@ -136,7 +136,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   @override
   Widget build(BuildContext context) {
     final isTablet = widget.isTablet;
-    
+
     return Container(
       padding: EdgeInsets.all(isTablet ? 12 : 10),
       decoration: BoxDecoration(
@@ -144,10 +144,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
             ? Color.lerp(widget.colors.surface, kPrimaryColor, 0.08)
             : kPrimaryColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: kPrimaryColor.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: kPrimaryColor.withOpacity(0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,15 +169,13 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                       ? Image.network(
                           widget.item.stock!.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Image.asset(
-                            overviewPlaceholder,
-                            fit: BoxFit.cover,
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Image.asset(
+                                overviewPlaceholder,
+                                fit: BoxFit.cover,
+                              ),
                         )
-                      : Image.asset(
-                          overviewPlaceholder,
-                          fit: BoxFit.cover,
-                        ),
+                      : Image.asset(overviewPlaceholder, fit: BoxFit.cover),
                 ),
               ),
               // Item details
@@ -234,15 +229,16 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
               ),
             ],
           ),
-          
+
           SizedBox(height: isTablet ? 10 : 8),
-          
+
           // Edit fields and actions row
           Row(
             children: [
               // Sell Price field
               SizedBox(
-                width: isTablet ? 90 : 70,
+                width: isTablet ? 140 : 70,
+                height: isTablet ? 52 : 30,
                 child: _buildCompactField(
                   label: "Price",
                   controller: _priceController,
@@ -254,18 +250,19 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                   },
                 ),
               ),
-              
-              SizedBox(width: isTablet ? 10 : 8),
-              
+
+              SizedBox(width: isTablet ? 20 : 8),
+
               // Qty with +/- buttons
               _buildQtyButton(
                 icon: Icons.remove,
                 onTap: _decrementQty,
                 isTablet: isTablet,
               ),
-              SizedBox(width: isTablet ? 4 : 3),
+              SizedBox(width: isTablet ? 10 : 3),
               SizedBox(
-                width: isTablet ? 50 : 40,
+                width: isTablet ? 90 : 40,
+                height: isTablet ? 52 : 30,
                 child: _buildCompactField(
                   controller: _qtyController,
                   isTablet: isTablet,
@@ -277,15 +274,15 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                   },
                 ),
               ),
-              SizedBox(width: isTablet ? 4 : 3),
+              SizedBox(width: isTablet ? 10 : 3),
               _buildQtyButton(
                 icon: Icons.add,
                 onTap: _incrementQty,
                 isTablet: isTablet,
               ),
-              
+
               const Spacer(),
-              
+
               // Action buttons
               if (widget.item.trackSerial) ...[
                 _buildIconButton(
@@ -296,16 +293,16 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                 ),
                 SizedBox(width: isTablet ? 6 : 4),
               ],
-              
+
               _buildIconButton(
                 icon: Icons.delete_outline,
                 onTap: widget.onDelete,
                 isTablet: isTablet,
                 isDestructive: true,
               ),
-              
+
               SizedBox(width: isTablet ? 6 : 4),
-              
+
               // Save button
               _buildCompactSaveButton(isTablet: isTablet),
             ],
@@ -324,54 +321,65 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     bool isNumber = false,
     required Function(String) onChanged,
   }) {
-    return SizedBox(
-      height: isTablet ? 34 : 30,
-      child: TextField(
-        controller: controller,
-        keyboardType: isNumber 
-            ? TextInputType.number 
-            : const TextInputType.numberWithOptions(decimal: true),
-        textAlign: textAlign,
-        inputFormatters: isNumber ? [FilteringTextInputFormatter.digitsOnly] : null,
-        style: TextStyle(
-          fontSize: isTablet ? 13 : 12,
-          fontWeight: FontWeight.w600,
-          color: widget.isDark ? Colors.white : Colors.black87,
-        ),
-        decoration: InputDecoration(
-          prefixText: prefix,
-          prefixStyle: TextStyle(
-            fontSize: isTablet ? 13 : 12,
-            fontWeight: FontWeight.w600,
-            color: widget.isDark ? Colors.white70 : Colors.black54,
-          ),
-          isDense: true,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 8 : 6,
-            vertical: isTablet ? 8 : 6,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: BorderSide(
-              color: widget.isDark ? Colors.white24 : Colors.grey.shade300,
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: BorderSide(
-              color: widget.isDark ? Colors.white24 : Colors.grey.shade300,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(color: kPrimaryColor),
-          ),
-          filled: true,
-          fillColor: widget.isDark ? widget.colors.surface : Colors.white,
-        ),
-        onChanged: onChanged,
+    final textField = TextField(
+      controller: controller,
+      keyboardType: isNumber
+          ? TextInputType.number
+          : const TextInputType.numberWithOptions(decimal: true),
+      textAlign: textAlign,
+      textAlignVertical: TextAlignVertical.center,
+      maxLines: 1,
+      minLines: 1,
+      inputFormatters: isNumber
+          ? [FilteringTextInputFormatter.digitsOnly]
+          : null,
+      style: TextStyle(
+        fontSize: isTablet ? 18 : 12,
+        fontWeight: FontWeight.w600,
+        color: widget.isDark ? Colors.white : Colors.black87,
       ),
+      decoration: InputDecoration(
+        prefixText: prefix,
+        prefixStyle: TextStyle(
+          fontSize: isTablet ? 18 : 12,
+          fontWeight: FontWeight.w600,
+          color: widget.isDark ? Colors.white70 : Colors.black54,
+        ),
+        isDense: true,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 12 : 6,
+          vertical: isTablet ? 0 : 6,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: BorderSide(
+            color: widget.isDark ? Colors.white24 : Colors.grey.shade300,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: BorderSide(
+            color: widget.isDark ? Colors.white24 : Colors.grey.shade300,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: const BorderSide(color: kPrimaryColor),
+        ),
+        filled: true,
+        fillColor: widget.isDark ? widget.colors.surface : Colors.white,
+      ),
+      onChanged: onChanged,
     );
+
+    // On tablet, wrap with MediaQuery to disable text scaling and prevent cutoff
+    if (isTablet) {
+      return MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+        child: textField,
+      );
+    }
+    return textField;
   }
 
   Widget _buildQtyButton({
@@ -379,7 +387,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     required VoidCallback onTap,
     required bool isTablet,
   }) {
-    final size = isTablet ? 34.0 : 30.0;
+    final size = isTablet ? 52.0 : 30.0;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
@@ -391,11 +399,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: kPrimaryColor.withOpacity(0.3)),
         ),
-        child: Icon(
-          icon,
-          size: isTablet ? 18 : 16,
-          color: kPrimaryColor,
-        ),
+        child: Icon(icon, size: isTablet ? 26 : 16, color: kPrimaryColor),
       ),
     );
   }
@@ -407,22 +411,22 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     bool isDestructive = false,
     bool hasValue = false,
   }) {
-    final size = isTablet ? 34.0 : 30.0;
+    final size = isTablet ? 52.0 : 30.0;
     final Color bgColor = isDestructive
         ? kErrorColor.withOpacity(0.1)
         : hasValue
-            ? kPrimaryColor.withOpacity(0.15)
-            : (widget.isDark ? widget.colors.surface : Colors.grey.shade100);
+        ? kPrimaryColor.withOpacity(0.15)
+        : (widget.isDark ? widget.colors.surface : Colors.grey.shade100);
     final Color fgColor = isDestructive
         ? kErrorColor
         : hasValue
-            ? kPrimaryColor
-            : (widget.isDark ? Colors.white70 : Colors.blueGrey.shade700);
+        ? kPrimaryColor
+        : (widget.isDark ? Colors.white70 : Colors.blueGrey.shade700);
     final Color borderColor = isDestructive
         ? kErrorColor.withOpacity(0.3)
         : hasValue
-            ? kPrimaryColor.withOpacity(0.3)
-            : (widget.isDark ? Colors.white24 : Colors.grey.shade300);
+        ? kPrimaryColor.withOpacity(0.3)
+        : (widget.isDark ? Colors.white24 : Colors.grey.shade300);
 
     return InkWell(
       onTap: onTap,
@@ -441,13 +445,13 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   }
 
   Widget _buildCompactSaveButton({required bool isTablet}) {
-    final height = isTablet ? 34.0 : 30.0;
+    final height = isTablet ? 52.0 : 30.0;
     return InkWell(
       onTap: widget.onSave,
       borderRadius: BorderRadius.circular(6),
       child: Container(
         height: height,
-        padding: EdgeInsets.symmetric(horizontal: isTablet ? 14 : 12),
+        padding: EdgeInsets.symmetric(horizontal: isTablet ? 22 : 12),
         decoration: BoxDecoration(
           color: kPrimaryColor,
           borderRadius: BorderRadius.circular(6),
@@ -455,12 +459,12 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check, size: isTablet ? 16 : 14, color: Colors.white),
-            SizedBox(width: isTablet ? 4 : 3),
+            Icon(Icons.check, size: isTablet ? 24 : 14, color: Colors.white),
+            SizedBox(width: isTablet ? 8 : 3),
             Text(
               "Save",
               style: TextStyle(
-                fontSize: isTablet ? 12 : 11,
+                fontSize: isTablet ? 16 : 11,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
@@ -472,7 +476,6 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   }
 
   void _showSerialDialog(BuildContext context) async {
-
     // For now, generate sample serials for demonstration
     final sampleSerials = List.generate(
       10,
@@ -523,8 +526,10 @@ class MobileCartTile extends StatelessWidget {
     this.taxRate = 0.1,
   });
 
-  double get _displayPrice => isIncTax ? item.sellPrice : item.sellPrice / (1 + taxRate);
-  double get _displayExtension => isIncTax ? item.extension : item.extension / (1 + taxRate);
+  double get _displayPrice =>
+      isIncTax ? item.sellPrice : item.sellPrice / (1 + taxRate);
+  double get _displayExtension =>
+      isIncTax ? item.extension : item.extension / (1 + taxRate);
 
   @override
   Widget build(BuildContext context) {
@@ -566,15 +571,10 @@ class MobileCartTile extends StatelessWidget {
                   ? Image.network(
                       item.stock!.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Image.asset(
-                        overviewPlaceholder,
-                        fit: BoxFit.cover,
-                      ),
+                      errorBuilder: (context, error, stackTrace) =>
+                          Image.asset(overviewPlaceholder, fit: BoxFit.cover),
                     )
-                  : Image.asset(
-                      overviewPlaceholder,
-                      fit: BoxFit.cover,
-                    ),
+                  : Image.asset(overviewPlaceholder, fit: BoxFit.cover),
             ),
           ),
           // Item Details
@@ -665,8 +665,10 @@ class TabletCartTile extends StatelessWidget {
     this.taxRate = 0.1,
   });
 
-  double get _displayPrice => isIncTax ? item.sellPrice : item.sellPrice / (1 + taxRate);
-  double get _displayExtension => isIncTax ? item.extension : item.extension / (1 + taxRate);
+  double get _displayPrice =>
+      isIncTax ? item.sellPrice : item.sellPrice / (1 + taxRate);
+  double get _displayExtension =>
+      isIncTax ? item.extension : item.extension / (1 + taxRate);
 
   @override
   Widget build(BuildContext context) {
@@ -707,15 +709,10 @@ class TabletCartTile extends StatelessWidget {
                   ? Image.network(
                       item.stock!.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Image.asset(
-                        overviewPlaceholder,
-                        fit: BoxFit.cover,
-                      ),
+                      errorBuilder: (context, error, stackTrace) =>
+                          Image.asset(overviewPlaceholder, fit: BoxFit.cover),
                     )
-                  : Image.asset(
-                      overviewPlaceholder,
-                      fit: BoxFit.cover,
-                    ),
+                  : Image.asset(overviewPlaceholder, fit: BoxFit.cover),
             ),
           ),
           Expanded(
@@ -743,18 +740,21 @@ class TabletCartTile extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width: 100,
+            width: 120,
             child: Text(
               "\$${_displayPrice.toStringAsFixed(2)}",
               textAlign: TextAlign.right,
-              style: TextStyle(color: colors.onSurfaceMuted, fontSize: 13),
+              style: TextStyle(color: colors.onSurfaceMuted, fontSize: 14),
             ),
           ),
           SizedBox(
-            width: 80,
+            width: 120,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: isDark ? colors.surface : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(6),
@@ -764,6 +764,7 @@ class TabletCartTile extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
+                    fontSize: 14,
                     color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
                   ),
                 ),
@@ -771,13 +772,13 @@ class TabletCartTile extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width: 100,
+            width: 130,
             child: Text(
               "\$${_displayExtension.toStringAsFixed(2)}",
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 14,
+                fontSize: 15,
                 color: isDark ? Colors.white : Colors.black87,
               ),
             ),
@@ -807,18 +808,19 @@ class CompactCartTile extends StatelessWidget {
     this.taxRate = 0.1,
   });
 
-  double get _displayExtension => isIncTax ? item.extension : item.extension / (1 + taxRate);
+  double get _displayExtension =>
+      isIncTax ? item.extension : item.extension / (1 + taxRate);
 
   @override
   Widget build(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 16 : 10, 
+            horizontal: isTablet ? 16 : 10,
             vertical: isTablet ? 8 : 4,
           ),
           child: Row(
@@ -851,12 +853,12 @@ class CompactCartTile extends StatelessWidget {
               ),
               // Qty
               SizedBox(
-                width: isTablet ? 50 : 30,
+                width: isTablet ? 80 : 30,
                 child: Text(
                   "${item.qty}",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: isTablet ? 14 : 12,
+                    fontSize: isTablet ? 15 : 12,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
                   ),
@@ -864,12 +866,12 @@ class CompactCartTile extends StatelessWidget {
               ),
               // Price
               SizedBox(
-                width: isTablet ? 90 : 65,
+                width: isTablet ? 130 : 65,
                 child: Text(
                   "\$${_displayExtension.toStringAsFixed(2)}",
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: isTablet ? 14 : 12,
+                    fontSize: isTablet ? 15 : 12,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
@@ -898,21 +900,27 @@ class CartGridHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // Space for thumbnail
+        // Space for thumbnail (45 + 12 margin)
         const SizedBox(width: 57),
         Expanded(flex: 2, child: _buildHeader("Code")),
         Expanded(flex: 4, child: _buildHeader("Description")),
-        SizedBox(width: 100, child: _buildHeader("Price", alignRight: true)),
-        SizedBox(width: 80, child: Center(child: _buildHeader("Qty"))),
-        SizedBox(width: 100, child: _buildHeader("Ext", alignRight: true)),
+        SizedBox(width: 120, child: _buildHeader("Price", alignRight: true)),
+        SizedBox(width: 120, child: _buildHeader("Qty", alignCenter: true)),
+        SizedBox(width: 130, child: _buildHeader("Ext", alignRight: true)),
       ],
     );
   }
 
-  Widget _buildHeader(String title, {bool alignRight = false}) {
+  Widget _buildHeader(
+    String title, {
+    bool alignRight = false,
+    bool alignCenter = false,
+  }) {
     return Text(
       title,
-      textAlign: alignRight ? TextAlign.right : TextAlign.left,
+      textAlign: alignCenter
+          ? TextAlign.center
+          : (alignRight ? TextAlign.right : TextAlign.left),
       style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.bold,
