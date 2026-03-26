@@ -409,6 +409,25 @@ const pendingCustomerCreationAddressesTableCreationQuery = '''
   )
 ''';
 
+const saleSessionsTableCreationQuery = '''
+  CREATE TABLE SaleSessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_type TEXT NOT NULL,
+    shopfront TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    cart_items_json TEXT,
+    customer_id INTEGER,
+    customer_barcode TEXT,
+    customer_name TEXT,
+    subtotal REAL DEFAULT 0,
+    discount REAL DEFAULT 0,
+    payment_amounts_json TEXT,
+    survey_value TEXT,
+    comment_value TEXT
+  )
+''';
+
 
 // ---------------------------------------------------------------------------
 // DB INDEXES (For drastically faster search performance)

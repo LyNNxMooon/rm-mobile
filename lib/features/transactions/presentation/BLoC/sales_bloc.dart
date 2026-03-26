@@ -19,6 +19,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     on<SearchStock>(_onSearchStock);
     on<SelectStock>(_onSelectStock);
     on<AddToCart>(_onAddToCart);
+    on<AddCartItemDirect>(_onAddCartItemDirect);
     on<UpdateCartItemQty>(_onUpdateCartItemQty);
     on<UpdateCartItemPrice>(_onUpdateCartItemPrice);
     on<UpdateCartItemSerial>(_onUpdateCartItemSerial);
@@ -97,6 +98,15 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 
   void _onAddToCart(AddToCart event, Emitter<SalesState> emit) {
     _addStockToCart(event.stock, qty: event.qty, skipEditMode: event.skipEditMode);
+    emit(CartUpdated(
+      cartItems: List.from(_cartItems),
+      selectedCustomer: _selectedCustomer,
+    ));
+  }
+
+  void _onAddCartItemDirect(AddCartItemDirect event, Emitter<SalesState> emit) {
+    // Add the cart item directly without searching for stock
+    _cartItems.insert(0, event.cartItem);
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,

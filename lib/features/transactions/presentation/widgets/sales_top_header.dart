@@ -13,6 +13,7 @@ class SalesTopHeader extends StatefulWidget {
   final String? customerName;
   final String staffName;
   final bool hasCustomer;
+  final bool autoFocusCustomer;
 
   const SalesTopHeader({
     super.key,
@@ -24,6 +25,7 @@ class SalesTopHeader extends StatefulWidget {
     this.customerBarcode,
     this.customerName,
     this.hasCustomer = false,
+    this.autoFocusCustomer = false,
   });
 
   @override
@@ -34,6 +36,17 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
   bool _isSearchMode = true; // Start in search mode
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-focus customer field if requested
+    if (widget.autoFocusCustomer) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _searchFocusNode.requestFocus();
+      });
+    }
+  }
 
   @override
   void didUpdateWidget(covariant SalesTopHeader oldWidget) {

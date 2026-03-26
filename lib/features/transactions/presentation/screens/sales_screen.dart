@@ -10,6 +10,7 @@ import 'package:alert_info/alert_info.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/customer_vo.dart';
+import '../../../../entities/vos/sale_session_vo.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../entities/vos/stock_vo.dart';
 import '../../../../utils/navigation_extension.dart';
@@ -22,6 +23,7 @@ import '../BLoC/sales_states.dart';
 import 'stock_selection_screen.dart';
 import 'customer_selection_screen.dart';
 import '../widgets/finalise_sale_dialog.dart';
+import '../widgets/sale_session_picker_dialog.dart';
 import '../widgets/sales_widgets.dart';
 import '../models/delivery_info.dart';
 import 'delivery_details_screen.dart';
@@ -104,6 +106,10 @@ class _SalesScreenState extends State<SalesScreen>
   String _commentValue = '';
   final TextEditingController _surveyController = TextEditingController();
 
+  // Session tracking
+  int? _currentSessionId;
+  bool _sessionsChecked = false;
+
   late AnimationController _actionsAnimationController;
   late Animation<double> _actionsAnimation;
 
@@ -151,6 +157,166 @@ class _SalesScreenState extends State<SalesScreen>
       }
     });
     _loadSalesSettings();
+    
+    // Check for saved sessions after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkSavedSessions();
+    });
+  }
+
+  Future<void> _checkSavedSessions() async {
+    if (_sessionsChecked) return;
+    _sessionsChecked = true;
+    
+    final shopfront = AppGlobals.instance.shopfront ?? '';
+    if (shopfront.isEmpty) return;
+    
+    final sessionsData = await LocalDbDAO.instance.getSaleSessions(
+      shopfront: shopfront,
+      sessionType: widget.title,
+    );
+    
+    if (sessionsData.isEmpty || !mounted) return;
+    
+    final sessions = sessionsData.map((e) => SaleSessionVO.fromMap(e)).toList();
+    
+    final result = await SaleSessionPickerDialog.show(
+      context: context,
+      sessions: sessions,
+      sessionType: widget.title,
+    );
+    
+    if (result == null || result.result == SessionPickerResult.cancelled) {
+      return;
+    }
+    
+    if (result.result == SessionPickerResult.continueSession && result.session != null) {
+      await _restoreSession(result.session!);
+    } else if (result.result == SessionPickerResult.newSale) {
+      // Starting new sale - optionally clear old sessions
+      // For now, we keep them so user can continue later
+    }
+  }
+
+  Future<void> _restoreSession(SaleSessionVO session) async {
+    _currentSessionId = session.id;
+    
+    // Restore cart items
+    _salesBloc.add(ClearCart());
+    for (final itemData in session.cartItems) {
+      // Try to find stock from database for full data
+      final stockSearch = await LocalDbDAO.instance.getStockBySearch(
+        itemData.code,
+        AppGlobals.instance.shopfront ?? '',
+      );
+      
+      StockVO? stock;
+      if (stockSearch.stock != null) {
+        stock = stockSearch.stock;
+      } else if (stockSearch.duplicates.isNotEmpty) {
+        stock = stockSearch.duplicates.first;
+      }
+      
+      final cartItem = CartItemVO(
+        code: itemData.code,
+        description: itemData.description,
+        qty: itemData.qty,
+        sellPrice: itemData.sellPrice,
+        costPrice: itemData.costPrice,
+        stock: stock,
+        serialNumber: itemData.serialNumber,
+        isEditing: false,
+      );
+      _salesBloc.add(AddCartItemDirect(cartItem: cartItem));
+    }
+    
+    // Restore customer (if we have customer ID, try to look them up)
+    if (session.customerId != null) {
+      final customerSearch = await LocalDbDAO.instance.getCustomerBySearch(
+        session.customerBarcode ?? '',
+        AppGlobals.instance.shopfront ?? '',
+      );
+      if (customerSearch.customer != null) {
+        _selectedCustomer = customerSearch.customer;
+      }
+    }
+    
+    // Restore other values
+    setState(() {
+      _discountValue = session.discount;
+      _discountController.text = session.discount.toStringAsFixed(2);
+      _paymentAmounts.clear();
+      _paymentAmounts.addAll(session.paymentAmounts);
+      _surveyValue = session.surveyValue ?? '';
+      _surveyController.text = _surveyValue;
+      _commentValue = session.commentValue ?? '';
+    });
+  }
+
+  Future<void> _saveCurrentSession() async {
+    // Only save if there are items in the cart
+    if (_cartItems.isEmpty) {
+      // If session exists but cart is now empty, delete it
+      if (_currentSessionId != null) {
+        await LocalDbDAO.instance.deleteSaleSession(_currentSessionId!);
+        _currentSessionId = null;
+      }
+      return;
+    }
+    
+    final shopfront = AppGlobals.instance.shopfront ?? '';
+    if (shopfront.isEmpty) return;
+    
+    final now = DateTime.now();
+    final cartItemsData = _cartItems.map((e) => CartItemData.fromCartItem(e)).toList();
+    
+    final sessionMap = {
+      'session_type': widget.title,
+      'shopfront': shopfront,
+      'created_at': _currentSessionId != null ? now.toIso8601String() : now.toIso8601String(),
+      'updated_at': now.toIso8601String(),
+      'cart_items_json': _cartItems.isNotEmpty 
+          ? cartItemsData.map((e) => e.toJson()).toList().toString().replaceAll('\'', '"')
+          : null,
+      'customer_id': _selectedCustomer?.customerId,
+      'customer_barcode': _selectedCustomer?.barcode,
+      'customer_name': _selectedCustomer != null 
+          ? _buildCustomerDisplayName(_selectedCustomer!)
+          : null,
+      'subtotal': _subtotal,
+      'discount': _discountValue,
+      'payment_amounts_json': _paymentAmounts.isNotEmpty 
+          ? _paymentAmounts.entries.map((e) => '"${e.key}":${e.value}').join(',')
+          : null,
+      'survey_value': _surveyValue.isNotEmpty ? _surveyValue : null,
+      'comment_value': _commentValue.isNotEmpty ? _commentValue : null,
+    };
+    
+    // Properly encode cart items
+    if (_cartItems.isNotEmpty) {
+      sessionMap['cart_items_json'] = '[${cartItemsData.map((e) => 
+        '{"code":"${e.code}","description":"${e.description.replaceAll('"', '\\"')}","qty":${e.qty},"sell_price":${e.sellPrice},"cost_price":${e.costPrice ?? 0},"serial_number":${e.serialNumber != null ? '"${e.serialNumber}"' : 'null'},"stock_id":${e.stockId ?? 'null'}}'
+      ).join(',')}]';
+    }
+    
+    // Properly encode payment amounts
+    if (_paymentAmounts.isNotEmpty) {
+      sessionMap['payment_amounts_json'] = '{${_paymentAmounts.entries.map((e) => '"${e.key}":${e.value}').join(',')}}';
+    }
+    
+    if (_currentSessionId != null) {
+      sessionMap['id'] = _currentSessionId;
+      await LocalDbDAO.instance.updateSaleSession(sessionMap);
+    } else {
+      _currentSessionId = await LocalDbDAO.instance.saveSaleSession(sessionMap);
+    }
+  }
+
+  Future<void> _deleteCurrentSession() async {
+    if (_currentSessionId != null) {
+      await LocalDbDAO.instance.deleteSaleSession(_currentSessionId!);
+      _currentSessionId = null;
+    }
   }
 
   Future<void> _loadSalesSettings() async {
@@ -285,13 +451,42 @@ class _SalesScreenState extends State<SalesScreen>
             );
 
             if (selected != null && mounted) {
-              _salesBloc.add(SelectCustomer(customer: selected));
-              setState(() => _selectedCustomer = selected);
+              // For Account Sales, validate customer is an account customer
+              if (widget.title == "Account Sales" && !selected.account) {
+                AlertInfo.show(
+                  context: context,
+                  text: "This customer is not an account customer",
+                  typeInfo: TypeInfo.error,
+                  backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                  iconColor: kErrorColor,
+                  textColor: kErrorColor,
+                  position: MessagePosition.top,
+                  padding: 70,
+                );
+                _salesBloc.add(ResetSearchState());
+              } else {
+                _salesBloc.add(SelectCustomer(customer: selected));
+                setState(() => _selectedCustomer = selected);
+              }
             } else {
               _salesBloc.add(ResetSearchState());
             }
           } else if (state is CustomerSelected) {
-            setState(() => _selectedCustomer = state.selectedCustomer);
+            // For Account Sales, validate customer is an account customer
+            if (widget.title == "Account Sales" && !(state.selectedCustomer?.account ?? false)) {
+              AlertInfo.show(
+                context: context,
+                text: "This customer is not an account customer",
+                typeInfo: TypeInfo.error,
+                backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                iconColor: kErrorColor,
+                textColor: kErrorColor,
+                position: MessagePosition.top,
+                padding: 70,
+              );
+            } else {
+              setState(() => _selectedCustomer = state.selectedCustomer);
+            }
           } else if (state is CustomerNotFound) {
             AlertInfo.show(
               context: context,
@@ -318,12 +513,20 @@ class _SalesScreenState extends State<SalesScreen>
         },
         child: BlocBuilder<SalesBloc, SalesState>(
           builder: (context, state) {
-            return Scaffold(
-              backgroundColor: isDark ? colors.bg : kBgColor,
-              appBar: _buildAppBar(colors, isDark),
-              body: SafeArea(
-                child: Column(
-                  children: [
+            return PopScope(
+              canPop: true,
+              onPopInvokedWithResult: (didPop, result) async {
+                if (didPop) {
+                  // Save session when leaving the screen
+                  await _saveCurrentSession();
+                }
+              },
+              child: Scaffold(
+                backgroundColor: isDark ? colors.bg : kBgColor,
+                appBar: _buildAppBar(colors, isDark),
+                body: SafeArea(
+                  child: Column(
+                    children: [
                     // Top Section: Customer, Staff, Date
                     SalesTopHeader(
                       isIncTax: _isIncTax,
@@ -336,6 +539,7 @@ class _SalesScreenState extends State<SalesScreen>
                       customerName: _selectedCustomer != null
                           ? _buildCustomerDisplayName(_selectedCustomer!)
                           : null,
+                      autoFocusCustomer: widget.title != "Sales",
                       onCustomerSearch: (query) {
                         _salesBloc.add(SearchCustomer(query: query));
                       },
@@ -388,7 +592,8 @@ class _SalesScreenState extends State<SalesScreen>
                   ],
                 ),
               ),
-            );
+            ),
+          );
           },
         ),
       ),
@@ -925,6 +1130,9 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   void _clearSale() {
+    // Delete the current session since sale was committed
+    _deleteCurrentSession();
+    
     setState(() {
       _salesBloc.add(ClearCart());
       _selectedCustomer = null;
@@ -2435,47 +2643,56 @@ class _SalesScreenState extends State<SalesScreen>
     bool isDark,
     bool isTablet,
   ) {
+    final isSales = widget.title == "Sales";
+    final requiresCustomer = !isSales && _selectedCustomer == null;
+    final isDisabled = _cartItems.isEmpty || requiresCustomer;
+    
     return GestureDetector(
-      onTap: () => _showFinaliseDialog(),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          vertical: isTablet ? 10 : 8,
-          horizontal: isTablet ? 28 : 20,
-        ),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.green.shade500, Colors.green.shade700],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      onTap: isDisabled ? null : () => _showFinaliseDialog(),
+      child: Opacity(
+        opacity: isDisabled ? 0.4 : 1.0,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            vertical: isTablet ? 10 : 8,
+            horizontal: isTablet ? 28 : 20,
           ),
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.green.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDisabled 
+                  ? [Colors.grey.shade400, Colors.grey.shade500]
+                  : [Colors.green.shade500, Colors.green.shade700],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              color: Colors.white,
-              size: isTablet ? 18 : 16,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              "FINALISE",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isTablet ? 13 : 11,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.8,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isDisabled ? [] : [
+              BoxShadow(
+                color: Colors.green.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                color: Colors.white,
+                size: isTablet ? 18 : 16,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "FINALISE",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isTablet ? 13 : 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -63,6 +63,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           await db.execute(customerCsoTableCreationQuery);
           await db.execute(customerSoQuoteTableCreationQuery);
           await db.execute(customerSoPayTableCreationQuery);
+          await db.execute(saleSessionsTableCreationQuery);
 
           // 2. Create Indexes for fast searching
           await db.execute(createIdxStocksBarcode);
@@ -3667,6 +3668,138 @@ class SQLiteDAOImpl extends LocalDbDAO {
       logger.d('Cleared customers for $shopfront');
     } catch (error) {
       logger.e('Error clearing customers for $shopfront: $error');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sale Sessions
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<List<Map<String, dynamic>>> getSaleSessions({
+    required String shopfront,
+    String? sessionType,
+  }) async {
+    try {
+      final db = _database!;
+      String where = 'shopfront = ?';
+      List<dynamic> whereArgs = [shopfront];
+      
+      if (sessionType != null) {
+        where += ' AND session_type = ?';
+        whereArgs.add(sessionType);
+      }
+      
+      final result = await db.query(
+        'SaleSessions',
+        where: where,
+        whereArgs: whereArgs,
+        orderBy: 'updated_at DESC',
+      );
+      return result;
+    } catch (error) {
+      logger.e('Error getting sale sessions: $error');
+      return [];
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getSaleSession(int id) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'SaleSessions',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      return result.isNotEmpty ? result.first : null;
+    } catch (error) {
+      logger.e('Error getting sale session: $error');
+      return null;
+    }
+  }
+
+  @override
+  Future<int> saveSaleSession(Map<String, dynamic> session) async {
+    try {
+      final db = _database!;
+      // Remove id if it's provided - let SQLite auto-generate it
+      final data = Map<String, dynamic>.from(session);
+      data.remove('id');
+      
+      final id = await db.insert('SaleSessions', data);
+      logger.d('Saved sale session with id: $id');
+      return id;
+    } catch (error) {
+      logger.e('Error saving sale session: $error');
+      return -1;
+    }
+  }
+
+  @override
+  Future<void> updateSaleSession(Map<String, dynamic> session) async {
+    try {
+      final db = _database!;
+      final id = session['id'];
+      if (id == null) {
+        logger.e('Cannot update sale session without id');
+        return;
+      }
+      
+      await db.update(
+        'SaleSessions',
+        session,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      logger.d('Updated sale session: $id');
+    } catch (error) {
+      logger.e('Error updating sale session: $error');
+    }
+  }
+
+  @override
+  Future<void> deleteSaleSession(int id) async {
+    try {
+      final db = _database!;
+      await db.delete(
+        'SaleSessions',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      logger.d('Deleted sale session: $id');
+    } catch (error) {
+      logger.e('Error deleting sale session: $error');
+    }
+  }
+
+  @override
+  Future<void> deleteAllSaleSessions({String? shopfront, String? sessionType}) async {
+    try {
+      final db = _database!;
+      String? where;
+      List<dynamic>? whereArgs;
+      
+      if (shopfront != null || sessionType != null) {
+        final conditions = <String>[];
+        whereArgs = <dynamic>[];
+        
+        if (shopfront != null) {
+          conditions.add('shopfront = ?');
+          whereArgs.add(shopfront);
+        }
+        if (sessionType != null) {
+          conditions.add('session_type = ?');
+          whereArgs.add(sessionType);
+        }
+        
+        where = conditions.join(' AND ');
+      }
+      
+      await db.delete('SaleSessions', where: where, whereArgs: whereArgs);
+      logger.d('Deleted all sale sessions (shopfront: $shopfront, type: $sessionType)');
+    } catch (error) {
+      logger.e('Error deleting all sale sessions: $error');
     }
   }
 }

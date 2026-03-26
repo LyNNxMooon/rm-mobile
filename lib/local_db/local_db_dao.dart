@@ -306,6 +306,17 @@ abstract class LocalDbDAO {
   });
   Future<void> renewPendingCustomerCreationIds(String shopfront);
 
+  // Sale Sessions
+  Future<List<Map<String, dynamic>>> getSaleSessions({
+    required String shopfront,
+    String? sessionType,
+  });
+  Future<Map<String, dynamic>?> getSaleSession(int id);
+  Future<int> saveSaleSession(Map<String, dynamic> session);
+  Future<void> updateSaleSession(Map<String, dynamic> session);
+  Future<void> deleteSaleSession(int id);
+  Future<void> deleteAllSaleSessions({String? shopfront, String? sessionType});
+
   //Removing data
   Future<void> removeNetworkCredential({required String ip});
   Future<void> deleteNetworkPath(String path);

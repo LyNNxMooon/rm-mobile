@@ -26,6 +26,12 @@ class AddToCart extends SalesEvent {
   AddToCart({required this.stock, this.qty = 1, this.skipEditMode = false});
 }
 
+/// Add a pre-built cart item directly (for session restore)
+class AddCartItemDirect extends SalesEvent {
+  final dynamic cartItem; // CartItemVO
+  AddCartItemDirect({required this.cartItem});
+}
+
 /// Update cart item quantity
 class UpdateCartItemQty extends SalesEvent {
   final int index;
