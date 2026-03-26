@@ -22,6 +22,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_bloc.dart';
@@ -38,9 +39,11 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   static const int _defaultAgentPort = 5000;
+  static const String _kCashDrawerIdentifierKey = "cash_drawer_identifier";
 
   double retentionDays = 30;
   bool backupToLan = true;
+  String _cashDrawerIdentifier = "A";
 
   final TextEditingController _manualIpController = TextEditingController();
   final TextEditingController _manualCodeController = TextEditingController();
@@ -76,6 +79,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       context.read<SettingsBloc>().add(CheckAutoBackupNowEvent());
     });
+    _loadCashDrawerIdentifier();
+  }
+
+  Future<void> _loadCashDrawerIdentifier() async {
+    final value = await LocalDbDAO.instance.getAppConfig(_kCashDrawerIdentifierKey);
+    if (mounted) {
+      setState(() {
+        _cashDrawerIdentifier = (value != null && value.isNotEmpty) ? value : "A";
+      });
+    }
+  }
+
+  Future<void> _saveCashDrawerIdentifier(String value) async {
+    await LocalDbDAO.instance.saveAppConfig(_kCashDrawerIdentifierKey, value);
+    if (mounted) {
+      setState(() {
+        _cashDrawerIdentifier = value;
+      });
+    }
   }
 
   @override
@@ -610,66 +632,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         _buildSectionTitle("Shopfront"),
                         _buildGlassContainer(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                            child: InkWell(
-                              onTap: () => _openShopfrontPicker(context),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      Icons.storefront_outlined,
-                                      size: 20,
-                                      color: context.appColors.isDark ? Colors.white : context.appColors.onHero,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 15),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "Current Shopfront",
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: context.appColors.isDark ? Colors.white70 : context.appColors.onHero,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                                child: InkWell(
+                                  onTap: () => _openShopfrontPicker(context),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.withOpacity(0.5),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          _getShopfrontLabel(),
-                                          style: getSmartTitle(
-                                            fontSize: 16,
-                                            color: context.appColors.isDark ? Colors.white : context.appColors.onHero,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                        child: Icon(
+                                          Icons.storefront_outlined,
+                                          size: 20,
+                                          color: context.appColors.isDark ? Colors.white : context.appColors.onHero,
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                      const SizedBox(width: 15),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Current Shopfront",
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: context.appColors.isDark ? Colors.white70 : context.appColors.onHero,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              _getShopfrontLabel(),
+                                              style: getSmartTitle(
+                                                fontSize: 16,
+                                                color: context.appColors.isDark ? Colors.white : context.appColors.onHero,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: kPrimaryColor.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                          Icons.settings,
+                                          size: 26,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: kPrimaryColor.withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Icon(
-                                      Icons.settings,
-                                      size: 26,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildCashDrawerDropdown(),
+                            ],
                           ),
                         ),
 
@@ -990,6 +1021,104 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (trailing != null) trailing,
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCashDrawerDropdown() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final List<String> drawerOptions = List.generate(26, (i) => String.fromCharCode(65 + i));
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.point_of_sale_outlined,
+              size: 20,
+              color: isDark ? Colors.white : colors.onHero,
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Set Active Cash Drawer Identifier",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.white70 : colors.onHero,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "Drawer $_cashDrawerIdentifier",
+                  style: getSmartTitle(
+                    fontSize: 16,
+                    color: isDark ? Colors.white : colors.onHero,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: kPrimaryColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: DropdownButton<String>(
+              value: _cashDrawerIdentifier,
+              icon: Icon(
+                Icons.arrow_drop_down,
+                color: isDark ? Colors.white : colors.onHero,
+              ),
+              underline: const SizedBox(),
+              dropdownColor: isDark ? colors.surfaceAlt : Colors.white,
+              selectedItemBuilder: (BuildContext context) {
+                return drawerOptions.map<Widget>((String value) {
+                  return Center(
+                    child: Text(
+                      value,
+                      style: getSmartTitle(
+                        fontSize: 16,
+                        color: isDark ? Colors.white : colors.onHero,
+                      ),
+                    ),
+                  );
+                }).toList();
+              },
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  _saveCashDrawerIdentifier(newValue);
+                }
+              },
+              items: drawerOptions.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }

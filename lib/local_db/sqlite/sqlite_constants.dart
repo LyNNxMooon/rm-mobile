@@ -38,6 +38,7 @@ const stocksTableCreationQuery = '''
     weighted INTEGER,
     track_serial INTEGER,
     last_sale_date TEXT,
+    allow_renaming INTEGER,
     pricing_rules TEXT,
     PRIMARY KEY (stock_id, shopfront)
   )
@@ -134,6 +135,9 @@ const String kStaffRestrictedPermissionsKey =
     "staff_restricted_permissions_json";
 const String kWelcomeSeenKey = "welcome_seen";
 const String kTermsAcceptedKey = "terms_accepted";
+const String kSalesScanIndividualUnitsKey = "sales_scan_individual_units";
+const String kSalesSkipSellPriceKey = "sales_skip_sell_price";
+const String kSalesPromptForEmailKey = "sales_prompt_for_email";
 
 const customersTableCreationQuery = '''
   CREATE TABLE Customers (

@@ -7,7 +7,7 @@ import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/customer_vo.dart';
 import '../../domain/use_cases/search_customer_for_sale.dart';
 import '../models/delivery_info.dart';
-import '../widgets/duplicate_customer_dialog.dart';
+import 'customer_selection_screen.dart';
 
 final _sl = GetIt.instance;
 
@@ -238,10 +238,12 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
           padding: 70,
         );
       } else if (result.duplicates.isNotEmpty) {
-        // Show duplicate selection dialog
-        final selected = await showDialog<CustomerVO>(
-          context: context,
-          builder: (_) => DuplicateCustomerDialog(matches: result.duplicates),
+        // Navigate to customer selection screen
+        final selected = await Navigator.push<CustomerVO>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CustomerSelectionScreen(matches: result.duplicates),
+          ),
         );
         if (selected != null && mounted) {
           setState(() {
@@ -675,7 +677,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         elevation: 0,
                       ),
                       child: const Text(
-                        "Commit - F10",
+                        "Commit",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,

@@ -64,6 +64,8 @@ class StockVO {
   final bool trackSerial;
   @JsonKey(name: 'last_sale_date')
   final String? lastSaleDate;
+  @JsonKey(name: 'allow_renaming')
+  final bool allowRenaming;
   @JsonKey(
     name: 'pricing_rules',
     fromJson: _pricingRulesFromJson,
@@ -121,6 +123,7 @@ class StockVO {
       "weighted": _asBool(item["weighted"]),
       "track_serial": _asBool(item["track_serial"]),
       "last_sale_date": _asNullableString(item["last_sale_date"]),
+      "allow_renaming": _asBool(item["allow_renaming"]),
       "pricing_rules": item["pricing_rules"],
     };
 
@@ -163,6 +166,7 @@ class StockVO {
     required this.weighted,
     required this.trackSerial,
     required this.lastSaleDate,
+    this.allowRenaming = false,
     this.pricingRules,
   });
 

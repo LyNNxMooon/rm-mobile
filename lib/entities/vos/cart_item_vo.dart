@@ -11,6 +11,7 @@ class CartItemVO {
   final StockVO? stock; // Full stock data for reference
   final String? serialNumber;
   final bool isEditing; // Whether item is in expanded edit mode
+  final bool isNewlyAdded; // Whether item was just added (for auto-save logic)
 
   CartItemVO({
     required this.code,
@@ -21,6 +22,7 @@ class CartItemVO {
     this.stock,
     this.serialNumber,
     this.isEditing = false,
+    this.isNewlyAdded = false,
   });
 
   double get extension => qty * sellPrice;
@@ -38,6 +40,7 @@ class CartItemVO {
       costPrice: stock.cost,
       stock: stock,
       isEditing: true, // New items start in edit mode
+      isNewlyAdded: true, // Mark as newly added for auto-save check
     );
   }
 
@@ -51,6 +54,7 @@ class CartItemVO {
     StockVO? stock,
     String? serialNumber,
     bool? isEditing,
+    bool? isNewlyAdded,
   }) {
     return CartItemVO(
       code: code ?? this.code,
@@ -61,6 +65,7 @@ class CartItemVO {
       stock: stock ?? this.stock,
       serialNumber: serialNumber ?? this.serialNumber,
       isEditing: isEditing ?? this.isEditing,
+      isNewlyAdded: isNewlyAdded ?? this.isNewlyAdded,
     );
   }
 }

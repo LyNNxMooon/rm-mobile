@@ -7,20 +7,23 @@ abstract class SalesEvent {}
 /// Search for stock by barcode, description, custom1, or custom2
 class SearchStock extends SalesEvent {
   final String query;
-  SearchStock({required this.query});
+  final bool skipEditMode;
+  SearchStock({required this.query, this.skipEditMode = false});
 }
 
 /// User selected a stock from duplicate matches dialog
 class SelectStock extends SalesEvent {
   final StockVO stock;
-  SelectStock({required this.stock});
+  final bool skipEditMode;
+  SelectStock({required this.stock, this.skipEditMode = false});
 }
 
 /// Add stock to cart
 class AddToCart extends SalesEvent {
   final StockVO stock;
   final int qty;
-  AddToCart({required this.stock, this.qty = 1});
+  final bool skipEditMode;
+  AddToCart({required this.stock, this.qty = 1, this.skipEditMode = false});
 }
 
 /// Update cart item quantity
@@ -42,6 +45,13 @@ class UpdateCartItemSerial extends SalesEvent {
   final int index;
   final String serialNumber;
   UpdateCartItemSerial({required this.index, required this.serialNumber});
+}
+
+/// Update cart item description (for allow_renaming items)
+class UpdateCartItemDescription extends SalesEvent {
+  final int index;
+  final String description;
+  UpdateCartItemDescription({required this.index, required this.description});
 }
 
 /// Save cart item (exit edit mode)

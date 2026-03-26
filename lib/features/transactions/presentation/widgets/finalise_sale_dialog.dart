@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
@@ -14,23 +15,62 @@ class FinaliseSaleEmailData {
   FinaliseSaleEmailData({required this.email});
 }
 
-/// Dialog for finalising a sale - offers Email or Save options
+/// Data returned with payment amounts
+class FinaliseSalePaymentData {
+  final Map<String, double> paymentAmounts;
+
+  FinaliseSalePaymentData({required this.paymentAmounts});
+}
+
+/// Dialog for finalising a sale - offers Payment selection, then Email or Save options
 class FinaliseSaleDialog extends StatefulWidget {
   final CustomerVO? customer;
+  final double total;
+  final Map<String, double> initialPaymentAmounts;
+  final bool promptForEmail;
+  final bool showPayments;
+  final String title;
 
-  const FinaliseSaleDialog({super.key, this.customer});
+  const FinaliseSaleDialog({
+    super.key,
+    this.customer,
+    required this.total,
+    this.initialPaymentAmounts = const {},
+    this.promptForEmail = true,
+    this.showPayments = true,
+    this.title = 'Sale',
+  });
 
   /// Shows the dialog and returns the result
-  static Future<
-    ({FinaliseSaleResult result, FinaliseSaleEmailData? emailData})?
-  >
-  show({required BuildContext context, CustomerVO? customer}) {
-    return showDialog<
-      ({FinaliseSaleResult result, FinaliseSaleEmailData? emailData})
-    >(
+  static Future<({
+    FinaliseSaleResult result,
+    FinaliseSaleEmailData? emailData,
+    FinaliseSalePaymentData? paymentData,
+  })?>
+  show({
+    required BuildContext context,
+    CustomerVO? customer,
+    required double total,
+    Map<String, double> initialPaymentAmounts = const {},
+    bool promptForEmail = true,
+    bool showPayments = true,
+    String title = 'Sale',
+  }) {
+    return showDialog<({
+      FinaliseSaleResult result,
+      FinaliseSaleEmailData? emailData,
+      FinaliseSalePaymentData? paymentData,
+    })>(
       context: context,
-      barrierDismissible: true,
-      builder: (_) => FinaliseSaleDialog(customer: customer),
+      barrierDismissible: false,
+      builder: (_) => FinaliseSaleDialog(
+        customer: customer,
+        total: total,
+        initialPaymentAmounts: initialPaymentAmounts,
+        promptForEmail: promptForEmail,
+        showPayments: showPayments,
+        title: title,
+      ),
     );
   }
 
@@ -39,8 +79,23 @@ class FinaliseSaleDialog extends StatefulWidget {
 }
 
 class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
-  bool _showEmailForm = false;
+  // 0 = payments, 1 = commit options, 2 = email form, 3 = receipt
+  late int _currentStep;
   late TextEditingController _emailController;
+  late Map<String, double> _paymentAmounts;
+  FinaliseSaleResult? _finalResult;
+  FinaliseSaleEmailData? _finalEmailData;
+
+  final List<String> _paymentMethods = [
+    "Cash",
+    "EFTPOS",
+    "Cheque",
+    "Bank Card",
+    "Master Card",
+    "Visa",
+    "Amex",
+    "Diners",
+  ];
 
   @override
   void initState() {
@@ -48,6 +103,21 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
     _emailController = TextEditingController(
       text: widget.customer?.email ?? '',
     );
+    _paymentAmounts = Map.from(widget.initialPaymentAmounts);
+    
+    // Determine starting step
+    if (widget.showPayments) {
+      // Sales: start at payments step
+      _currentStep = 0;
+    } else if (widget.promptForEmail) {
+      // Non-Sales with email prompt: start at commit options
+      _currentStep = 1;
+    } else {
+      // Non-Sales without email prompt: go directly to receipt
+      _currentStep = 3;
+      _finalResult = FinaliseSaleResult.save;
+      _finalEmailData = null;
+    }
   }
 
   @override
@@ -55,6 +125,11 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
     _emailController.dispose();
     super.dispose();
   }
+
+  double get _totalPaid =>
+      _paymentAmounts.values.fold(0.0, (sum, amount) => sum + amount);
+
+  double get _balanceOrChange => _totalPaid - widget.total;
 
   String _getCustomerDisplayName() {
     if (widget.customer == null) return 'No customer selected';
@@ -74,6 +149,179 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
     return parts.isEmpty ? widget.customer!.barcode : parts.join(' ');
   }
 
+  void _showPaymentAmountDialog(String paymentMethod, AppThemeColors colors, bool isDark) {
+    final existingAmount = _paymentAmounts[paymentMethod] ?? 0.0;
+    // Auto-fill with remaining balance if no existing amount and balance is owed
+    final prefillAmount = existingAmount > 0 
+        ? existingAmount 
+        : (_balanceOrChange < 0 ? _balanceOrChange.abs() : 0.0);
+    final controller = TextEditingController(
+      text: prefillAmount > 0 ? prefillAmount.toStringAsFixed(2) : '',
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (dialogContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
+          ),
+          child: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "$paymentMethod Amount",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    if (existingAmount > 0)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _paymentAmounts.remove(paymentMethod);
+                          });
+                          Navigator.of(dialogContext).pop();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            "Remove",
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        autofocus: true,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                        ],
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        decoration: InputDecoration(
+                          prefixText: "\$ ",
+                          prefixStyle: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                          hintText: "0.00",
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.white30 : Colors.grey.shade400,
+                          ),
+                          filled: true,
+                          fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
+                        ),
+                        onSubmitted: (value) {
+                          _applyPayment(paymentMethod, value);
+                          Navigator.of(dialogContext).pop();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: () {
+                        _applyPayment(paymentMethod, controller.text);
+                        Navigator.of(dialogContext).pop();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF30B24C), Color(0xFF60D394)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ).then((_) {
+      // Ensure parent dialog rebuilds when bottom sheet is dismissed
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _applyPayment(String paymentMethod, String value) {
+    final amount = double.tryParse(value) ?? 0.0;
+    setState(() {
+      if (amount > 0) {
+        _paymentAmounts[paymentMethod] = amount;
+      } else {
+        _paymentAmounts.remove(paymentMethod);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
@@ -86,20 +334,234 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        width: isTablet ? 400 : MediaQuery.of(context).size.width * 0.85,
+        width: isTablet ? 500 : MediaQuery.of(context).size.width * 0.9,
         padding: const EdgeInsets.all(24),
-        child: _showEmailForm
-            ? _buildEmailForm(colors, isDark, isTablet)
-            : _buildInitialOptions(colors, isDark, isTablet),
+        child: _currentStep == 0
+            ? _buildPaymentsStep(colors, isDark, isTablet)
+            : _currentStep == 1
+                ? _buildCommitOptions(colors, isDark, isTablet)
+                : _currentStep == 2
+                    ? _buildEmailForm(colors, isDark, isTablet)
+                    : _buildReceiptStep(colors, isDark, isTablet),
       ),
     );
   }
 
-  Widget _buildInitialOptions(
-    AppThemeColors colors,
-    bool isDark,
-    bool isTablet,
-  ) {
+  Widget _buildPaymentsStep(AppThemeColors colors, bool isDark, bool isTablet) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Header
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: kPrimaryColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.payment,
+            color: kPrimaryColor,
+            size: 32,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          "Payment",
+          style: TextStyle(
+            fontSize: isTablet ? 20 : 18,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Select payment method(s)",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: isTablet ? 14 : 13,
+            color: colors.onSurfaceMuted,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Total, Balance/Change display
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isDark ? Colors.white12 : Colors.grey.shade300,
+            ),
+          ),
+          child: Column(
+            children: [
+              _buildAmountRow("Total", widget.total, isDark, isLarge: true),
+              const SizedBox(height: 8),
+              Divider(
+                color: isDark ? Colors.white12 : Colors.grey.shade300,
+                height: 1,
+              ),
+              const SizedBox(height: 8),
+              _buildAmountRow(
+                _balanceOrChange >= 0 ? "Change" : "Balance",
+                _balanceOrChange.abs(),
+                isDark,
+                isNegative: _balanceOrChange < 0,
+                isPositive: _balanceOrChange > 0,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Payment Methods Grid
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _paymentMethods.map((method) {
+            final hasAmount = _paymentAmounts.containsKey(method) && _paymentAmounts[method]! > 0;
+            final amount = _paymentAmounts[method] ?? 0;
+            return GestureDetector(
+              onTap: () => _showPaymentAmountDialog(method, colors, isDark),
+              onLongPress: hasAmount
+                  ? () {
+                      setState(() {
+                        _paymentAmounts.remove(method);
+                      });
+                    }
+                  : null,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: hasAmount
+                      ? kPrimaryColor
+                      : (isDark ? colors.surfaceAlt : Colors.grey.shade100),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: hasAmount
+                        ? kPrimaryColor
+                        : (isDark ? Colors.white24 : Colors.grey.shade300),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      method,
+                      style: TextStyle(
+                        color: hasAmount
+                            ? Colors.white
+                            : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
+                        fontWeight: hasAmount ? FontWeight.bold : FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (hasAmount) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        "\$${amount.toStringAsFixed(0)}",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 24),
+
+        // Next/Commit Button
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              if (widget.promptForEmail) {
+                setState(() => _currentStep = 1);
+              } else {
+                // Skip email step, go to receipt
+                setState(() {
+                  _finalResult = FinaliseSaleResult.save;
+                  _finalEmailData = null;
+                  _currentStep = 3;
+                });
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kPrimaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              widget.promptForEmail ? "Next" : "Commit",
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Cancel
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context, (
+              result: FinaliseSaleResult.cancelled,
+              emailData: null,
+              paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
+            ));
+          },
+          child: Text("Cancel", style: TextStyle(color: colors.onSurfaceMuted)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAmountRow(String label, double amount, bool isDark, {
+    bool isLarge = false,
+    bool isNegative = false,
+    bool isPositive = false,
+  }) {
+    Color valueColor;
+    if (isNegative) {
+      valueColor = Colors.redAccent;
+    } else if (isPositive) {
+      valueColor = kPrimaryColor;
+    } else {
+      valueColor = isDark ? Colors.white : Colors.black87;
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isLarge ? 16 : 14,
+            fontWeight: isLarge ? FontWeight.bold : FontWeight.w500,
+            color: isDark ? Colors.white70 : Colors.black54,
+          ),
+        ),
+        Text(
+          "\$${amount.toStringAsFixed(2)}",
+          style: TextStyle(
+            fontSize: isLarge ? 18 : 15,
+            fontWeight: FontWeight.bold,
+            color: valueColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCommitOptions(AppThemeColors colors, bool isDark, bool isTablet) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -142,10 +604,10 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () {
-              setState(() => _showEmailForm = true);
+              setState(() => _currentStep = 2);
             },
             icon: const Icon(Icons.email_outlined),
-            label: const Text("Email Receipt"),
+            label: const Text("Email & Commit"),
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimaryColor,
               foregroundColor: Colors.white,
@@ -163,13 +625,14 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: () {
-              Navigator.pop(context, (
-                result: FinaliseSaleResult.save,
-                emailData: null,
-              ));
+              setState(() {
+                _finalResult = FinaliseSaleResult.save;
+                _finalEmailData = null;
+                _currentStep = 3;
+              });
             },
             icon: const Icon(Icons.save_outlined),
-            label: const Text("Save Only"),
+            label: const Text("Commit"),
             style: OutlinedButton.styleFrom(
               foregroundColor: isDark ? Colors.white : Colors.black87,
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -184,15 +647,28 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
         ),
         const SizedBox(height: 16),
 
-        // Cancel
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context, (
-              result: FinaliseSaleResult.cancelled,
-              emailData: null,
-            ));
-          },
-          child: Text("Cancel", style: TextStyle(color: colors.onSurfaceMuted)),
+        // Back and Cancel
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (widget.showPayments) ...[
+              TextButton(
+                onPressed: () => setState(() => _currentStep = 0),
+                child: Text("Back", style: TextStyle(color: colors.onSurfaceMuted)),
+              ),
+              const SizedBox(width: 16),
+            ],
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, (
+                  result: FinaliseSaleResult.cancelled,
+                  emailData: null,
+                  paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
+                ));
+              },
+              child: Text("Cancel", style: TextStyle(color: colors.onSurfaceMuted)),
+            ),
+          ],
         ),
       ],
     );
@@ -207,7 +683,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
         Row(
           children: [
             IconButton(
-              onPressed: () => setState(() => _showEmailForm = false),
+              onPressed: () => setState(() => _currentStep = 1),
               icon: Icon(
                 Icons.arrow_back,
                 color: isDark ? Colors.white : Colors.black87,
@@ -228,7 +704,16 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 8),
+        Text(
+          "Email will be batched to process in RetailManager.",
+          style: TextStyle(
+            fontSize: isTablet ? 13 : 12,
+            color: isDark ? Colors.white60 : Colors.black54,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        const SizedBox(height: 16),
 
         // Customer Info
         Container(
@@ -336,10 +821,11 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           child: ElevatedButton(
             onPressed: () {
               final email = _emailController.text.trim();
-              Navigator.pop(context, (
-                result: FinaliseSaleResult.email,
-                emailData: FinaliseSaleEmailData(email: email),
-              ));
+              setState(() {
+                _finalResult = FinaliseSaleResult.email;
+                _finalEmailData = FinaliseSaleEmailData(email: email);
+                _currentStep = 3;
+              });
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimaryColor,
@@ -365,12 +851,156 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
               Navigator.pop(context, (
                 result: FinaliseSaleResult.cancelled,
                 emailData: null,
+                paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
               ));
             },
             child: Text(
               "Cancel",
               style: TextStyle(color: colors.onSurfaceMuted),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReceiptStep(AppThemeColors colors, bool isDark, bool isTablet) {
+    final change = _totalPaid - widget.total;
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Header
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: kPrimaryColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.check_circle,
+            color: kPrimaryColor,
+            size: 32,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          "${widget.title} Complete",
+          style: TextStyle(
+            fontSize: isTablet ? 20 : 18,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Receipt summary
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isDark ? Colors.white12 : Colors.grey.shade300,
+            ),
+          ),
+          child: Column(
+            children: [
+              _buildReceiptRow("Total", widget.total, isDark),
+              const SizedBox(height: 8),
+              _buildReceiptRow("Amount Paid", _totalPaid, isDark),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Change - prominent display
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          decoration: BoxDecoration(
+            color: kPrimaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: kPrimaryColor.withOpacity(0.3),
+              width: 2,
+            ),
+          ),
+          child: Column(
+            children: [
+              Text(
+                "Change",
+                style: TextStyle(
+                  fontSize: isTablet ? 16 : 14,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white70 : Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "\$${(change > 0 ? change : 0).toStringAsFixed(2)}",
+                style: TextStyle(
+                  fontSize: isTablet ? 36 : 32,
+                  fontWeight: FontWeight.bold,
+                  color: kPrimaryColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // OK Button
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, (
+                result: _finalResult!,
+                emailData: _finalEmailData,
+                paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
+              ));
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kPrimaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text(
+              "OK",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReceiptRow(String label, double amount, bool isDark, {
+    bool isLarge = false,
+    bool isHighlighted = false,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isLarge ? 16 : 14,
+            fontWeight: isLarge ? FontWeight.bold : FontWeight.w500,
+            color: isDark ? Colors.white70 : Colors.black54,
+          ),
+        ),
+        Text(
+          "\$${amount.toStringAsFixed(2)}",
+          style: TextStyle(
+            fontSize: isLarge ? 18 : 15,
+            fontWeight: FontWeight.bold,
+            color: isHighlighted ? kPrimaryColor : (isDark ? Colors.white : Colors.black87),
           ),
         ),
       ],

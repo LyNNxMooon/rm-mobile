@@ -9,7 +9,7 @@ import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/screens/stock_take_list_screen.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/widgets/duplicate_stock_dialog.dart';
+import 'package:rmstock_scanner/features/transactions/presentation/screens/stock_selection_screen.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/stocktake_question_dialog.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
@@ -258,10 +258,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                   if (state is StockDuplicatesFound) {
                                     countingStock = null;
 
-                                    final selected = await showDialog<StockVO>(
-                                      context: context,
-                                      builder: (_) => DuplicateStockDialog(
-                                        matches: state.matches,
+                                    final selected = await Navigator.push<StockVO>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => StockSelectionScreen(
+                                          matches: state.matches,
+                                        ),
                                       ),
                                     );
 

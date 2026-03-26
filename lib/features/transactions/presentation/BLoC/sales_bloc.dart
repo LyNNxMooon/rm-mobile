@@ -22,6 +22,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     on<UpdateCartItemQty>(_onUpdateCartItemQty);
     on<UpdateCartItemPrice>(_onUpdateCartItemPrice);
     on<UpdateCartItemSerial>(_onUpdateCartItemSerial);
+    on<UpdateCartItemDescription>(_onUpdateCartItemDescription);
     on<SaveCartItem>(_onSaveCartItem);
     on<EditCartItem>(_onEditCartItem);
     on<RemoveCartItem>(_onRemoveCartItem);
@@ -64,7 +65,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 
       if (result.stock != null) {
         // Auto-add to cart when single match found
-        _addStockToCart(result.stock!);
+        _addStockToCart(result.stock!, skipEditMode: event.skipEditMode);
         emit(CartUpdated(
           cartItems: List.from(_cartItems),
           selectedCustomer: _selectedCustomer,
@@ -87,7 +88,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   }
 
   void _onSelectStock(SelectStock event, Emitter<SalesState> emit) {
-    _addStockToCart(event.stock);
+    _addStockToCart(event.stock, skipEditMode: event.skipEditMode);
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
@@ -95,14 +96,14 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   }
 
   void _onAddToCart(AddToCart event, Emitter<SalesState> emit) {
-    _addStockToCart(event.stock, qty: event.qty);
+    _addStockToCart(event.stock, qty: event.qty, skipEditMode: event.skipEditMode);
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
     ));
   }
 
-  void _addStockToCart(dynamic stock, {int qty = 1}) {
+  void _addStockToCart(dynamic stock, {int qty = 1, bool skipEditMode = false}) {
     // Check if item already exists in cart (by barcode)
     final existingIndex = _cartItems.indexWhere(
       (item) => item.code == stock.barcode,
@@ -112,11 +113,17 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       // Update quantity of existing item
       _cartItems[existingIndex] = _cartItems[existingIndex].copyWith(
         qty: _cartItems[existingIndex].qty + qty,
-        isEditing: true, // Show in edit mode
+        isEditing: skipEditMode ? false : true, // Skip edit mode if auto-adding
       );
     } else {
       // Add new item
-      _cartItems.insert(0, CartItemVO.fromStock(stock, qty: qty));
+      final newItem = CartItemVO.fromStock(stock, qty: qty);
+      if (skipEditMode) {
+        // Auto-save: don't enter edit mode
+        _cartItems.insert(0, newItem.copyWith(isEditing: false, isNewlyAdded: false));
+      } else {
+        _cartItems.insert(0, newItem);
+      }
     }
   }
 
@@ -125,7 +132,6 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     Emitter<SalesState> emit,
   ) {
     if (event.index < 0 || event.index >= _cartItems.length) return;
-    if (event.qty < 1) return;
 
     _cartItems[event.index] = _cartItems[event.index].copyWith(qty: event.qty);
     emit(CartUpdated(cartItems: List.from(_cartItems), selectedCustomer: _selectedCustomer));
@@ -136,7 +142,6 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     Emitter<SalesState> emit,
   ) {
     if (event.index < 0 || event.index >= _cartItems.length) return;
-    if (event.price < 0) return;
 
     _cartItems[event.index] = _cartItems[event.index].copyWith(
       sellPrice: event.price,
@@ -156,11 +161,24 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     emit(CartUpdated(cartItems: List.from(_cartItems), selectedCustomer: _selectedCustomer));
   }
 
+  void _onUpdateCartItemDescription(
+    UpdateCartItemDescription event,
+    Emitter<SalesState> emit,
+  ) {
+    if (event.index < 0 || event.index >= _cartItems.length) return;
+
+    _cartItems[event.index] = _cartItems[event.index].copyWith(
+      description: event.description,
+    );
+    emit(CartUpdated(cartItems: List.from(_cartItems), selectedCustomer: _selectedCustomer));
+  }
+
   void _onSaveCartItem(SaveCartItem event, Emitter<SalesState> emit) {
     if (event.index < 0 || event.index >= _cartItems.length) return;
 
     _cartItems[event.index] = _cartItems[event.index].copyWith(
       isEditing: false,
+      isNewlyAdded: false,
     );
     emit(CartItemSaved(index: event.index, cartItems: List.from(_cartItems), selectedCustomer: _selectedCustomer));
   }
@@ -268,7 +286,6 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
       selectedCustomer: null,
-      message: "Customer cleared",
     ));
   }
 }

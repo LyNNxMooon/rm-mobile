@@ -13,12 +13,14 @@ import '../../../../entities/vos/customer_vo.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../entities/vos/stock_vo.dart';
 import '../../../../utils/navigation_extension.dart';
-import '../../../stocktake/presentation/widgets/duplicate_stock_dialog.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
+import '../../../../local_db/local_db_dao.dart';
+import '../../../../local_db/sqlite/sqlite_constants.dart';
 import '../BLoC/sales_bloc.dart';
 import '../BLoC/sales_events.dart';
 import '../BLoC/sales_states.dart';
-import '../widgets/duplicate_customer_dialog.dart';
+import 'stock_selection_screen.dart';
+import 'customer_selection_screen.dart';
 import '../widgets/finalise_sale_dialog.dart';
 import '../widgets/sales_widgets.dart';
 import '../models/delivery_info.dart';
@@ -76,9 +78,23 @@ class _SalesScreenState extends State<SalesScreen>
   bool _isCompactView = false;
   bool _showTaxDetails = false;
   bool _showProfitDetails = false;
-  String _selectedPaymentMethod = "Cash";
   String? _selectedOption;
   double _discountValue = 0.00;
+
+  // Sales Settings
+  bool _scanIndividualUnits = false;
+  bool _skipSellPrice = false;
+  bool _promptForEmailAtSale = false;
+  bool _roundSellPriceTo2Decimals = false;
+  bool _skipCustomField = false;
+  bool _skipCustomerField = false;
+  bool _scanIndividualUnitsForFractional = false;
+  bool _preventAddIfNoStock = false;
+  bool _preventFinaliseIfOutOfStock = false;
+  bool _acceptLeadingZeros = false;
+  bool _autoRemindLowStock = false;
+  bool _promptScanIndividualFractional = false;
+  bool _displayCustomerMessagesAsPrompt = false;
 
   // Payment amounts for each payment type
   final Map<String, double> _paymentAmounts = {};
@@ -94,21 +110,10 @@ class _SalesScreenState extends State<SalesScreen>
   final List<String> _optionItems = [
     "Add Survey",
     "Add Comment",
+    "Add Discount",
     "Add Delivery",
     "View Tax",
     "View Profit",
-  ];
-
-  final List<String> _paymentMethods = [
-    "Cash",
-    "EFTPOS",
-    "Cheque",
-    "Bank Card",
-    "Master Card",
-    "Visa",
-    "Amex",
-    "Diners",
-    "Deposit",
   ];
 
   // Cart items from BLoC state
@@ -145,6 +150,20 @@ class _SalesScreenState extends State<SalesScreen>
         setState(() => _showScanner = false);
       }
     });
+    _loadSalesSettings();
+  }
+
+  Future<void> _loadSalesSettings() async {
+    final scanIndividualUnits = await LocalDbDAO.instance.getAppConfig(kSalesScanIndividualUnitsKey);
+    final skipSellPrice = await LocalDbDAO.instance.getAppConfig(kSalesSkipSellPriceKey);
+    final promptForEmail = await LocalDbDAO.instance.getAppConfig(kSalesPromptForEmailKey);
+    if (mounted) {
+      setState(() {
+        _scanIndividualUnits = scanIndividualUnits == 'true';
+        _skipSellPrice = skipSellPrice == 'true';
+        _promptForEmailAtSale = promptForEmail == 'true';
+      });
+    }
   }
 
   @override
@@ -178,7 +197,10 @@ class _SalesScreenState extends State<SalesScreen>
     _audioPlayer.play(_beepSource);
 
     // Search for stock
-    _salesBloc.add(SearchStock(query: barcode));
+    _salesBloc.add(SearchStock(
+      query: barcode,
+      skipEditMode: _scanIndividualUnits && _skipSellPrice,
+    ));
   }
 
   String _buildCustomerDisplayName(CustomerVO customer) {
@@ -204,14 +226,19 @@ class _SalesScreenState extends State<SalesScreen>
       child: BlocListener<SalesBloc, SalesState>(
         listener: (context, state) async {
           if (state is StockDuplicatesFound) {
-            // Show duplicate selection dialog
-            final selected = await showDialog<StockVO>(
-              context: context,
-              builder: (_) => DuplicateStockDialog(matches: state.matches),
+            // Navigate to stock selection screen
+            final selected = await Navigator.push<StockVO>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StockSelectionScreen(matches: state.matches),
+              ),
             );
 
             if (selected != null && mounted) {
-              _salesBloc.add(SelectStock(stock: selected));
+              _salesBloc.add(SelectStock(
+                stock: selected,
+                skipEditMode: _scanIndividualUnits && _skipSellPrice,
+              ));
             } else {
               _salesBloc.add(ResetSearchState());
             }
@@ -249,10 +276,12 @@ class _SalesScreenState extends State<SalesScreen>
               padding: 70,
             );
           } else if (state is CustomerDuplicatesFound) {
-            // Show duplicate customer selection dialog
-            final selected = await showDialog<CustomerVO>(
-              context: context,
-              builder: (_) => DuplicateCustomerDialog(matches: state.matches),
+            // Navigate to customer selection screen
+            final selected = await Navigator.push<CustomerVO>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CustomerSelectionScreen(matches: state.matches),
+              ),
             );
 
             if (selected != null && mounted) {
@@ -263,17 +292,6 @@ class _SalesScreenState extends State<SalesScreen>
             }
           } else if (state is CustomerSelected) {
             setState(() => _selectedCustomer = state.selectedCustomer);
-            AlertInfo.show(
-              context: context,
-              text:
-                  "Customer selected: ${state.selectedCustomer?.surname ?? ''}",
-              typeInfo: TypeInfo.success,
-              backgroundColor: isDark ? colors.surface : kSecondaryColor,
-              iconColor: kPrimaryColor,
-              textColor: kPrimaryColor,
-              position: MessagePosition.top,
-              padding: 70,
-            );
           } else if (state is CustomerNotFound) {
             AlertInfo.show(
               context: context,
@@ -358,7 +376,10 @@ class _SalesScreenState extends State<SalesScreen>
                         });
                       },
                       onSearch: (query) {
-                        _salesBloc.add(SearchStock(query: query));
+                        _salesBloc.add(SearchStock(
+                          query: query,
+                          skipEditMode: _scanIndividualUnits && _skipSellPrice,
+                        ));
                       },
                     ),
 
@@ -417,6 +438,8 @@ class _SalesScreenState extends State<SalesScreen>
               setState(() => _isCompactView = false);
             } else if (value == 'compact') {
               setState(() => _isCompactView = true);
+            } else if (value == 'settings') {
+              _showSalesSettingsDialog(context);
             }
           },
           itemBuilder: (context) => [
@@ -449,6 +472,17 @@ class _SalesScreenState extends State<SalesScreen>
                   ),
                   const SizedBox(width: 8),
                   const Text('Compact View'),
+                ],
+              ),
+            ),
+            const PopupMenuDivider(),
+            const PopupMenuItem(
+              value: 'settings',
+              child: Row(
+                children: [
+                  Icon(Icons.settings, size: 18, color: Colors.grey),
+                  SizedBox(width: 8),
+                  Text('Settings'),
                 ],
               ),
             ),
@@ -623,6 +657,11 @@ class _SalesScreenState extends State<SalesScreen>
             UpdateCartItemSerial(index: index, serialNumber: serial),
           );
         },
+        onDescriptionChanged: (description) {
+          _salesBloc.add(
+            UpdateCartItemDescription(index: index, description: description),
+          );
+        },
         onSave: () {
           _salesBloc.add(SaveCartItem(index: index));
         },
@@ -730,153 +769,69 @@ class _SalesScreenState extends State<SalesScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Payment Methods Chips (only visible on Sales Screen)
-              if (widget.title == "Sales") ...[
-                SizedBox(
-                  height: 34,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _paymentMethods.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(width: 6),
-                    itemBuilder: (context, index) {
-                      final item = _paymentMethods[index];
-                      final isSelected = _selectedPaymentMethod == item;
-                      final hasAmount =
-                          _paymentAmounts.containsKey(item) &&
-                          _paymentAmounts[item]! > 0;
-                      final amount = _paymentAmounts[item] ?? 0;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedPaymentMethod = item;
-                          });
-                          _showPaymentAmountDialog(
-                            context,
-                            item,
-                            colors,
-                            isDark,
-                          );
-                        },
-                        onLongPress: hasAmount
-                            ? () {
-                                setState(() {
-                                  _paymentAmounts.remove(item);
-                                });
-                              }
-                            : null,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: hasAmount
-                                ? kPrimaryColor
-                                : (isSelected
-                                      ? kPrimaryColor.withOpacity(0.3)
-                                      : (isDark
-                                            ? colors.surface
-                                            : Colors.grey.shade100)),
-                            borderRadius: BorderRadius.circular(17),
-                            border: Border.all(
-                              color: hasAmount || isSelected
-                                  ? kPrimaryColor
-                                  : (isDark
-                                        ? Colors.white24
-                                        : Colors.grey.shade300),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                item,
-                                style: TextStyle(
-                                  color: hasAmount
-                                      ? Colors.white
-                                      : (isSelected
-                                            ? kPrimaryColor
-                                            : (isDark
-                                                  ? Colors.white70
-                                                  : Colors.blueGrey.shade700)),
-                                  fontWeight: hasAmount || isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w500,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              if (hasAmount) ...[
-                                const SizedBox(width: 4),
-                                Text(
-                                  "\$${amount.toStringAsFixed(0)}",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-              ],
-
               // Totals Row
               IntrinsicHeight(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Actions Button and Profit breakdown (left column)
+                    // Actions Button and Finalise Button (left column)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        // Profit breakdown display (above Actions button)
-                        if (_showProfitDetails) ...[
-                          _buildProfitBreakdown(colors, isDark),
-                          const SizedBox(height: 8),
-                        ],
-                        // Actions Button
-                        _buildActionsButton(colors, isDark, isTablet),
+                        // Actions Button - offset upward
+                        Transform.translate(
+                          offset: Offset(0, isTablet ? -8 : -6),
+                          child: _buildActionsButton(colors, isDark, isTablet),
+                        ),
+                        const SizedBox(height: 12),
+                        // Finalise Button
+                        _buildFinaliseButton(colors, isDark, isTablet),
                       ],
                     ),
 
-                    // Change/Remain amount display and Tax breakdown
+                    // Balance display
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          // Change/Remain display
-                          if (_totalPaid > _total)
-                            Text(
-                              "Change: \$${(_totalPaid - _total).toStringAsFixed(2)}",
-                              style: const TextStyle(
-                                color: Color(0xFF30B24C),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12.5,
+                          // Balance label
+                          Text(
+                            "Balance",
+                            style: TextStyle(
+                              fontSize: isTablet ? 14 : 12.5,
+                              color: colors.onSurfaceMuted,
+                            ),
+                          ),
+                          SizedBox(height: isTablet ? 6 : 4),
+                          // Balance amount in border
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isTablet ? 12 : 8,
+                              vertical: isTablet ? 2 : 1,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: (_total - _totalPaid) <= 0
+                                    ? const Color(0xFF30B24C)
+                                    : Colors.redAccent,
+                                width: 2,
                               ),
-                            )
-                          else if (_totalPaid > 0 && _totalPaid < _total)
-                            Text(
-                              "Remain: \$${(_total - _totalPaid).toStringAsFixed(2)}",
-                              style: const TextStyle(
-                                color: Colors.redAccent,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12.5,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              "\$${(_totalPaid >= _total ? 0.0 : _total - _totalPaid).toStringAsFixed(2)}",
+                              style: TextStyle(
+                                fontSize: isTablet ? 22 : 18,
+                                letterSpacing: -0.5,
+                                color: (_total - _totalPaid) <= 0
+                                    ? const Color(0xFF30B24C)
+                                    : Colors.redAccent,
                               ),
                             ),
-
-                          // Tax breakdown display
-                          if (_showTaxDetails) ...[
-                            const SizedBox(height: 6),
-                            _buildTaxBreakdown(colors, isDark),
-                          ],
+                          ),
                         ],
                       ),
                     ),
@@ -891,157 +846,16 @@ class _SalesScreenState extends State<SalesScreen>
                             fontSize: isTablet ? 14 : 12.5,
                           ),
                         ),
-                        SizedBox(height: isTablet ? 12 : 4),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: isTablet
-                              ? CrossAxisAlignment.baseline
-                              : CrossAxisAlignment.center,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              "Discount: \$",
-                              style: TextStyle(
-                                color: colors.onSurfaceMuted,
-                                fontSize: isTablet ? 14 : 12.5,
-                              ),
-                            ),
-                            SizedBox(
-                              width: isTablet ? 120 : 55,
-                              height: isTablet ? 56 : 20,
-                              child: isTablet
-                                  ? MediaQuery(
-                                      data: MediaQuery.of(context).copyWith(
-                                        textScaler: TextScaler.noScaling,
-                                      ),
-                                      child: TextField(
-                                        controller: _discountController,
-                                        keyboardType:
-                                            const TextInputType.numberWithOptions(
-                                              decimal: true,
-                                            ),
-                                        maxLines: 1,
-                                        minLines: 1,
-                                        textAlignVertical:
-                                            TextAlignVertical.center,
-                                        textAlign: TextAlign.right,
-                                        style: TextStyle(
-                                          color: isDark
-                                              ? Colors.white
-                                              : Colors.black87,
-                                          fontSize: 18,
-                                        ),
-                                        decoration: InputDecoration(
-                                          isDense: true,
-                                          hintText: "0.00",
-                                          hintStyle: TextStyle(
-                                            color: colors.onSurfaceMuted,
-                                            fontSize: 18,
-                                          ),
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 0,
-                                              ),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                            borderSide: BorderSide(
-                                              color: isDark
-                                                  ? Colors.white24
-                                                  : Colors.grey.shade300,
-                                            ),
-                                          ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                            borderSide: BorderSide(
-                                              color: isDark
-                                                  ? Colors.white24
-                                                  : Colors.grey.shade300,
-                                            ),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                            borderSide: BorderSide(
-                                              color: kPrimaryColor,
-                                            ),
-                                          ),
-                                        ),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            _discountValue =
-                                                double.tryParse(value) ?? 0.00;
-                                          });
-                                        },
-                                      ),
-                                    )
-                                  : TextField(
-                                      controller: _discountController,
-                                      keyboardType:
-                                          const TextInputType.numberWithOptions(
-                                            decimal: true,
-                                          ),
-                                      maxLines: 1,
-                                      minLines: 1,
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                        color: isDark
-                                            ? Colors.white
-                                            : Colors.black87,
-                                        fontSize: 12.5,
-                                      ),
-                                      decoration: InputDecoration(
-                                        isDense: true,
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                              horizontal: 4,
-                                              vertical: 2,
-                                            ),
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: isDark
-                                                ? Colors.white24
-                                                : Colors.grey.shade300,
-                                          ),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: isDark
-                                                ? Colors.white24
-                                                : Colors.grey.shade300,
-                                          ),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: kPrimaryColor,
-                                          ),
-                                        ),
-                                      ),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _discountValue =
-                                              double.tryParse(value) ?? 0.00;
-                                        });
-                                      },
-                                    ),
-                            ),
-                          ],
+                        SizedBox(height: isTablet ? 6 : 4),
+                        Text(
+                          "Discount: \$${_discount.toStringAsFixed(2)}",
+                          style: TextStyle(
+                            color: _discount > 0 ? kPrimaryColor : colors.onSurfaceMuted,
+                            fontSize: isTablet ? 14 : 12.5,
+                            fontWeight: _discount > 0 ? FontWeight.w600 : FontWeight.normal,
+                          ),
                         ),
-                        SizedBox(height: isTablet ? 0 : 6),
+                        SizedBox(height: isTablet ? 6 : 4),
                         Text(
                           "Rounding: \$${_rounding.toStringAsFixed(2)}",
                           style: TextStyle(
@@ -1049,11 +863,11 @@ class _SalesScreenState extends State<SalesScreen>
                             fontSize: isTablet ? 14 : 12.5,
                           ),
                         ),
-                        SizedBox(height: isTablet ? 4 : 2),
+                        SizedBox(height: isTablet ? 14 : 10),
                         Text(
                           "\$${_total.toStringAsFixed(2)}",
                           style: TextStyle(
-                            fontSize: isTablet ? 32 : 26,
+                            fontSize: isTablet ? 22 : 18,
                             fontWeight: FontWeight.w900,
                             color: isDark ? Colors.white : Colors.black87,
                             letterSpacing: -0.5,
@@ -1071,192 +885,32 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
-  void _showPaymentAmountDialog(
-    BuildContext context,
-    String paymentMethod,
-    AppThemeColors colors,
-    bool isDark,
-  ) {
-    final existingAmount = _paymentAmounts[paymentMethod] ?? 0.0;
-    final controller = TextEditingController(
-      text: existingAmount > 0 ? existingAmount.toStringAsFixed(2) : '',
-    );
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (dialogContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
-          ),
-          child: Container(
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "$paymentMethod Amount",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                    if (existingAmount > 0)
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _paymentAmounts.remove(paymentMethod);
-                          });
-                          Navigator.of(dialogContext).pop();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            "Remove",
-                            style: TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: controller,
-                        autofocus: true,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                        decoration: InputDecoration(
-                          prefixText: "\$ ",
-                          prefixStyle: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
-                          hintText: "0.00",
-                          hintStyle: TextStyle(
-                            color: isDark
-                                ? Colors.white30
-                                : Colors.grey.shade400,
-                          ),
-                          filled: true,
-                          fillColor: isDark
-                              ? colors.surface
-                              : Colors.grey.shade100,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 14,
-                          ),
-                        ),
-                        onSubmitted: (value) {
-                          final amount = double.tryParse(value) ?? 0.0;
-                          if (amount > 0) {
-                            setState(() {
-                              _paymentAmounts[paymentMethod] = amount;
-                            });
-                          } else {
-                            setState(() {
-                              _paymentAmounts.remove(paymentMethod);
-                            });
-                          }
-                          Navigator.of(dialogContext).pop();
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: () {
-                        final amount = double.tryParse(controller.text) ?? 0.0;
-                        if (amount > 0) {
-                          setState(() {
-                            _paymentAmounts[paymentMethod] = amount;
-                          });
-                        } else {
-                          setState(() {
-                            _paymentAmounts.remove(paymentMethod);
-                          });
-                        }
-                        Navigator.of(dialogContext).pop();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF30B24C), Color(0xFF60D394)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _showFinaliseDialog() async {
+    final isSales = widget.title == "Sales";
+    
     final result = await FinaliseSaleDialog.show(
       context: context,
       customer: _selectedCustomer,
+      total: _total,
+      initialPaymentAmounts: Map.from(_paymentAmounts),
+      promptForEmail: _promptForEmailAtSale,
+      showPayments: isSales,
+      title: widget.title,
     );
 
-    if (result == null || result.result == FinaliseSaleResult.cancelled) {
+    if (result == null) {
+      return;
+    }
+
+    // Always update payment amounts from dialog (even on cancel)
+    if (result.paymentData != null) {
+      setState(() {
+        _paymentAmounts.clear();
+        _paymentAmounts.addAll(result.paymentData!.paymentAmounts);
+      });
+    }
+
+    if (result.result == FinaliseSaleResult.cancelled) {
       return;
     }
 
@@ -1266,17 +920,8 @@ class _SalesScreenState extends State<SalesScreen>
       debugPrint('Sending receipt to: ${emailData?.email}');
     }
 
-    // Clear everything for now
+    // Clear everything
     _clearSale();
-
-    if (mounted) {
-      AlertInfo.show(
-        padding: 80,
-        context: context,
-        text: "Committed to RM",
-        typeInfo: TypeInfo.success,
-      );
-    }
   }
 
   void _clearSale() {
@@ -1285,8 +930,12 @@ class _SalesScreenState extends State<SalesScreen>
       _selectedCustomer = null;
       _deliveryInfo = null;
       _paymentAmounts.clear();
+      _discountValue = 0.00;
       _discountController.text = "0.00";
       _searchController.clear();
+      _surveyValue = '';
+      _surveyController.clear();
+      _commentValue = '';
     });
   }
 
@@ -1533,6 +1182,262 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
+  Widget _buildDiscountMenuItem(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+    bool expanded,
+    Function(bool) onExpandChanged,
+  ) {
+    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final discountTextController = TextEditingController(
+      text: _discountValue > 0 ? _discountValue.toStringAsFixed(2) : '',
+    );
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 16 : 12,
+        vertical: isTablet ? 14 : 10,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E2733) : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: expanded
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    onExpandChanged(false);
+                  },
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.discount_outlined,
+                        size: isTablet ? 22 : 18,
+                        color: kPrimaryColor,
+                      ),
+                      SizedBox(width: isTablet ? 16 : 12),
+                      Text(
+                        "Add Discount",
+                        style: TextStyle(
+                          color: isDark
+                              ? Colors.white
+                              : Colors.blueGrey.shade800,
+                          fontWeight: FontWeight.w500,
+                          fontSize: isTablet ? 15 : 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: isTablet ? 12 : 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: isTablet ? 48 : 32,
+                        child: isTablet
+                            ? MediaQuery(
+                                data: MediaQuery.of(
+                                  context,
+                                ).copyWith(textScaler: TextScaler.noScaling),
+                                child: TextField(
+                                  controller: discountTextController,
+                                  autofocus: true,
+                                  keyboardType: const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: isDark
+                                        ? Colors.white
+                                        : Colors.black87,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: "0.00",
+                                    prefixText: "\$ ",
+                                    prefixStyle: TextStyle(
+                                      color: isDark
+                                          ? Colors.white70
+                                          : Colors.black54,
+                                      fontSize: 16,
+                                    ),
+                                    hintStyle: TextStyle(
+                                      color: isDark
+                                          ? Colors.white30
+                                          : Colors.grey.shade400,
+                                      fontSize: 16,
+                                    ),
+                                    filled: true,
+                                    fillColor: isDark
+                                        ? colors.surface
+                                        : Colors.grey.shade100,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 0,
+                                    ),
+                                  ),
+                                  onSubmitted: (value) {
+                                    setState(() {
+                                      _discountValue = double.tryParse(value.trim()) ?? 0.00;
+                                      _discountController.text = _discountValue.toStringAsFixed(2);
+                                    });
+                                    onExpandChanged(false);
+                                  },
+                                ),
+                              )
+                            : TextField(
+                                controller: discountTextController,
+                                autofocus: true,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: "0.00",
+                                  prefixText: "\$ ",
+                                  prefixStyle: TextStyle(
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.black54,
+                                    fontSize: 12,
+                                  ),
+                                  hintStyle: TextStyle(
+                                    color: isDark
+                                        ? Colors.white30
+                                        : Colors.grey.shade400,
+                                    fontSize: 12,
+                                  ),
+                                  filled: true,
+                                  fillColor: isDark
+                                      ? colors.surface
+                                      : Colors.grey.shade100,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                onSubmitted: (value) {
+                                  setState(() {
+                                    _discountValue = double.tryParse(value.trim()) ?? 0.00;
+                                    _discountController.text = _discountValue.toStringAsFixed(2);
+                                  });
+                                  onExpandChanged(false);
+                                },
+                              ),
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 12 : 8),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _discountValue = double.tryParse(discountTextController.text.trim()) ?? 0.00;
+                          _discountController.text = _discountValue.toStringAsFixed(2);
+                        });
+                        onExpandChanged(false);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(isTablet ? 10 : 6),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF30B24C), Color(0xFF60D394)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: isTablet ? 20 : 16,
+                        ),
+                      ),
+                    ),
+                    if (_discountValue > 0) ...[
+                      SizedBox(width: isTablet ? 8 : 4),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _discountValue = 0.00;
+                            _discountController.text = "0.00";
+                          });
+                          onExpandChanged(false);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(isTablet ? 10 : 6),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.redAccent,
+                            size: isTablet ? 20 : 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            )
+          : GestureDetector(
+              onTap: () {
+                onExpandChanged(true);
+              },
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.discount_outlined,
+                    size: isTablet ? 22 : 18,
+                    color: kPrimaryColor,
+                  ),
+                  SizedBox(width: isTablet ? 16 : 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Add Discount",
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white
+                                : Colors.blueGrey.shade800,
+                            fontWeight: FontWeight.w500,
+                            fontSize: isTablet ? 15 : 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
   void _showCommentDialog(
     BuildContext context,
     AppThemeColors colors,
@@ -1672,6 +1577,403 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
+  void _showSalesSettingsDialog(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: isDark ? colors.surfaceAlt : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 60 : 20,
+                vertical: isTablet ? 40 : 24,
+              ),
+              child: Container(
+                width: isTablet ? 600 : double.infinity,
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.85,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(16),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.settings, color: Colors.white),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Sales Settings',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () => Navigator.pop(dialogContext),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Content
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            _buildSettingsCheckbox(
+                              'Scan Individual Units',
+                              _scanIndividualUnits,
+                              (v) {
+                                setDialogState(() => _scanIndividualUnits = v!);
+                                setState(() {});
+                                LocalDbDAO.instance.saveAppConfig(kSalesScanIndividualUnitsKey, v.toString());
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Skip Sell Price',
+                              _skipSellPrice,
+                              (v) {
+                                setDialogState(() => _skipSellPrice = v!);
+                                setState(() {});
+                                LocalDbDAO.instance.saveAppConfig(kSalesSkipSellPriceKey, v.toString());
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Prompt for Email at Time of Sale',
+                              _promptForEmailAtSale,
+                              (v) {
+                                setDialogState(() => _promptForEmailAtSale = v!);
+                                setState(() {});
+                                LocalDbDAO.instance.saveAppConfig(kSalesPromptForEmailKey, v.toString());
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Round Sell Price to 2 Decimals',
+                              _roundSellPriceTo2Decimals,
+                              (v) {
+                                setDialogState(() => _roundSellPriceTo2Decimals = v!);
+                                setState(() {});
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Skip Custom Field',
+                              _skipCustomField,
+                              (v) {
+                                setDialogState(() => _skipCustomField = v!);
+                                setState(() {});
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Skip Customer Field',
+                              _skipCustomerField,
+                              (v) {
+                                setDialogState(() => _skipCustomerField = v!);
+                                setState(() {});
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Scan Individual Units for Fractional Quantities',
+                              _scanIndividualUnitsForFractional,
+                              (v) {
+                                setDialogState(() => _scanIndividualUnitsForFractional = v!);
+                                setState(() {});
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Prevent adding item to any sale transaction if there is no stock on hand',
+                              _preventAddIfNoStock,
+                              (v) {
+                                setDialogState(() => _preventAddIfNoStock = v!);
+                                setState(() {});
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Prevent finalising SA and IV when any item is out of stock - SO, LB, & CSO Allowed',
+                              _preventFinaliseIfOutOfStock,
+                              (v) {
+                                setDialogState(() => _preventFinaliseIfOutOfStock = v!);
+                                setState(() {});
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Accept Leading Zeros on Barcodes',
+                              _acceptLeadingZeros,
+                              (v) {
+                                setDialogState(() => _acceptLeadingZeros = v!);
+                                setState(() {});
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Auto Remind - Low Stock',
+                              _autoRemindLowStock,
+                              (v) {
+                                setDialogState(() => _autoRemindLowStock = v!);
+                                setState(() {});
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Prompt for Scan Individual Units for Fractional Quantities',
+                              _promptScanIndividualFractional,
+                              (v) {
+                                setDialogState(() => _promptScanIndividualFractional = v!);
+                                setState(() {});
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            _buildSettingsCheckbox(
+                              'Display customer messages as a Prompt during sale',
+                              _displayCustomerMessagesAsPrompt,
+                              (v) {
+                                setDialogState(() => _displayCustomerMessagesAsPrompt = v!);
+                                setState(() {});
+                              },
+                              isDark,
+                              colors,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Footer
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(
+                            color: isDark ? Colors.white12 : Colors.grey.shade200,
+                          ),
+                        ),
+                      ),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kPrimaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Done',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSettingsCheckbox(
+    String label,
+    bool value,
+    ValueChanged<bool?> onChanged,
+    bool isDark,
+    AppThemeColors colors,
+  ) {
+    return CheckboxListTile(
+      value: value,
+      onChanged: onChanged,
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 14,
+          color: isDark ? Colors.white : Colors.black87,
+        ),
+      ),
+      activeColor: kPrimaryColor,
+      checkColor: Colors.white,
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      controlAffinity: ListTileControlAffinity.leading,
+    );
+  }
+
+  void _showTaxDialog(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (dialogContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
+          ),
+          child: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Tax Breakdown",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.of(dialogContext).pop(),
+                      child: Icon(
+                        Icons.close,
+                        size: 20,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildTaxBreakdown(colors, isDark),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showProfitDialog(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (dialogContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
+          ),
+          child: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Profit Breakdown",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.of(dialogContext).pop(),
+                      child: Icon(
+                        Icons.close,
+                        size: 20,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildProfitBreakdown(colors, isDark),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showActionsMenu(
     BuildContext context,
     AppThemeColors colors,
@@ -1683,6 +1985,7 @@ class _SalesScreenState extends State<SalesScreen>
     final buttonPosition = button.localToGlobal(Offset.zero, ancestor: overlay);
 
     bool surveyExpanded = false;
+    bool discountExpanded = false;
     _surveyController.text = _surveyValue;
 
     showGeneralDialog(
@@ -1770,6 +2073,19 @@ class _SalesScreenState extends State<SalesScreen>
                                                     (expanded) {
                                                       setDialogState(() {
                                                         surveyExpanded =
+                                                            expanded;
+                                                      });
+                                                    },
+                                                  )
+                                                : item == "Add Discount"
+                                                ? _buildDiscountMenuItem(
+                                                    context,
+                                                    colors,
+                                                    isDark,
+                                                    discountExpanded,
+                                                    (expanded) {
+                                                      setDialogState(() {
+                                                        discountExpanded =
                                                             expanded;
                                                       });
                                                     },
@@ -1869,24 +2185,30 @@ class _SalesScreenState extends State<SalesScreen>
                                                           context,
                                                         ).pop();
                                                         setState(() {
-                                                          _showTaxDetails =
-                                                              !_showTaxDetails;
                                                           _showActions = false;
                                                           _actionsAnimationController
                                                               .reverse();
                                                         });
+                                                        _showTaxDialog(
+                                                          context,
+                                                          colors,
+                                                          isDark,
+                                                        );
                                                       } else if (item ==
                                                           "View Profit") {
                                                         Navigator.of(
                                                           context,
                                                         ).pop();
                                                         setState(() {
-                                                          _showProfitDetails =
-                                                              !_showProfitDetails;
                                                           _showActions = false;
                                                           _actionsAnimationController
                                                               .reverse();
                                                         });
+                                                        _showProfitDialog(
+                                                          context,
+                                                          colors,
+                                                          isDark,
+                                                        );
                                                       } else {
                                                         Navigator.of(
                                                           context,
@@ -2029,100 +2351,6 @@ class _SalesScreenState extends State<SalesScreen>
                                   })
                                   .toList()
                                   .reversed,
-                              // Finalise button - appears at bottom, animated last
-                              Builder(
-                                builder: (context) {
-                                  final isTablet =
-                                      MediaQuery.of(
-                                        context,
-                                      ).size.shortestSide >=
-                                      600;
-                                  final finaliseProgress =
-                                      ((curvedAnimation.value *
-                                                  (_optionItems.length + 4)) -
-                                              _optionItems.length)
-                                          .clamp(0.0, 1.0);
-                                  return ClipRect(
-                                    child: Align(
-                                      alignment: Alignment.bottomCenter,
-                                      heightFactor: finaliseProgress,
-                                      child: Opacity(
-                                        opacity: finaliseProgress,
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 0,
-                                            right: 0,
-                                            top: 4,
-                                            bottom: 8,
-                                          ),
-                                          child: InkWell(
-                                            onTap: () {
-                                              Navigator.of(context).pop();
-                                              setState(() {
-                                                _showActions = false;
-                                                _actionsAnimationController
-                                                    .reverse();
-                                              });
-                                              _showFinaliseDialog();
-                                            },
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 20,
-                                                vertical: isTablet ? 14 : 10,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                gradient: const LinearGradient(
-                                                  colors: [
-                                                    Color(0xFF30B24C),
-                                                    Color(0xFF60D394),
-                                                  ],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: const Color(
-                                                      0xFF30B24C,
-                                                    ).withOpacity(0.4),
-                                                    blurRadius: 10,
-                                                    offset: const Offset(0, 3),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  const Icon(
-                                                    Icons.check_circle_outline,
-                                                    size: 22,
-                                                    color: Colors.white,
-                                                  ),
-                                                  const SizedBox(width: 12),
-                                                  const Text(
-                                                    "Finalise",
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 16,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
                             ],
                           );
                         },
@@ -2150,6 +2378,7 @@ class _SalesScreenState extends State<SalesScreen>
     bool isDark,
     bool isTablet,
   ) {
+    final size = isTablet ? 70.0 : 60.0;
     return Builder(
       builder: (context) => GestureDetector(
         onTap: () {
@@ -2164,51 +2393,89 @@ class _SalesScreenState extends State<SalesScreen>
           });
         },
         child: Container(
-          padding: EdgeInsets.symmetric(
-            vertical: isTablet ? 10 : 8,
-            horizontal: isTablet ? 16 : 14,
-          ),
+          width: size,
+          height: size,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: _showActions
-                  ? [Colors.green.shade400, Colors.green.shade600]
-                  : [Colors.green.shade500, Colors.green.shade700],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+            color: isDark ? colors.surfaceAlt : Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isDark ? Colors.white30 : Colors.grey.shade400,
+              width: 1.5,
             ),
-            borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
-                color: Colors.green.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+                color: isDark
+                    ? Colors.black.withOpacity(0.5)
+                    : Colors.black.withOpacity(0.15),
+                blurRadius: 12,
+                spreadRadius: 1,
+                offset: const Offset(0, 4),
               ),
+              if (!isDark)
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  blurRadius: 6,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 2),
+                ),
             ],
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "ACTIONS",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 13 : 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(width: 6),
-              AnimatedRotation(
-                turns: _showActions ? 0.5 : 0,
-                duration: const Duration(milliseconds: 300),
-                child: Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: Colors.white,
-                  size: isTablet ? 20 : 18,
-                ),
-              ),
-            ],
+          child: Icon(
+            Icons.menu,
+            color: kPrimaryColor,
+            size: isTablet ? 34 : 30,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFinaliseButton(
+    AppThemeColors colors,
+    bool isDark,
+    bool isTablet,
+  ) {
+    return GestureDetector(
+      onTap: () => _showFinaliseDialog(),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: isTablet ? 10 : 8,
+          horizontal: isTablet ? 28 : 20,
+        ),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.green.shade500, Colors.green.shade700],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.green.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.check_circle_outline,
+              color: Colors.white,
+              size: isTablet ? 18 : 16,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              "FINALISE",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isTablet ? 13 : 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -2220,6 +2487,8 @@ class _SalesScreenState extends State<SalesScreen>
         return Icons.poll_outlined;
       case "Add Comment":
         return Icons.comment_outlined;
+      case "Add Discount":
+        return Icons.discount_outlined;
       case "Add Delivery":
         return Icons.local_shipping_outlined;
       case "View Tax":
