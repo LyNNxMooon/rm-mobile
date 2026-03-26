@@ -235,21 +235,29 @@ class SaleSessionPickerDialog extends StatelessWidget {
                       size: 24,
                     ),
                     Positioned(
-                      top: 4,
-                      right: 4,
+                      top: 2,
+                      right: 2,
                       child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          maxWidth: 28,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
                           color: kPrimaryColor,
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(9),
                         ),
                         child: Text(
-                          "${session.itemCount}",
+                          session.itemCount > 99 ? "99+" : "${session.itemCount}",
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 10,
+                            fontSize: 9,
                             fontWeight: FontWeight.bold,
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
@@ -277,12 +285,21 @@ class SaleSessionPickerDialog extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Text(
-                          session.formattedTotal,
-                          style: TextStyle(
-                            fontSize: isTablet ? 16 : 14,
-                            fontWeight: FontWeight.bold,
-                            color: kPrimaryColor,
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: isTablet ? 140 : 100,
+                          ),
+                          child: Text(
+                            session.formattedTotal,
+                            style: TextStyle(
+                              fontSize: isTablet ? 16 : 14,
+                              fontWeight: FontWeight.bold,
+                              color: kPrimaryColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.right,
                           ),
                         ),
                       ],
@@ -296,16 +313,20 @@ class SaleSessionPickerDialog extends StatelessWidget {
                           color: isDark ? Colors.white54 : Colors.black45,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          dateFormat.format(session.updatedAt),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? Colors.white54 : Colors.black45,
+                        Flexible(
+                          child: Text(
+                            dateFormat.format(session.updatedAt),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white54 : Colors.black45,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          "${session.totalQuantity} items",
+                          "${_formatQuantity(session.totalQuantity)} items",
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark ? Colors.white54 : Colors.black45,
@@ -329,5 +350,16 @@ class SaleSessionPickerDialog extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Formats large quantities to avoid overflow (e.g., 1234 -> "1,234", 9999999 -> "9.9M")
+  String _formatQuantity(num quantity) {
+    if (quantity >= 1000000) {
+      return "${(quantity / 1000000).toStringAsFixed(1)}M";
+    } else if (quantity >= 10000) {
+      return "${(quantity / 1000).toStringAsFixed(1)}K";
+    }
+    final doubleVal = quantity.toDouble();
+    return doubleVal.toStringAsFixed(doubleVal.truncateToDouble() == doubleVal ? 0 : 2);
   }
 }

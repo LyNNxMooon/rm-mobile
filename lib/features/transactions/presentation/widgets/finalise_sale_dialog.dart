@@ -331,11 +331,15 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
     return Dialog(
       backgroundColor: isDark ? colors.surface : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 40 : 20,
+        vertical: isTablet ? 24 : 16,
+      ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        width: isTablet ? 500 : MediaQuery.of(context).size.width * 0.9,
-        padding: const EdgeInsets.all(24),
+        width: isTablet ? 500 : MediaQuery.of(context).size.width * 0.95,
+        padding: EdgeInsets.all(isTablet ? 24 : 16),
         child: _currentStep == 0
             ? _buildPaymentsStep(colors, isDark, isTablet)
             : _currentStep == 1
@@ -348,52 +352,53 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
   }
 
   Widget _buildPaymentsStep(AppThemeColors colors, bool isDark, bool isTablet) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Header
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: kPrimaryColor.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.payment,
-            color: kPrimaryColor,
-            size: 32,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          "Payment",
-          style: TextStyle(
-            fontSize: isTablet ? 20 : 18,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "Select payment method(s)",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: isTablet ? 14 : 13,
-            color: colors.onSurfaceMuted,
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Total, Balance/Change display
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isDark ? Colors.white12 : Colors.grey.shade300,
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: kPrimaryColor.withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
+            child: const Icon(
+              Icons.payment,
+              color: kPrimaryColor,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Payment",
+            style: TextStyle(
+              fontSize: isTablet ? 20 : 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Select payment method(s)",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: isTablet ? 14 : 13,
+              color: colors.onSurfaceMuted,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Total, Balance/Change display
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isDark ? Colors.white12 : Colors.grey.shade300,
+              ),
           ),
           child: Column(
             children: [
@@ -520,7 +525,8 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           },
           child: Text("Cancel", style: TextStyle(color: colors.onSurfaceMuted)),
         ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -867,116 +873,118 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
   Widget _buildReceiptStep(AppThemeColors colors, bool isDark, bool isTablet) {
     final change = _totalPaid - widget.total;
     
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Header
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: kPrimaryColor.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.check_circle,
-            color: kPrimaryColor,
-            size: 32,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          "${widget.title} Complete",
-          style: TextStyle(
-            fontSize: isTablet ? 20 : 18,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Receipt summary
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isDark ? Colors.white12 : Colors.grey.shade300,
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: kPrimaryColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle,
+              color: kPrimaryColor,
+              size: 32,
             ),
           ),
-          child: Column(
-            children: [
-              _buildReceiptRow("Total", widget.total, isDark),
-              const SizedBox(height: 8),
-              _buildReceiptRow("Amount Paid", _totalPaid, isDark),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Change - prominent display
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-          decoration: BoxDecoration(
-            color: kPrimaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: kPrimaryColor.withOpacity(0.3),
-              width: 2,
+          const SizedBox(height: 16),
+          Text(
+            "${widget.title} Complete",
+            style: TextStyle(
+              fontSize: isTablet ? 20 : 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
             ),
           ),
-          child: Column(
-            children: [
-              Text(
-                "Change",
-                style: TextStyle(
-                  fontSize: isTablet ? 16 : 14,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white70 : Colors.black54,
+          const SizedBox(height: 24),
+
+          // Receipt summary
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isDark ? Colors.white12 : Colors.grey.shade300,
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildReceiptRow("Total", widget.total, isDark),
+                const SizedBox(height: 8),
+                _buildReceiptRow("Amount Paid", _totalPaid, isDark),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Change - prominent display
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            decoration: BoxDecoration(
+              color: kPrimaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: kPrimaryColor.withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  "Change",
+                  style: TextStyle(
+                    fontSize: isTablet ? 16 : 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "\$${(change > 0 ? change : 0).toStringAsFixed(2)}",
+                  style: TextStyle(
+                    fontSize: isTablet ? 36 : 32,
+                    fontWeight: FontWeight.bold,
+                    color: kPrimaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // OK Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, (
+                  result: _finalResult!,
+                  emailData: _finalEmailData,
+                  paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
+                ));
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                "\$${(change > 0 ? change : 0).toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontSize: isTablet ? 36 : 32,
-                  fontWeight: FontWeight.bold,
-                  color: kPrimaryColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // OK Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context, (
-                result: _finalResult!,
-                emailData: _finalEmailData,
-                paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
-              ));
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kPrimaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              child: const Text(
+                "OK",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
-            child: const Text(
-              "OK",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

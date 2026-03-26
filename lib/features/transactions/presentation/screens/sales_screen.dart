@@ -549,8 +549,8 @@ class _SalesScreenState extends State<SalesScreen>
                       },
                     ),
 
-                    // Scanner Area (shown when scanner icon tapped)
-                    if (_showScanner)
+                    // Scanner Area (hidden when keyboard is visible to prevent overflow)
+                    if (_showScanner && MediaQuery.of(context).viewInsets.bottom == 0)
                       SalesScannerArea(
                         scannerController: _scannerController,
                         onBarcodeScanned: _onBarcodeScanned,
@@ -996,89 +996,108 @@ class _SalesScreenState extends State<SalesScreen>
                       ],
                     ),
 
+                    const SizedBox(width: 5),
+
                     // Balance display
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          // Balance label
-                          Text(
-                            "Balance",
-                            style: TextStyle(
-                              fontSize: isTablet ? 14 : 12.5,
-                              color: colors.onSurfaceMuted,
-                            ),
-                          ),
-                          SizedBox(height: isTablet ? 6 : 4),
-                          // Balance amount in border
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isTablet ? 12 : 8,
-                              vertical: isTablet ? 2 : 1,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: (_total - _totalPaid) <= 0
-                                    ? const Color(0xFF30B24C)
-                                    : Colors.redAccent,
-                                width: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            // Balance label
+                            Text(
+                              "Balance",
+                              style: TextStyle(
+                                fontSize: isTablet ? 14 : 12.5,
+                                color: colors.onSurfaceMuted,
                               ),
-                              borderRadius: BorderRadius.circular(6),
                             ),
+                            SizedBox(height: isTablet ? 6 : 4),
+                            // Balance amount in border
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isTablet ? 12 : 8,
+                                vertical: isTablet ? 2 : 7,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: (_total - _totalPaid) <= 0
+                                      ? const Color(0xFF30B24C)
+                                      : Colors.redAccent,
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                "\$${(_totalPaid >= _total ? 0.0 : _total - _totalPaid).toStringAsFixed(2)}",
+                                style: TextStyle(
+                                  fontSize: isTablet ? 22 : 18,
+                                  letterSpacing: -0.5,
+                                  color: (_total - _totalPaid) <= 0
+                                      ? const Color(0xFF30B24C)
+                                      : Colors.redAccent,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 5),
+
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: isTablet ? 200 : 110,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            "Subtotal: \$${_subtotal.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              color: colors.onSurfaceMuted,
+                              fontSize: isTablet ? 14 : 12.5,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: isTablet ? 6 : 8),
+                          Text(
+                            "Discount: \$${_discount.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              color: _discount > 0 ? kPrimaryColor : colors.onSurfaceMuted,
+                              fontSize: isTablet ? 14 : 12.5,
+                              fontWeight: _discount > 0 ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: isTablet ? 6 : 8),
+                          Text(
+                            "Rounding: \$${_rounding.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              color: colors.onSurfaceMuted,
+                              fontSize: isTablet ? 14 : 12.5,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: isTablet ? 14 : 22),
+                          Transform.translate(
+                            offset: Offset(0, isTablet ? 0 : -8),
                             child: Text(
-                              "\$${(_totalPaid >= _total ? 0.0 : _total - _totalPaid).toStringAsFixed(2)}",
+                              "\$${_total.toStringAsFixed(2)}",
                               style: TextStyle(
                                 fontSize: isTablet ? 22 : 18,
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? Colors.white : Colors.black87,
                                 letterSpacing: -0.5,
-                                color: (_total - _totalPaid) <= 0
-                                    ? const Color(0xFF30B24C)
-                                    : Colors.redAccent,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
-                    ),
-
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          "Subtotal: \$${_subtotal.toStringAsFixed(2)}",
-                          style: TextStyle(
-                            color: colors.onSurfaceMuted,
-                            fontSize: isTablet ? 14 : 12.5,
-                          ),
-                        ),
-                        SizedBox(height: isTablet ? 6 : 4),
-                        Text(
-                          "Discount: \$${_discount.toStringAsFixed(2)}",
-                          style: TextStyle(
-                            color: _discount > 0 ? kPrimaryColor : colors.onSurfaceMuted,
-                            fontSize: isTablet ? 14 : 12.5,
-                            fontWeight: _discount > 0 ? FontWeight.w600 : FontWeight.normal,
-                          ),
-                        ),
-                        SizedBox(height: isTablet ? 6 : 4),
-                        Text(
-                          "Rounding: \$${_rounding.toStringAsFixed(2)}",
-                          style: TextStyle(
-                            color: colors.onSurfaceMuted,
-                            fontSize: isTablet ? 14 : 12.5,
-                          ),
-                        ),
-                        SizedBox(height: isTablet ? 14 : 10),
-                        Text(
-                          "\$${_total.toStringAsFixed(2)}",
-                          style: TextStyle(
-                            fontSize: isTablet ? 22 : 18,
-                            fontWeight: FontWeight.w900,
-                            color: isDark ? Colors.white : Colors.black87,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
@@ -2214,6 +2233,7 @@ class _SalesScreenState extends State<SalesScreen>
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
             return Stack(
               children: [
                 Positioned(
@@ -2221,7 +2241,8 @@ class _SalesScreenState extends State<SalesScreen>
                   bottom:
                       MediaQuery.of(context).size.height -
                       buttonPosition.dy +
-                      8,
+                      8 +
+                      keyboardHeight,
                   child: Material(
                     color: Colors.transparent,
                     child: SizedBox(
@@ -2586,7 +2607,7 @@ class _SalesScreenState extends State<SalesScreen>
     bool isDark,
     bool isTablet,
   ) {
-    final size = isTablet ? 70.0 : 60.0;
+    final size = isTablet ? 70.0 : 50.0;
     return Builder(
       builder: (context) => GestureDetector(
         onTap: () {
@@ -2631,7 +2652,7 @@ class _SalesScreenState extends State<SalesScreen>
           child: Icon(
             Icons.menu,
             color: kPrimaryColor,
-            size: isTablet ? 34 : 30,
+            size: isTablet ? 34 : 24,
           ),
         ),
       ),
@@ -2653,7 +2674,7 @@ class _SalesScreenState extends State<SalesScreen>
         opacity: isDisabled ? 0.4 : 1.0,
         child: Container(
           padding: EdgeInsets.symmetric(
-            vertical: isTablet ? 10 : 8,
+            vertical: isTablet ? 10 : 14,
             horizontal: isTablet ? 28 : 20,
           ),
           decoration: BoxDecoration(
