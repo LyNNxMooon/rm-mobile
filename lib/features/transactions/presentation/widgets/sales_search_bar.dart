@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../utils/responsive_utils.dart';
 
 /// Search bar widget with scanner toggle for sales screen
 class SalesSearchBar extends StatelessWidget {
@@ -29,7 +30,7 @@ class SalesSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

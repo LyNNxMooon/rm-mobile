@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:rmstock_scanner/utils/responsive_utils.dart';
 
 EdgeInsets dialogInsetPadding(BuildContext context) {
-  final media = MediaQuery.of(context);
-  final double width = media.size.width;
-  final bool isTablet = media.size.shortestSide >= 600;
-  final bool isPortrait = media.orientation == Orientation.portrait;
+  final double width = context.screenWidth;
+  final bool isTablet = context.isTablet;
+  final bool isPortrait = context.isPortrait;
 
   if (isTablet) {
     final double horizontal = isPortrait

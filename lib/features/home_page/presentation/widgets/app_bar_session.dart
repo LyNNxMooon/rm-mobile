@@ -4,6 +4,7 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
+import '../../../../utils/responsive_utils.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
 import '../BLoC/home_screen_states.dart';
@@ -30,9 +31,8 @@ class AppBarSession extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final shortestSide = MediaQuery.of(context).size.shortestSide;
-    final isTablet = shortestSide >= 600;
-    final isLargeTablet = shortestSide >= 900;
+    final isTablet = context.isTablet;
+    final isLargeTablet = context.isLargeTablet;
     final double networkIconSize = isLargeTablet ? 52 : isTablet ? 44 : 30;
     final double settingsIconSize = isLargeTablet ? 40 : isTablet ? 34 : 26;
 

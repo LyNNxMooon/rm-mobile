@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../utils/responsive_utils.dart';
 
 /// Top header widget for sales screen - displays staff, tax toggle, and customer selection
 class SalesTopHeader extends StatefulWidget {
@@ -98,7 +99,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
 
     return Container(
       padding: EdgeInsets.fromLTRB(16, isTablet ? 12 : 8, 16, isTablet ? 12 : 8),

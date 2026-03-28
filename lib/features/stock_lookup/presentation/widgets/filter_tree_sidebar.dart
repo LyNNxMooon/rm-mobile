@@ -4,6 +4,7 @@ import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmstock_scanner/utils/responsive_utils.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
@@ -401,11 +402,17 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
     required double uiScale,
   }) {
     final leftPadding = 8.0 + (level * 16.0);
+    final bool isMediumTablet = context.isMediumTablet;
+    
+    // Reduced padding and font size for medium tablets
+    final double verticalPadding = isMediumTablet ? 10 : 16;
+    final double fontSize = isMediumTablet ? 13 : 14;
+    final double iconSize = isMediumTablet ? 14 : 16;
 
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: 8 * uiScale,
-        vertical: 5 * uiScale,
+        vertical: (isMediumTablet ? 3 : 5) * uiScale,
       ),
       child: Material(
         color: Colors.transparent,
@@ -421,8 +428,8 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
             padding: EdgeInsets.only(
               left: leftPadding * uiScale,
               right: 12 * uiScale,
-              top: 16 * uiScale,
-              bottom: 16 * uiScale,
+              top: verticalPadding * uiScale,
+              bottom: verticalPadding * uiScale,
             ),
             decoration: BoxDecoration(
               color: isSelected
@@ -462,7 +469,7 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
                   ),
                   child: Icon(
                     icon,
-                    size: 16 * uiScale,
+                    size: iconSize * uiScale,
                     color: isSelected
                         ? kPrimaryColor
                         : (isDark ? Colors.white70 : kThirdColor.withOpacity(0.7)),
@@ -478,7 +485,7 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
                       color: isSelected
                           ? kPrimaryColor
                           : (isDark ? Colors.white : kThirdColor),
-                      fontSize: 14,
+                      fontSize: fontSize,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     ),
                     maxLines: 1,

@@ -8,6 +8,7 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
+import '../../../../utils/responsive_utils.dart';
 
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
@@ -43,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _savedStaffPassword = "";
 
   _DrawerSizes _resolveDrawerSizes(MediaQueryData media) {
-    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTablet = media.size.shortestSide >= Breakpoints.tablet;
     final bool isPortrait = media.orientation == Orientation.portrait;
 
     double initialChildSize;
@@ -262,8 +263,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
-    final bool isPortrait = media.orientation == Orientation.portrait;
+    final bool isTablet = context.isTablet;
+    final bool isPortrait = context.isPortrait;
     final drawerSizes = _resolveDrawerSizes(media);
 
     // Calculate available space between AppBarSession end and drawer top edge
@@ -371,8 +372,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget logo() {
     final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
-    final bool isLargeTablet = isTablet && media.size.shortestSide >= 900;
+    final bool isTablet = context.isTablet;
+    final bool isLargeTablet = context.isLargeTablet;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final double tabletScale = isTablet
         ? (media.size.shortestSide / 768).clamp(0.85, 1.3)
@@ -396,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget headerTitle() {
     final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double tabletScale = isTablet
         ? (media.size.shortestSide / 768).clamp(0.85, 1.3)
         : 1.0;

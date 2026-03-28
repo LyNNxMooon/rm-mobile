@@ -10,6 +10,7 @@ import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loadin
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmstock_scanner/utils/responsive_utils.dart';
 
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
@@ -147,8 +148,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double logoWidth = isTablet ? 260 : 160;
     final double logoHeight = isTablet ? 188 : 120;
     //final double loadingWidth = isTablet ? 280 : 220;

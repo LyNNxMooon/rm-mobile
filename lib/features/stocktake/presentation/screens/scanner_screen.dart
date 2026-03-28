@@ -12,6 +12,7 @@ import 'package:rmstock_scanner/features/stocktake/presentation/screens/stock_ta
 import 'package:rmstock_scanner/features/transactions/presentation/screens/stock_selection_screen.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/stocktake_question_dialog.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmstock_scanner/utils/responsive_utils.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/theme_colors.dart';
@@ -411,7 +412,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         bottom: outerVerticalPadding,
         left: horizontalPadding,
         right: horizontalPadding,
-        top: outerVerticalPadding,
+        top: context.isMediumTablet ? 14.0 : outerVerticalPadding,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,7 +617,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
           Container(
             padding: EdgeInsets.symmetric(
-              vertical: isTablet ? 14 : 8,
+              vertical: context.isMediumTablet ? 6 : (isTablet ? 14 : 8),
               horizontal: isTablet ? 20 : 12,
             ),
             decoration: BoxDecoration(
@@ -677,15 +678,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
           ),
           SizedBox(
-            height: isMediumTabletPortrait
-                ? 8
-                : (isTablet ? 15 : 3) * portraitBoost,
+            height: context.isMediumTablet
+                ? 6
+                : (isMediumTabletPortrait
+                    ? 8
+                    : (isTablet ? 15 : 3) * portraitBoost),
           ),
 
           SizedBox(
             height: isMediumTabletPortrait
-                ? 56 * uiScale
-                : (isTablet ? 60 : 45) * uiScale * portraitBoost,
+                ? 42 * uiScale
+                : (isTablet 
+                    ? (isPortrait ? 46 * portraitBoost : 62) 
+                    : 36 * portraitBoost) * uiScale,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

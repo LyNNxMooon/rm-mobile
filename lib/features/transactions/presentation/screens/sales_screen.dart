@@ -26,6 +26,7 @@ import '../widgets/finalise_sale_dialog.dart';
 import '../widgets/sale_session_picker_dialog.dart';
 import '../widgets/sales_widgets.dart';
 import '../models/delivery_info.dart';
+import '../../../../utils/responsive_utils.dart';
 import 'delivery_details_screen.dart';
 
 final _sl = GetIt.instance;
@@ -385,7 +386,7 @@ class _SalesScreenState extends State<SalesScreen>
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
 
     return BlocProvider.value(
       value: _salesBloc,
@@ -1000,48 +1001,51 @@ class _SalesScreenState extends State<SalesScreen>
 
                     // Balance display
                     Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            // Balance label
-                            Text(
-                              "Balance",
-                              style: TextStyle(
-                                fontSize: isTablet ? 14 : 12.5,
-                                color: colors.onSurfaceMuted,
-                              ),
-                            ),
-                            SizedBox(height: isTablet ? 6 : 4),
-                            // Balance amount in border
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isTablet ? 12 : 8,
-                                vertical: isTablet ? 2 : 7,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: (_total - _totalPaid) <= 0
-                                      ? const Color(0xFF30B24C)
-                                      : Colors.redAccent,
-                                  width: 2,
-                                ),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                "\$${(_totalPaid >= _total ? 0.0 : _total - _totalPaid).toStringAsFixed(2)}",
+                      child: Transform.translate(
+                        offset: Offset(isTablet ? -32 : 0, 0),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              // Balance label
+                              Text(
+                                "Balance",
                                 style: TextStyle(
-                                  fontSize: isTablet ? 22 : 18,
-                                  letterSpacing: -0.5,
-                                  color: (_total - _totalPaid) <= 0
-                                      ? const Color(0xFF30B24C)
-                                      : Colors.redAccent,
+                                  fontSize: isTablet ? 14 : 12.5,
+                                  color: colors.onSurfaceMuted,
                                 ),
                               ),
-                            ),
-                          ],
+                              SizedBox(height: isTablet ? 6 : 4),
+                              // Balance amount in border
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTablet ? 12 : 8,
+                                  vertical: isTablet ? 2 : 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: (_total - _totalPaid) <= 0
+                                        ? const Color(0xFF30B24C)
+                                        : Colors.redAccent,
+                                    width: 2,
+                                  ),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  "\$${(_totalPaid >= _total ? 0.0 : _total - _totalPaid).toStringAsFixed(2)}",
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 22 : 18,
+                                    letterSpacing: -0.5,
+                                    color: (_total - _totalPaid) <= 0
+                                        ? const Color(0xFF30B24C)
+                                        : Colors.redAccent,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -1173,7 +1177,7 @@ class _SalesScreenState extends State<SalesScreen>
     bool expanded,
     Function(bool) onExpandChanged,
   ) {
-    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final isTablet = context.isTablet;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -1416,7 +1420,7 @@ class _SalesScreenState extends State<SalesScreen>
     bool expanded,
     Function(bool) onExpandChanged,
   ) {
-    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final isTablet = context.isTablet;
     final discountTextController = TextEditingController(
       text: _discountValue > 0 ? _discountValue.toStringAsFixed(2) : '',
     );
@@ -1807,7 +1811,7 @@ class _SalesScreenState extends State<SalesScreen>
   void _showSalesSettingsDialog(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
 
     showDialog(
       context: context,
@@ -2246,7 +2250,7 @@ class _SalesScreenState extends State<SalesScreen>
                   child: Material(
                     color: Colors.transparent,
                     child: SizedBox(
-                      width: MediaQuery.of(context).size.shortestSide >= 600
+                      width: context.isTablet
                           ? 280
                           : 220,
                       child: AnimatedBuilder(
@@ -2675,7 +2679,7 @@ class _SalesScreenState extends State<SalesScreen>
         child: Container(
           padding: EdgeInsets.symmetric(
             vertical: isTablet ? 10 : 14,
-            horizontal: isTablet ? 28 : 20,
+            horizontal: isTablet ? 52 : 10,
           ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -2700,14 +2704,14 @@ class _SalesScreenState extends State<SalesScreen>
               Icon(
                 Icons.check_circle_outline,
                 color: Colors.white,
-                size: isTablet ? 18 : 16,
+                size: isTablet ? 22 : 16,
               ),
               const SizedBox(width: 8),
               Text(
                 "FINALISE",
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: isTablet ? 13 : 11,
+                  fontSize: isTablet ? 15 : 11,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.8,
                 ),

@@ -11,6 +11,7 @@ import '../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
+import '../../../../utils/responsive_utils.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
 import '../BLoC/home_screen_states.dart';
@@ -87,8 +88,8 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
-    final bool isLandscape = media.orientation == Orientation.landscape;
+    final bool isTablet = context.isTablet;
+    final bool isLandscape = context.isLandscape;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)

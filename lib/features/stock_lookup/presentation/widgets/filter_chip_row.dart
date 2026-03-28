@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../utils/responsive_utils.dart';
 
 class FilterChipRow extends StatelessWidget {
   final ValueChanged<String> onFilterChanged;
@@ -30,7 +31,7 @@ class FilterChipRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)

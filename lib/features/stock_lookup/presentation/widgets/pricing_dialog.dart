@@ -4,6 +4,7 @@ import 'package:rmstock_scanner/constants/colors.dart';
 import 'package:rmstock_scanner/constants/theme_colors.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
+import 'package:rmstock_scanner/utils/responsive_utils.dart';
 
 class PricingDialog extends StatefulWidget {
   const PricingDialog({
@@ -89,7 +90,7 @@ class _PricingDialogState extends State<PricingDialog> {
     final Color surface = isDark ? colors.surfaceAlt : Colors.white;
     //final Color surfaceAlt = isDark ? colors.surfaceAlt : Colors.grey.shade50;
     final Color divider = isDark ? colors.divider : Colors.grey.shade300;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     
     final double headerSize = isTablet ? 16 : 13;
     final double textSize = isTablet ? 15 : 13;

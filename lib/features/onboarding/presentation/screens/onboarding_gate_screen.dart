@@ -13,6 +13,7 @@ import 'package:rmstock_scanner/features/onboarding/onboarding_content.dart';
 import 'package:rmstock_scanner/features/onboarding/presentation/screens/welcome_video_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/features/onboarding/presentation/BLoC/onboarding_bloc.dart';
+import 'package:rmstock_scanner/utils/responsive_utils.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class OnboardingGateScreen extends StatefulWidget {
@@ -187,7 +188,7 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     const double horizontalPadding = 22;
     final double mobileContentWidth = (media.size.width - (horizontalPadding * 2))
         .clamp(220.0, media.size.width);

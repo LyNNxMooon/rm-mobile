@@ -10,6 +10,7 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
+import '../../../../utils/responsive_utils.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
 import '../../../transactions/presentation/screens/sales_screen.dart';
@@ -111,7 +112,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
                       },
                     ),
                   ),
-                  SizedBox(height: MediaQuery.of(context).size.shortestSide >= 600 ? 15 : 14),
+                  SizedBox(height: context.isTablet ? 15 : 14),
                   Expanded(child: dashBoardView(scrollController)),
                 ],
               ),
@@ -126,7 +127,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
 
   Widget _buildSectionTitle(String title, BuildContext context) {
     final colors = context.appColors;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double fontSize = isTablet ? 18 : 16;
 
     return Padding(
@@ -146,11 +147,10 @@ class _GlassDrawerState extends State<GlassDrawer> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double width = constraints.maxWidth;
-        final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+        final bool isTablet = context.isTablet;
         final bool isTabletPortrait =
-            isTablet && MediaQuery.of(context).orientation == Orientation.portrait;
-        final bool isLargeTablet =
-            isTablet && MediaQuery.of(context).size.shortestSide >= 900;
+            isTablet && context.isPortrait;
+        final bool isLargeTablet = context.isLargeTablet;
 
         int crossAxisCount = 2;
         if (isTabletPortrait && isLargeTablet) {
@@ -308,7 +308,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
     bool isTransaction = false,
   }) {
     final colors = context.appColors;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
 
     final double scale = isTablet
         ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.85, 1.3)

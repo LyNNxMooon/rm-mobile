@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/customer_vo.dart';
+import '../../../../utils/responsive_utils.dart';
 
 /// Result from finalise sale dialog
 enum FinaliseSaleResult { email, save, cancelled }
@@ -326,7 +327,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
 
     return Dialog(
       backgroundColor: isDark ? colors.surface : Colors.white,

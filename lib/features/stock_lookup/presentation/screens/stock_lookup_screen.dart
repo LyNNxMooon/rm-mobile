@@ -23,6 +23,7 @@ import '../../../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/filter_criteria.dart';
+import '../../../../utils/responsive_utils.dart';
 import '../BLoC/stock_lookup_bloc.dart';
 import '../BLoC/stock_lookup_events.dart';
 import '../widgets/filter_chip_row.dart';
@@ -174,9 +175,19 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    final bool isPortrait =
-        MediaQuery.of(context).orientation == Orientation.portrait;
+    final bool isTablet = context.isTablet;
+    final bool isPortrait = context.isPortrait;
+
+    // Reset to list view when switching to portrait mode on tablets
+    if (isTablet && isPortrait && _viewMode != StockViewMode.list) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _viewMode = StockViewMode.list;
+          });
+        }
+      });
+    }
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -195,9 +206,8 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     bool isPortrait,
   ) {
     final screenSize = MediaQuery.of(context).size;
-    final shortestSide = screenSize.shortestSide;
     // Medium tablets/iPads: shortestSide between 600-900px
-    final bool isLargeTablet = shortestSide >= 900;
+    final bool isLargeTablet = context.isLargeTablet;
 
     // In landscape mode, limit max sidebar width to 35% of screen width
     final double maxAllowedWidth = isPortrait
@@ -214,7 +224,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         SizedBox(
           width: isLargeTablet
               ? _sidebarWidth.clamp(_minSidebarWidth, effectiveMaxWidth)
-              : 280.0,
+              : (isPortrait ? 220.0 : 280.0), // Narrower for medium tablets in portrait
           child: const FilterTreeSidebar(),
         ),
 
@@ -560,7 +570,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   Widget _buildGlassSearchBar() {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
@@ -688,7 +698,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     return Expanded(
       child: BlocBuilder<StockListBloc, StockListState>(
         builder: (context, state) {
-          final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+          final bool isTablet = context.isTablet;
           if (state is StockListLoading) {
             return loadingWidget();
           }
@@ -749,6 +759,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final screenSize = MediaQuery.of(context).size;
     final bool isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
+    final bool isMediumTablet = context.isMediumTablet;
 
     // Calculate available width for the grid (accounting for sidebar in landscape)
     final double availableWidth = isLandscape
@@ -765,24 +776,32 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
     switch (_viewMode) {
       case StockViewMode.gridMedium:
+        // Keep 2 columns, but reduce tile height for medium tablets
         crossAxisCount = 2;
         // Calculate item width and set aspect ratio to prevent overflow
         final double itemWidth =
             (availableWidth - 12) / 2; // 12 is crossAxisSpacing
         // For horizontal tiles: width / height ratio
-        // Minimum height of ~100-130 to fit content
-        final double minItemHeight = hasSearchQuery ? 130.0 : 100.0;
-        childAspectRatio = (itemWidth / minItemHeight).clamp(2.5, 5.5);
+        // Medium tablets get smaller height (higher aspect ratio)
+        final double minItemHeight = hasSearchQuery 
+            ? (isMediumTablet ? 95.0 : 130.0) 
+            : (isMediumTablet ? 70.0 : 100.0);
+        childAspectRatio = (itemWidth / minItemHeight).clamp(2.0, 7.0);
         break;
       case StockViewMode.largeIcons:
-        crossAxisCount = 3;
-        childAspectRatio = hasSearchQuery ? 0.58 : 0.75;
+        // Medium tablets get 5 columns with smaller cards, others get 3
+        crossAxisCount = isMediumTablet ? 5 : 3;
+        childAspectRatio = isMediumTablet 
+            ? (hasSearchQuery ? 0.70 : 0.85) 
+            : (hasSearchQuery ? 0.58 : 0.75);
         break;
       default:
         crossAxisCount = 2;
         final double itemWidth = (availableWidth - 12) / 2;
-        final double minItemHeight = hasSearchQuery ? 130.0 : 100.0;
-        childAspectRatio = (itemWidth / minItemHeight).clamp(2.5, 5.5);
+        final double minItemHeight = hasSearchQuery 
+            ? (isMediumTablet ? 95.0 : 130.0) 
+            : (isMediumTablet ? 70.0 : 100.0);
+        childAspectRatio = (itemWidth / minItemHeight).clamp(2.0, 7.0);
     }
 
     return AnimationLimiter(
@@ -860,9 +879,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
     // Base font sizes
     final double descFontSize =
-        (_viewMode == StockViewMode.largeIcons ? 14 : 12) * uiScale;
+        (_viewMode == StockViewMode.largeIcons ? 12.5 : 12) * uiScale;
     final double barcodeFontSize =
-        (_viewMode == StockViewMode.largeIcons ? 12 : 10) * uiScale;
+        (_viewMode == StockViewMode.largeIcons ? 12 : 13) * uiScale;
     final double customFontSize =
         (_viewMode == StockViewMode.largeIcons ? 11 : 10) * uiScale;
 
@@ -962,7 +981,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                 fontFamily: 'monospace',
                                 fontSize: barcodeFontSize,
                                 color: kPrimaryColor,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.bold,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1044,6 +1063,10 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final String trimmedQuery = query.trim();
     final String lowerQuery = trimmedQuery.toLowerCase();
     final bool hasQuery = trimmedQuery.isNotEmpty;
+    final bool isMediumTablet = context.isMediumTablet;
+    
+    // Thumbnail width: smaller for medium tablets
+    final double thumbnailWidth = isMediumTablet ? 60 : 100;
 
     bool matchesQuery(String? value) {
       if (!hasQuery || value == null) return false;
@@ -1056,7 +1079,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final bool showCustom2 = matchesQuery(stock.custom2);
 
     final double descFontSize = 13 * uiScale;
-    final double barcodeFontSize = 11 * uiScale;
+    final double barcodeFontSize = 13 * uiScale;
     final double customFontSize = 11 * uiScale;
 
     return AnimationConfiguration.staggeredGrid(
@@ -1096,7 +1119,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 children: [
                   // Thumbnail on the left - fixed width
                   Container(
-                    width: 100,
+                    width: thumbnailWidth,
                     height: double.infinity,
                     margin: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -1148,7 +1171,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                 fontFamily: 'monospace',
                                 fontSize: barcodeFontSize,
                                 color: kPrimaryColor,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.bold,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1272,7 +1295,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
@@ -1393,7 +1416,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                               fontFamily: 'monospace',
                               fontSize: 13 * textUiScale,
                               color: kPrimaryColor,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           // Custom1 field (only if matched)

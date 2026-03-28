@@ -7,6 +7,7 @@ import '../../../../constants/global_widgets.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
+import '../../../../utils/responsive_utils.dart';
 import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
 import '../../../home_page/presentation/BLoC/home_screen_events.dart';
 
@@ -36,8 +37,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
 import 'package:rmstock_scanner/constants/theme_colors.dart';
+import 'package:rmstock_scanner/utils/responsive_utils.dart';
 import 'package:video_player/video_player.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -51,8 +52,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final size = media.size;
     final shortestSide = size.shortestSide;
     final orientation = media.orientation;
-    final isTablet = shortestSide >= 600;
-    final isLargeTablet = shortestSide >= 900;
+    final isTablet = context.isTablet;
+    final isLargeTablet = context.isLargeTablet;
     final scale = (shortestSide / 375).clamp(1.0, 1.25);
     final horizontalPadding = (isLargeTablet ? 64.0 : isTablet ? 48.0 : 24.0) * scale;
     final verticalPadding = (isLargeTablet ? 48.0 : 32.0) * scale;

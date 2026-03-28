@@ -11,6 +11,7 @@ import '../../../../constants/global_widgets.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
+import '../../../../utils/responsive_utils.dart';
 
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
@@ -73,7 +74,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     if (_selectedPc == null) return;
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
@@ -215,7 +216,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     _connectCodeController.clear();
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
@@ -656,7 +657,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
   }
 
   Widget _buildServerTile(NetworkServerVO pc, BuildContext ctx) {
-    final bool isTablet = MediaQuery.of(ctx).size.shortestSide >= 600;
+    final bool isTablet = ctx.isTablet;
     final double textScale = MediaQuery.textScalerOf(ctx).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)

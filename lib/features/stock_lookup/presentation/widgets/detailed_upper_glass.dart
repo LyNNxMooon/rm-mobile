@@ -6,6 +6,7 @@ import 'package:languagetool_textfield/languagetool_textfield.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../utils/responsive_utils.dart';
 
 class DetailedUpperGlass extends StatefulWidget {
   const DetailedUpperGlass({
@@ -56,7 +57,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
     final bool isDark = colors.isDark;
     final Color onGlass = isDark ? Colors.white : kSecondaryColor;
     final Color onGlassMuted = isDark ? Colors.white70 : kGreyColor;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)

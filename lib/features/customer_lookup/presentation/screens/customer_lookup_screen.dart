@@ -33,6 +33,7 @@ import '../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../entities/vos/filter_criteria.dart';
+import '../../../../utils/responsive_utils.dart';
 
 class Debouncer {
   final int milliseconds;
@@ -352,7 +353,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
   Widget _buildGlassSearchBar() {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
       ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
@@ -524,7 +525,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     return Expanded(
       child: BlocBuilder<CustomerListBloc, CustomerListState>(
         builder: (context, state) {
-          final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+          final bool isTablet = context.isTablet;
 
           if (state is CustomerListLoading) {
             return loadingWidget();
@@ -669,9 +670,8 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final double shortestSide = MediaQuery.of(context).size.shortestSide;
-    final bool isTablet = shortestSide >= 600;
-    final bool isLargeTablet = shortestSide >= 900;
+    final bool isTablet = context.isTablet;
+    final bool isLargeTablet = context.isLargeTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)

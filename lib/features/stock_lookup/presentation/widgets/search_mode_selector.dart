@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/search_mode.dart';
+import '../../../../utils/responsive_utils.dart';
 
 class SearchModeSelector extends StatelessWidget {
   final SearchMode currentMode;
@@ -70,9 +71,8 @@ class SearchModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shortestSide = MediaQuery.of(context).size.shortestSide;
-    final isTablet = shortestSide >= 600;
-    final isLargeTablet = shortestSide >= 900;
+    final isTablet = context.isTablet;
+    final isLargeTablet = context.isLargeTablet;
     final double iconSize = isLargeTablet ? 32 : isTablet ? 28 : 22;
 
     return GestureDetector(

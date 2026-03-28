@@ -16,6 +16,7 @@ import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_b
 //import 'package:rmstock_scanner/features/stocktake/presentation/screens/scanner_screen.dart';
 import 'package:rmstock_scanner/utils/dependency_injection_utils.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
+import 'package:rmstock_scanner/utils/responsive_utils.dart';
 
 import 'features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import 'features/loading_splash/presentation/BLoC/loading_splash_events.dart';
@@ -28,32 +29,14 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  /// Calculate text scale using centralized responsive utilities.
   double _tabletTextScaleFor(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
-    final double shortestSide = size.shortestSide;
-    final double longestSide = size.longestSide;
-
-    // Keep mobile unchanged.
-    if (shortestSide < 600) return 1.0;
-
-    // Tablet/iPad adaptive scale for portrait + landscape.
-    // Use stronger scaling for large tablets/iPads.
-    if (shortestSide >= 900 || longestSide >= 1366) {
-      return 1.60;
-    }
-    if (shortestSide >= 820 || longestSide >= 1200) {
-      return 1.50;
-    }
-    if (shortestSide >= 720 || longestSide >= 1100) {
-      return 1.42;
-    }
-    return 1.34;
+    return context.responsive.textScale;
   }
 
-  double _tabletUiScaleFor(double textScale) {
-    if (textScale <= 1.0) return 1.0;
-    final double scaled = 1.0 + ((textScale - 1.0) * 0.65);
-    return scaled.clamp(1.0, 1.42);
+  /// Calculate UI scale from text scale using centralized responsive utilities.
+  double _tabletUiScaleFor(BuildContext context) {
+    return context.responsive.uiScale;
   }
 
   @override
@@ -210,7 +193,7 @@ class _MyAppState extends State<MyApp> {
             builder: (context, child) {
               final media = MediaQuery.of(context);
               final double textScale = _tabletTextScaleFor(context);
-              final double uiScale = _tabletUiScaleFor(textScale);
+              final double uiScale = _tabletUiScaleFor(context);
               final ThemeData baseTheme = Theme.of(context);
               final double densityAdjust =
                   ((uiScale - 1.0) * 3.2).clamp(0.0, 1.35);

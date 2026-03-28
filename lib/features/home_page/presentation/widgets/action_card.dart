@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rmstock_scanner/utils/responsive_utils.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
@@ -21,9 +22,9 @@ class ActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double scale = isTablet
-        ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.85, 1.3)
+        ? (context.shortestSide / 768).clamp(0.85, 1.3)
         : 1.0;
     final double titleSize = isTablet ? (16 * scale).clamp(16.0, 19.0) : 16.0;
     final double subTitleSize =

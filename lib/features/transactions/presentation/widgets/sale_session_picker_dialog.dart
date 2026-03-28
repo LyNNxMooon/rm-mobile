@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/sale_session_vo.dart';
+import '../../../../utils/responsive_utils.dart';
 
 /// Result from session picker dialog
 enum SessionPickerResult { continueSession, newSale, cancelled }
@@ -40,7 +41,7 @@ class SaleSessionPickerDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = AppThemeColors(context);
-    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final isTablet = context.isTablet;
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
     return Dialog(

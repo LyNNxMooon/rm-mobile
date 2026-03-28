@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../utils/responsive_utils.dart';
 
 
 class StockLookupScanner extends StatefulWidget {
@@ -27,7 +28,7 @@ class _StockLookupScannerState extends State<StockLookupScanner> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double scannerHeight = isTablet
         ? (media.size.height * 0.24).clamp(170.0, 280.0)
         : (media.size.height * 0.2).clamp(130.0, 210.0);

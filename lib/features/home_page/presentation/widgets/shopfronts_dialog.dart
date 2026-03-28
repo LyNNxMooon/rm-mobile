@@ -14,6 +14,7 @@ import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
+import '../../../../utils/responsive_utils.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_events.dart';
@@ -73,7 +74,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
     final bool isDark = colors.isDark;
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.78)
         .clamp(420.0, 780.0);
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
@@ -484,8 +485,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
         ctx.watch<StaffAuthBloc>().state is StaffAuthenticating;
     final colors = ctx.appColors;
     final bool isDark = colors.isDark;
-    final media = MediaQuery.of(ctx);
-    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTablet = ctx.isTablet;
     final double textScale = MediaQuery.textScalerOf(ctx).scale(14) / 14;
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.65)).clamp(1.0, 1.42);
     final double fieldHeight = isTablet

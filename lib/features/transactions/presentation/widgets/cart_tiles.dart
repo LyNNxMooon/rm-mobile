@@ -5,6 +5,7 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/images.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
+import '../../../../utils/responsive_utils.dart';
 import 'serial_number_dialog.dart';
 
 /// Wraps a cart tile with slide-to-delete functionality
@@ -915,7 +916,7 @@ class CompactCartTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final isTablet = context.isTablet;
 
     return Column(
       mainAxisSize: MainAxisSize.min,

@@ -7,6 +7,7 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
+import '../../../../utils/responsive_utils.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
@@ -39,7 +40,7 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:rmstock_scanner/utils/responsive_utils.dart';
 
 import 'colors.dart';
 import 'theme_colors.dart';
@@ -74,8 +75,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.32)).clamp(1.0, 1.18)
@@ -154,10 +154,8 @@ class LottieLoadingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
-    final shortestSide = media.size.shortestSide;
-    final isTablet = shortestSide >= 600;
-    final isLargeTablet = shortestSide >= 900;
+    final isTablet = context.isTablet;
+    final isLargeTablet = context.isLargeTablet;
 
     final lottie = Lottie.asset(
       'assets/animations/Loading bar.json',

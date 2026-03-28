@@ -5,6 +5,7 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../utils/responsive_utils.dart';
 
 class ComingSoonScreen extends StatelessWidget {
   final String featureName;
@@ -14,8 +15,7 @@ class ComingSoonScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double outerCircle = isTablet ? 210 : 160;
     final double innerCircle = isTablet ? 160 : 120;
     final double iconSize = isTablet ? 78 : 60;

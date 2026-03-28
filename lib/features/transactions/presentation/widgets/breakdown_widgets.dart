@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../utils/responsive_utils.dart';
 
 /// Tax breakdown widget showing Ex Tax, Tax Amount, Inc Tax
 class TaxBreakdownWidget extends StatelessWidget {
@@ -23,7 +24,7 @@ class TaxBreakdownWidget extends StatelessWidget {
     final double incTaxTotal = total;
     final double exTaxTotal = total / (1 + taxRate);
     final double taxAmount = incTaxTotal - exTaxTotal;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -117,7 +118,7 @@ class ProfitBreakdownWidget extends StatelessWidget {
     final double totalCost = subtotal * costRatio;
     final double egp = subtotal - totalCost - discount;
     final double egpPercent = subtotal > 0 ? (egp / subtotal) * 100 : 0;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
 
     return Container(
       padding: EdgeInsets.symmetric(

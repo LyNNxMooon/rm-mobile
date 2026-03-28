@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
+import '../../../../utils/responsive_utils.dart';
 
 class PriceCalculatorDialog extends StatefulWidget {
   final double incCost;
@@ -191,7 +192,7 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
     final Color surfaceAlt = isDark ? colors.surfaceAlt : Colors.grey[100]!;
     final Color divider = isDark ? colors.divider : Colors.grey[300]!;
     final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTablet = context.isTablet;
     final double dialogWidth = isTablet
         ? (media.size.width * 0.56).clamp(360.0, 520.0)
         : (media.size.width * 0.9).clamp(280.0, 400.0);

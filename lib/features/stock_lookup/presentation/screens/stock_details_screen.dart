@@ -31,6 +31,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/images.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../utils/responsive_utils.dart';
 import '../widgets/detailed_lower_glass.dart';
 import '../widgets/detailed_upper_glass.dart';
 
@@ -409,8 +410,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     final bool isDark = colors.isDark;
     final Color imageBackground = kSecondaryColor;
     final media = MediaQuery.of(context);
-    final bool isTablet = media.size.shortestSide >= 600;
-    final bool isLandscape = media.orientation == Orientation.landscape;
+    final bool isTablet = context.isTablet;
+    final bool isLandscape = context.isLandscape;
     final double screenHeight = media.size.height;
     final double screenWidth = media.size.width;
 

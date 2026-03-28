@@ -5,6 +5,7 @@ import 'package:alert_info/alert_info.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/customer_vo.dart';
+import '../../../../utils/responsive_utils.dart';
 import '../../domain/use_cases/search_customer_for_sale.dart';
 import '../models/delivery_info.dart';
 import 'customer_selection_screen.dart';
@@ -284,7 +285,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = context.appColors;
-    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final isTablet = context.isTablet;
 
     return Scaffold(
       backgroundColor: isDark ? colors.bg : Colors.grey.shade50,
