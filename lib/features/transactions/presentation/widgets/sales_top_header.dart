@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/responsive_utils.dart';
+import '../screens/sales_screen.dart';
 
 /// Top header widget for sales screen - displays staff, tax toggle, and customer selection
 class SalesTopHeader extends StatefulWidget {
@@ -15,6 +16,8 @@ class SalesTopHeader extends StatefulWidget {
   final String staffName;
   final bool hasCustomer;
   final bool autoFocusCustomer;
+  final CartViewMode? viewMode;
+  final ValueChanged<CartViewMode>? onViewModeChanged;
 
   const SalesTopHeader({
     super.key,
@@ -27,6 +30,8 @@ class SalesTopHeader extends StatefulWidget {
     this.customerName,
     this.hasCustomer = false,
     this.autoFocusCustomer = false,
+    this.viewMode,
+    this.onViewModeChanged,
   });
 
   @override
@@ -113,7 +118,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
       ),
       child: Column(
         children: [
-          // Info Row (Staff, Tax Toggle)
+          // Info Row (Staff, View Mode Toggle, Tax Toggle)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -135,6 +140,9 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
                   ),
                 ],
               ),
+              // View Mode Toggle (tablet only)
+              if (isTablet && widget.viewMode != null && widget.onViewModeChanged != null)
+                _buildViewModeToggle(colors, isDark, isTablet),
               // Ex Tax / Inc Tax Toggle
               _buildTaxToggle(colors, isDark, isTablet),
             ],
@@ -202,6 +210,46 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildViewModeToggle(AppThemeColors colors, bool isDark, bool isTablet) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      decoration: BoxDecoration(
+        color: isDark ? colors.surface.withOpacity(0.8) : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? Colors.white24 : Colors.grey.shade300,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: CartViewMode.values.map((mode) {
+          final isSelected = widget.viewMode == mode;
+          return GestureDetector(
+            onTap: () {
+              widget.onViewModeChanged?.call(mode);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? kPrimaryColor.withOpacity(0.2)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                mode.icon,
+                size: isTablet ? 22 : 18,
+                color: isSelected
+                    ? kPrimaryColor
+                    : (isDark ? Colors.white70 : Colors.blueGrey.shade600),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

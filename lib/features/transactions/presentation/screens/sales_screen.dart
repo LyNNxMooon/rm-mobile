@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_underscores
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +10,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:alert_info/alert_info.dart';
 
 import '../../../../constants/colors.dart';
+import '../../../../constants/images.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/customer_vo.dart';
 import '../../../../entities/vos/sale_session_vo.dart';
@@ -30,6 +33,35 @@ import '../../../../utils/responsive_utils.dart';
 import 'delivery_details_screen.dart';
 
 final _sl = GetIt.instance;
+
+/// View mode options for cart (tablet only)
+enum CartViewMode {
+  list,
+  gridMedium,
+  largeIcons;
+
+  String get displayName {
+    switch (this) {
+      case CartViewMode.list:
+        return 'List';
+      case CartViewMode.gridMedium:
+        return 'Grid';
+      case CartViewMode.largeIcons:
+        return 'Large Icons';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case CartViewMode.list:
+        return Icons.table_rows;
+      case CartViewMode.gridMedium:
+        return Icons.view_list;
+      case CartViewMode.largeIcons:
+        return Icons.grid_view;
+    }
+  }
+}
 
 class SalesScreen extends StatefulWidget {
   const SalesScreen({
@@ -79,6 +111,7 @@ class _SalesScreenState extends State<SalesScreen>
   bool _showActions = false;
   bool _isIncTax = true;
   bool _isCompactView = false;
+  CartViewMode _cartViewMode = CartViewMode.list; // View mode for tablet
   final bool _showTaxDetails = false;
   final bool _showProfitDetails = false;
   String? _selectedOption;
@@ -158,7 +191,7 @@ class _SalesScreenState extends State<SalesScreen>
       }
     });
     _loadSalesSettings();
-    
+
     // Check for saved sessions after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkSavedSessions();
@@ -168,30 +201,31 @@ class _SalesScreenState extends State<SalesScreen>
   Future<void> _checkSavedSessions() async {
     if (_sessionsChecked) return;
     _sessionsChecked = true;
-    
+
     final shopfront = AppGlobals.instance.shopfront ?? '';
     if (shopfront.isEmpty) return;
-    
+
     final sessionsData = await LocalDbDAO.instance.getSaleSessions(
       shopfront: shopfront,
       sessionType: widget.title,
     );
-    
+
     if (sessionsData.isEmpty || !mounted) return;
-    
+
     final sessions = sessionsData.map((e) => SaleSessionVO.fromMap(e)).toList();
-    
+
     final result = await SaleSessionPickerDialog.show(
       context: context,
       sessions: sessions,
       sessionType: widget.title,
     );
-    
+
     if (result == null || result.result == SessionPickerResult.cancelled) {
       return;
     }
-    
-    if (result.result == SessionPickerResult.continueSession && result.session != null) {
+
+    if (result.result == SessionPickerResult.continueSession &&
+        result.session != null) {
       await _restoreSession(result.session!);
     } else if (result.result == SessionPickerResult.newSale) {
       // Starting new sale - optionally clear old sessions
@@ -201,7 +235,7 @@ class _SalesScreenState extends State<SalesScreen>
 
   Future<void> _restoreSession(SaleSessionVO session) async {
     _currentSessionId = session.id;
-    
+
     // Restore cart items
     _salesBloc.add(ClearCart());
     for (final itemData in session.cartItems) {
@@ -210,14 +244,14 @@ class _SalesScreenState extends State<SalesScreen>
         itemData.code,
         AppGlobals.instance.shopfront ?? '',
       );
-      
+
       StockVO? stock;
       if (stockSearch.stock != null) {
         stock = stockSearch.stock;
       } else if (stockSearch.duplicates.isNotEmpty) {
         stock = stockSearch.duplicates.first;
       }
-      
+
       final cartItem = CartItemVO(
         code: itemData.code,
         description: itemData.description,
@@ -230,7 +264,7 @@ class _SalesScreenState extends State<SalesScreen>
       );
       _salesBloc.add(AddCartItemDirect(cartItem: cartItem));
     }
-    
+
     // Restore customer (if we have customer ID, try to look them up)
     if (session.customerId != null) {
       final customerSearch = await LocalDbDAO.instance.getCustomerBySearch(
@@ -241,7 +275,7 @@ class _SalesScreenState extends State<SalesScreen>
         _selectedCustomer = customerSearch.customer;
       }
     }
-    
+
     // Restore other values
     setState(() {
       _discountValue = session.discount;
@@ -264,47 +298,57 @@ class _SalesScreenState extends State<SalesScreen>
       }
       return;
     }
-    
+
     final shopfront = AppGlobals.instance.shopfront ?? '';
     if (shopfront.isEmpty) return;
-    
+
     final now = DateTime.now();
-    final cartItemsData = _cartItems.map((e) => CartItemData.fromCartItem(e)).toList();
-    
+    final cartItemsData = _cartItems
+        .map((e) => CartItemData.fromCartItem(e))
+        .toList();
+
     final sessionMap = {
       'session_type': widget.title,
       'shopfront': shopfront,
-      'created_at': _currentSessionId != null ? now.toIso8601String() : now.toIso8601String(),
+      'created_at': _currentSessionId != null
+          ? now.toIso8601String()
+          : now.toIso8601String(),
       'updated_at': now.toIso8601String(),
-      'cart_items_json': _cartItems.isNotEmpty 
-          ? cartItemsData.map((e) => e.toJson()).toList().toString().replaceAll('\'', '"')
+      'cart_items_json': _cartItems.isNotEmpty
+          ? cartItemsData
+                .map((e) => e.toJson())
+                .toList()
+                .toString()
+                .replaceAll('\'', '"')
           : null,
       'customer_id': _selectedCustomer?.customerId,
       'customer_barcode': _selectedCustomer?.barcode,
-      'customer_name': _selectedCustomer != null 
+      'customer_name': _selectedCustomer != null
           ? _buildCustomerDisplayName(_selectedCustomer!)
           : null,
       'subtotal': _subtotal,
       'discount': _discountValue,
-      'payment_amounts_json': _paymentAmounts.isNotEmpty 
-          ? _paymentAmounts.entries.map((e) => '"${e.key}":${e.value}').join(',')
+      'payment_amounts_json': _paymentAmounts.isNotEmpty
+          ? _paymentAmounts.entries
+                .map((e) => '"${e.key}":${e.value}')
+                .join(',')
           : null,
       'survey_value': _surveyValue.isNotEmpty ? _surveyValue : null,
       'comment_value': _commentValue.isNotEmpty ? _commentValue : null,
     };
-    
+
     // Properly encode cart items
     if (_cartItems.isNotEmpty) {
-      sessionMap['cart_items_json'] = '[${cartItemsData.map((e) => 
-        '{"code":"${e.code}","description":"${e.description.replaceAll('"', '\\"')}","qty":${e.qty},"sell_price":${e.sellPrice},"cost_price":${e.costPrice ?? 0},"serial_number":${e.serialNumber != null ? '"${e.serialNumber}"' : 'null'},"stock_id":${e.stockId ?? 'null'}}'
-      ).join(',')}]';
+      sessionMap['cart_items_json'] =
+          '[${cartItemsData.map((e) => '{"code":"${e.code}","description":"${e.description.replaceAll('"', '\\"')}","qty":${e.qty},"sell_price":${e.sellPrice},"cost_price":${e.costPrice ?? 0},"serial_number":${e.serialNumber != null ? '"${e.serialNumber}"' : 'null'},"stock_id":${e.stockId ?? 'null'}}').join(',')}]';
     }
-    
+
     // Properly encode payment amounts
     if (_paymentAmounts.isNotEmpty) {
-      sessionMap['payment_amounts_json'] = '{${_paymentAmounts.entries.map((e) => '"${e.key}":${e.value}').join(',')}}';
+      sessionMap['payment_amounts_json'] =
+          '{${_paymentAmounts.entries.map((e) => '"${e.key}":${e.value}').join(',')}}';
     }
-    
+
     if (_currentSessionId != null) {
       sessionMap['id'] = _currentSessionId;
       await LocalDbDAO.instance.updateSaleSession(sessionMap);
@@ -321,9 +365,15 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Future<void> _loadSalesSettings() async {
-    final scanIndividualUnits = await LocalDbDAO.instance.getAppConfig(kSalesScanIndividualUnitsKey);
-    final skipSellPrice = await LocalDbDAO.instance.getAppConfig(kSalesSkipSellPriceKey);
-    final promptForEmail = await LocalDbDAO.instance.getAppConfig(kSalesPromptForEmailKey);
+    final scanIndividualUnits = await LocalDbDAO.instance.getAppConfig(
+      kSalesScanIndividualUnitsKey,
+    );
+    final skipSellPrice = await LocalDbDAO.instance.getAppConfig(
+      kSalesSkipSellPriceKey,
+    );
+    final promptForEmail = await LocalDbDAO.instance.getAppConfig(
+      kSalesPromptForEmailKey,
+    );
     if (mounted) {
       setState(() {
         _scanIndividualUnits = scanIndividualUnits == 'true';
@@ -364,10 +414,12 @@ class _SalesScreenState extends State<SalesScreen>
     _audioPlayer.play(_beepSource);
 
     // Search for stock
-    _salesBloc.add(SearchStock(
-      query: barcode,
-      skipEditMode: _scanIndividualUnits && _skipSellPrice,
-    ));
+    _salesBloc.add(
+      SearchStock(
+        query: barcode,
+        skipEditMode: _scanIndividualUnits && _skipSellPrice,
+      ),
+    );
   }
 
   String _buildCustomerDisplayName(CustomerVO customer) {
@@ -402,10 +454,12 @@ class _SalesScreenState extends State<SalesScreen>
             );
 
             if (selected != null && mounted) {
-              _salesBloc.add(SelectStock(
-                stock: selected,
-                skipEditMode: _scanIndividualUnits && _skipSellPrice,
-              ));
+              _salesBloc.add(
+                SelectStock(
+                  stock: selected,
+                  skipEditMode: _scanIndividualUnits && _skipSellPrice,
+                ),
+              );
             } else {
               _salesBloc.add(ResetSearchState());
             }
@@ -474,7 +528,8 @@ class _SalesScreenState extends State<SalesScreen>
             }
           } else if (state is CustomerSelected) {
             // For Account Sales, validate customer is an account customer
-            if (widget.title == "Account Sales" && !(state.selectedCustomer?.account ?? false)) {
+            if (widget.title == "Account Sales" &&
+                !(state.selectedCustomer?.account ?? false)) {
               AlertInfo.show(
                 context: context,
                 text: "This customer is not an account customer",
@@ -528,73 +583,81 @@ class _SalesScreenState extends State<SalesScreen>
                 body: SafeArea(
                   child: Column(
                     children: [
-                    // Top Section: Customer, Staff, Date
-                    SalesTopHeader(
-                      isIncTax: _isIncTax,
-                      onTaxModeChanged: (value) =>
-                          setState(() => _isIncTax = value),
-                      staffName:
-                          AppGlobals.instance.staffName ?? "Unknown Staff",
-                      hasCustomer: _selectedCustomer != null,
-                      customerBarcode: _selectedCustomer?.barcode,
-                      customerName: _selectedCustomer != null
-                          ? _buildCustomerDisplayName(_selectedCustomer!)
-                          : null,
-                      autoFocusCustomer: widget.title != "Sales",
-                      onCustomerSearch: (query) {
-                        _salesBloc.add(SearchCustomer(query: query));
-                      },
-                      onCustomerClear: () {
-                        _salesBloc.add(ClearCustomer());
-                        setState(() => _selectedCustomer = null);
-                      },
-                    ),
-
-                    // Scanner Area (hidden when keyboard is visible to prevent overflow)
-                    if (_showScanner && MediaQuery.of(context).viewInsets.bottom == 0)
-                      SalesScannerArea(
-                        scannerController: _scannerController,
-                        onBarcodeScanned: _onBarcodeScanned,
+                      // Top Section: Customer, Staff, Date
+                      SalesTopHeader(
+                        isIncTax: _isIncTax,
+                        onTaxModeChanged: (value) =>
+                            setState(() => _isIncTax = value),
+                        staffName:
+                            AppGlobals.instance.staffName ?? "Unknown Staff",
+                        hasCustomer: _selectedCustomer != null,
+                        customerBarcode: _selectedCustomer?.barcode,
+                        customerName: _selectedCustomer != null
+                            ? _buildCustomerDisplayName(_selectedCustomer!)
+                            : null,
+                        autoFocusCustomer: widget.title != "Sales",
+                        onCustomerSearch: (query) {
+                          _salesBloc.add(SearchCustomer(query: query));
+                        },
+                        onCustomerClear: () {
+                          _salesBloc.add(ClearCustomer());
+                          setState(() => _selectedCustomer = null);
+                        },
+                        viewMode: isTablet ? _cartViewMode : null,
+                        onViewModeChanged: isTablet
+                            ? (mode) => setState(() => _cartViewMode = mode)
+                            : null,
                       ),
 
-                    // Middle Section: Cart Items
-                    Expanded(child: _buildCartArea(colors, isDark, isTablet)),
+                      // Scanner Area (hidden when keyboard is visible to prevent overflow)
+                      if (_showScanner &&
+                          MediaQuery.of(context).viewInsets.bottom == 0)
+                        SalesScannerArea(
+                          scannerController: _scannerController,
+                          onBarcodeScanned: _onBarcodeScanned,
+                        ),
 
-                    // Search Bar (moved to bottom)
-                    SalesSearchBar(
-                      searchController: _searchController,
-                      searchFocusNode: _searchFocusNode,
-                      showScanner: _showScanner,
-                      isTorchOn: _isTorchOn,
-                      onScannerToggle: () {
-                        setState(() {
-                          _showScanner = !_showScanner;
-                          if (_showScanner) {
-                            _searchFocusNode.unfocus();
-                          }
-                        });
-                      },
-                      onTorchToggle: () {
-                        setState(() {
-                          _scannerController.toggleTorch();
-                          _isTorchOn = !_isTorchOn;
-                        });
-                      },
-                      onSearch: (query) {
-                        _salesBloc.add(SearchStock(
-                          query: query,
-                          skipEditMode: _scanIndividualUnits && _skipSellPrice,
-                        ));
-                      },
-                    ),
+                      // Middle Section: Cart Items
+                      Expanded(child: _buildCartArea(colors, isDark, isTablet)),
 
-                    // Bottom Section: Summary, Payment & Commit
-                    _buildBottomSummary(colors, isDark, isTablet),
-                  ],
+                      // Search Bar (moved to bottom)
+                      SalesSearchBar(
+                        searchController: _searchController,
+                        searchFocusNode: _searchFocusNode,
+                        showScanner: _showScanner,
+                        isTorchOn: _isTorchOn,
+                        onScannerToggle: () {
+                          setState(() {
+                            _showScanner = !_showScanner;
+                            if (_showScanner) {
+                              _searchFocusNode.unfocus();
+                            }
+                          });
+                        },
+                        onTorchToggle: () {
+                          setState(() {
+                            _scannerController.toggleTorch();
+                            _isTorchOn = !_isTorchOn;
+                          });
+                        },
+                        onSearch: (query) {
+                          _salesBloc.add(
+                            SearchStock(
+                              query: query,
+                              skipEditMode:
+                                  _scanIndividualUnits && _skipSellPrice,
+                            ),
+                          );
+                        },
+                      ),
+
+                      // Bottom Section: Summary, Payment & Commit
+                      _buildBottomSummary(colors, isDark, isTablet),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
+            );
           },
         ),
       ),
@@ -741,6 +804,18 @@ class _SalesScreenState extends State<SalesScreen>
       );
     }
 
+    // Check if any item is in edit mode - if so, use list view for the edit form
+    final bool hasEditingItem = _cartItems.any((item) => item.isEditing);
+
+    // Use different views based on cart view mode (tablet only)
+    // But switch to list view if any item is being edited (edit form needs space)
+    if (isTablet && !hasEditingItem && _cartViewMode == CartViewMode.gridMedium) {
+      return _buildCartGridView(colors, isDark);
+    } else if (isTablet && !hasEditingItem && _cartViewMode == CartViewMode.largeIcons) {
+      return _buildCartLargeIconView(colors, isDark);
+    }
+
+    // Default list view
     return Column(
       children: [
         // Optional Tablet Header Row mimicking the desktop grid (not shown in compact view)
@@ -831,6 +906,481 @@ class _SalesScreenState extends State<SalesScreen>
         fontSize: 12,
         fontWeight: FontWeight.bold,
         color: colors.onSurfaceMuted,
+      ),
+    );
+  }
+
+  /// Grid view for cart items (2 columns, horizontal tiles)
+  Widget _buildCartGridView(AppThemeColors colors, bool isDark) {
+    final bool isMediumTablet = context.isMediumTablet;
+    final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final bool isLargeTablet = !isMediumTablet;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
+
+    // Calculate aspect ratio based on content needs (higher = shorter tiles)
+    // Large tablets get shorter tiles
+    final double childAspectRatio = isLandscape
+        ? (isMediumTablet ? 5.5 : (isLargeTablet ? 6.5 : 5.2))
+        : (isMediumTablet ? 3.4 : (isLargeTablet ? 4.6 : 3.2));
+
+    return AnimationLimiter(
+      child: GridView.builder(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 80),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          childAspectRatio: childAspectRatio,
+        ),
+        itemCount: _cartItems.length,
+        itemBuilder: (context, index) {
+          final item = _cartItems[index];
+          return AnimationConfiguration.staggeredGrid(
+            position: index,
+            duration: const Duration(milliseconds: 300),
+            columnCount: 2,
+            child: ScaleAnimation(
+              child: FadeInAnimation(
+                child: _buildCartGridTile(item, index, colors, isDark, uiScale),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Large icon view for cart items (3-4 columns, vertical tiles with larger thumbnails)
+  Widget _buildCartLargeIconView(AppThemeColors colors, bool isDark) {
+    final bool isMediumTablet = context.isMediumTablet;
+    final bool isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final bool isLargeTabletPortrait = !isMediumTablet && !isLandscape;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
+
+    // More columns for medium tablets, and in landscape mode use 6 columns with smaller cards
+    final int crossAxisCount = isLandscape ? 6 : (isMediumTablet ? 5 : 4);
+    // Landscape: higher aspect ratio for smaller cards, Portrait: lower for taller cards
+    // Large tablet portrait: shorter cards (higher aspect ratio)
+    final double childAspectRatio = isLandscape
+        ? (isMediumTablet ? 0.88 : 0.85)
+        : (isMediumTablet ? 0.65 : (isLargeTabletPortrait ? 0.82 : 0.60));
+    // More spacing in landscape, less in portrait
+    final double spacing = isLandscape ? 14 : 8;
+
+    return AnimationLimiter(
+      child: GridView.builder(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 80),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: spacing,
+          crossAxisSpacing: spacing,
+          childAspectRatio: childAspectRatio,
+        ),
+        itemCount: _cartItems.length,
+        itemBuilder: (context, index) {
+          final item = _cartItems[index];
+          return AnimationConfiguration.staggeredGrid(
+            position: index,
+            duration: const Duration(milliseconds: 300),
+            columnCount: crossAxisCount,
+            child: ScaleAnimation(
+              child: FadeInAnimation(
+                child: _buildCartLargeIconTile(
+                  item,
+                  index,
+                  colors,
+                  isDark,
+                  uiScale,
+                  isLandscape,
+                  isLargeTabletPortrait,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Grid tile for cart item (horizontal layout)
+  Widget _buildCartGridTile(
+    CartItemVO item,
+    int index,
+    AppThemeColors colors,
+    bool isDark,
+    double uiScale,
+  ) {
+    final bool isMediumTablet = context.isMediumTablet;
+    final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final bool isLargeTablet = !isMediumTablet;
+    // Wider thumbnail in landscape, even wider for large tablets
+    final double thumbnailSize = isLandscape
+        ? (isMediumTablet ? 115 : (isLargeTablet ? 140 : 125))
+        : (isMediumTablet ? 95 : (isLargeTablet ? 130 : 105));
+    final double displayPrice = _isIncTax
+        ? item.sellPrice
+        : item.sellPrice / 1.1;
+    final double displayExt = _isIncTax ? item.extension : item.extension / 1.1;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        _salesBloc.add(EditCartItem(index: index));
+      },
+      child: Dismissible(
+        key: Key('cart_grid_${item.code}_$index'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            color: Colors.red.shade400,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.delete, color: Colors.white, size: 24),
+        ),
+        onDismissed: (_) {
+          _salesBloc.add(RemoveCartItem(index: index));
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? Color.lerp(colors.surface, Colors.white, 0.06)
+                : kSecondaryColor,
+            borderRadius: BorderRadius.circular(10),
+            border: isDark
+                ? Border.all(color: Colors.white.withOpacity(0.18))
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black.withOpacity(0.35)
+                    : kThirdColor.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Thumbnail
+              Container(
+                width: thumbnailSize,
+                height: double.infinity,
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isDark ? colors.surface : Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: item.stock?.imageUrl != null
+                      ? Image.network(
+                          item.stock!.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Image.asset(
+                            overviewPlaceholder,
+                            fit: BoxFit.fill,
+                          ),
+                        )
+                      : Image.asset(overviewPlaceholder, fit: BoxFit.fill),
+                ),
+              ),
+              // Item details
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 6,
+                  ),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Description
+                        Text(
+                          item.description,
+                          style: TextStyle(
+                            fontSize: 13 * uiScale,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : kThirdColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        // Code/Barcode
+                        Text(
+                          item.code,
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 11 * uiScale,
+                            fontWeight: FontWeight.bold,
+                            color: kPrimaryColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        // Price and Qty row - fully scrollable
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            children: [
+                              Text(
+                                "\$${displayPrice.toStringAsFixed(2)}",
+                                style: TextStyle(
+                                  fontSize: 12 * uiScale,
+                                  color: colors.onSurfaceMuted,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? colors.surface
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  "×${item.qty}",
+                                  style: TextStyle(
+                                    fontSize: 11 * uiScale,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.blueGrey.shade700,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                "=",
+                                style: TextStyle(
+                                  fontSize: 12 * uiScale,
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.onSurfaceMuted,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              // Extension price
+                              Text(
+                                "\$${displayExt.toStringAsFixed(2)}",
+                                style: TextStyle(
+                                  fontSize: 13 * uiScale,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Large icon tile for cart item (vertical layout with larger thumbnail)
+  Widget _buildCartLargeIconTile(
+    CartItemVO item,
+    int index,
+    AppThemeColors colors,
+    bool isDark,
+    double uiScale,
+    bool isLandscape,
+    bool isLargeTabletPortrait,
+  ) {
+    // final double displayPrice = _isIncTax
+    //     ? item.sellPrice
+    //     : item.sellPrice / 1.1;
+    final double displayExt = _isIncTax ? item.extension : item.extension / 1.1;
+    
+    // Reduce thumbnail size for large tablet portrait
+    final int thumbnailFlex = isLargeTabletPortrait ? 11 : 13;
+    final int detailsFlex = isLargeTabletPortrait ? 5 : 7;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        _salesBloc.add(EditCartItem(index: index));
+      },
+      child: Dismissible(
+        key: Key('cart_largeicon_${item.code}_$index'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            color: Colors.red.shade400,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.delete, color: Colors.white, size: 24),
+        ),
+        onDismissed: (_) {
+          _salesBloc.add(RemoveCartItem(index: index));
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? Color.lerp(colors.surface, Colors.white, 0.06)
+                : kSecondaryColor,
+            borderRadius: BorderRadius.circular(10),
+            border: isDark
+                ? Border.all(color: Colors.white.withOpacity(0.18))
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black.withOpacity(0.35)
+                    : kThirdColor.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Thumbnail (larger, takes most space)
+              Expanded(
+                flex: thumbnailFlex,
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    // color: isDark ? colors.surface : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: item.stock?.imageUrl != null
+                            ? Image.network(
+                                item.stock!.imageUrl!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Image.asset(
+                                  overviewPlaceholder,
+                                  fit: BoxFit.fill,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              )
+                            : Image.asset(
+                                overviewPlaceholder,
+                                fit: BoxFit.fill,
+                                width: double.infinity,
+                                height: double.infinity,
+                              ),
+                      ),
+                      // Qty badge
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: kPrimaryColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            "×${item.qty}",
+                            style: TextStyle(
+                              fontSize: 11 * uiScale,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Item details
+              Expanded(
+                flex: detailsFlex,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 8, bottom: 6),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Description
+                        Text(
+                          item.description,
+                          style: TextStyle(
+                            fontSize: 12 * uiScale,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : kThirdColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 2),
+                        // Code/Barcode
+                        Text(
+                          item.code,
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 10 * uiScale,
+                            fontWeight: FontWeight.bold,
+                            color: kPrimaryColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 2),
+                        // Extension
+                        Text(
+                          "\$${displayExt.toStringAsFixed(2)}",
+                          style: TextStyle(
+                            fontSize: 13 * uiScale,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -997,7 +1547,7 @@ class _SalesScreenState extends State<SalesScreen>
                       ],
                     ),
 
-                    const SizedBox(width: 5),
+                    SizedBox(width: isTablet ? 38 : 5),
 
                     // Balance display
                     Expanded(
@@ -1050,30 +1600,36 @@ class _SalesScreenState extends State<SalesScreen>
                       ),
                     ),
 
-                    const SizedBox(width: 5),
+                    SizedBox(width: isTablet ? 0 : 5),
 
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: isTablet ? 200 : 110,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            "Subtotal: \$${_subtotal.toStringAsFixed(2)}",
-                            style: TextStyle(
-                              color: colors.onSurfaceMuted,
-                              fontSize: isTablet ? 14 : 12.5,
+                    Transform.translate(
+                      offset: Offset(isTablet ? -10 : 0, 0),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isTablet ? 200 : 110,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              "Subtotal: \$${_subtotal.toStringAsFixed(2)}",
+                              style: TextStyle(
+                                color: colors.onSurfaceMuted,
+                                fontSize: isTablet ? 14 : 12.5,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: isTablet ? 6 : 8),
-                          Text(
-                            "Discount: \$${_discount.toStringAsFixed(2)}",
-                            style: TextStyle(
-                              color: _discount > 0 ? kPrimaryColor : colors.onSurfaceMuted,
+                            SizedBox(height: isTablet ? 6 : 8),
+                            Text(
+                              "Discount: \$${_discount.toStringAsFixed(2)}",
+                              style: TextStyle(
+                                color: _discount > 0
+                                    ? kPrimaryColor
+                                    : colors.onSurfaceMuted,
                               fontSize: isTablet ? 14 : 12.5,
-                              fontWeight: _discount > 0 ? FontWeight.w600 : FontWeight.normal,
+                              fontWeight: _discount > 0
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1101,6 +1657,7 @@ class _SalesScreenState extends State<SalesScreen>
                             ),
                           ),
                         ],
+                        ),
                       ),
                     ),
                   ],
@@ -1115,7 +1672,7 @@ class _SalesScreenState extends State<SalesScreen>
 
   Future<void> _showFinaliseDialog() async {
     final isSales = widget.title == "Sales";
-    
+
     final result = await FinaliseSaleDialog.show(
       context: context,
       customer: _selectedCustomer,
@@ -1155,7 +1712,7 @@ class _SalesScreenState extends State<SalesScreen>
   void _clearSale() {
     // Delete the current session since sale was committed
     _deleteCurrentSession();
-    
+
     setState(() {
       _salesBloc.add(ClearCart());
       _selectedCustomer = null;
@@ -1485,9 +2042,10 @@ class _SalesScreenState extends State<SalesScreen>
                                 child: TextField(
                                   controller: discountTextController,
                                   autofocus: true,
-                                  keyboardType: const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: isDark
@@ -1524,8 +2082,10 @@ class _SalesScreenState extends State<SalesScreen>
                                   ),
                                   onSubmitted: (value) {
                                     setState(() {
-                                      _discountValue = double.tryParse(value.trim()) ?? 0.00;
-                                      _discountController.text = _discountValue.toStringAsFixed(2);
+                                      _discountValue =
+                                          double.tryParse(value.trim()) ?? 0.00;
+                                      _discountController.text = _discountValue
+                                          .toStringAsFixed(2);
                                     });
                                     onExpandChanged(false);
                                   },
@@ -1534,9 +2094,10 @@ class _SalesScreenState extends State<SalesScreen>
                             : TextField(
                                 controller: discountTextController,
                                 autofocus: true,
-                                keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: isDark ? Colors.white : Colors.black87,
@@ -1571,8 +2132,10 @@ class _SalesScreenState extends State<SalesScreen>
                                 ),
                                 onSubmitted: (value) {
                                   setState(() {
-                                    _discountValue = double.tryParse(value.trim()) ?? 0.00;
-                                    _discountController.text = _discountValue.toStringAsFixed(2);
+                                    _discountValue =
+                                        double.tryParse(value.trim()) ?? 0.00;
+                                    _discountController.text = _discountValue
+                                        .toStringAsFixed(2);
                                   });
                                   onExpandChanged(false);
                                 },
@@ -1583,8 +2146,13 @@ class _SalesScreenState extends State<SalesScreen>
                     GestureDetector(
                       onTap: () {
                         setState(() {
-                          _discountValue = double.tryParse(discountTextController.text.trim()) ?? 0.00;
-                          _discountController.text = _discountValue.toStringAsFixed(2);
+                          _discountValue =
+                              double.tryParse(
+                                discountTextController.text.trim(),
+                              ) ??
+                              0.00;
+                          _discountController.text = _discountValue
+                              .toStringAsFixed(2);
                         });
                         onExpandChanged(false);
                       },
@@ -1879,7 +2447,10 @@ class _SalesScreenState extends State<SalesScreen>
                               (v) {
                                 setDialogState(() => _scanIndividualUnits = v!);
                                 setState(() {});
-                                LocalDbDAO.instance.saveAppConfig(kSalesScanIndividualUnitsKey, v.toString());
+                                LocalDbDAO.instance.saveAppConfig(
+                                  kSalesScanIndividualUnitsKey,
+                                  v.toString(),
+                                );
                               },
                               isDark,
                               colors,
@@ -1890,7 +2461,10 @@ class _SalesScreenState extends State<SalesScreen>
                               (v) {
                                 setDialogState(() => _skipSellPrice = v!);
                                 setState(() {});
-                                LocalDbDAO.instance.saveAppConfig(kSalesSkipSellPriceKey, v.toString());
+                                LocalDbDAO.instance.saveAppConfig(
+                                  kSalesSkipSellPriceKey,
+                                  v.toString(),
+                                );
                               },
                               isDark,
                               colors,
@@ -1899,9 +2473,14 @@ class _SalesScreenState extends State<SalesScreen>
                               'Prompt for Email at Time of Sale',
                               _promptForEmailAtSale,
                               (v) {
-                                setDialogState(() => _promptForEmailAtSale = v!);
+                                setDialogState(
+                                  () => _promptForEmailAtSale = v!,
+                                );
                                 setState(() {});
-                                LocalDbDAO.instance.saveAppConfig(kSalesPromptForEmailKey, v.toString());
+                                LocalDbDAO.instance.saveAppConfig(
+                                  kSalesPromptForEmailKey,
+                                  v.toString(),
+                                );
                               },
                               isDark,
                               colors,
@@ -1910,7 +2489,9 @@ class _SalesScreenState extends State<SalesScreen>
                               'Round Sell Price to 2 Decimals',
                               _roundSellPriceTo2Decimals,
                               (v) {
-                                setDialogState(() => _roundSellPriceTo2Decimals = v!);
+                                setDialogState(
+                                  () => _roundSellPriceTo2Decimals = v!,
+                                );
                                 setState(() {});
                               },
                               isDark,
@@ -1940,7 +2521,9 @@ class _SalesScreenState extends State<SalesScreen>
                               'Scan Individual Units for Fractional Quantities',
                               _scanIndividualUnitsForFractional,
                               (v) {
-                                setDialogState(() => _scanIndividualUnitsForFractional = v!);
+                                setDialogState(
+                                  () => _scanIndividualUnitsForFractional = v!,
+                                );
                                 setState(() {});
                               },
                               isDark,
@@ -1960,7 +2543,9 @@ class _SalesScreenState extends State<SalesScreen>
                               'Prevent finalising SA and IV when any item is out of stock - SO, LB, & CSO Allowed',
                               _preventFinaliseIfOutOfStock,
                               (v) {
-                                setDialogState(() => _preventFinaliseIfOutOfStock = v!);
+                                setDialogState(
+                                  () => _preventFinaliseIfOutOfStock = v!,
+                                );
                                 setState(() {});
                               },
                               isDark,
@@ -1990,7 +2575,9 @@ class _SalesScreenState extends State<SalesScreen>
                               'Prompt for Scan Individual Units for Fractional Quantities',
                               _promptScanIndividualFractional,
                               (v) {
-                                setDialogState(() => _promptScanIndividualFractional = v!);
+                                setDialogState(
+                                  () => _promptScanIndividualFractional = v!,
+                                );
                                 setState(() {});
                               },
                               isDark,
@@ -2000,7 +2587,9 @@ class _SalesScreenState extends State<SalesScreen>
                               'Display customer messages as a Prompt during sale',
                               _displayCustomerMessagesAsPrompt,
                               (v) {
-                                setDialogState(() => _displayCustomerMessagesAsPrompt = v!);
+                                setDialogState(
+                                  () => _displayCustomerMessagesAsPrompt = v!,
+                                );
                                 setState(() {});
                               },
                               isDark,
@@ -2016,7 +2605,9 @@ class _SalesScreenState extends State<SalesScreen>
                       decoration: BoxDecoration(
                         border: Border(
                           top: BorderSide(
-                            color: isDark ? Colors.white12 : Colors.grey.shade200,
+                            color: isDark
+                                ? Colors.white12
+                                : Colors.grey.shade200,
                           ),
                         ),
                       ),
@@ -2250,9 +2841,7 @@ class _SalesScreenState extends State<SalesScreen>
                   child: Material(
                     color: Colors.transparent,
                     child: SizedBox(
-                      width: context.isTablet
-                          ? 280
-                          : 220,
+                      width: context.isTablet ? 280 : 220,
                       child: AnimatedBuilder(
                         animation: curvedAnimation,
                         builder: (context, child) {
@@ -2671,7 +3260,7 @@ class _SalesScreenState extends State<SalesScreen>
     final isSales = widget.title == "Sales";
     final requiresCustomer = !isSales && _selectedCustomer == null;
     final isDisabled = _cartItems.isEmpty || requiresCustomer;
-    
+
     return GestureDetector(
       onTap: isDisabled ? null : () => _showFinaliseDialog(),
       child: Opacity(
@@ -2683,20 +3272,22 @@ class _SalesScreenState extends State<SalesScreen>
           ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: isDisabled 
+              colors: isDisabled
                   ? [Colors.grey.shade400, Colors.grey.shade500]
                   : [Colors.green.shade500, Colors.green.shade700],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(10),
-            boxShadow: isDisabled ? [] : [
-              BoxShadow(
-                color: Colors.green.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            boxShadow: isDisabled
+                ? []
+                : [
+                    BoxShadow(
+                      color: Colors.green.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
