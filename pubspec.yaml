@@ -56,6 +56,7 @@ dependencies:
   alert_info: ^0.0.8
   top_snackbar_flutter: ^3.3.0
   sqflite: ^2.4.2
+  sqflite_common_ffi: ^2.3.4+4
   shimmer: ^3.0.0
   path: ^1.9.1
   smb_connect: ^0.0.9

@@ -78,8 +78,8 @@ class _SalesScreenState extends State<SalesScreen>
   bool _showActions = false;
   bool _isIncTax = true;
   bool _isCompactView = false;
-  bool _showTaxDetails = false;
-  bool _showProfitDetails = false;
+  final bool _showTaxDetails = false;
+  final bool _showProfitDetails = false;
   String? _selectedOption;
   double _discountValue = 0.00;
 

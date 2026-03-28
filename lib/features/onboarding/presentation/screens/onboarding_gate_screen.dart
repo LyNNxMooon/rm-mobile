@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
 import 'package:rmstock_scanner/constants/theme_colors.dart';
@@ -347,29 +349,39 @@ class _TermsScreen extends StatefulWidget {
 }
 
 class _TermsScreenState extends State<_TermsScreen> {
-  late final WebViewController _webViewController;
+  WebViewController? _webViewController;
   bool _isWebLoading = true;
   bool _isAgreed = false;
+  final bool _isDesktop = Platform.isWindows || Platform.isLinux;
 
   @override
   void initState() {
     super.initState();
-    _webViewController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.transparent)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (_) {
-            if (!mounted) return;
-            setState(() => _isWebLoading = true);
-          },
-          onPageFinished: (_) {
-            if (!mounted) return;
-            setState(() => _isWebLoading = false);
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(kTermsAndConditionsUrl));
+    if (!_isDesktop) {
+      _webViewController = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(Colors.transparent)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onPageStarted: (_) {
+              if (!mounted) return;
+              setState(() => _isWebLoading = true);
+            },
+            onPageFinished: (_) {
+              if (!mounted) return;
+              setState(() => _isWebLoading = false);
+            },
+          ),
+        )
+        ..loadRequest(Uri.parse(kTermsAndConditionsUrl));
+    }
+  }
+
+  Future<void> _openTermsInBrowser() async {
+    final uri = Uri.parse(kTermsAndConditionsUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
   }
 
   @override
@@ -423,22 +435,53 @@ class _TermsScreenState extends State<_TermsScreen> {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
-                                child: Stack(
-                                  children: [
-                                    WebViewWidget(
-                                      controller: _webViewController,
-                                    ),
-                                    if (_isWebLoading)
-                                      Container(
-                                        color: colors.surface.withOpacity(0.65),
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                            color: kPrimaryColor,
+                                child: _isDesktop
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.description_outlined,
+                                            size: 64,
+                                            color: colors.onSurface.withOpacity(0.6),
                                           ),
-                                        ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            "Please review our Terms & Conditions",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: colors.onSurface,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          ElevatedButton.icon(
+                                            onPressed: _openTermsInBrowser,
+                                            icon: const Icon(Icons.open_in_new),
+                                            label: const Text("Open in Browser"),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: kPrimaryColor,
+                                              foregroundColor: Colors.white,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                  ],
-                                ),
+                                    )
+                                  : Stack(
+                                      children: [
+                                        WebViewWidget(
+                                          controller: _webViewController!,
+                                        ),
+                                        if (_isWebLoading)
+                                          Container(
+                                            color: colors.surface.withOpacity(0.65),
+                                            child: const Center(
+                                              child: CircularProgressIndicator(
+                                                color: kPrimaryColor,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
                               ),
                             ),
                           ),
