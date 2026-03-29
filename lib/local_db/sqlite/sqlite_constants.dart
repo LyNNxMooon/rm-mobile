@@ -138,6 +138,7 @@ const String kTermsAcceptedKey = "terms_accepted";
 const String kSalesScanIndividualUnitsKey = "sales_scan_individual_units";
 const String kSalesSkipSellPriceKey = "sales_skip_sell_price";
 const String kSalesPromptForEmailKey = "sales_prompt_for_email";
+const String kSalesAutoRemindLowStockKey = "sales_auto_remind_low_stock";
 
 const customersTableCreationQuery = '''
   CREATE TABLE Customers (

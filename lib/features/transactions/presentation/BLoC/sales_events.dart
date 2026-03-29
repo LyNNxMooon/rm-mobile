@@ -8,14 +8,16 @@ abstract class SalesEvent {}
 class SearchStock extends SalesEvent {
   final String query;
   final bool skipEditMode;
-  SearchStock({required this.query, this.skipEditMode = false});
+  final bool autoRemindLowStock;
+  SearchStock({required this.query, this.skipEditMode = false, this.autoRemindLowStock = false});
 }
 
 /// User selected a stock from duplicate matches dialog
 class SelectStock extends SalesEvent {
   final StockVO stock;
   final bool skipEditMode;
-  SelectStock({required this.stock, this.skipEditMode = false});
+  final bool autoRemindLowStock;
+  SelectStock({required this.stock, this.skipEditMode = false, this.autoRemindLowStock = false});
 }
 
 /// Add stock to cart
@@ -23,7 +25,8 @@ class AddToCart extends SalesEvent {
   final StockVO stock;
   final int qty;
   final bool skipEditMode;
-  AddToCart({required this.stock, this.qty = 1, this.skipEditMode = false});
+  final bool autoRemindLowStock;
+  AddToCart({required this.stock, this.qty = 1, this.skipEditMode = false, this.autoRemindLowStock = false});
 }
 
 /// Add a pre-built cart item directly (for session restore)
@@ -63,7 +66,8 @@ class UpdateCartItemDescription extends SalesEvent {
 /// Save cart item (exit edit mode)
 class SaveCartItem extends SalesEvent {
   final int index;
-  SaveCartItem({required this.index});
+  final bool autoRemindLowStock;
+  SaveCartItem({required this.index, this.autoRemindLowStock = false});
 }
 
 /// Enter edit mode for cart item

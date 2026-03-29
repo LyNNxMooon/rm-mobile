@@ -25,6 +25,7 @@ import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
 import 'package:rmstock_scanner/utils/internet_connection_utils.dart';
+import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
@@ -96,6 +97,12 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     } else {
       sell = widget.stock.sell;
     }
+
+    // Log order threshold and quantity for debugging
+    logger.i('Stock Details - ${widget.stock.description}');
+    logger.i('  orderThreshold: ${widget.stock.orderThreshold}');
+    logger.i('  orderQuantity: ${widget.stock.orderQuantity}');
+    logger.i('  quantity (in stock): ${widget.stock.quantity}');
 
     super.initState();
   }

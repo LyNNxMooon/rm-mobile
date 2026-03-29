@@ -102,6 +102,7 @@ import '../features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import '../features/transactions/domain/repositories/sales_repo.dart';
 import '../features/transactions/domain/use_cases/search_stock_for_sale.dart';
 import '../features/transactions/domain/use_cases/search_customer_for_sale.dart';
+import '../features/transactions/domain/use_cases/check_low_stock_warning.dart';
 import '../features/transactions/models/sales_model.dart';
 import '../features/transactions/presentation/BLoC/sales_bloc.dart';
 import '../features/onboarding/domain/repositories/onboarding_repo.dart';
@@ -121,6 +122,7 @@ Future<void> init() async {
   sl.registerFactory(() => SalesBloc(
     searchStockForSale: sl(),
     searchCustomerForSale: sl(),
+    checkLowStockWarning: sl(),
   ));
   sl.registerFactory(() => StocktakeBloc(countAndSaveToLocaldb: sl()));
   sl.registerFactory(() => FetchingNetworkServerBloc(fetchNetworkPcs: sl()));
@@ -267,6 +269,7 @@ Future<void> init() async {
   //Use cases
   sl.registerLazySingleton(() => SearchStockForSale(sl()));
   sl.registerLazySingleton(() => SearchCustomerForSale(sl()));
+  sl.registerLazySingleton(() => CheckLowStockWarning());
   sl.registerLazySingleton(() => CountAndSaveToLocaldb(sl()));
   sl.registerLazySingleton(() => FetchNetworkPcs(sl()));
   sl.registerLazySingleton(() => GetToSharedFolder(sl()));

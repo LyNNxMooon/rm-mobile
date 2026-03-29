@@ -1,20 +1,25 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../entities/vos/customer_vo.dart';
+import '../../../../entities/vos/stock_vo.dart';
+import '../../domain/models/low_stock_warning.dart';
 import '../../domain/use_cases/search_stock_for_sale.dart';
 import '../../domain/use_cases/search_customer_for_sale.dart';
+import '../../domain/use_cases/check_low_stock_warning.dart';
 import 'sales_events.dart';
 import 'sales_states.dart';
 
 class SalesBloc extends Bloc<SalesEvent, SalesState> {
   final SearchStockForSale searchStockForSale;
   final SearchCustomerForSale searchCustomerForSale;
+  final CheckLowStockWarning checkLowStockWarning;
   final List<CartItemVO> _cartItems = [];
   CustomerVO? _selectedCustomer;
 
   SalesBloc({
     required this.searchStockForSale,
     required this.searchCustomerForSale,
+    required this.checkLowStockWarning,
   }) : super(const SalesInitial()) {
     on<SearchStock>(_onSearchStock);
     on<SelectStock>(_onSelectStock);
@@ -66,10 +71,19 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 
       if (result.stock != null) {
         // Auto-add to cart when single match found
-        _addStockToCart(result.stock!, skipEditMode: event.skipEditMode);
+        final addedQty = _addStockToCart(result.stock!, skipEditMode: event.skipEditMode);
+        
+        // Check for low stock warning
+        final warning = checkLowStockWarning(
+          stock: result.stock!,
+          saleQty: addedQty,
+          autoRemindEnabled: event.autoRemindLowStock,
+        );
+        
         emit(CartUpdated(
           cartItems: List.from(_cartItems),
           selectedCustomer: _selectedCustomer,
+          lowStockWarning: warning.hasWarning ? warning : null,
         ));
         return;
       }
@@ -89,18 +103,36 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   }
 
   void _onSelectStock(SelectStock event, Emitter<SalesState> emit) {
-    _addStockToCart(event.stock, skipEditMode: event.skipEditMode);
+    final addedQty = _addStockToCart(event.stock, skipEditMode: event.skipEditMode);
+    
+    // Check for low stock warning
+    final warning = checkLowStockWarning(
+      stock: event.stock,
+      saleQty: addedQty,
+      autoRemindEnabled: event.autoRemindLowStock,
+    );
+    
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
+      lowStockWarning: warning.hasWarning ? warning : null,
     ));
   }
 
   void _onAddToCart(AddToCart event, Emitter<SalesState> emit) {
-    _addStockToCart(event.stock, qty: event.qty, skipEditMode: event.skipEditMode);
+    final addedQty = _addStockToCart(event.stock, qty: event.qty, skipEditMode: event.skipEditMode);
+    
+    // Check for low stock warning
+    final warning = checkLowStockWarning(
+      stock: event.stock,
+      saleQty: addedQty,
+      autoRemindEnabled: event.autoRemindLowStock,
+    );
+    
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
+      lowStockWarning: warning.hasWarning ? warning : null,
     ));
   }
 
@@ -113,16 +145,20 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     ));
   }
 
-  void _addStockToCart(dynamic stock, {int qty = 1, bool skipEditMode = false}) {
+  /// Adds stock to cart and returns the total quantity in cart for this item
+  int _addStockToCart(StockVO stock, {int qty = 1, bool skipEditMode = false}) {
     // Check if item already exists in cart (by barcode)
     final existingIndex = _cartItems.indexWhere(
       (item) => item.code == stock.barcode,
     );
 
+    int totalQty = qty;
+    
     if (existingIndex >= 0) {
       // Update quantity of existing item
+      totalQty = _cartItems[existingIndex].qty + qty;
       _cartItems[existingIndex] = _cartItems[existingIndex].copyWith(
-        qty: _cartItems[existingIndex].qty + qty,
+        qty: totalQty,
         isEditing: skipEditMode ? false : true, // Skip edit mode if auto-adding
       );
     } else {
@@ -135,6 +171,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         _cartItems.insert(0, newItem);
       }
     }
+    
+    return totalQty;
   }
 
   void _onUpdateCartItemQty(
@@ -186,11 +224,29 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   void _onSaveCartItem(SaveCartItem event, Emitter<SalesState> emit) {
     if (event.index < 0 || event.index >= _cartItems.length) return;
 
-    _cartItems[event.index] = _cartItems[event.index].copyWith(
+    final cartItem = _cartItems[event.index];
+    _cartItems[event.index] = cartItem.copyWith(
       isEditing: false,
       isNewlyAdded: false,
     );
-    emit(CartItemSaved(index: event.index, cartItems: List.from(_cartItems), selectedCustomer: _selectedCustomer));
+    
+    // Check for low stock warning if the setting is enabled and stock data is available
+    LowStockWarning? warning;
+    if (event.autoRemindLowStock && cartItem.stock != null) {
+      warning = checkLowStockWarning(
+        stock: cartItem.stock!,
+        saleQty: cartItem.qty,
+        autoRemindEnabled: true,
+      );
+      if (!warning.hasWarning) warning = null;
+    }
+    
+    emit(CartItemSaved(
+      index: event.index,
+      cartItems: List.from(_cartItems),
+      selectedCustomer: _selectedCustomer,
+      lowStockWarning: warning,
+    ));
   }
 
   void _onEditCartItem(EditCartItem event, Emitter<SalesState> emit) {

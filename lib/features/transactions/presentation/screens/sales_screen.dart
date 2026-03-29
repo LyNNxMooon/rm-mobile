@@ -122,8 +122,8 @@ class _SalesScreenState extends State<SalesScreen>
   bool _skipSellPrice = false;
   bool _promptForEmailAtSale = false;
   bool _roundSellPriceTo2Decimals = false;
-  bool _skipCustomField = false;
-  bool _skipCustomerField = false;
+  final bool _skipCustomField = false;
+  final bool _skipCustomerField = false;
   bool _scanIndividualUnitsForFractional = false;
   bool _preventAddIfNoStock = false;
   bool _preventFinaliseIfOutOfStock = false;
@@ -374,11 +374,15 @@ class _SalesScreenState extends State<SalesScreen>
     final promptForEmail = await LocalDbDAO.instance.getAppConfig(
       kSalesPromptForEmailKey,
     );
+    final autoRemindLowStock = await LocalDbDAO.instance.getAppConfig(
+      kSalesAutoRemindLowStockKey,
+    );
     if (mounted) {
       setState(() {
         _scanIndividualUnits = scanIndividualUnits == 'true';
         _skipSellPrice = skipSellPrice == 'true';
         _promptForEmailAtSale = promptForEmail == 'true';
+        _autoRemindLowStock = autoRemindLowStock == 'true';
       });
     }
   }
@@ -418,6 +422,7 @@ class _SalesScreenState extends State<SalesScreen>
       SearchStock(
         query: barcode,
         skipEditMode: _scanIndividualUnits && _skipSellPrice,
+        autoRemindLowStock: _autoRemindLowStock,
       ),
     );
   }
@@ -458,6 +463,7 @@ class _SalesScreenState extends State<SalesScreen>
                 SelectStock(
                   stock: selected,
                   skipEditMode: _scanIndividualUnits && _skipSellPrice,
+                  autoRemindLowStock: _autoRemindLowStock,
                 ),
               );
             } else {
@@ -496,7 +502,16 @@ class _SalesScreenState extends State<SalesScreen>
               position: MessagePosition.top,
               padding: 70,
             );
-          } else if (state is CustomerDuplicatesFound) {
+          }
+          
+          // Handle low stock warning (show after CartUpdated or CartItemSaved)
+          if ((state is CartUpdated || state is CartItemSaved) && 
+              state.lowStockWarning != null && 
+              state.lowStockWarning!.hasWarning) {
+            _showLowStockWarningDialog(context, state.lowStockWarning!.message ?? '', colors, isDark);
+          }
+          
+          if (state is CustomerDuplicatesFound) {
             // Navigate to customer selection screen
             final selected = await Navigator.push<CustomerVO>(
               context,
@@ -646,6 +661,7 @@ class _SalesScreenState extends State<SalesScreen>
                               query: query,
                               skipEditMode:
                                   _scanIndividualUnits && _skipSellPrice,
+                              autoRemindLowStock: _autoRemindLowStock,
                             ),
                           );
                         },
@@ -1419,7 +1435,10 @@ class _SalesScreenState extends State<SalesScreen>
           );
         },
         onSave: () {
-          _salesBloc.add(SaveCartItem(index: index));
+          _salesBloc.add(SaveCartItem(
+            index: index,
+            autoRemindLowStock: _autoRemindLowStock,
+          ));
         },
         onDelete: () {
           _salesBloc.add(RemoveCartItem(index: index));
@@ -2376,6 +2395,71 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
+  void _showLowStockWarningDialog(
+    BuildContext context,
+    String message,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E2733) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Low Stock Alert',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: TextStyle(
+              fontSize: 15,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              style: TextButton.styleFrom(
+                foregroundColor: kPrimaryColor,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showSalesSettingsDialog(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
@@ -2387,50 +2471,88 @@ class _SalesScreenState extends State<SalesScreen>
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return Dialog(
-              backgroundColor: isDark ? colors.surfaceAlt : Colors.white,
+              backgroundColor: Colors.transparent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
               insetPadding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 60 : 20,
-                vertical: isTablet ? 40 : 24,
+                horizontal: isTablet ? 80 : 20,
+                vertical: isTablet ? 60 : 40,
               ),
               child: Container(
-                width: isTablet ? 600 : double.infinity,
+                width: isTablet ? 500 : double.infinity,
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.85,
+                ),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Header
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: kPrimaryColor,
+                        color: kPrimaryColor.withOpacity(0.1),
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(16),
                         ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.settings, color: Colors.white),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text(
-                              'Sales Settings',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: kPrimaryColor.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.settings,
+                              color: kPrimaryColor,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Sales Settings',
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 20 : 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Configure your sales preferences',
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 14 : 12,
+                                    color: isDark ? Colors.white70 : Colors.black54,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white),
                             onPressed: () => Navigator.pop(dialogContext),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
+                            icon: Icon(
+                              Icons.close,
+                              color: isDark ? Colors.white54 : Colors.black45,
+                            ),
+                            tooltip: 'Close',
                           ),
                         ],
                       ),
@@ -2440,160 +2562,237 @@ class _SalesScreenState extends State<SalesScreen>
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.all(16),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildSettingsCheckbox(
-                              'Scan Individual Units',
-                              _scanIndividualUnits,
-                              (v) {
-                                setDialogState(() => _scanIndividualUnits = v!);
-                                setState(() {});
-                                LocalDbDAO.instance.saveAppConfig(
-                                  kSalesScanIndividualUnitsKey,
-                                  v.toString(),
-                                );
-                              },
+                            // Tools Section
+                            _buildSettingsGroupHeader(
+                              'Tools',
+                              Icons.build_outlined,
                               isDark,
-                              colors,
                             ),
-                            _buildSettingsCheckbox(
-                              'Skip Sell Price',
-                              _skipSellPrice,
-                              (v) {
-                                setDialogState(() => _skipSellPrice = v!);
-                                setState(() {});
-                                LocalDbDAO.instance.saveAppConfig(
-                                  kSalesSkipSellPriceKey,
-                                  v.toString(),
-                                );
-                              },
+                            _buildSettingsGroupContainer(
                               isDark,
                               colors,
+                              [
+                                _buildSettingsSwitch(
+                                  'Scan Individual Units',
+                                  _scanIndividualUnits,
+                                  (v) {
+                                    setDialogState(() => _scanIndividualUnits = v);
+                                    setState(() {});
+                                    LocalDbDAO.instance.saveAppConfig(
+                                      kSalesScanIndividualUnitsKey,
+                                      v.toString(),
+                                    );
+                                  },
+                                  isDark,
+                                  colors,
+                                ),
+                              ],
                             ),
-                            _buildSettingsCheckbox(
-                              'Prompt for Email at Time of Sale',
-                              _promptForEmailAtSale,
-                              (v) {
-                                setDialogState(
-                                  () => _promptForEmailAtSale = v!,
-                                );
-                                setState(() {});
-                                LocalDbDAO.instance.saveAppConfig(
-                                  kSalesPromptForEmailKey,
-                                  v.toString(),
-                                );
-                              },
+                            const SizedBox(height: 16),
+
+                            // Skip Fields Section
+                            _buildSettingsGroupHeader(
+                              'Skip Fields',
+                              Icons.skip_next_outlined,
                               isDark,
-                              colors,
                             ),
-                            _buildSettingsCheckbox(
-                              'Round Sell Price to 2 Decimals',
-                              _roundSellPriceTo2Decimals,
-                              (v) {
-                                setDialogState(
-                                  () => _roundSellPriceTo2Decimals = v!,
-                                );
-                                setState(() {});
-                              },
+                            _buildSettingsGroupContainer(
                               isDark,
                               colors,
+                              [
+                                _buildSettingsSwitch(
+                                  'Skip Sell Price',
+                                  _skipSellPrice,
+                                  (v) {
+                                    setDialogState(() => _skipSellPrice = v);
+                                    setState(() {});
+                                    LocalDbDAO.instance.saveAppConfig(
+                                      kSalesSkipSellPriceKey,
+                                      v.toString(),
+                                    );
+                                  },
+                                  isDark,
+                                  colors,
+                                ),
+                              ],
                             ),
-                            _buildSettingsCheckbox(
-                              'Skip Custom Field',
-                              _skipCustomField,
-                              (v) {
-                                setDialogState(() => _skipCustomField = v!);
-                                setState(() {});
-                              },
+                            const SizedBox(height: 16),
+
+                            // Sales Window Section
+                            _buildSettingsGroupHeader(
+                              'Sales Window',
+                              Icons.storefront_outlined,
                               isDark,
-                              colors,
                             ),
-                            _buildSettingsCheckbox(
-                              'Skip Customer Field',
-                              _skipCustomerField,
-                              (v) {
-                                setDialogState(() => _skipCustomerField = v!);
-                                setState(() {});
-                              },
+                            _buildSettingsGroupContainer(
                               isDark,
                               colors,
+                              [
+                                _buildSettingsSwitch(
+                                  'Prompt for Email at Time of Sale',
+                                  _promptForEmailAtSale,
+                                  (v) {
+                                    setDialogState(
+                                      () => _promptForEmailAtSale = v,
+                                    );
+                                    setState(() {});
+                                    LocalDbDAO.instance.saveAppConfig(
+                                      kSalesPromptForEmailKey,
+                                      v.toString(),
+                                    );
+                                  },
+                                  isDark,
+                                  colors,
+                                ),
+                                Divider(
+                                  height: 1,
+                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
+                                ),
+                                _buildSettingsSwitch(
+                                  'Round Sell Price to 2 Decimals',
+                                  _roundSellPriceTo2Decimals,
+                                  (v) {
+                                    setDialogState(
+                                      () => _roundSellPriceTo2Decimals = v,
+                                    );
+                                    setState(() {});
+                                  },
+                                  isDark,
+                                  colors,
+                                ),
+                                Divider(
+                                  height: 1,
+                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
+                                ),
+                                _buildSettingsSwitch(
+                                  'Scan Individual Units for Fractional Quantities',
+                                  _scanIndividualUnitsForFractional,
+                                  (v) {
+                                    setDialogState(
+                                      () => _scanIndividualUnitsForFractional = v,
+                                    );
+                                    setState(() {});
+                                  },
+                                  isDark,
+                                  colors,
+                                ),
+                                Divider(
+                                  height: 1,
+                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
+                                ),
+                                _buildSettingsSwitch(
+                                  'Prevent adding item to any sale transaction if there is no stock on hand',
+                                  _preventAddIfNoStock,
+                                  (v) {
+                                    setDialogState(() => _preventAddIfNoStock = v);
+                                    setState(() {});
+                                  },
+                                  isDark,
+                                  colors,
+                                ),
+                                Divider(
+                                  height: 1,
+                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
+                                ),
+                                _buildSettingsSwitch(
+                                  'Prevent finalising IV when any item is out of stock - SO, & LB Allowed',
+                                  _preventFinaliseIfOutOfStock,
+                                  (v) {
+                                    setDialogState(
+                                      () => _preventFinaliseIfOutOfStock = v,
+                                    );
+                                    setState(() {});
+                                  },
+                                  isDark,
+                                  colors,
+                                ),
+                              ],
                             ),
-                            _buildSettingsCheckbox(
-                              'Scan Individual Units for Fractional Quantities',
-                              _scanIndividualUnitsForFractional,
-                              (v) {
-                                setDialogState(
-                                  () => _scanIndividualUnitsForFractional = v!,
-                                );
-                                setState(() {});
-                              },
+                            const SizedBox(height: 16),
+
+                            // Other Section
+                            _buildSettingsGroupHeader(
+                              'Other',
+                              Icons.more_horiz,
                               isDark,
-                              colors,
                             ),
-                            _buildSettingsCheckbox(
-                              'Prevent adding item to any sale transaction if there is no stock on hand',
-                              _preventAddIfNoStock,
-                              (v) {
-                                setDialogState(() => _preventAddIfNoStock = v!);
-                                setState(() {});
-                              },
+                            _buildSettingsGroupContainer(
                               isDark,
                               colors,
+                              [
+                                _buildSettingsSwitch(
+                                  'Accept Leading Zeros on Barcodes',
+                                  _acceptLeadingZeros,
+                                  (v) {
+                                    setDialogState(() => _acceptLeadingZeros = v);
+                                    setState(() {});
+                                  },
+                                  isDark,
+                                  colors,
+                                ),
+                                Divider(
+                                  height: 1,
+                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
+                                ),
+                                _buildSettingsSwitch(
+                                  'Auto Remind - Low Stock',
+                                  _autoRemindLowStock,
+                                  (v) {
+                                    setDialogState(() => _autoRemindLowStock = v);
+                                    setState(() {});
+                                    LocalDbDAO.instance.saveAppConfig(
+                                      kSalesAutoRemindLowStockKey,
+                                      v.toString(),
+                                    );
+                                  },
+                                  isDark,
+                                  colors,
+                                ),
+                              ],
                             ),
-                            _buildSettingsCheckbox(
-                              'Prevent finalising SA and IV when any item is out of stock - SO, LB, & CSO Allowed',
-                              _preventFinaliseIfOutOfStock,
-                              (v) {
-                                setDialogState(
-                                  () => _preventFinaliseIfOutOfStock = v!,
-                                );
-                                setState(() {});
-                              },
+                            const SizedBox(height: 16),
+
+                            // Alerts Section
+                            _buildSettingsGroupHeader(
+                              'Alerts',
+                              Icons.notifications_outlined,
                               isDark,
-                              colors,
                             ),
-                            _buildSettingsCheckbox(
-                              'Accept Leading Zeros on Barcodes',
-                              _acceptLeadingZeros,
-                              (v) {
-                                setDialogState(() => _acceptLeadingZeros = v!);
-                                setState(() {});
-                              },
+                            _buildSettingsGroupContainer(
                               isDark,
                               colors,
-                            ),
-                            _buildSettingsCheckbox(
-                              'Auto Remind - Low Stock',
-                              _autoRemindLowStock,
-                              (v) {
-                                setDialogState(() => _autoRemindLowStock = v!);
-                                setState(() {});
-                              },
-                              isDark,
-                              colors,
-                            ),
-                            _buildSettingsCheckbox(
-                              'Prompt for Scan Individual Units for Fractional Quantities',
-                              _promptScanIndividualFractional,
-                              (v) {
-                                setDialogState(
-                                  () => _promptScanIndividualFractional = v!,
-                                );
-                                setState(() {});
-                              },
-                              isDark,
-                              colors,
-                            ),
-                            _buildSettingsCheckbox(
-                              'Display customer messages as a Prompt during sale',
-                              _displayCustomerMessagesAsPrompt,
-                              (v) {
-                                setDialogState(
-                                  () => _displayCustomerMessagesAsPrompt = v!,
-                                );
-                                setState(() {});
-                              },
-                              isDark,
-                              colors,
+                              [
+                                _buildSettingsSwitch(
+                                  'Prompt for Scan Individual Units for Fractional Quantities',
+                                  _promptScanIndividualFractional,
+                                  (v) {
+                                    setDialogState(
+                                      () => _promptScanIndividualFractional = v,
+                                    );
+                                    setState(() {});
+                                  },
+                                  isDark,
+                                  colors,
+                                ),
+                                Divider(
+                                  height: 1,
+                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
+                                ),
+                                _buildSettingsSwitch(
+                                  'Display customer messages as a Prompt during sale',
+                                  _displayCustomerMessagesAsPrompt,
+                                  (v) {
+                                    setDialogState(
+                                      () => _displayCustomerMessagesAsPrompt = v,
+                                    );
+                                    setState(() {});
+                                  },
+                                  isDark,
+                                  colors,
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -2605,9 +2804,7 @@ class _SalesScreenState extends State<SalesScreen>
                       decoration: BoxDecoration(
                         border: Border(
                           top: BorderSide(
-                            color: isDark
-                                ? Colors.white12
-                                : Colors.grey.shade200,
+                            color: isDark ? Colors.white12 : Colors.grey.shade200,
                           ),
                         ),
                       ),
@@ -2620,7 +2817,7 @@ class _SalesScreenState extends State<SalesScreen>
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                           child: const Text(
@@ -2640,6 +2837,81 @@ class _SalesScreenState extends State<SalesScreen>
           },
         );
       },
+    );
+  }
+
+  Widget _buildSettingsGroupHeader(String title, IconData icon, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 18,
+            color: kPrimaryColor,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: kPrimaryColor,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsGroupContainer(
+    bool isDark,
+    AppThemeColors colors,
+    List<Widget> children,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? colors.surfaceAlt : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.grey.shade200,
+        ),
+      ),
+      child: Column(
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildSettingsSwitch(
+    String label,
+    bool value,
+    ValueChanged<bool> onChanged,
+    bool isDark,
+    AppThemeColors colors,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
+            activeColor: kPrimaryColor,
+          ),
+        ],
+      ),
     );
   }
 
