@@ -9,6 +9,7 @@ import 'package:rmstock_scanner/features/customer_lookup/domain/entities/custome
 import 'package:rmstock_scanner/features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmstock_scanner/utils/log_utils.dart';
 
 import '../../../entities/vos/filter_criteria.dart';
 import '../../../local_db/local_db_dao.dart';
@@ -425,6 +426,8 @@ class CustomerLookupModels implements CustomerLookupRepo {
         resolvedApiKey,
       );
 
+      logger.d('Fetched transactions for customer $customerId: success=${response.success}, purchases=${response.data.purchases.length}');
+
       if (!response.success) {
         return Future.error(response.message);
       }
@@ -441,7 +444,7 @@ class CustomerLookupModels implements CustomerLookupRepo {
                 "product": item.product,
                 "qty": item.qty,
                 "price": item.price,
-                "price_inc": item.priceInc,
+                "price_inc": item.priceInc ?? item.price, // Fallback to price if not provided
                 "stock_id": item.stockId,
                 "goods_tax": item.goodsTax,
               },

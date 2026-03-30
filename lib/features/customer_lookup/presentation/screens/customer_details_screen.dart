@@ -192,6 +192,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ),
         );
       } catch (error) {
+        debugPrint('Error fetching customer transactions: $error');
         if (!mounted) return;
         Navigator.of(context, rootNavigator: true).pop();
         Navigator.push(

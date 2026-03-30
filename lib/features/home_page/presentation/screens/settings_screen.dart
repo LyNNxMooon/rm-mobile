@@ -58,6 +58,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Timer? _autoBackupTimer;
   int? _savedPort;
   String _savedApiKey = "";
+  String _savedShopfrontId = "";
+  String _savedShopfrontName = "";
+  bool _isRefreshingShopfront = false;
 
   bool _isSyncInProgress(BuildContext context) {
     return context.read<FetchStockBloc>().state is FetchStockProgress;
@@ -153,6 +156,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
         isPairedFlow: true,
         port: _savedPort,
         apiKey: _savedApiKey,
+      ),
+    );
+  }
+
+  void _refreshShopfront(BuildContext context) {
+    if (_blockIfSyncing(context)) return;
+
+    final String hostIp = AppGlobals.instance.currentHostIp ?? "";
+    final String shopfrontId = _savedShopfrontId;
+    final String shopfrontName = _savedShopfrontName;
+
+    if (hostIp.isEmpty || _savedApiKey.isEmpty || _savedPort == null) {
+      _showError(context, "Connection info missing. Please reconnect to host.");
+      return;
+    }
+
+    if (shopfrontId.isEmpty) {
+      _showError(context, "No shopfront selected.");
+      return;
+    }
+
+    context.read<ShopFrontConnectionBloc>().add(
+      ConnectToShopfrontApiEvent(
+        ip: hostIp,
+        port: _savedPort!,
+        apiKey: _savedApiKey,
+        shopfrontId: shopfrontId,
+        shopfrontName: shopfrontName,
       ),
     );
   }
@@ -589,12 +620,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
             }
           },
         ),
+        BlocListener<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
+          listener: (context, state) {
+            if (state is ConnectingToShopfront) {
+              setState(() => _isRefreshingShopfront = true);
+            }
+
+            if (state is ConnectedToShopfront) {
+              setState(() => _isRefreshingShopfront = false);
+              final colors = context.appColors;
+              AlertInfo.show(
+                context: context,
+                text: 'Shopfront refreshed successfully',
+                typeInfo: TypeInfo.success,
+                backgroundColor: colors.surface,
+                iconColor: kPrimaryColor,
+                textColor: colors.onSurface,
+                position: MessagePosition.top,
+                padding: 70,
+              );
+            }
+
+            if (state is ShopfrontConnectionError) {
+              setState(() => _isRefreshingShopfront = false);
+              _showError(context, state.message);
+            }
+          },
+        ),
         BlocListener<StaffAuthBloc, StaffAuthStates>(
           listener: (context, state) async {
             if (state is StaffConnectionInfoLoaded) {
               setState(() {
                 _savedPort = state.port;
                 _savedApiKey = state.apiKey;
+                _savedShopfrontId = state.shopfrontId;
+                _savedShopfrontName = state.shopfrontName;
               });
             }
 
@@ -679,17 +739,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           ],
                                         ),
                                       ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: kPrimaryColor.withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: const Icon(
-                                          Icons.settings,
-                                          size: 26,
-                                          color: Colors.white,
-                                        ),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          GestureDetector(
+                                            onTap: _isRefreshingShopfront ? null : () => _refreshShopfront(context),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.withOpacity(0.15),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: _isRefreshingShopfront
+                                                  ? const SizedBox(
+                                                      width: 26,
+                                                      height: 26,
+                                                      child: CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                        color: Colors.white,
+                                                      ),
+                                                    )
+                                                  : const Icon(
+                                                      Icons.refresh,
+                                                      size: 26,
+                                                      color: Colors.white,
+                                                    ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                            decoration: BoxDecoration(
+                                              color: kPrimaryColor.withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: const Icon(
+                                              Icons.settings,
+                                              size: 26,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -1102,6 +1192,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
               onChanged: (String? newValue) {
                 if (newValue != null) {
+                  if (!AppGlobals.instance.hasPermission("Reconciliation_SetActiveCashDrawer")) {
+                    _showError(context, "You do not have permission to change Cash Drawer.");
+                    return;
+                  }
                   _saveCashDrawerIdentifier(newValue);
                 }
               },

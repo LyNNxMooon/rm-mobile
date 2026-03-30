@@ -272,24 +272,60 @@ class _GlassDrawerState extends State<GlassDrawer> {
         icon: Icons.point_of_sale_outlined,
       ));
     } else if (action == "account_sales") {
+      if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
+        showTopSnackBar(
+          Overlay.of(context),
+          const CustomSnackBar.error(
+            message: "You do not have permission to access Account Sales.",
+          ),
+        );
+        return;
+      }
       context.navigateToNext(const SalesScreen(
         title: "Account Sales",
         themeColor: Color.fromARGB(255, 238, 130, 166),
         icon: Icons.receipt_long_outlined,
       ));
     } else if (action == "sales_order") {
+      if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
+        showTopSnackBar(
+          Overlay.of(context),
+          const CustomSnackBar.error(
+            message: "You do not have permission to access Sales Order.",
+          ),
+        );
+        return;
+      }
       context.navigateToNext(const SalesScreen(
         title: "Sales Order",
         themeColor: Color.fromARGB(255, 44, 133, 211),
         icon: Icons.shopping_cart_outlined,
       ));
     } else if (action == "quotes") {
+      if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
+        showTopSnackBar(
+          Overlay.of(context),
+          const CustomSnackBar.error(
+            message: "You do not have permission to access Quotes.",
+          ),
+        );
+        return;
+      }
       context.navigateToNext(const SalesScreen(
         title: "Quotes",
         themeColor: Colors.orange,
         icon: Icons.request_quote_outlined,
       ));
     } else if (action == "lay_bys") {
+      if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
+        showTopSnackBar(
+          Overlay.of(context),
+          const CustomSnackBar.error(
+            message: "You do not have permission to access Lay-bys.",
+          ),
+        );
+        return;
+      }
       context.navigateToNext(const SalesScreen(
         title: "Lay-bys",
         themeColor: Color.fromARGB(255, 152, 86, 165),

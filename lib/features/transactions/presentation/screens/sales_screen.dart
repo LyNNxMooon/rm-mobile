@@ -8,6 +8,8 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:alert_info/alert_info.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/images.dart';
@@ -32,6 +34,9 @@ import '../widgets/low_stock_warning_dialog.dart';
 import '../widgets/not_permitted_dialog.dart';
 import '../widgets/out_of_stock_finalise_dialog.dart';
 import '../widgets/customer_comments_dialog.dart';
+import '../../../customer_lookup/presentation/screens/customer_transactions_screen.dart';
+import '../../../customer_lookup/domain/use_cases/fetch_customer_transactions.dart';
+import '../../../../utils/internet_connection_utils.dart';
 import '../../../../entities/vos/delivery_info_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 import 'delivery_details_screen.dart';
@@ -157,14 +162,18 @@ class _SalesScreenState extends State<SalesScreen>
           ? AppGlobals.instance.salesCustom!
           : "Add Survey";
 
-  List<String> get _optionItems => [
-    _surveyLabel,
-    "Add Comment",
-    "Add Discount",
-    "Add Delivery",
-    "View Tax",
-    "View Profit",
-  ];
+  List<String> get _optionItems {
+    final items = <String>[
+      _surveyLabel,
+      "Add Comment",
+      if (AppGlobals.instance.hasPermission("Miscellaneous_LockDiscount"))
+        "Add Discount",
+      "Add Delivery",
+      "View Tax",
+      "View Profit",
+    ];
+    return items;
+  }
 
   // Cart items from BLoC state
   List<CartItemVO> get _cartItems => _salesBloc.state.cartItems;
@@ -583,12 +592,14 @@ class _SalesScreenState extends State<SalesScreen>
                           _salesBloc.add(ClearCustomer());
                           setState(() => _selectedCustomer = null);
                         },
+                        onViewCustomerTransactions: _selectedCustomer != null
+                            ? () => _openCustomerTransactions()
+                            : null,
                         viewMode: isTablet ? _cartViewMode : null,
                         onViewModeChanged: isTablet
                             ? (mode) => setState(() => _cartViewMode = mode)
                             : null,
                       ),
-
                       // Scanner Area (hidden when keyboard is visible to prevent overflow)
                       if (_showScanner &&
                           MediaQuery.of(context).viewInsets.bottom == 0)
@@ -690,6 +701,15 @@ class _SalesScreenState extends State<SalesScreen>
             } else if (value == 'compact') {
               setState(() => _isCompactView = true);
             } else if (value == 'settings') {
+              if (!AppGlobals.instance.hasPermission("Setup_Options")) {
+                showTopSnackBar(
+                  Overlay.of(context),
+                  const CustomSnackBar.error(
+                    message: "You do not have permission to access Sales Settings.",
+                  ),
+                );
+                return;
+              }
               _showSalesSettingsDialog(context);
             }
           },
@@ -1385,6 +1405,7 @@ class _SalesScreenState extends State<SalesScreen>
         isTablet: isTablet,
         isIncTax: _isIncTax,
         roundSellPriceTo2Decimals: _roundSellPriceTo2Decimals,
+        allowPriceEdit: AppGlobals.instance.hasPermission("Miscellaneous_LockSellPrice"),
         onQtyChanged: (qty) {
           _salesBloc.add(UpdateCartItemQty(index: index, qty: qty));
         },
@@ -2397,6 +2418,58 @@ class _SalesScreenState extends State<SalesScreen>
       colors: colors,
       isDark: colors.isDark,
     );
+  }
+
+  Future<void> _openCustomerTransactions() async {
+    if (_selectedCustomer == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: kPrimaryColor),
+      ),
+    );
+
+    final isOnline =
+        await InternetConnectionUtils.instance.checkInternetConnection();
+    if (!mounted) return;
+
+    if (!isOnline) {
+      Navigator.of(context, rootNavigator: true).pop();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              CustomerTransactionsScreen(customer: _selectedCustomer!),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await _sl<FetchCustomerTransactions>()(_selectedCustomer!.customerId);
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              CustomerTransactionsScreen(customer: _selectedCustomer!),
+        ),
+      );
+    } catch (error) {
+      debugPrint('Error fetching customer transactions: $error');
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              CustomerTransactionsScreen(customer: _selectedCustomer!),
+        ),
+      );
+    }
   }
 
   void _showSalesSettingsDialog(BuildContext context) {

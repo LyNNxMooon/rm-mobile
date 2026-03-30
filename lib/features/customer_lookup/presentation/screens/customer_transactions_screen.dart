@@ -307,7 +307,7 @@ class _CustomerTransactionsScreenState
               _asString(row['product']),
               _formatNumber(row['qty']),
               _formatMoney(
-                _showIncTax ? row['price_inc'] : row['price'],
+                _showIncTax ? (row['price_inc'] ?? row['price']) : row['price'],
               ),
             ],
           )

@@ -52,6 +52,12 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
   int? _savedPort;
   String _savedApiKey = "";
   String _savedShopfrontId = "";
+  
+  // Pending connection info for Connect API call after auth
+  String? _pendingShopfrontId;
+  String? _pendingShopfrontName;
+  String? _pendingApiKey;
+  int? _pendingPort;
 
   @override
   void initState() {
@@ -108,6 +114,35 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
         BlocListener<StaffAuthBloc, StaffAuthStates>(
           listener: (context, state) {
             if (state is StaffAuthenticated) {
+              // Call Connect API to get salesCustom and taxCodes (for BOTH flows)
+              // Use pending values stored during sign-in
+              final apiKey = _pendingApiKey ?? widget.apiKey ?? _savedApiKey;
+              final port = _pendingPort ?? widget.port ?? _savedPort;
+              final shopfrontId = _pendingShopfrontId ?? _savedShopfrontId;
+              final shopfrontName = _pendingShopfrontName ?? _expandedShop ?? '';
+              
+              logger.d('ShopfrontsDialog: StaffAuthenticated received');
+              logger.d('  apiKey: ${apiKey.isNotEmpty ? "present" : "empty"}');
+              logger.d('  port: $port');
+              logger.d('  shopfrontId: $shopfrontId');
+              logger.d('  shopfrontName: $shopfrontName');
+              logger.d('  isPairedFlow: ${widget.isPairedFlow}');
+              
+              if (apiKey.isNotEmpty && port != null && shopfrontId.isNotEmpty) {
+                logger.d('ShopfrontsDialog: Dispatching ConnectToShopfrontApiEvent');
+                context.read<ShopFrontConnectionBloc>().add(
+                  ConnectToShopfrontApiEvent(
+                    ip: widget.pc.ipAddress,
+                    port: port,
+                    apiKey: apiKey,
+                    shopfrontId: shopfrontId,
+                    shopfrontName: shopfrontName,
+                  ),
+                );
+              } else {
+                logger.w('ShopfrontsDialog: Missing data for Connect API call');
+              }
+              
               if (widget.isPairedFlow) {
                 context.read<FetchStockBloc>().add(
                   StartSyncEvent(ipAddress: ""),
@@ -122,17 +157,13 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                 );
 
                 context.navigateBack();
-              } else {
-                final selectedShop = _expandedShop;
-                if (selectedShop != null) {
-                  context.read<ShopFrontConnectionBloc>().add(
-                    ConnectToShopfrontEvent(
-                      ip: widget.pc.ipAddress,
-                      shopName: selectedShop,
-                    ),
-                  );
-                }
               }
+              
+              // Clear pending info
+              _pendingShopfrontId = null;
+              _pendingShopfrontName = null;
+              _pendingApiKey = null;
+              _pendingPort = null;
             }
 
             if (state is StaffConnectionInfoLoaded) {
@@ -600,6 +631,12 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
       );
       return;
     }
+
+    // Store pending info for Connect API call after auth
+    _pendingShopfrontId = shopfrontId;
+    _pendingShopfrontName = shopName;
+    _pendingApiKey = apiKey;
+    _pendingPort = port;
 
     ctx.read<StaffAuthBloc>().add(
       AuthenticateStaffEvent(

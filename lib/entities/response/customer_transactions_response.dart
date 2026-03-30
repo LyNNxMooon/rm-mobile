@@ -60,18 +60,18 @@ class CustomerPurchaseItem {
   final String product;
   final num qty;
   final num price;
-  final num priceInc;
+  final num? priceInc; // Nullable - may not be present for all customers
   final int stockId;
-  final String goodsTax;
+  final String? goodsTax; // Nullable - can be null for items without tax code
 
   CustomerPurchaseItem({
     required this.date,
     required this.product,
     required this.qty,
     required this.price,
-    required this.priceInc,
+    this.priceInc,
     required this.stockId,
-    required this.goodsTax,
+    this.goodsTax,
   });
 
   factory CustomerPurchaseItem.fromJson(Map<String, dynamic> json) =>

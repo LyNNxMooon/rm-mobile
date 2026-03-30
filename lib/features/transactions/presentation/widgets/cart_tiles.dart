@@ -70,6 +70,7 @@ class ExpandedEditCartTile extends StatefulWidget {
   final bool isIncTax;
   final double taxRate;
   final bool roundSellPriceTo2Decimals;
+  final bool allowPriceEdit;
 
   const ExpandedEditCartTile({
     super.key,
@@ -87,6 +88,7 @@ class ExpandedEditCartTile extends StatefulWidget {
     this.isIncTax = true,
     this.taxRate = 0.1,
     this.roundSellPriceTo2Decimals = false,
+    this.allowPriceEdit = true,
   });
 
   @override
@@ -297,6 +299,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                   prefix: "\$",
                   isTablet: isTablet,
                   maxDecimals: _priceDecimalPlaces,
+                  enabled: widget.allowPriceEdit,
                   onChanged: (value) {
                     final price = double.tryParse(value);
                     if (price != null) widget.onPriceChanged(price);

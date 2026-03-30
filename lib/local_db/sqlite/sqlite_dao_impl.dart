@@ -338,10 +338,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
     try {
       final db = _database!;
 
-      // 1) Barcode exact match (ALL matches)
+      // 1) Barcode exact match (ALL matches) - exclude default stock
       final barcodeRows = await db.query(
         'Stocks',
-        where: 'Barcode = ? AND shopfront = ?',
+        where: 'Barcode = ? AND shopfront = ? AND stock_id != 0',
         whereArgs: [query, shopfront],
       );
 
@@ -356,10 +356,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return StockSearchResult.duplicates(matches);
       }
 
-      // 2) Description LIKE match (ALL matches)
+      // 2) Description LIKE match (ALL matches) - exclude default stock
       final descriptionRows = await db.query(
         'Stocks',
-        where: 'description LIKE ? AND shopfront = ?',
+        where: 'description LIKE ? AND shopfront = ? AND stock_id != 0',
         whereArgs: ['%$query%', shopfront],
       );
 
@@ -373,10 +373,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return StockSearchResult.duplicates(matches);
       }
 
-      // 3) Custom1 LIKE match (ALL matches)
+      // 3) Custom1 LIKE match (ALL matches) - exclude default stock
       final custom1Rows = await db.query(
         'Stocks',
-        where: 'custom1 LIKE ? AND shopfront = ?',
+        where: 'custom1 LIKE ? AND shopfront = ? AND stock_id != 0',
         whereArgs: ['%$query%', shopfront],
       );
 
@@ -390,10 +390,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return StockSearchResult.duplicates(matches);
       }
 
-      // 4) Custom2 LIKE match (ALL matches)
+      // 4) Custom2 LIKE match (ALL matches) - exclude default stock
       final custom2Rows = await db.query(
         'Stocks',
-        where: 'custom2 LIKE ? AND shopfront = ?',
+        where: 'custom2 LIKE ? AND shopfront = ? AND stock_id != 0',
         whereArgs: ['%$query%', shopfront],
       );
 
@@ -456,7 +456,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       final String orderBy = "$safeSortColumn ${ascending ? 'ASC' : 'DESC'}";
 
-      String baseWhere = 'shopfront = ?';
+      // Exclude default stock (stock_id = 0) from all queries
+      String baseWhere = 'shopfront = ? AND stock_id != 0';
       final List<dynamic> baseArgs = [shopfront];
 
       if (filters != null) {
@@ -584,11 +585,13 @@ class SQLiteDAOImpl extends LocalDbDAO {
     try {
       final db = _database!;
 
+      // Exclude default stock (stock_id = 0) from distinct values
       final List<Map<String, dynamic>> result = await db.rawQuery(
         '''
       SELECT DISTINCT $columnName 
       FROM Stocks 
       WHERE shopfront = ? 
+        AND stock_id != 0
         AND $columnName IS NOT NULL 
         AND $columnName != '' 
       ORDER BY $columnName ASC

@@ -18,6 +18,7 @@ class SalesTopHeader extends StatefulWidget {
   final bool autoFocusCustomer;
   final CartViewMode? viewMode;
   final ValueChanged<CartViewMode>? onViewModeChanged;
+  final VoidCallback? onViewCustomerTransactions;
 
   const SalesTopHeader({
     super.key,
@@ -26,6 +27,7 @@ class SalesTopHeader extends StatefulWidget {
     required this.staffName,
     this.onCustomerSearch,
     this.onCustomerClear,
+    this.onViewCustomerTransactions,
     this.customerBarcode,
     this.customerName,
     this.hasCustomer = false,
@@ -341,22 +343,31 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
               color: kPrimaryColor,
             ),
           ),
-          // Customer info (tappable to search)
+          // Customer info (display only - tap X to clear and add new customer)
           Expanded(
-            child: InkWell(
-              onTap: _enterSearchMode,
-              child: Container(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "${widget.customerBarcode ?? ''} | ${widget.customerName ?? ''}",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.white : Colors.black87,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+            child: Container(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "${widget.customerBarcode ?? ''} | ${widget.customerName ?? ''}",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w500,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+          // View transactions button
+          GestureDetector(
+            onTap: widget.onViewCustomerTransactions,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8, right: 4),
+              child: Icon(
+                Icons.receipt_long_outlined,
+                size: 22,
+                color: kPrimaryColor,
               ),
             ),
           ),
