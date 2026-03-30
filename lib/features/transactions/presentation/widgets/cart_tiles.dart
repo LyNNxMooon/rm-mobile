@@ -8,6 +8,17 @@ import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 import 'serial_number_dialog.dart';
 
+/// Helper to format sell price - shows 4 decimals if the price has significant 
+/// digits beyond 2 decimal places, otherwise shows 2 decimals
+String formatSellPriceForDisplay(double price) {
+  final fixed4 = price.toStringAsFixed(4);
+  final fixed2 = price.toStringAsFixed(2);
+  if (double.parse(fixed4) != double.parse(fixed2)) {
+    return fixed4;
+  }
+  return fixed2;
+}
+
 /// Wraps a cart tile with slide-to-delete functionality
 class DismissibleCartTile extends StatelessWidget {
   final Widget child;
@@ -58,6 +69,7 @@ class ExpandedEditCartTile extends StatefulWidget {
   final VoidCallback onDelete;
   final bool isIncTax;
   final double taxRate;
+  final bool roundSellPriceTo2Decimals;
 
   const ExpandedEditCartTile({
     super.key,
@@ -74,6 +86,7 @@ class ExpandedEditCartTile extends StatefulWidget {
     required this.onDelete,
     this.isIncTax = true,
     this.taxRate = 0.1,
+    this.roundSellPriceTo2Decimals = false,
   });
 
   @override
@@ -88,12 +101,27 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
 
   bool get _allowRenaming => widget.item.stock?.allowRenaming ?? false;
 
+  int get _priceDecimalPlaces => widget.roundSellPriceTo2Decimals ? 2 : 4;
+
+  String _formatSellPrice(double price) {
+    if (widget.roundSellPriceTo2Decimals) {
+      return price.toStringAsFixed(2);
+    }
+    // Show 4 decimals if it has significant digits beyond 2 decimals
+    final fixed4 = price.toStringAsFixed(4);
+    final fixed2 = price.toStringAsFixed(2);
+    if (double.parse(fixed4) != double.parse(fixed2)) {
+      return fixed4;
+    }
+    return fixed2;
+  }
+
   @override
   void initState() {
     super.initState();
     _qtyController = TextEditingController(text: widget.item.qty.toString());
     _priceController = TextEditingController(
-      text: widget.item.sellPrice.toStringAsFixed(2),
+      text: _formatSellPrice(widget.item.sellPrice),
     );
     _serialController = TextEditingController(
       text: widget.item.serialNumber ?? '',
@@ -110,7 +138,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
       _qtyController.text = widget.item.qty.toString();
     }
     if (oldWidget.item.sellPrice != widget.item.sellPrice) {
-      _priceController.text = widget.item.sellPrice.toStringAsFixed(2);
+      _priceController.text = _formatSellPrice(widget.item.sellPrice);
     }
     if (oldWidget.item.description != widget.item.description) {
       _descriptionController.text = widget.item.description;
@@ -260,6 +288,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                   controller: _priceController,
                   prefix: "\$",
                   isTablet: isTablet,
+                  maxDecimals: _priceDecimalPlaces,
                   onChanged: (value) {
                     final price = double.tryParse(value);
                     if (price != null) widget.onPriceChanged(price);
@@ -335,10 +364,17 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     required bool isTablet,
     TextAlign textAlign = TextAlign.right,
     bool isNumber = false,
+    int? maxDecimals,
     required Function(String) onChanged,
     bool enabled = true,
   }) {
     final fieldHeight = isTablet ? 52.0 : 30.0;
+    
+    // Build regex pattern based on maxDecimals
+    final decimalPattern = maxDecimals != null
+        ? r'^-?\d*\.?\d{0,' + maxDecimals.toString() + r'}'
+        : r'^-?\d*\.?\d*';
+    
     final textField = TextField(
       controller: controller,
       enabled: enabled,
@@ -349,7 +385,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
       minLines: 1,
       inputFormatters: isNumber
           ? [FilteringTextInputFormatter.allow(RegExp(r'^-?\d*'))]
-          : [FilteringTextInputFormatter.allow(RegExp(r'^-?\d*\.?\d*'))],
+          : [FilteringTextInputFormatter.allow(RegExp(decimalPattern))],
       style: TextStyle(
         fontSize: isTablet ? 18 : 12,
         fontWeight: FontWeight.w600,
@@ -845,7 +881,7 @@ class TabletCartTile extends StatelessWidget {
           SizedBox(
             width: 120,
             child: Text(
-              "\$${_displayPrice.toStringAsFixed(2)}",
+              "\$${formatSellPriceForDisplay(_displayPrice)}",
               textAlign: TextAlign.right,
               style: TextStyle(color: colors.onSurfaceMuted, fontSize: 14),
             ),

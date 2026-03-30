@@ -377,12 +377,28 @@ class _SalesScreenState extends State<SalesScreen>
     final autoRemindLowStock = await LocalDbDAO.instance.getAppConfig(
       kSalesAutoRemindLowStockKey,
     );
+    final preventAddIfNoStock = await LocalDbDAO.instance.getAppConfig(
+      kSalesPreventAddIfNoStockKey,
+    );
+    final preventFinaliseIfOutOfStock = await LocalDbDAO.instance.getAppConfig(
+      kSalesPreventFinaliseIfOutOfStockKey,
+    );
+    final displayCustomerMessages = await LocalDbDAO.instance.getAppConfig(
+      kSalesDisplayCustomerMessagesKey,
+    );
+    final roundSellPriceTo2Decimals = await LocalDbDAO.instance.getAppConfig(
+      kSalesRoundSellPriceTo2DecimalsKey,
+    );
     if (mounted) {
       setState(() {
         _scanIndividualUnits = scanIndividualUnits == 'true';
         _skipSellPrice = skipSellPrice == 'true';
         _promptForEmailAtSale = promptForEmail == 'true';
         _autoRemindLowStock = autoRemindLowStock == 'true';
+        _preventAddIfNoStock = preventAddIfNoStock == 'true';
+        _preventFinaliseIfOutOfStock = preventFinaliseIfOutOfStock == 'true';
+        _displayCustomerMessagesAsPrompt = displayCustomerMessages == 'true';
+        _roundSellPriceTo2Decimals = roundSellPriceTo2Decimals == 'true';
       });
     }
   }
@@ -423,6 +439,7 @@ class _SalesScreenState extends State<SalesScreen>
         query: barcode,
         skipEditMode: _scanIndividualUnits && _skipSellPrice,
         autoRemindLowStock: _autoRemindLowStock,
+        preventAddIfNoStock: _preventAddIfNoStock,
       ),
     );
   }
@@ -464,6 +481,7 @@ class _SalesScreenState extends State<SalesScreen>
                   stock: selected,
                   skipEditMode: _scanIndividualUnits && _skipSellPrice,
                   autoRemindLowStock: _autoRemindLowStock,
+                  preventAddIfNoStock: _preventAddIfNoStock,
                 ),
               );
             } else {
@@ -491,6 +509,8 @@ class _SalesScreenState extends State<SalesScreen>
               position: MessagePosition.top,
               padding: 70,
             );
+          } else if (state is StockNotPermitted) {
+            _showNotPermittedDialog(context, state.message, colors, isDark);
           } else if (state is CartUpdated && state.message != null) {
             AlertInfo.show(
               context: context,
@@ -537,6 +557,7 @@ class _SalesScreenState extends State<SalesScreen>
               } else {
                 _salesBloc.add(SelectCustomer(customer: selected));
                 setState(() => _selectedCustomer = selected);
+                _checkAndShowCustomerComments(selected);
               }
             } else {
               _salesBloc.add(ResetSearchState());
@@ -557,6 +578,7 @@ class _SalesScreenState extends State<SalesScreen>
               );
             } else {
               setState(() => _selectedCustomer = state.selectedCustomer);
+              _checkAndShowCustomerComments(state.selectedCustomer);
             }
           } else if (state is CustomerNotFound) {
             AlertInfo.show(
@@ -662,6 +684,7 @@ class _SalesScreenState extends State<SalesScreen>
                               skipEditMode:
                                   _scanIndividualUnits && _skipSellPrice,
                               autoRemindLowStock: _autoRemindLowStock,
+                              preventAddIfNoStock: _preventAddIfNoStock,
                             ),
                           );
                         },
@@ -1418,6 +1441,7 @@ class _SalesScreenState extends State<SalesScreen>
         isDark: isDark,
         isTablet: isTablet,
         isIncTax: _isIncTax,
+        roundSellPriceTo2Decimals: _roundSellPriceTo2Decimals,
         onQtyChanged: (qty) {
           _salesBloc.add(UpdateCartItemQty(index: index, qty: qty));
         },
@@ -1690,7 +1714,17 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Future<void> _showFinaliseDialog() async {
+    final isAccountSales = widget.title == "Account Sales";
     final isSales = widget.title == "Sales";
+
+    // Check for out of stock items if in Account Sales and setting is enabled
+    if (isAccountSales && _preventFinaliseIfOutOfStock) {
+      final outOfStockItems = _getOutOfStockItems();
+      if (outOfStockItems.isNotEmpty) {
+        _showOutOfStockFinaliseDialog(outOfStockItems);
+        return;
+      }
+    }
 
     final result = await FinaliseSaleDialog.show(
       context: context,
@@ -2395,69 +2429,523 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
+  void _showNotPermittedDialog(
+    BuildContext context,
+    String message,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    final bool isTablet = context.isTablet;
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 80 : 24,
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: isTablet ? 450 : double.infinity,
+            ),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon and Title
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: kErrorColor.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.block_rounded,
+                        color: kErrorColor,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Not Permitted!',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Message
+                Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.4,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Button
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: kErrorColor,
+                      side: const BorderSide(color: kErrorColor),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Returns a list of cart items where sale qty exceeds stock qty
+  List<CartItemVO> _getOutOfStockItems() {
+    final outOfStockItems = <CartItemVO>[];
+    for (final item in _cartItems) {
+      if (item.stock != null) {
+        final stockQty = item.stock!.quantity;
+        if (item.qty > stockQty) {
+          outOfStockItems.add(item);
+        }
+      }
+    }
+    return outOfStockItems;
+  }
+
+  void _showOutOfStockFinaliseDialog(List<CartItemVO> outOfStockItems) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final bool isTablet = context.isTablet;
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 80 : 24,
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: isTablet ? 450 : double.infinity,
+            ),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon and Title
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: kErrorColor.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.block_rounded,
+                        color: kErrorColor,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Not Permitted!',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Message
+                Text(
+                  'Stock items cannot be sold if inventory levels are below the sale quantity.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.4,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Out of stock items list
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 150),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: outOfStockItems.map((item) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.circle,
+                                size: 6,
+                                color: isDark ? Colors.white54 : Colors.black45,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  item.description,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark ? Colors.white70 : Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Footer message
+                Text(
+                  'Please review inventory levels of items in the list.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    color: isDark ? Colors.white54 : Colors.black45,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Button
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: kErrorColor,
+                      side: const BorderSide(color: kErrorColor),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showLowStockWarningDialog(
     BuildContext context,
     String message,
     AppThemeColors colors,
     bool isDark,
   ) {
+    final bool isTablet = context.isTablet;
+    
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF1E2733) : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 80 : 24,
           ),
-          title: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.15),
-                  shape: BoxShape.circle,
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: isTablet ? 450 : double.infinity,
+            ),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
                 ),
-                child: const Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.orange,
-                  size: 24,
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon and Title
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.inventory_2_outlined,
+                        color: Colors.orange,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Low Stock Alert',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Low Stock Alert',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
+                const SizedBox(height: 16),
+                
+                // Message
+                Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.4,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          content: Text(
-            message,
-            style: TextStyle(
-              fontSize: 15,
-              color: isDark ? Colors.white70 : Colors.black87,
+                const SizedBox(height: 20),
+                
+                // Button
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.orange,
+                      side: const BorderSide(color: Colors.orange),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              style: TextButton.styleFrom(
-                foregroundColor: kPrimaryColor,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              ),
-              child: const Text(
-                'OK',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
         );
       },
     );
+  }
+
+  void _showCustomerCommentsDialog(
+    BuildContext context,
+    CustomerVO customer,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    final bool isTablet = context.isTablet;
+    // final customerName = customer.company.isNotEmpty
+    //     ? customer.company
+    //     : '${customer.givenNames} ${customer.surname}'.trim();
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 80 : 24,
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: isTablet ? 450 : double.infinity,
+            ),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon and Title
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.person_outline,
+                        color: kPrimaryColor,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Customer Message',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Customer name
+                // if (customerName.isNotEmpty) ...[
+                //   Text(
+                //     customerName,
+                //     style: TextStyle(
+                //       fontSize: 14,
+                //       fontWeight: FontWeight.w500,
+                //       color: isDark ? Colors.white70 : Colors.black54,
+                //     ),
+                //   ),
+                //   const SizedBox(height: 8),
+                // ],
+                
+                // Comments
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.05)
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    customer.comments,
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.4,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Button
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: kPrimaryColor,
+                      side: const BorderSide(color: kPrimaryColor),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _checkAndShowCustomerComments(CustomerVO? customer) {
+    if (!_displayCustomerMessagesAsPrompt) return;
+    if (customer == null) return;
+    if (customer.comments.isEmpty) return;
+    
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    _showCustomerCommentsDialog(context, customer, colors, isDark);
   }
 
   void _showSalesSettingsDialog(BuildContext context) {
@@ -2480,7 +2968,7 @@ class _SalesScreenState extends State<SalesScreen>
                 vertical: isTablet ? 60 : 40,
               ),
               child: Container(
-                width: isTablet ? 500 : double.infinity,
+                width: isTablet ? 600 : double.infinity,
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.85,
                 ),
@@ -2658,6 +3146,10 @@ class _SalesScreenState extends State<SalesScreen>
                                       () => _roundSellPriceTo2Decimals = v,
                                     );
                                     setState(() {});
+                                    LocalDbDAO.instance.saveAppConfig(
+                                      kSalesRoundSellPriceTo2DecimalsKey,
+                                      v.toString(),
+                                    );
                                   },
                                   isDark,
                                   colors,
@@ -2688,6 +3180,10 @@ class _SalesScreenState extends State<SalesScreen>
                                   (v) {
                                     setDialogState(() => _preventAddIfNoStock = v);
                                     setState(() {});
+                                    LocalDbDAO.instance.saveAppConfig(
+                                      kSalesPreventAddIfNoStockKey,
+                                      v.toString(),
+                                    );
                                   },
                                   isDark,
                                   colors,
@@ -2704,6 +3200,10 @@ class _SalesScreenState extends State<SalesScreen>
                                       () => _preventFinaliseIfOutOfStock = v,
                                     );
                                     setState(() {});
+                                    LocalDbDAO.instance.saveAppConfig(
+                                      kSalesPreventFinaliseIfOutOfStockKey,
+                                      v.toString(),
+                                    );
                                   },
                                   isDark,
                                   colors,
@@ -2788,6 +3288,10 @@ class _SalesScreenState extends State<SalesScreen>
                                       () => _displayCustomerMessagesAsPrompt = v,
                                     );
                                     setState(() {});
+                                    LocalDbDAO.instance.saveAppConfig(
+                                      kSalesDisplayCustomerMessagesKey,
+                                      v.toString(),
+                                    );
                                   },
                                   isDark,
                                   colors,

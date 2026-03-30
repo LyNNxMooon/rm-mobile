@@ -45,6 +45,12 @@ class StockSearchError extends SalesState {
   const StockSearchError({required this.error, required super.cartItems, super.selectedCustomer});
 }
 
+/// Stock cannot be added - insufficient quantity
+class StockNotPermitted extends SalesState {
+  final String message;
+  const StockNotPermitted({required this.message, required super.cartItems, super.selectedCustomer});
+}
+
 /// Cart updated (item added, removed, or modified)
 class CartUpdated extends SalesState {
   final String? message;

@@ -139,6 +139,10 @@ const String kSalesScanIndividualUnitsKey = "sales_scan_individual_units";
 const String kSalesSkipSellPriceKey = "sales_skip_sell_price";
 const String kSalesPromptForEmailKey = "sales_prompt_for_email";
 const String kSalesAutoRemindLowStockKey = "sales_auto_remind_low_stock";
+const String kSalesPreventAddIfNoStockKey = "sales_prevent_add_if_no_stock";
+const String kSalesPreventFinaliseIfOutOfStockKey = "sales_prevent_finalise_if_out_of_stock";
+const String kSalesDisplayCustomerMessagesKey = "sales_display_customer_messages";
+const String kSalesRoundSellPriceTo2DecimalsKey = "sales_round_sell_price_to_2_decimals";
 
 const customersTableCreationQuery = '''
   CREATE TABLE Customers (

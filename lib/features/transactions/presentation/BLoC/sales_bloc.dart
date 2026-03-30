@@ -6,6 +6,7 @@ import '../../domain/models/low_stock_warning.dart';
 import '../../domain/use_cases/search_stock_for_sale.dart';
 import '../../domain/use_cases/search_customer_for_sale.dart';
 import '../../domain/use_cases/check_low_stock_warning.dart';
+import '../../domain/use_cases/check_stock_availability.dart';
 import 'sales_events.dart';
 import 'sales_states.dart';
 
@@ -13,6 +14,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   final SearchStockForSale searchStockForSale;
   final SearchCustomerForSale searchCustomerForSale;
   final CheckLowStockWarning checkLowStockWarning;
+  final CheckStockAvailability checkStockAvailability;
   final List<CartItemVO> _cartItems = [];
   CustomerVO? _selectedCustomer;
 
@@ -20,6 +22,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     required this.searchStockForSale,
     required this.searchCustomerForSale,
     required this.checkLowStockWarning,
+    required this.checkStockAvailability,
   }) : super(const SalesInitial()) {
     on<SearchStock>(_onSearchStock);
     on<SelectStock>(_onSelectStock);
@@ -70,20 +73,50 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       }
 
       if (result.stock != null) {
+        // Calculate what the total qty would be if added
+        final existingIndex = _cartItems.indexWhere(
+          (item) => item.code == result.stock!.barcode,
+        );
+        final int qtyToAdd = 1;
+        final int totalQty = existingIndex >= 0 
+            ? _cartItems[existingIndex].qty + qtyToAdd 
+            : qtyToAdd;
+        
+        // Check if adding is permitted (stock availability)
+        final availability = checkStockAvailability(
+          stock: result.stock!,
+          saleQty: totalQty,
+          preventAddIfNoStock: event.preventAddIfNoStock,
+        );
+        
+        if (!availability.canAdd) {
+          emit(StockNotPermitted(
+            message: availability.message ?? '',
+            cartItems: List.from(_cartItems),
+            selectedCustomer: _selectedCustomer,
+          ));
+          return;
+        }
+        
         // Auto-add to cart when single match found
         final addedQty = _addStockToCart(result.stock!, skipEditMode: event.skipEditMode);
         
-        // Check for low stock warning
-        final warning = checkLowStockWarning(
-          stock: result.stock!,
-          saleQty: addedQty,
-          autoRemindEnabled: event.autoRemindLowStock,
-        );
+        // Check for low stock warning - only show on add if skipEditMode is true
+        // (if in edit mode, warning will show when user hits save)
+        LowStockWarning? warning;
+        if (event.skipEditMode) {
+          warning = checkLowStockWarning(
+            stock: result.stock!,
+            saleQty: addedQty,
+            autoRemindEnabled: event.autoRemindLowStock,
+          );
+          if (!warning.hasWarning) warning = null;
+        }
         
         emit(CartUpdated(
           cartItems: List.from(_cartItems),
           selectedCustomer: _selectedCustomer,
-          lowStockWarning: warning.hasWarning ? warning : null,
+          lowStockWarning: warning,
         ));
         return;
       }
@@ -103,36 +136,95 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   }
 
   void _onSelectStock(SelectStock event, Emitter<SalesState> emit) {
+    // Calculate what the total qty would be if added
+    final existingIndex = _cartItems.indexWhere(
+      (item) => item.code == event.stock.barcode,
+    );
+    final int qtyToAdd = 1;
+    final int totalQty = existingIndex >= 0 
+        ? _cartItems[existingIndex].qty + qtyToAdd 
+        : qtyToAdd;
+    
+    // Check if adding is permitted (stock availability)
+    final availability = checkStockAvailability(
+      stock: event.stock,
+      saleQty: totalQty,
+      preventAddIfNoStock: event.preventAddIfNoStock,
+    );
+    
+    if (!availability.canAdd) {
+      emit(StockNotPermitted(
+        message: availability.message ?? '',
+        cartItems: List.from(_cartItems),
+        selectedCustomer: _selectedCustomer,
+      ));
+      return;
+    }
+    
     final addedQty = _addStockToCart(event.stock, skipEditMode: event.skipEditMode);
     
-    // Check for low stock warning
-    final warning = checkLowStockWarning(
-      stock: event.stock,
-      saleQty: addedQty,
-      autoRemindEnabled: event.autoRemindLowStock,
-    );
+    // Check for low stock warning - only show on add if skipEditMode is true
+    // (if in edit mode, warning will show when user hits save)
+    LowStockWarning? warning;
+    if (event.skipEditMode) {
+      warning = checkLowStockWarning(
+        stock: event.stock,
+        saleQty: addedQty,
+        autoRemindEnabled: event.autoRemindLowStock,
+      );
+      if (!warning.hasWarning) warning = null;
+    }
     
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
-      lowStockWarning: warning.hasWarning ? warning : null,
+      lowStockWarning: warning,
     ));
   }
 
   void _onAddToCart(AddToCart event, Emitter<SalesState> emit) {
+    // Calculate what the total qty would be if added
+    final existingIndex = _cartItems.indexWhere(
+      (item) => item.code == event.stock.barcode,
+    );
+    final int totalQty = existingIndex >= 0 
+        ? _cartItems[existingIndex].qty + event.qty 
+        : event.qty;
+    
+    // Check if adding is permitted (stock availability)
+    final availability = checkStockAvailability(
+      stock: event.stock,
+      saleQty: totalQty,
+      preventAddIfNoStock: event.preventAddIfNoStock,
+    );
+    
+    if (!availability.canAdd) {
+      emit(StockNotPermitted(
+        message: availability.message ?? '',
+        cartItems: List.from(_cartItems),
+        selectedCustomer: _selectedCustomer,
+      ));
+      return;
+    }
+    
     final addedQty = _addStockToCart(event.stock, qty: event.qty, skipEditMode: event.skipEditMode);
     
-    // Check for low stock warning
-    final warning = checkLowStockWarning(
-      stock: event.stock,
-      saleQty: addedQty,
-      autoRemindEnabled: event.autoRemindLowStock,
-    );
+    // Check for low stock warning - only show on add if skipEditMode is true
+    // (if in edit mode, warning will show when user hits save)
+    LowStockWarning? warning;
+    if (event.skipEditMode) {
+      warning = checkLowStockWarning(
+        stock: event.stock,
+        saleQty: addedQty,
+        autoRemindEnabled: event.autoRemindLowStock,
+      );
+      if (!warning.hasWarning) warning = null;
+    }
     
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
-      lowStockWarning: warning.hasWarning ? warning : null,
+      lowStockWarning: warning,
     ));
   }
 

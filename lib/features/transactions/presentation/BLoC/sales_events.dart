@@ -9,7 +9,13 @@ class SearchStock extends SalesEvent {
   final String query;
   final bool skipEditMode;
   final bool autoRemindLowStock;
-  SearchStock({required this.query, this.skipEditMode = false, this.autoRemindLowStock = false});
+  final bool preventAddIfNoStock;
+  SearchStock({
+    required this.query,
+    this.skipEditMode = false,
+    this.autoRemindLowStock = false,
+    this.preventAddIfNoStock = false,
+  });
 }
 
 /// User selected a stock from duplicate matches dialog
@@ -17,7 +23,13 @@ class SelectStock extends SalesEvent {
   final StockVO stock;
   final bool skipEditMode;
   final bool autoRemindLowStock;
-  SelectStock({required this.stock, this.skipEditMode = false, this.autoRemindLowStock = false});
+  final bool preventAddIfNoStock;
+  SelectStock({
+    required this.stock,
+    this.skipEditMode = false,
+    this.autoRemindLowStock = false,
+    this.preventAddIfNoStock = false,
+  });
 }
 
 /// Add stock to cart
@@ -26,7 +38,14 @@ class AddToCart extends SalesEvent {
   final int qty;
   final bool skipEditMode;
   final bool autoRemindLowStock;
-  AddToCart({required this.stock, this.qty = 1, this.skipEditMode = false, this.autoRemindLowStock = false});
+  final bool preventAddIfNoStock;
+  AddToCart({
+    required this.stock,
+    this.qty = 1,
+    this.skipEditMode = false,
+    this.autoRemindLowStock = false,
+    this.preventAddIfNoStock = false,
+  });
 }
 
 /// Add a pre-built cart item directly (for session restore)
