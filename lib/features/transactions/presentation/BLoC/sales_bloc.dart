@@ -7,6 +7,13 @@ import '../../domain/use_cases/search_stock_for_sale.dart';
 import '../../domain/use_cases/search_customer_for_sale.dart';
 import '../../domain/use_cases/check_low_stock_warning.dart';
 import '../../domain/use_cases/check_stock_availability.dart';
+import '../../domain/use_cases/validate_out_of_stock_items.dart';
+import '../../domain/use_cases/get_sale_sessions.dart';
+import '../../domain/use_cases/save_sale_session.dart';
+import '../../domain/use_cases/delete_sale_session.dart';
+import '../../domain/use_cases/restore_sale_session.dart';
+import '../../domain/use_cases/load_sales_settings.dart';
+import '../../domain/use_cases/save_sales_setting.dart';
 import 'sales_events.dart';
 import 'sales_states.dart';
 
@@ -15,6 +22,13 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   final SearchCustomerForSale searchCustomerForSale;
   final CheckLowStockWarning checkLowStockWarning;
   final CheckStockAvailability checkStockAvailability;
+  final ValidateOutOfStockItems validateOutOfStockItems;
+  final GetSaleSessions getSaleSessions;
+  final SaveSaleSession saveSaleSession;
+  final DeleteSaleSession deleteSaleSession;
+  final RestoreSaleSession restoreSaleSession;
+  final LoadSalesSettings loadSalesSettings;
+  final SaveSalesSetting saveSalesSetting;
   final List<CartItemVO> _cartItems = [];
   CustomerVO? _selectedCustomer;
 
@@ -23,6 +37,13 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     required this.searchCustomerForSale,
     required this.checkLowStockWarning,
     required this.checkStockAvailability,
+    required this.validateOutOfStockItems,
+    required this.getSaleSessions,
+    required this.saveSaleSession,
+    required this.deleteSaleSession,
+    required this.restoreSaleSession,
+    required this.loadSalesSettings,
+    required this.saveSalesSetting,
   }) : super(const SalesInitial()) {
     on<SearchStock>(_onSearchStock);
     on<SelectStock>(_onSelectStock);

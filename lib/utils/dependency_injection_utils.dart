@@ -104,6 +104,13 @@ import '../features/transactions/domain/use_cases/search_stock_for_sale.dart';
 import '../features/transactions/domain/use_cases/search_customer_for_sale.dart';
 import '../features/transactions/domain/use_cases/check_low_stock_warning.dart';
 import '../features/transactions/domain/use_cases/check_stock_availability.dart';
+import '../features/transactions/domain/use_cases/validate_out_of_stock_items.dart';
+import '../features/transactions/domain/use_cases/get_sale_sessions.dart';
+import '../features/transactions/domain/use_cases/save_sale_session.dart';
+import '../features/transactions/domain/use_cases/delete_sale_session.dart';
+import '../features/transactions/domain/use_cases/restore_sale_session.dart';
+import '../features/transactions/domain/use_cases/load_sales_settings.dart';
+import '../features/transactions/domain/use_cases/save_sales_setting.dart';
 import '../features/transactions/models/sales_model.dart';
 import '../features/transactions/presentation/BLoC/sales_bloc.dart';
 import '../features/onboarding/domain/repositories/onboarding_repo.dart';
@@ -125,6 +132,13 @@ Future<void> init() async {
     searchCustomerForSale: sl(),
     checkLowStockWarning: sl(),
     checkStockAvailability: sl(),
+    validateOutOfStockItems: sl(),
+    getSaleSessions: sl(),
+    saveSaleSession: sl(),
+    deleteSaleSession: sl(),
+    restoreSaleSession: sl(),
+    loadSalesSettings: sl(),
+    saveSalesSetting: sl(),
   ));
   sl.registerFactory(() => StocktakeBloc(countAndSaveToLocaldb: sl()));
   sl.registerFactory(() => FetchingNetworkServerBloc(fetchNetworkPcs: sl()));
@@ -273,6 +287,13 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SearchCustomerForSale(sl()));
   sl.registerLazySingleton(() => CheckLowStockWarning());
   sl.registerLazySingleton(() => CheckStockAvailability());
+  sl.registerLazySingleton(() => ValidateOutOfStockItems());
+  sl.registerLazySingleton(() => GetSaleSessions());
+  sl.registerLazySingleton(() => SaveSaleSession());
+  sl.registerLazySingleton(() => DeleteSaleSession());
+  sl.registerLazySingleton(() => RestoreSaleSession());
+  sl.registerLazySingleton(() => LoadSalesSettings());
+  sl.registerLazySingleton(() => SaveSalesSetting());
   sl.registerLazySingleton(() => CountAndSaveToLocaldb(sl()));
   sl.registerLazySingleton(() => FetchNetworkPcs(sl()));
   sl.registerLazySingleton(() => GetToSharedFolder(sl()));

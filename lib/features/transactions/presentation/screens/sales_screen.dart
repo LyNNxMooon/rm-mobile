@@ -18,8 +18,8 @@ import '../../../../utils/global_var_utils.dart';
 import '../../../../entities/vos/stock_vo.dart';
 import '../../../../utils/navigation_extension.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../../../local_db/sqlite/sqlite_constants.dart';
+import '../../domain/use_cases/save_sale_session.dart';
 import '../BLoC/sales_bloc.dart';
 import '../BLoC/sales_events.dart';
 import '../BLoC/sales_states.dart';
@@ -28,7 +28,11 @@ import 'customer_selection_screen.dart';
 import '../widgets/finalise_sale_dialog.dart';
 import '../widgets/sale_session_picker_dialog.dart';
 import '../widgets/sales_widgets.dart';
-import '../models/delivery_info.dart';
+import '../widgets/low_stock_warning_dialog.dart';
+import '../widgets/not_permitted_dialog.dart';
+import '../widgets/out_of_stock_finalise_dialog.dart';
+import '../widgets/customer_comments_dialog.dart';
+import '../../../../entities/vos/delivery_info_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 import 'delivery_details_screen.dart';
 
@@ -104,7 +108,7 @@ class _SalesScreenState extends State<SalesScreen>
   CustomerVO? _selectedCustomer;
 
   // Delivery info (stored until user leaves screen)
-  DeliveryInfo? _deliveryInfo;
+  DeliveryInfoVO? _deliveryInfo;
 
   final bool _isPaymentMode = false;
   bool _showScanner = false;
@@ -205,14 +209,12 @@ class _SalesScreenState extends State<SalesScreen>
     final shopfront = AppGlobals.instance.shopfront ?? '';
     if (shopfront.isEmpty) return;
 
-    final sessionsData = await LocalDbDAO.instance.getSaleSessions(
+    final sessions = await _salesBloc.getSaleSessions(
       shopfront: shopfront,
       sessionType: widget.title,
     );
 
-    if (sessionsData.isEmpty || !mounted) return;
-
-    final sessions = sessionsData.map((e) => SaleSessionVO.fromMap(e)).toList();
+    if (sessions.isEmpty || !mounted) return;
 
     final result = await SaleSessionPickerDialog.show(
       context: context,
@@ -236,55 +238,30 @@ class _SalesScreenState extends State<SalesScreen>
   Future<void> _restoreSession(SaleSessionVO session) async {
     _currentSessionId = session.id;
 
+    final shopfront = AppGlobals.instance.shopfront ?? '';
+    final restoreResult = await _salesBloc.restoreSaleSession(
+      session: session,
+      shopfront: shopfront,
+    );
+
     // Restore cart items
     _salesBloc.add(ClearCart());
-    for (final itemData in session.cartItems) {
-      // Try to find stock from database for full data
-      final stockSearch = await LocalDbDAO.instance.getStockBySearch(
-        itemData.code,
-        AppGlobals.instance.shopfront ?? '',
-      );
-
-      StockVO? stock;
-      if (stockSearch.stock != null) {
-        stock = stockSearch.stock;
-      } else if (stockSearch.duplicates.isNotEmpty) {
-        stock = stockSearch.duplicates.first;
-      }
-
-      final cartItem = CartItemVO(
-        code: itemData.code,
-        description: itemData.description,
-        qty: itemData.qty,
-        sellPrice: itemData.sellPrice,
-        costPrice: itemData.costPrice,
-        stock: stock,
-        serialNumber: itemData.serialNumber,
-        isEditing: false,
-      );
+    for (final cartItem in restoreResult.cartItems) {
       _salesBloc.add(AddCartItemDirect(cartItem: cartItem));
     }
 
-    // Restore customer (if we have customer ID, try to look them up)
-    if (session.customerId != null) {
-      final customerSearch = await LocalDbDAO.instance.getCustomerBySearch(
-        session.customerBarcode ?? '',
-        AppGlobals.instance.shopfront ?? '',
-      );
-      if (customerSearch.customer != null) {
-        _selectedCustomer = customerSearch.customer;
-      }
-    }
+    // Restore customer
+    _selectedCustomer = restoreResult.customer;
 
     // Restore other values
     setState(() {
-      _discountValue = session.discount;
-      _discountController.text = session.discount.toStringAsFixed(2);
+      _discountValue = restoreResult.discount;
+      _discountController.text = restoreResult.discount.toStringAsFixed(2);
       _paymentAmounts.clear();
-      _paymentAmounts.addAll(session.paymentAmounts);
-      _surveyValue = session.surveyValue ?? '';
+      _paymentAmounts.addAll(restoreResult.paymentAmounts);
+      _surveyValue = restoreResult.surveyValue;
       _surveyController.text = _surveyValue;
-      _commentValue = session.commentValue ?? '';
+      _commentValue = restoreResult.commentValue;
     });
   }
 
@@ -293,7 +270,7 @@ class _SalesScreenState extends State<SalesScreen>
     if (_cartItems.isEmpty) {
       // If session exists but cart is now empty, delete it
       if (_currentSessionId != null) {
-        await LocalDbDAO.instance.deleteSaleSession(_currentSessionId!);
+        await _salesBloc.deleteSaleSession(sessionId: _currentSessionId!);
         _currentSessionId = null;
       }
       return;
@@ -302,103 +279,42 @@ class _SalesScreenState extends State<SalesScreen>
     final shopfront = AppGlobals.instance.shopfront ?? '';
     if (shopfront.isEmpty) return;
 
-    final now = DateTime.now();
-    final cartItemsData = _cartItems
-        .map((e) => CartItemData.fromCartItem(e))
-        .toList();
+    final params = SaveSessionParams(
+      existingSessionId: _currentSessionId,
+      sessionType: widget.title,
+      shopfront: shopfront,
+      cartItems: _cartItems,
+      customer: _selectedCustomer,
+      subtotal: _subtotal,
+      discount: _discountValue,
+      paymentAmounts: _paymentAmounts,
+      surveyValue: _surveyValue,
+      commentValue: _commentValue,
+      buildCustomerDisplayName: _buildCustomerDisplayName,
+    );
 
-    final sessionMap = {
-      'session_type': widget.title,
-      'shopfront': shopfront,
-      'created_at': _currentSessionId != null
-          ? now.toIso8601String()
-          : now.toIso8601String(),
-      'updated_at': now.toIso8601String(),
-      'cart_items_json': _cartItems.isNotEmpty
-          ? cartItemsData
-                .map((e) => e.toJson())
-                .toList()
-                .toString()
-                .replaceAll('\'', '"')
-          : null,
-      'customer_id': _selectedCustomer?.customerId,
-      'customer_barcode': _selectedCustomer?.barcode,
-      'customer_name': _selectedCustomer != null
-          ? _buildCustomerDisplayName(_selectedCustomer!)
-          : null,
-      'subtotal': _subtotal,
-      'discount': _discountValue,
-      'payment_amounts_json': _paymentAmounts.isNotEmpty
-          ? _paymentAmounts.entries
-                .map((e) => '"${e.key}":${e.value}')
-                .join(',')
-          : null,
-      'survey_value': _surveyValue.isNotEmpty ? _surveyValue : null,
-      'comment_value': _commentValue.isNotEmpty ? _commentValue : null,
-    };
-
-    // Properly encode cart items
-    if (_cartItems.isNotEmpty) {
-      sessionMap['cart_items_json'] =
-          '[${cartItemsData.map((e) => '{"code":"${e.code}","description":"${e.description.replaceAll('"', '\\"')}","qty":${e.qty},"sell_price":${e.sellPrice},"cost_price":${e.costPrice ?? 0},"serial_number":${e.serialNumber != null ? '"${e.serialNumber}"' : 'null'},"stock_id":${e.stockId ?? 'null'}}').join(',')}]';
-    }
-
-    // Properly encode payment amounts
-    if (_paymentAmounts.isNotEmpty) {
-      sessionMap['payment_amounts_json'] =
-          '{${_paymentAmounts.entries.map((e) => '"${e.key}":${e.value}').join(',')}}';
-    }
-
-    if (_currentSessionId != null) {
-      sessionMap['id'] = _currentSessionId;
-      await LocalDbDAO.instance.updateSaleSession(sessionMap);
-    } else {
-      _currentSessionId = await LocalDbDAO.instance.saveSaleSession(sessionMap);
-    }
+    _currentSessionId = await _salesBloc.saveSaleSession(params);
   }
 
   Future<void> _deleteCurrentSession() async {
     if (_currentSessionId != null) {
-      await LocalDbDAO.instance.deleteSaleSession(_currentSessionId!);
+      await _salesBloc.deleteSaleSession(sessionId: _currentSessionId!);
       _currentSessionId = null;
     }
   }
 
   Future<void> _loadSalesSettings() async {
-    final scanIndividualUnits = await LocalDbDAO.instance.getAppConfig(
-      kSalesScanIndividualUnitsKey,
-    );
-    final skipSellPrice = await LocalDbDAO.instance.getAppConfig(
-      kSalesSkipSellPriceKey,
-    );
-    final promptForEmail = await LocalDbDAO.instance.getAppConfig(
-      kSalesPromptForEmailKey,
-    );
-    final autoRemindLowStock = await LocalDbDAO.instance.getAppConfig(
-      kSalesAutoRemindLowStockKey,
-    );
-    final preventAddIfNoStock = await LocalDbDAO.instance.getAppConfig(
-      kSalesPreventAddIfNoStockKey,
-    );
-    final preventFinaliseIfOutOfStock = await LocalDbDAO.instance.getAppConfig(
-      kSalesPreventFinaliseIfOutOfStockKey,
-    );
-    final displayCustomerMessages = await LocalDbDAO.instance.getAppConfig(
-      kSalesDisplayCustomerMessagesKey,
-    );
-    final roundSellPriceTo2Decimals = await LocalDbDAO.instance.getAppConfig(
-      kSalesRoundSellPriceTo2DecimalsKey,
-    );
+    final settings = await _salesBloc.loadSalesSettings();
     if (mounted) {
       setState(() {
-        _scanIndividualUnits = scanIndividualUnits == 'true';
-        _skipSellPrice = skipSellPrice == 'true';
-        _promptForEmailAtSale = promptForEmail == 'true';
-        _autoRemindLowStock = autoRemindLowStock == 'true';
-        _preventAddIfNoStock = preventAddIfNoStock == 'true';
-        _preventFinaliseIfOutOfStock = preventFinaliseIfOutOfStock == 'true';
-        _displayCustomerMessagesAsPrompt = displayCustomerMessages == 'true';
-        _roundSellPriceTo2Decimals = roundSellPriceTo2Decimals == 'true';
+        _scanIndividualUnits = settings.scanIndividualUnits;
+        _skipSellPrice = settings.skipSellPrice;
+        _promptForEmailAtSale = settings.promptForEmailAtSale;
+        _autoRemindLowStock = settings.autoRemindLowStock;
+        _preventAddIfNoStock = settings.preventAddIfNoStock;
+        _preventFinaliseIfOutOfStock = settings.preventFinaliseIfOutOfStock;
+        _displayCustomerMessagesAsPrompt = settings.displayCustomerMessagesAsPrompt;
+        _roundSellPriceTo2Decimals = settings.roundSellPriceTo2Decimals;
       });
     }
   }
@@ -510,7 +426,12 @@ class _SalesScreenState extends State<SalesScreen>
               padding: 70,
             );
           } else if (state is StockNotPermitted) {
-            _showNotPermittedDialog(context, state.message, colors, isDark);
+            NotPermittedDialog.show(
+              context: context,
+              message: state.message,
+              colors: colors,
+              isDark: isDark,
+            );
           } else if (state is CartUpdated && state.message != null) {
             AlertInfo.show(
               context: context,
@@ -528,7 +449,12 @@ class _SalesScreenState extends State<SalesScreen>
           if ((state is CartUpdated || state is CartItemSaved) && 
               state.lowStockWarning != null && 
               state.lowStockWarning!.hasWarning) {
-            _showLowStockWarningDialog(context, state.lowStockWarning!.message ?? '', colors, isDark);
+            LowStockWarningDialog.show(
+              context: context,
+              message: state.lowStockWarning!.message ?? '',
+              colors: colors,
+              isDark: isDark,
+            );
           }
           
           if (state is CustomerDuplicatesFound) {
@@ -1722,7 +1648,13 @@ class _SalesScreenState extends State<SalesScreen>
     if (isAccountSales && _preventFinaliseIfOutOfStock) {
       final outOfStockItems = _getOutOfStockItems();
       if (outOfStockItems.isNotEmpty) {
-        _showOutOfStockFinaliseDialog(outOfStockItems);
+        final colors = context.appColors;
+        OutOfStockFinaliseDialog.show(
+          context: context,
+          outOfStockItems: outOfStockItems,
+          colors: colors,
+          isDark: colors.isDark,
+        );
         return;
       }
     }
@@ -2430,513 +2362,10 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
-  void _showNotPermittedDialog(
-    BuildContext context,
-    String message,
-    AppThemeColors colors,
-    bool isDark,
-  ) {
-    final bool isTablet = context.isTablet;
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 80 : 24,
-          ),
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: isTablet ? 450 : double.infinity,
-            ),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon and Title
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: kErrorColor.withOpacity(0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.block_rounded,
-                        color: kErrorColor,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Not Permitted!',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Message
-                Text(
-                  message,
-                  style: TextStyle(
-                    fontSize: 16,
-                    height: 1.4,
-                    color: isDark ? Colors.white70 : Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                
-                // Button
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: kErrorColor,
-                      side: const BorderSide(color: kErrorColor),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'OK',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   /// Returns a list of cart items where sale qty exceeds stock qty
+  /// Uses the ValidateOutOfStockItems use case from the BLoC
   List<CartItemVO> _getOutOfStockItems() {
-    final outOfStockItems = <CartItemVO>[];
-    for (final item in _cartItems) {
-      if (item.stock != null) {
-        final stockQty = item.stock!.quantity;
-        if (item.qty > stockQty) {
-          outOfStockItems.add(item);
-        }
-      }
-    }
-    return outOfStockItems;
-  }
-
-  void _showOutOfStockFinaliseDialog(List<CartItemVO> outOfStockItems) {
-    final colors = context.appColors;
-    final bool isDark = colors.isDark;
-    final bool isTablet = context.isTablet;
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 80 : 24,
-          ),
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: isTablet ? 450 : double.infinity,
-            ),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon and Title
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: kErrorColor.withOpacity(0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.block_rounded,
-                        color: kErrorColor,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Not Permitted!',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Message
-                Text(
-                  'Stock items cannot be sold if inventory levels are below the sale quantity.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    height: 1.4,
-                    color: isDark ? Colors.white70 : Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Out of stock items list
-                Container(
-                  constraints: const BoxConstraints(maxHeight: 150),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: outOfStockItems.map((item) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.circle,
-                                size: 6,
-                                color: isDark ? Colors.white54 : Colors.black45,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  item.description,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDark ? Colors.white70 : Colors.black87,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Footer message
-                Text(
-                  'Please review inventory levels of items in the list.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontStyle: FontStyle.italic,
-                    color: isDark ? Colors.white54 : Colors.black45,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                
-                // Button
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: kErrorColor,
-                      side: const BorderSide(color: kErrorColor),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'OK',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showLowStockWarningDialog(
-    BuildContext context,
-    String message,
-    AppThemeColors colors,
-    bool isDark,
-  ) {
-    final bool isTablet = context.isTablet;
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 80 : 24,
-          ),
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: isTablet ? 450 : double.infinity,
-            ),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon and Title
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.inventory_2_outlined,
-                        color: Colors.orange,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Low Stock Alert',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Message
-                Text(
-                  message,
-                  style: TextStyle(
-                    fontSize: 16,
-                    height: 1.4,
-                    color: isDark ? Colors.white70 : Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                
-                // Button
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.orange,
-                      side: const BorderSide(color: Colors.orange),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'OK',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showCustomerCommentsDialog(
-    BuildContext context,
-    CustomerVO customer,
-    AppThemeColors colors,
-    bool isDark,
-  ) {
-    final bool isTablet = context.isTablet;
-    // final customerName = customer.company.isNotEmpty
-    //     ? customer.company
-    //     : '${customer.givenNames} ${customer.surname}'.trim();
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 80 : 24,
-          ),
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: isTablet ? 450 : double.infinity,
-            ),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon and Title
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor.withOpacity(0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person_outline,
-                        color: kPrimaryColor,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Customer Message',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Customer name
-                // if (customerName.isNotEmpty) ...[
-                //   Text(
-                //     customerName,
-                //     style: TextStyle(
-                //       fontSize: 14,
-                //       fontWeight: FontWeight.w500,
-                //       color: isDark ? Colors.white70 : Colors.black54,
-                //     ),
-                //   ),
-                //   const SizedBox(height: 8),
-                // ],
-                
-                // Comments
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.05)
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    customer.comments,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.4,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                
-                // Button
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: kPrimaryColor,
-                      side: const BorderSide(color: kPrimaryColor),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'OK',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    return _salesBloc.validateOutOfStockItems(cartItems: _cartItems);
   }
 
   void _checkAndShowCustomerComments(CustomerVO? customer) {
@@ -2945,8 +2374,12 @@ class _SalesScreenState extends State<SalesScreen>
     if (customer.comments.isEmpty) return;
     
     final colors = context.appColors;
-    final bool isDark = colors.isDark;
-    _showCustomerCommentsDialog(context, customer, colors, isDark);
+    CustomerCommentsDialog.show(
+      context: context,
+      customer: customer,
+      colors: colors,
+      isDark: colors.isDark,
+    );
   }
 
   void _showSalesSettingsDialog(BuildContext context) {
@@ -3069,9 +2502,9 @@ class _SalesScreenState extends State<SalesScreen>
                                   (v) {
                                     setDialogState(() => _scanIndividualUnits = v);
                                     setState(() {});
-                                    LocalDbDAO.instance.saveAppConfig(
-                                      kSalesScanIndividualUnitsKey,
-                                      v.toString(),
+                                    _salesBloc.saveSalesSetting(
+                                      key: kSalesScanIndividualUnitsKey,
+                                      value: v,
                                     );
                                   },
                                   isDark,
@@ -3097,9 +2530,9 @@ class _SalesScreenState extends State<SalesScreen>
                                   (v) {
                                     setDialogState(() => _skipSellPrice = v);
                                     setState(() {});
-                                    LocalDbDAO.instance.saveAppConfig(
-                                      kSalesSkipSellPriceKey,
-                                      v.toString(),
+                                    _salesBloc.saveSalesSetting(
+                                      key: kSalesSkipSellPriceKey,
+                                      value: v,
                                     );
                                   },
                                   isDark,
@@ -3127,9 +2560,9 @@ class _SalesScreenState extends State<SalesScreen>
                                       () => _promptForEmailAtSale = v,
                                     );
                                     setState(() {});
-                                    LocalDbDAO.instance.saveAppConfig(
-                                      kSalesPromptForEmailKey,
-                                      v.toString(),
+                                    _salesBloc.saveSalesSetting(
+                                      key: kSalesPromptForEmailKey,
+                                      value: v,
                                     );
                                   },
                                   isDark,
@@ -3147,9 +2580,9 @@ class _SalesScreenState extends State<SalesScreen>
                                       () => _roundSellPriceTo2Decimals = v,
                                     );
                                     setState(() {});
-                                    LocalDbDAO.instance.saveAppConfig(
-                                      kSalesRoundSellPriceTo2DecimalsKey,
-                                      v.toString(),
+                                    _salesBloc.saveSalesSetting(
+                                      key: kSalesRoundSellPriceTo2DecimalsKey,
+                                      value: v,
                                     );
                                   },
                                   isDark,
@@ -3181,9 +2614,9 @@ class _SalesScreenState extends State<SalesScreen>
                                   (v) {
                                     setDialogState(() => _preventAddIfNoStock = v);
                                     setState(() {});
-                                    LocalDbDAO.instance.saveAppConfig(
-                                      kSalesPreventAddIfNoStockKey,
-                                      v.toString(),
+                                    _salesBloc.saveSalesSetting(
+                                      key: kSalesPreventAddIfNoStockKey,
+                                      value: v,
                                     );
                                   },
                                   isDark,
@@ -3201,9 +2634,9 @@ class _SalesScreenState extends State<SalesScreen>
                                       () => _preventFinaliseIfOutOfStock = v,
                                     );
                                     setState(() {});
-                                    LocalDbDAO.instance.saveAppConfig(
-                                      kSalesPreventFinaliseIfOutOfStockKey,
-                                      v.toString(),
+                                    _salesBloc.saveSalesSetting(
+                                      key: kSalesPreventFinaliseIfOutOfStockKey,
+                                      value: v,
                                     );
                                   },
                                   isDark,
@@ -3243,9 +2676,9 @@ class _SalesScreenState extends State<SalesScreen>
                                   (v) {
                                     setDialogState(() => _autoRemindLowStock = v);
                                     setState(() {});
-                                    LocalDbDAO.instance.saveAppConfig(
-                                      kSalesAutoRemindLowStockKey,
-                                      v.toString(),
+                                    _salesBloc.saveSalesSetting(
+                                      key: kSalesAutoRemindLowStockKey,
+                                      value: v,
                                     );
                                   },
                                   isDark,
@@ -3289,9 +2722,9 @@ class _SalesScreenState extends State<SalesScreen>
                                       () => _displayCustomerMessagesAsPrompt = v,
                                     );
                                     setState(() {});
-                                    LocalDbDAO.instance.saveAppConfig(
-                                      kSalesDisplayCustomerMessagesKey,
-                                      v.toString(),
+                                    _salesBloc.saveSalesSetting(
+                                      key: kSalesDisplayCustomerMessagesKey,
+                                      value: v,
                                     );
                                   },
                                   isDark,
@@ -3756,7 +3189,7 @@ class _SalesScreenState extends State<SalesScreen>
                                                                 await Navigator.of(
                                                                   this.context,
                                                                 ).push<
-                                                                  DeliveryInfo
+                                                                  DeliveryInfoVO
                                                                 >(
                                                                   MaterialPageRoute(
                                                                     builder: (ctx) => DeliveryDetailsScreen(

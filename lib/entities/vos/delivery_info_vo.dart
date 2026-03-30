@@ -1,5 +1,5 @@
-/// Model to hold delivery information for a sale
-class DeliveryInfo {
+/// Value Object to hold delivery information for a sale
+class DeliveryInfoVO {
   final int? customerId;
   final String recipientName;
   final String phone;
@@ -17,7 +17,7 @@ class DeliveryInfo {
   final String notes;
   final String addressSource; // "primary", "address_2", "address_3", "other"
 
-  const DeliveryInfo({
+  const DeliveryInfoVO({
     this.customerId,
     this.recipientName = '',
     this.phone = '',
@@ -36,7 +36,7 @@ class DeliveryInfo {
     this.addressSource = 'primary',
   });
 
-  DeliveryInfo copyWith({
+  DeliveryInfoVO copyWith({
     int? customerId,
     String? recipientName,
     String? phone,
@@ -54,7 +54,7 @@ class DeliveryInfo {
     String? notes,
     String? addressSource,
   }) {
-    return DeliveryInfo(
+    return DeliveryInfoVO(
       customerId: customerId ?? this.customerId,
       recipientName: recipientName ?? this.recipientName,
       phone: phone ?? this.phone,

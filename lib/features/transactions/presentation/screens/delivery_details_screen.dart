@@ -7,7 +7,7 @@ import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/customer_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 import '../../domain/use_cases/search_customer_for_sale.dart';
-import '../models/delivery_info.dart';
+import '../../../../entities/vos/delivery_info_vo.dart';
 import 'customer_selection_screen.dart';
 
 final _sl = GetIt.instance;
@@ -15,7 +15,7 @@ final _sl = GetIt.instance;
 /// Delivery Details Screen for adding delivery information to a sale
 class DeliveryDetailsScreen extends StatefulWidget {
   final CustomerVO? initialCustomer;
-  final DeliveryInfo? existingDelivery;
+  final DeliveryInfoVO? existingDelivery;
 
   const DeliveryDetailsScreen({
     super.key,
@@ -85,7 +85,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
     super.dispose();
   }
 
-  void _restoreDeliveryInfo(DeliveryInfo info) {
+  void _restoreDeliveryInfo(DeliveryInfoVO info) {
     _attentionController.text = info.recipientName;
     _phoneController.text = info.phone.isNotEmpty ? info.phone : info.mobile;
     _address1Controller.text = info.addr1;
@@ -185,8 +185,8 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
     return "primary";
   }
 
-  DeliveryInfo _buildDeliveryInfo() {
-    return DeliveryInfo(
+  DeliveryInfoVO _buildDeliveryInfo() {
+    return DeliveryInfoVO(
       customerId: _selectedCustomer?.customerId,
       recipientName: _attentionController.text.trim(),
       phone: _phoneController.text.trim(),
