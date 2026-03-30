@@ -462,14 +462,6 @@ class _GlassDrawerState extends State<GlassDrawer> {
 
   final List<Map<String, dynamic>> _transactionItems = [
     {
-      "title": "Sales",
-      "subTitle": "Process sales",
-      "icon": Icons.point_of_sale_outlined,
-      "color": Colors.green.shade600,
-      "comingSoon": false,
-      "action": "sales"
-    },
-    {
       "title": "Account Sales",
       "subTitle": "Invoice customers",
       "icon": Icons.receipt_long_outlined,
@@ -500,6 +492,14 @@ class _GlassDrawerState extends State<GlassDrawer> {
       "color": const Color.fromARGB(255, 152, 86, 165),
       "comingSoon": false,
       "action": "lay_bys"
+    },
+    {
+      "title": "Sales",
+      "subTitle": "Coming soon",
+      "icon": Icons.point_of_sale_outlined,
+      "color": Colors.grey,
+      "comingSoon": true,
+      "action": "coming_soon"
     },
     {
       "title": "Goods Received",

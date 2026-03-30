@@ -1523,6 +1523,7 @@ class _SalesScreenState extends State<SalesScreen>
       colors: colors,
       isDark: isDark,
       isIncTax: _isIncTax,
+      roundSellPriceTo2Decimals: _roundSellPriceTo2Decimals,
     );
   }
 

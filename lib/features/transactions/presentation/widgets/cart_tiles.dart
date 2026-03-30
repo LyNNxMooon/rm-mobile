@@ -791,6 +791,7 @@ class TabletCartTile extends StatelessWidget {
   final VoidCallback? onDelete;
   final bool isIncTax;
   final double taxRate;
+  final bool roundSellPriceTo2Decimals;
 
   const TabletCartTile({
     super.key,
@@ -801,12 +802,17 @@ class TabletCartTile extends StatelessWidget {
     this.onDelete,
     this.isIncTax = true,
     this.taxRate = 0.1,
+    this.roundSellPriceTo2Decimals = false,
   });
 
   double get _displayPrice =>
       isIncTax ? item.sellPrice : item.sellPrice / (1 + taxRate);
   double get _displayExtension =>
       isIncTax ? item.extension : item.extension / (1 + taxRate);
+
+  String get _formattedPrice => roundSellPriceTo2Decimals
+      ? _displayPrice.toStringAsFixed(2)
+      : formatSellPriceForDisplay(_displayPrice);
 
   @override
   Widget build(BuildContext context) {
@@ -881,7 +887,7 @@ class TabletCartTile extends StatelessWidget {
           SizedBox(
             width: 120,
             child: Text(
-              "\$${formatSellPriceForDisplay(_displayPrice)}",
+              "\$$_formattedPrice",
               textAlign: TextAlign.right,
               style: TextStyle(color: colors.onSurfaceMuted, fontSize: 14),
             ),
