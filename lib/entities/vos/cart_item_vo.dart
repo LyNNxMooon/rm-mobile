@@ -6,12 +6,18 @@ class CartItemVO {
   final String code;
   final String description;
   int qty;
-  double sellPrice;
+  double sellPrice; // Base sell price from stock (could be ex or inc depending on taxType)
   final double? costPrice;
   final StockVO? stock; // Full stock data for reference
   final String? serialNumber;
   final bool isEditing; // Whether item is in expanded edit mode
   final bool isNewlyAdded; // Whether item was just added (for auto-save logic)
+  
+  // Tax calculation fields
+  final double taxPercentage; // Tax percentage from tax code table
+  final int taxType; // 0 or 1 = Ex-tax base, >= 2 = Inc-tax base
+  final double incPrice; // Inclusive price (calculated or direct)
+  final double exPrice; // Exclusive price (calculated or direct)
 
   CartItemVO({
     required this.code,
@@ -23,9 +29,18 @@ class CartItemVO {
     this.serialNumber,
     this.isEditing = false,
     this.isNewlyAdded = false,
-  });
+    this.taxPercentage = 0.0,
+    this.taxType = 0,
+    double? incPrice,
+    double? exPrice,
+  }) : incPrice = incPrice ?? sellPrice,
+       exPrice = exPrice ?? sellPrice;
 
-  double get extension => qty * sellPrice;
+  /// Extension using inclusive price
+  double get extension => qty * incPrice;
+  
+  /// Extension using exclusive price
+  double get extensionEx => qty * exPrice;
 
   /// Whether this stock item tracks serial numbers
   bool get trackSerial => stock?.trackSerial ?? false;
@@ -55,6 +70,10 @@ class CartItemVO {
     String? serialNumber,
     bool? isEditing,
     bool? isNewlyAdded,
+    double? taxPercentage,
+    int? taxType,
+    double? incPrice,
+    double? exPrice,
   }) {
     return CartItemVO(
       code: code ?? this.code,
@@ -66,6 +85,10 @@ class CartItemVO {
       serialNumber: serialNumber ?? this.serialNumber,
       isEditing: isEditing ?? this.isEditing,
       isNewlyAdded: isNewlyAdded ?? this.isNewlyAdded,
+      taxPercentage: taxPercentage ?? this.taxPercentage,
+      taxType: taxType ?? this.taxType,
+      incPrice: incPrice ?? this.incPrice,
+      exPrice: exPrice ?? this.exPrice,
     );
   }
 }

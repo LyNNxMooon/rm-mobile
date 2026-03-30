@@ -6,24 +6,31 @@ import '../../../../utils/responsive_utils.dart';
 
 /// Tax breakdown widget showing Ex Tax, Tax Amount, Inc Tax
 class TaxBreakdownWidget extends StatelessWidget {
-  final double total;
+  final double? total; // Legacy: used with taxRate
+  final double? exTotal; // Pre-calculated Ex total
+  final double? incTotal; // Pre-calculated Inc total
+  final double? taxAmount; // Pre-calculated tax amount
   final AppThemeColors colors;
   final bool isDark;
   final double taxRate;
 
   const TaxBreakdownWidget({
     super.key,
-    required this.total,
+    this.total,
+    this.exTotal,
+    this.incTotal,
+    this.taxAmount,
     required this.colors,
     required this.isDark,
-    this.taxRate = 0.10, // Default 10% GST
+    this.taxRate = 0.10, // Default 10% GST (legacy fallback)
   });
 
   @override
   Widget build(BuildContext context) {
-    final double incTaxTotal = total;
-    final double exTaxTotal = total / (1 + taxRate);
-    final double taxAmount = incTaxTotal - exTaxTotal;
+    // Use pre-calculated values if provided, otherwise fall back to legacy calculation
+    final double displayIncTotal = incTotal ?? total ?? 0.0;
+    final double displayExTotal = exTotal ?? (total != null ? total! / (1 + taxRate) : 0.0);
+    final double displayTaxAmount = taxAmount ?? (displayIncTotal - displayExTotal);
     final bool isTablet = context.isTablet;
 
     return Container(
@@ -43,13 +50,13 @@ class TaxBreakdownWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildTaxRow("Ex:", exTaxTotal, highlight: false, isTablet: isTablet),
+          _buildTaxRow("Ex:", displayExTotal, highlight: false, isTablet: isTablet),
           SizedBox(height: isTablet ? 8 : 3),
-          _buildTaxRow("Tax:", taxAmount, highlight: true, isTablet: isTablet),
+          _buildTaxRow("Tax:", displayTaxAmount, highlight: true, isTablet: isTablet),
           SizedBox(height: isTablet ? 8 : 3),
           _buildTaxRow(
             "Inc:",
-            incTaxTotal,
+            displayIncTotal,
             highlight: false,
             isTablet: isTablet,
           ),

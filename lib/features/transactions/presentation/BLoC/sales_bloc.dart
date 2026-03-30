@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../entities/vos/customer_vo.dart';
 import '../../../../entities/vos/stock_vo.dart';
+import '../../../../utils/tax_calculation_utils.dart';
 import '../../domain/models/low_stock_warning.dart';
 import '../../domain/use_cases/search_stock_for_sale.dart';
 import '../../domain/use_cases/search_customer_for_sale.dart';
@@ -120,7 +121,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         }
         
         // Auto-add to cart when single match found
-        final addedQty = _addStockToCart(result.stock!, skipEditMode: event.skipEditMode);
+        final addedQty = await _addStockToCart(result.stock!, skipEditMode: event.skipEditMode);
         
         // Check for low stock warning - only show on add if skipEditMode is true
         // (if in edit mode, warning will show when user hits save)
@@ -156,7 +157,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     }
   }
 
-  void _onSelectStock(SelectStock event, Emitter<SalesState> emit) {
+  Future<void> _onSelectStock(SelectStock event, Emitter<SalesState> emit) async {
     // Calculate what the total qty would be if added
     final existingIndex = _cartItems.indexWhere(
       (item) => item.code == event.stock.barcode,
@@ -182,7 +183,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       return;
     }
     
-    final addedQty = _addStockToCart(event.stock, skipEditMode: event.skipEditMode);
+    final addedQty = await _addStockToCart(event.stock, skipEditMode: event.skipEditMode);
     
     // Check for low stock warning - only show on add if skipEditMode is true
     // (if in edit mode, warning will show when user hits save)
@@ -203,7 +204,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     ));
   }
 
-  void _onAddToCart(AddToCart event, Emitter<SalesState> emit) {
+  Future<void> _onAddToCart(AddToCart event, Emitter<SalesState> emit) async {
     // Calculate what the total qty would be if added
     final existingIndex = _cartItems.indexWhere(
       (item) => item.code == event.stock.barcode,
@@ -228,7 +229,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       return;
     }
     
-    final addedQty = _addStockToCart(event.stock, qty: event.qty, skipEditMode: event.skipEditMode);
+    final addedQty = await _addStockToCart(event.stock, qty: event.qty, skipEditMode: event.skipEditMode);
     
     // Check for low stock warning - only show on add if skipEditMode is true
     // (if in edit mode, warning will show when user hits save)
@@ -259,7 +260,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   }
 
   /// Adds stock to cart and returns the total quantity in cart for this item
-  int _addStockToCart(StockVO stock, {int qty = 1, bool skipEditMode = false}) {
+  Future<int> _addStockToCart(StockVO stock, {int qty = 1, bool skipEditMode = false}) async {
     // Check if item already exists in cart (by barcode)
     final existingIndex = _cartItems.indexWhere(
       (item) => item.code == stock.barcode,
@@ -275,14 +276,28 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         isEditing: skipEditMode ? false : true, // Skip edit mode if auto-adding
       );
     } else {
-      // Add new item
-      final newItem = CartItemVO.fromStock(stock, qty: qty);
-      if (skipEditMode) {
-        // Auto-save: don't enter edit mode
-        _cartItems.insert(0, newItem.copyWith(isEditing: false, isNewlyAdded: false));
-      } else {
-        _cartItems.insert(0, newItem);
-      }
+      // Add new item - calculate tax first
+      final taxResult = await TaxCalculationUtils.calculateSellTax(
+        sell: stock.sell,
+        salesTax: stock.salesTax,
+      );
+      
+      final newItem = CartItemVO(
+        code: stock.barcode,
+        description: stock.description,
+        qty: qty,
+        sellPrice: stock.sell,
+        costPrice: stock.cost,
+        stock: stock,
+        isEditing: !skipEditMode, // New items start in edit mode unless skipEditMode
+        isNewlyAdded: !skipEditMode, // Mark as newly added for auto-save check
+        taxPercentage: taxResult.percentage,
+        taxType: taxResult.taxType,
+        incPrice: taxResult.incPrice,
+        exPrice: taxResult.exPrice,
+      );
+      
+      _cartItems.insert(0, newItem);
     }
     
     return totalQty;
@@ -304,8 +319,27 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   ) {
     if (event.index < 0 || event.index >= _cartItems.length) return;
 
-    _cartItems[event.index] = _cartItems[event.index].copyWith(
-      sellPrice: event.price,
+    final item = _cartItems[event.index];
+    final percentage = item.taxPercentage;
+    final multiplier = 1 + (percentage / 100);
+    
+    double incPrice;
+    double exPrice;
+    
+    if (event.isIncPrice) {
+      // User edited the Inc price
+      incPrice = event.price;
+      exPrice = percentage > 0 ? event.price / multiplier : event.price;
+    } else {
+      // User edited the Ex price
+      exPrice = event.price;
+      incPrice = percentage > 0 ? event.price * multiplier : event.price;
+    }
+
+    _cartItems[event.index] = item.copyWith(
+      sellPrice: incPrice, // sellPrice stores the base price as inc
+      incPrice: incPrice,
+      exPrice: exPrice,
     );
     emit(CartUpdated(cartItems: List.from(_cartItems), selectedCustomer: _selectedCustomer));
   }

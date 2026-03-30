@@ -151,8 +151,14 @@ class _SalesScreenState extends State<SalesScreen>
   late AnimationController _actionsAnimationController;
   late Animation<double> _actionsAnimation;
 
-  final List<String> _optionItems = [
-    "Add Survey",
+  /// Gets the survey label from AppGlobals.salesCustom or defaults to "Add Survey"
+  String get _surveyLabel =>
+      AppGlobals.instance.salesCustom?.trim().isNotEmpty == true
+          ? AppGlobals.instance.salesCustom!
+          : "Add Survey";
+
+  List<String> get _optionItems => [
+    _surveyLabel,
     "Add Comment",
     "Add Discount",
     "Add Delivery",
@@ -163,11 +169,22 @@ class _SalesScreenState extends State<SalesScreen>
   // Cart items from BLoC state
   List<CartItemVO> get _cartItems => _salesBloc.state.cartItems;
 
+  /// Subtotal always uses inclusive price (actual sale amount)
   double get _subtotal =>
       _cartItems.fold(0, (sum, item) => sum + item.extension);
+  
+  /// Display subtotal respects the tax toggle
+  double get _displaySubtotal => _isIncTax
+      ? _cartItems.fold(0, (sum, item) => sum + item.extension)
+      : _cartItems.fold(0, (sum, item) => sum + item.extensionEx);
+  
   double get _discount => _discountValue;
   double get _rounding => 0.00; // Placeholder
   double get _total => _subtotal - _discount + _rounding;
+  
+  /// Display total respects the tax toggle
+  double get _displayTotal => _displaySubtotal - _discount + _rounding;
+  
   double get _totalPaid =>
       _paymentAmounts.values.fold(0.0, (sum, amount) => sum + amount);
 
@@ -990,9 +1007,9 @@ class _SalesScreenState extends State<SalesScreen>
         ? (isMediumTablet ? 115 : (isLargeTablet ? 140 : 125))
         : (isMediumTablet ? 95 : (isLargeTablet ? 130 : 105));
     final double displayPrice = _isIncTax
-        ? item.sellPrice
-        : item.sellPrice / 1.1;
-    final double displayExt = _isIncTax ? item.extension : item.extension / 1.1;
+        ? item.incPrice
+        : item.exPrice;
+    final double displayExt = _isIncTax ? item.extension : item.extensionEx;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -1177,9 +1194,9 @@ class _SalesScreenState extends State<SalesScreen>
     bool isLargeTabletPortrait,
   ) {
     // final double displayPrice = _isIncTax
-    //     ? item.sellPrice
-    //     : item.sellPrice / 1.1;
-    final double displayExt = _isIncTax ? item.extension : item.extension / 1.1;
+    //     ? item.incPrice
+    //     : item.exPrice;
+    final double displayExt = _isIncTax ? item.extension : item.extensionEx;
     
     // Reduce thumbnail size for large tablet portrait
     final int thumbnailFlex = isLargeTabletPortrait ? 11 : 13;
@@ -1372,7 +1389,7 @@ class _SalesScreenState extends State<SalesScreen>
           _salesBloc.add(UpdateCartItemQty(index: index, qty: qty));
         },
         onPriceChanged: (price) {
-          _salesBloc.add(UpdateCartItemPrice(index: index, price: price));
+          _salesBloc.add(UpdateCartItemPrice(index: index, price: price, isIncPrice: _isIncTax));
         },
         onSerialChanged: (serial) {
           _salesBloc.add(
@@ -1582,7 +1599,7 @@ class _SalesScreenState extends State<SalesScreen>
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              "Subtotal: \$${_subtotal.toStringAsFixed(2)}",
+                              "Subtotal: \$${_displaySubtotal.toStringAsFixed(2)}",
                               style: TextStyle(
                                 color: colors.onSurfaceMuted,
                                 fontSize: isTablet ? 14 : 12.5,
@@ -1616,7 +1633,7 @@ class _SalesScreenState extends State<SalesScreen>
                           Transform.translate(
                             offset: Offset(0, isTablet ? 0 : -8),
                             child: Text(
-                              "\$${_total.toStringAsFixed(2)}",
+                              "\$${_displayTotal.toStringAsFixed(2)}",
                               style: TextStyle(
                                 fontSize: isTablet ? 22 : 18,
                                 fontWeight: FontWeight.w900,
@@ -1756,7 +1773,7 @@ class _SalesScreenState extends State<SalesScreen>
                       ),
                       SizedBox(width: isTablet ? 16 : 12),
                       Text(
-                        "Add Survey",
+                        _surveyLabel,
                         style: TextStyle(
                           color: isDark
                               ? Colors.white
@@ -1925,7 +1942,7 @@ class _SalesScreenState extends State<SalesScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "Add Survey",
+                          _surveyLabel,
                           style: TextStyle(
                             color: isDark
                                 ? Colors.white
@@ -3096,7 +3113,7 @@ class _SalesScreenState extends State<SalesScreen>
                                                   ? 8
                                                   : 4,
                                             ),
-                                            child: item == "Add Survey"
+                                            child: item == _surveyLabel
                                                 ? _buildSurveyMenuItem(
                                                     context,
                                                     colors,
@@ -3525,9 +3542,10 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   IconData _getActionIcon(String action) {
+    if (action == _surveyLabel) {
+      return Icons.poll_outlined;
+    }
     switch (action) {
-      case "Add Survey":
-        return Icons.poll_outlined;
       case "Add Comment":
         return Icons.comment_outlined;
       case "Add Discount":
@@ -3546,7 +3564,21 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Widget _buildTaxBreakdown(AppThemeColors colors, bool isDark) {
-    return TaxBreakdownWidget(total: _total, colors: colors, isDark: isDark);
+    // Calculate totals from cart items using their pre-calculated tax values
+    final double incTotal = _cartItems.fold(0.0, (sum, item) => sum + item.extension);
+    final double exTotal = _cartItems.fold(0.0, (sum, item) => sum + item.extensionEx);
+    final double taxAmount = incTotal - exTotal;
+    
+    // Apply discount proportionally (discount is typically on Inc total)
+    final double discountRatio = incTotal > 0 ? (incTotal - _discount) / incTotal : 1.0;
+    
+    return TaxBreakdownWidget(
+      incTotal: incTotal - _discount,
+      exTotal: exTotal * discountRatio,
+      taxAmount: taxAmount * discountRatio,
+      colors: colors,
+      isDark: isDark,
+    );
   }
 
   Widget _buildProfitBreakdown(AppThemeColors colors, bool isDark) {

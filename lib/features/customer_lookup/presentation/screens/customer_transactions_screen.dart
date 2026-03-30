@@ -307,10 +307,7 @@ class _CustomerTransactionsScreenState
               _asString(row['product']),
               _formatNumber(row['qty']),
               _formatMoney(
-                _applyPurchaseTax(
-                  row['price'],
-                  row['goods_tax'] ?? row['goodsTax'],
-                ),
+                _showIncTax ? row['price_inc'] : row['price'],
               ),
             ],
           )
@@ -534,14 +531,7 @@ class _CustomerTransactionsScreenState
     return parsed.toStringAsFixed(2);
   }
 
-  num _applyPurchaseTax(Object? price, Object? goodsTax) {
-    final num? parsed = price is num ? price : num.tryParse(price.toString());
-    if (parsed == null) return 0;
-    if (!_showIncTax) return parsed;
-    final String taxCode = (goodsTax ?? "").toString().toUpperCase();
-    if (taxCode != "GST") return parsed;
-    return parsed * 1.1;
-  }
+
 
   Widget _buildPurchasesTaxToggle() {
     final colors = context.appColors;

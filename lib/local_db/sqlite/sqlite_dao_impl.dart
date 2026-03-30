@@ -15,6 +15,7 @@ import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
 import 'package:rmstock_scanner/entities/vos/customer_address_vo.dart';
 import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmstock_scanner/entities/vos/tax_code_vo.dart';
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/local_db/sqlite/sqlite_constants.dart';
 import 'package:sqflite/sqflite.dart';
@@ -64,6 +65,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           await db.execute(customerSoQuoteTableCreationQuery);
           await db.execute(customerSoPayTableCreationQuery);
           await db.execute(saleSessionsTableCreationQuery);
+          await db.execute(taxCodesTableCreationQuery);
 
           // 2. Create Indexes for fast searching
           await db.execute(createIdxStocksBarcode);
@@ -793,6 +795,27 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error searching stock in $shopfront: $error');
       return Future.error("Error searching stock: $error");
+    }
+  }
+
+  @override
+  Future<StockVO?> getStockById(int stockId, String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'Stocks',
+        where: 'stock_id = ? AND shopfront = ?',
+        whereArgs: [stockId, shopfront],
+        limit: 1,
+      );
+
+      if (result.isNotEmpty) {
+        return StockVO.fromJson(result.first);
+      }
+      return null;
+    } catch (error) {
+      logger.e('Error getting stock by ID $stockId in $shopfront: $error');
+      return null;
     }
   }
 
@@ -3800,6 +3823,87 @@ class SQLiteDAOImpl extends LocalDbDAO {
       logger.d('Deleted all sale sessions (shopfront: $shopfront, type: $sessionType)');
     } catch (error) {
       logger.e('Error deleting all sale sessions: $error');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tax Codes
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> saveTaxCodes(List<TaxCodeVO> taxCodes, String shopfront) async {
+    try {
+      final db = _database!;
+      await db.transaction((txn) async {
+        // Clear existing tax codes for this shopfront
+        await txn.delete(
+          'TaxCodes',
+          where: 'shopfront = ?',
+          whereArgs: [shopfront],
+        );
+        
+        // Insert new tax codes
+        for (final taxCode in taxCodes) {
+          await txn.insert(
+            'TaxCodes',
+            taxCode.toDbMap(shopfront),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      });
+      logger.d('Saved ${taxCodes.length} tax codes for $shopfront');
+    } catch (error) {
+      logger.e('Error saving tax codes: $error');
+    }
+  }
+
+  @override
+  Future<List<TaxCodeVO>> getTaxCodes(String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'TaxCodes',
+        where: 'shopfront = ?',
+        whereArgs: [shopfront],
+        orderBy: 'code ASC',
+      );
+      return result.map((row) => TaxCodeVO.fromDbMap(row)).toList();
+    } catch (error) {
+      logger.e('Error getting tax codes: $error');
+      return [];
+    }
+  }
+
+  @override
+  Future<TaxCodeVO?> getTaxCodeByCode(String code, String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'TaxCodes',
+        where: 'code = ? AND shopfront = ?',
+        whereArgs: [code, shopfront],
+        limit: 1,
+      );
+      if (result.isEmpty) return null;
+      return TaxCodeVO.fromDbMap(result.first);
+    } catch (error) {
+      logger.e('Error getting tax code by code: $error');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> clearTaxCodesForShop(String shopfront) async {
+    try {
+      final db = _database!;
+      await db.delete(
+        'TaxCodes',
+        where: 'shopfront = ?',
+        whereArgs: [shopfront],
+      );
+      logger.d('Cleared tax codes for $shopfront');
+    } catch (error) {
+      logger.e('Error clearing tax codes for $shopfront: $error');
     }
   }
 }

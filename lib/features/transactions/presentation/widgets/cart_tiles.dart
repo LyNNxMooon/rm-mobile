@@ -121,7 +121,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     super.initState();
     _qtyController = TextEditingController(text: widget.item.qty.toString());
     _priceController = TextEditingController(
-      text: _formatSellPrice(widget.item.sellPrice),
+      text: _formatSellPrice(_displayPrice),
     );
     _serialController = TextEditingController(
       text: widget.item.serialNumber ?? '',
@@ -137,8 +137,12 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     if (oldWidget.item.qty != widget.item.qty) {
       _qtyController.text = widget.item.qty.toString();
     }
-    if (oldWidget.item.sellPrice != widget.item.sellPrice) {
-      _priceController.text = _formatSellPrice(widget.item.sellPrice);
+    // Update price when incPrice/exPrice changes or tax toggle changes
+    final oldDisplayPrice = oldWidget.isIncTax
+        ? oldWidget.item.incPrice
+        : oldWidget.item.exPrice;
+    if (oldDisplayPrice != _displayPrice || oldWidget.isIncTax != widget.isIncTax) {
+      _priceController.text = _formatSellPrice(_displayPrice);
     }
     if (oldWidget.item.description != widget.item.description) {
       _descriptionController.text = widget.item.description;
@@ -154,9 +158,13 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     super.dispose();
   }
 
+  double get _displayPrice => widget.isIncTax
+      ? widget.item.incPrice
+      : widget.item.exPrice;
+
   double get _displayExtension => widget.isIncTax
       ? widget.item.extension
-      : widget.item.extension / (1 + widget.taxRate);
+      : widget.item.extensionEx;
 
   void _incrementQty() {
     final current = int.tryParse(_qtyController.text) ?? 1;
@@ -665,9 +673,9 @@ class MobileCartTile extends StatelessWidget {
   });
 
   double get _displayPrice =>
-      isIncTax ? item.sellPrice : item.sellPrice / (1 + taxRate);
+      isIncTax ? item.incPrice : item.exPrice;
   double get _displayExtension =>
-      isIncTax ? item.extension : item.extension / (1 + taxRate);
+      isIncTax ? item.extension : item.extensionEx;
 
   @override
   Widget build(BuildContext context) {
@@ -806,9 +814,9 @@ class TabletCartTile extends StatelessWidget {
   });
 
   double get _displayPrice =>
-      isIncTax ? item.sellPrice : item.sellPrice / (1 + taxRate);
+      isIncTax ? item.incPrice : item.exPrice;
   double get _displayExtension =>
-      isIncTax ? item.extension : item.extension / (1 + taxRate);
+      isIncTax ? item.extension : item.extensionEx;
 
   String get _formattedPrice => roundSellPriceTo2Decimals
       ? _displayPrice.toStringAsFixed(2)
@@ -954,7 +962,7 @@ class CompactCartTile extends StatelessWidget {
   });
 
   double get _displayExtension =>
-      isIncTax ? item.extension : item.extension / (1 + taxRate);
+      isIncTax ? item.extension : item.extensionEx;
 
   @override
   Widget build(BuildContext context) {

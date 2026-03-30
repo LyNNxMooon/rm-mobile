@@ -221,6 +221,7 @@ const customerPurchasesTableCreationQuery = '''
     product TEXT,
     qty REAL,
     price REAL,
+    price_inc REAL,
     stock_id INTEGER,
     goods_tax TEXT
   )
@@ -432,6 +433,24 @@ const saleSessionsTableCreationQuery = '''
     comment_value TEXT
   )
 ''';
+
+const taxCodesTableCreationQuery = '''
+  CREATE TABLE TaxCodes (
+    code TEXT NOT NULL,
+    shopfront TEXT NOT NULL,
+    export_code TEXT NOT NULL,
+    description TEXT NOT NULL,
+    percentage REAL NOT NULL,
+    tax_type INTEGER NOT NULL,
+    sales_ac TEXT,
+    goods_ac TEXT,
+    tax_id INTEGER NOT NULL,
+    date_modified TEXT NOT NULL,
+    PRIMARY KEY (code, shopfront)
+  )
+''';
+
+const String kSalesCustomKey = "sales_custom";
 
 
 // ---------------------------------------------------------------------------

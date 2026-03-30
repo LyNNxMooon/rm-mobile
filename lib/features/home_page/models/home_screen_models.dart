@@ -371,6 +371,23 @@ class HomeScreenModels implements HomeRepo {
         await LocalDbDAO.instance.saveShopfrontId(response.shopfrontId);
         await LocalDbDAO.instance.saveShopfrontName(response.shopfrontName);
         AppGlobals.instance.shopfront = response.shopfrontName;
+
+        // Save salesCustom (for "Add Survey" label replacement)
+        if (response.salesCustom != null) {
+          await LocalDbDAO.instance.saveAppConfig(
+            kSalesCustomKey,
+            response.salesCustom!,
+          );
+          AppGlobals.instance.salesCustom = response.salesCustom;
+        }
+
+        // Save tax codes
+        if (response.taxCodes != null && response.taxCodes!.isNotEmpty) {
+          await LocalDbDAO.instance.saveTaxCodes(
+            response.taxCodes!,
+            response.shopfrontName,
+          );
+        }
       }
 
       return response;

@@ -21,7 +21,7 @@ class DetailedLowerGlass extends StatefulWidget {
     required this.exSell,
     required this.incCost,
     required this.exCost,
-    required this.isGst,
+    required this.taxPercentage,
     required this.stockId,
     required this.descController,
     required this.custom1Controller,
@@ -34,7 +34,7 @@ class DetailedLowerGlass extends StatefulWidget {
   final double exSell;
   final double incCost;
   final double exCost;
-  final bool isGst;
+  final double taxPercentage;
   final num stockId;
   final LanguageToolController descController;
   final TextEditingController custom1Controller;
@@ -68,6 +68,18 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
   }
 
   @override
+  void didUpdateWidget(covariant DetailedLowerGlass oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update controllers when parent passes new values (after async tax calculation)
+    if (oldWidget.sell != widget.sell) {
+      _rrpController.text = widget.sell.toStringAsFixed(4);
+    }
+    if (oldWidget.exSell != widget.exSell) {
+      _exRrpController.text = widget.exSell.toStringAsFixed(4);
+    }
+  }
+
+  @override
   void dispose() {
     if (!mounted) {
       _rrpController.dispose();
@@ -87,8 +99,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     final double incVal = double.tryParse(text) ?? 0.0;
     double exVal = 0.0;
 
-    if (widget.isGst) {
-      exVal = incVal / 1.1;
+    if (widget.taxPercentage > 0) {
+      exVal = incVal / (1 + widget.taxPercentage / 100);
     } else {
       exVal = incVal;
     }
@@ -105,8 +117,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     final double exVal = double.tryParse(text) ?? 0.0;
     double incVal = 0.0;
 
-    if (widget.isGst) {
-      incVal = exVal * 1.1;
+    if (widget.taxPercentage > 0) {
+      incVal = exVal * (1 + widget.taxPercentage / 100);
     } else {
       incVal = exVal;
     }
@@ -133,8 +145,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
         _rrpController.text = result.toStringAsFixed(4);
 
         // Manually trigger the Ex Calculation since focus logic won't catch this
-        if (widget.isGst) {
-          _exRrpController.text = (result / 1.1).toStringAsFixed(4);
+        if (widget.taxPercentage > 0) {
+          _exRrpController.text = (result / (1 + widget.taxPercentage / 100)).toStringAsFixed(4);
         } else {
           _exRrpController.text = result.toStringAsFixed(4);
         }
@@ -240,65 +252,6 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                       Container(
                         padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
-                          color: Colors.greenAccent.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: Image.asset(
-                            "assets/images/rrp.png",
-                            fit: BoxFit.fill,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Inc RRP",
-                        style: TextStyle(fontSize: 14, color: onGlass),
-                      ),
-                    ],
-                  ),
-                  SizedBox(width: (isTablet ? 34 : 30) * uiScale),
-                  Expanded(
-                    child: SizedBox(
-                      height: fieldHeight,
-                      child: TextField(
-                        enabled: widget.canUpdateSellPrice,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        controller: _rrpController,
-                        focusNode: _rrpFocus,
-                        //keyboardType: TextInputType.number,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: onGlass,
-                        ),
-                        onEditingComplete: () {
-                          final trimmedValue = _rrpController.text.trim();
-                          if (_rrpController.text != trimmedValue) {
-                            _rrpController.value = _rrpController.value.copyWith(
-                              text: trimmedValue,
-                              selection: TextSelection.collapsed(offset: trimmedValue.length),
-                            );
-                          }
-                        },
-                        decoration: _inputDecoration(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: rowGap),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
                           color: Color.fromRGBO(
                             203,
                             128,
@@ -342,6 +295,65 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                           final trimmedValue = _exRrpController.text.trim();
                           if (_exRrpController.text != trimmedValue) {
                             _exRrpController.value = _exRrpController.value.copyWith(
+                              text: trimmedValue,
+                              selection: TextSelection.collapsed(offset: trimmedValue.length),
+                            );
+                          }
+                        },
+                        decoration: _inputDecoration(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: rowGap),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Colors.greenAccent.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: Image.asset(
+                            "assets/images/rrp.png",
+                            fit: BoxFit.fill,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Inc RRP",
+                        style: TextStyle(fontSize: 14, color: onGlass),
+                      ),
+                    ],
+                  ),
+                  SizedBox(width: (isTablet ? 34 : 30) * uiScale),
+                  Expanded(
+                    child: SizedBox(
+                      height: fieldHeight,
+                      child: TextField(
+                        enabled: widget.canUpdateSellPrice,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        controller: _rrpController,
+                        focusNode: _rrpFocus,
+                        //keyboardType: TextInputType.number,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: onGlass,
+                        ),
+                        onEditingComplete: () {
+                          final trimmedValue = _rrpController.text.trim();
+                          if (_rrpController.text != trimmedValue) {
+                            _rrpController.value = _rrpController.value.copyWith(
                               text: trimmedValue,
                               selection: TextSelection.collapsed(offset: trimmedValue.length),
                             );

@@ -65,7 +65,8 @@ class UpdateCartItemQty extends SalesEvent {
 class UpdateCartItemPrice extends SalesEvent {
   final int index;
   final double price;
-  UpdateCartItemPrice({required this.index, required this.price});
+  final bool isIncPrice; // true = editing Inc price, false = editing Ex price
+  UpdateCartItemPrice({required this.index, required this.price, this.isIncPrice = true});
 }
 
 /// Update cart item serial number

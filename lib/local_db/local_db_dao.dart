@@ -10,6 +10,7 @@ import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
 import 'package:rmstock_scanner/entities/vos/search_mode.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmstock_scanner/entities/vos/tax_code_vo.dart';
 
 import '../entities/response/paginated_stock_response.dart';
 import '../entities/response/paginated_customer_response.dart';
@@ -73,6 +74,7 @@ abstract class LocalDbDAO {
   });
   Future<int> getHistoryRetentionDays();
   Future<StockVO?> getStockByIDSearch(String query, String shopfront);
+  Future<StockVO?> getStockById(int stockId, String shopfront);
   Future<int> getUnsyncedStocksCount({
     required String shopfront,
     String? query,
@@ -316,6 +318,12 @@ abstract class LocalDbDAO {
   Future<void> updateSaleSession(Map<String, dynamic> session);
   Future<void> deleteSaleSession(int id);
   Future<void> deleteAllSaleSessions({String? shopfront, String? sessionType});
+
+  // Tax Codes
+  Future<void> saveTaxCodes(List<TaxCodeVO> taxCodes, String shopfront);
+  Future<List<TaxCodeVO>> getTaxCodes(String shopfront);
+  Future<TaxCodeVO?> getTaxCodeByCode(String code, String shopfront);
+  Future<void> clearTaxCodesForShop(String shopfront);
 
   //Removing data
   Future<void> removeNetworkCredential({required String ip});

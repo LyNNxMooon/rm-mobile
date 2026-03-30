@@ -60,6 +60,7 @@ class CustomerPurchaseItem {
   final String product;
   final num qty;
   final num price;
+  final num priceInc;
   final int stockId;
   final String goodsTax;
 
@@ -68,6 +69,7 @@ class CustomerPurchaseItem {
     required this.product,
     required this.qty,
     required this.price,
+    required this.priceInc,
     required this.stockId,
     required this.goodsTax,
   });

@@ -109,6 +109,13 @@ class CheckPathConnection {
               "1") ==
           "1";
 
+      // Load salesCustom for "Add Survey" label
+      final savedSalesCustom =
+          await LocalDbDAO.instance.getAppConfig(kSalesCustomKey);
+      if (savedSalesCustom != null && savedSalesCustom.isNotEmpty) {
+        AppGlobals.instance.salesCustom = savedSalesCustom;
+      }
+
       final String savedStaffId =
           ((await LocalDbDAO.instance.getAppConfig(kStaffIdKey)) ?? "").trim();
       final String savedStaffNo =

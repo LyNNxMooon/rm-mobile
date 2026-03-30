@@ -33,6 +33,7 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/images.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/responsive_utils.dart';
+import '../../../../utils/tax_calculation_utils.dart';
 import '../widgets/detailed_lower_glass.dart';
 import '../widgets/detailed_upper_glass.dart';
 
@@ -48,6 +49,13 @@ class StockDetailsScreen extends StatefulWidget {
 class _StockDetailsScreenState extends State<StockDetailsScreen> {
   double sell = 0.00;
   double cost = 0.00;
+  double exSell = 0.00;
+  double exCost = 0.00;
+  double sellTaxPercentage = 0.0;
+  double costTaxPercentage = 0.0;
+  int sellTaxType = 0;
+  int costTaxType = 0;
+  bool _taxLoaded = false;
   String? _localSelectedImagePath;
   bool _shouldSyncOnExit = false;
 
@@ -86,17 +94,12 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     //   );
     // }
 
-    if ((widget.stock.goodsTax ?? "") == "GST") {
-      cost = widget.stock.cost * 1.1;
-    } else {
-      cost = widget.stock.cost;
-    }
-
-    if ((widget.stock.salesTax ?? "") == "GST") {
-      sell = widget.stock.sell * 1.1;
-    } else {
-      sell = widget.stock.sell;
-    }
+    // Initialize with base values, then calculate tax async
+    sell = widget.stock.sell;
+    cost = widget.stock.cost;
+    exSell = widget.stock.sell;
+    exCost = widget.stock.cost;
+    _calculateTaxAsync();
 
     // Log order threshold and quantity for debugging
     logger.i('Stock Details - ${widget.stock.description}');
@@ -105,6 +108,55 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     logger.i('  quantity (in stock): ${widget.stock.quantity}');
 
     super.initState();
+  }
+
+  Future<void> _calculateTaxAsync() async {
+    try {
+      // Calculate sell price tax (uses sales_tax)
+      final sellResult = await TaxCalculationUtils.calculateSellTax(
+        sell: widget.stock.sell,
+        salesTax: widget.stock.salesTax,
+      );
+
+      // Calculate cost tax (uses goods_tax)
+      final costResult = await TaxCalculationUtils.calculateCostTax(
+        cost: widget.stock.cost,
+        goodsTax: widget.stock.goodsTax,
+      );
+
+      logger.i('=== Tax Calculation Results ===');
+      logger.i('Stock ID: ${widget.stock.stockID}, Description: ${widget.stock.description}');
+      logger.i('--- Sell Tax (salesTax code: ${widget.stock.salesTax}) ---');
+      logger.i('  Ex Price: ${sellResult.exPrice}, Inc Price: ${sellResult.incPrice}');
+      logger.i('  Tax %: ${sellResult.percentage}, Tax Type: ${sellResult.taxType}');
+      logger.i('--- Cost Tax (goodsTax code: ${widget.stock.goodsTax}) ---');
+      logger.i('  Ex Price: ${costResult.exPrice}, Inc Price: ${costResult.incPrice}');
+      logger.i('  Tax %: ${costResult.percentage}, Tax Type: ${costResult.taxType}');
+
+      if (mounted) {
+        setState(() {
+          sell = sellResult.incPrice;
+          exSell = sellResult.exPrice;
+          sellTaxPercentage = sellResult.percentage;
+          sellTaxType = sellResult.taxType;
+
+          cost = costResult.incPrice;
+          exCost = costResult.exPrice;
+          costTaxPercentage = costResult.percentage;
+          costTaxType = costResult.taxType;
+
+          _taxLoaded = true;
+        });
+      }
+    } catch (e) {
+      logger.e('Error calculating tax: $e');
+      // Fall back to no tax calculation
+      if (mounted) {
+        setState(() {
+          _taxLoaded = true;
+        });
+      }
+    }
   }
 
   final ImagePicker _picker = ImagePicker();
@@ -671,7 +723,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                     widget.stock.salesOrderQuantity
                                         .toStringAsFixed(2),
                                   ).toString(),
-                            exCost: widget.stock.cost,
+                            exCost: exCost,
                             lastSaleDate: _formatLastSaleDate(
                               widget.stock.lastSaleDate,
                             ),
@@ -692,10 +744,10 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           custom2Controller: _custom2Controller,
                           stockId: widget.stock.stockID,
                           sell: sell,
-                          exSell: widget.stock.sell,
+                          exSell: exSell,
                           incCost: cost,
-                          exCost: widget.stock.cost,
-                          isGst: (widget.stock.salesTax ?? "") == "GST",
+                          exCost: exCost,
+                          taxPercentage: sellTaxPercentage,
                           canUpdateSellPrice: !lockSellPrice,
                           pricingRules: widget.stock.pricingRules,
                         ),
