@@ -1827,7 +1827,7 @@ class _SalesScreenState extends State<SalesScreen>
                                         : Colors.black87,
                                   ),
                                   decoration: InputDecoration(
-                                    hintText: "Survey code...",
+                                    hintText: "Enter...",
                                     hintStyle: TextStyle(
                                       color: isDark
                                           ? Colors.white30
@@ -1863,7 +1863,7 @@ class _SalesScreenState extends State<SalesScreen>
                                   color: isDark ? Colors.white : Colors.black87,
                                 ),
                                 decoration: InputDecoration(
-                                  hintText: "Survey code...",
+                                  hintText: "Enter...",
                                   hintStyle: TextStyle(
                                     color: isDark
                                         ? Colors.white30
@@ -1985,273 +1985,6 @@ class _SalesScreenState extends State<SalesScreen>
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildDiscountMenuItem(
-    BuildContext context,
-    AppThemeColors colors,
-    bool isDark,
-    bool expanded,
-    Function(bool) onExpandChanged,
-  ) {
-    final isTablet = context.isTablet;
-    final discountTextController = TextEditingController(
-      text: _discountValue > 0 ? _discountValue.toStringAsFixed(2) : '',
-    );
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isTablet ? 16 : 12,
-        vertical: isTablet ? 14 : 10,
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2733) : Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: expanded
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    onExpandChanged(false);
-                  },
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.discount_outlined,
-                        size: isTablet ? 22 : 18,
-                        color: kPrimaryColor,
-                      ),
-                      SizedBox(width: isTablet ? 16 : 12),
-                      Text(
-                        "Add Discount",
-                        style: TextStyle(
-                          color: isDark
-                              ? Colors.white
-                              : Colors.blueGrey.shade800,
-                          fontWeight: FontWeight.w500,
-                          fontSize: isTablet ? 15 : 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: isTablet ? 12 : 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: isTablet ? 48 : 32,
-                        child: isTablet
-                            ? MediaQuery(
-                                data: MediaQuery.of(
-                                  context,
-                                ).copyWith(textScaler: TextScaler.noScaling),
-                                child: TextField(
-                                  controller: discountTextController,
-                                  autofocus: true,
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: isDark
-                                        ? Colors.white
-                                        : Colors.black87,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: "0.00",
-                                    prefixText: "\$ ",
-                                    prefixStyle: TextStyle(
-                                      color: isDark
-                                          ? Colors.white70
-                                          : Colors.black54,
-                                      fontSize: 16,
-                                    ),
-                                    hintStyle: TextStyle(
-                                      color: isDark
-                                          ? Colors.white30
-                                          : Colors.grey.shade400,
-                                      fontSize: 16,
-                                    ),
-                                    filled: true,
-                                    fillColor: isDark
-                                        ? colors.surface
-                                        : Colors.grey.shade100,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(6),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 0,
-                                    ),
-                                  ),
-                                  onSubmitted: (value) {
-                                    setState(() {
-                                      _discountValue =
-                                          double.tryParse(value.trim()) ?? 0.00;
-                                      _discountController.text = _discountValue
-                                          .toStringAsFixed(2);
-                                    });
-                                    onExpandChanged(false);
-                                  },
-                                ),
-                              )
-                            : TextField(
-                                controller: discountTextController,
-                                autofocus: true,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: "0.00",
-                                  prefixText: "\$ ",
-                                  prefixStyle: TextStyle(
-                                    color: isDark
-                                        ? Colors.white70
-                                        : Colors.black54,
-                                    fontSize: 12,
-                                  ),
-                                  hintStyle: TextStyle(
-                                    color: isDark
-                                        ? Colors.white30
-                                        : Colors.grey.shade400,
-                                    fontSize: 12,
-                                  ),
-                                  filled: true,
-                                  fillColor: isDark
-                                      ? colors.surface
-                                      : Colors.grey.shade100,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 8,
-                                  ),
-                                ),
-                                onSubmitted: (value) {
-                                  setState(() {
-                                    _discountValue =
-                                        double.tryParse(value.trim()) ?? 0.00;
-                                    _discountController.text = _discountValue
-                                        .toStringAsFixed(2);
-                                  });
-                                  onExpandChanged(false);
-                                },
-                              ),
-                      ),
-                    ),
-                    SizedBox(width: isTablet ? 12 : 8),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _discountValue =
-                              double.tryParse(
-                                discountTextController.text.trim(),
-                              ) ??
-                              0.00;
-                          _discountController.text = _discountValue
-                              .toStringAsFixed(2);
-                        });
-                        onExpandChanged(false);
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(isTablet ? 10 : 6),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF30B24C), Color(0xFF60D394)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: isTablet ? 20 : 16,
-                        ),
-                      ),
-                    ),
-                    if (_discountValue > 0) ...[
-                      SizedBox(width: isTablet ? 8 : 4),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _discountValue = 0.00;
-                            _discountController.text = "0.00";
-                          });
-                          onExpandChanged(false);
-                        },
-                        child: Container(
-                          padding: EdgeInsets.all(isTablet ? 10 : 6),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            color: Colors.redAccent,
-                            size: isTablet ? 20 : 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            )
-          : GestureDetector(
-              onTap: () {
-                onExpandChanged(true);
-              },
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.discount_outlined,
-                    size: isTablet ? 22 : 18,
-                    color: kPrimaryColor,
-                  ),
-                  SizedBox(width: isTablet ? 16 : 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          "Add Discount",
-                          style: TextStyle(
-                            color: isDark
-                                ? Colors.white
-                                : Colors.blueGrey.shade800,
-                            fontWeight: FontWeight.w500,
-                            fontSize: isTablet ? 15 : 13,
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -2973,58 +2706,58 @@ class _SalesScreenState extends State<SalesScreen>
     AppThemeColors colors,
     bool isDark,
   ) {
-    showModalBottomSheet(
+    final isTablet = context.isTablet;
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
       builder: (dialogContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
-          ),
-          child: Container(
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Tax Breakdown",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: isTablet ? 500 : MediaQuery.of(context).size.width * 0.85,
+              padding: EdgeInsets.all(isTablet ? 28 : 24),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Tax Breakdown",
+                        style: TextStyle(
+                          fontSize: isTablet ? 20 : 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.of(dialogContext).pop(),
-                      child: Icon(
-                        Icons.close,
-                        size: 20,
-                        color: isDark ? Colors.white70 : Colors.black54,
+                      GestureDetector(
+                        onTap: () => Navigator.of(dialogContext).pop(),
+                        child: Icon(
+                          Icons.close,
+                          size: isTablet ? 26 : 24,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildTaxBreakdown(colors, isDark),
-                const SizedBox(height: 12),
-              ],
+                    ],
+                  ),
+                  SizedBox(height: isTablet ? 24 : 20),
+                  _buildTaxBreakdown(colors, isDark),
+                  SizedBox(height: isTablet ? 16 : 12),
+                ],
+              ),
             ),
           ),
         );
@@ -3037,62 +2770,447 @@ class _SalesScreenState extends State<SalesScreen>
     AppThemeColors colors,
     bool isDark,
   ) {
-    showModalBottomSheet(
+    final isTablet = context.isTablet;
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
       builder: (dialogContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
-          ),
-          child: Container(
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Profit Breakdown",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: isTablet ? 500 : MediaQuery.of(context).size.width * 0.85,
+              padding: EdgeInsets.all(isTablet ? 28 : 24),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Profit Breakdown",
+                        style: TextStyle(
+                          fontSize: isTablet ? 20 : 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.of(dialogContext).pop(),
-                      child: Icon(
-                        Icons.close,
-                        size: 20,
-                        color: isDark ? Colors.white70 : Colors.black54,
+                      GestureDetector(
+                        onTap: () => Navigator.of(dialogContext).pop(),
+                        child: Icon(
+                          Icons.close,
+                          size: isTablet ? 26 : 24,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildProfitBreakdown(colors, isDark),
-                const SizedBox(height: 12),
-              ],
+                    ],
+                  ),
+                  SizedBox(height: isTablet ? 24 : 20),
+                  _buildProfitBreakdown(colors, isDark),
+                  SizedBox(height: isTablet ? 16 : 12),
+                ],
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  /// Parse discount input and calculate the actual discount value
+  /// Supports: "$20" or "20" for fixed amount, "20%" or "%20" for percentage, "T200" or "t200" for target total
+  double _parseDiscountInput(String input, double subtotal) {
+    final trimmed = input.trim();
+    if (trimmed.isEmpty) return 0.0;
+
+    // Target total format: T200 or t200
+    if (trimmed.toUpperCase().startsWith('T')) {
+      final targetTotal = double.tryParse(trimmed.substring(1));
+      if (targetTotal != null && targetTotal >= 0 && targetTotal < subtotal) {
+        return subtotal - targetTotal;
+      }
+      return 0.0;
+    }
+
+    // Percentage format: 20% or %20
+    if (trimmed.contains('%')) {
+      final numStr = trimmed.replaceAll('%', '').trim();
+      final percent = double.tryParse(numStr);
+      if (percent != null && percent >= 0 && percent <= 100) {
+        return subtotal * (percent / 100);
+      }
+      return 0.0;
+    }
+
+    // Fixed dollar amount (with or without $)
+    final numStr = trimmed.replaceAll('\$', '').trim();
+    return double.tryParse(numStr) ?? 0.0;
+  }
+
+  void _showDiscountDialog(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    final isTablet = context.isTablet;
+    final discountController = TextEditingController(
+      text: _discountValue > 0 ? _discountValue.toStringAsFixed(2) : '',
+    );
+    double tempDiscount = _discountValue;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            // Calculate profit with temp discount for live preview
+            final double totalCost = _subtotal * 0.6; // Using default cost ratio
+            final double egp = _subtotal - totalCost - tempDiscount;
+            final double egpPercent = _subtotal > 0 ? (egp / _subtotal) * 100 : 0;
+
+            return Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: isTablet ? 600 : MediaQuery.of(context).size.width * 0.92,
+                  padding: EdgeInsets.all(isTablet ? 28 : 20),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Add Discount",
+                            style: TextStyle(
+                              fontSize: isTablet ? 20 : 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.of(dialogContext).pop(),
+                            child: Icon(
+                              Icons.close,
+                              size: isTablet ? 26 : 24,
+                              color: isDark ? Colors.white70 : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: isTablet ? 20 : 16),
+
+                      // Main content row: Discount input + Profit breakdown
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Discount input section
+                          Expanded(
+                            flex: 3,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Discount Amount",
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 14 : 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+                                  ),
+                                ),
+                                SizedBox(height: isTablet ? 10 : 8),
+                                TextField(
+                                  controller: discountController,
+                                  autofocus: true,
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 24 : 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: "0.00",
+                                    hintStyle: TextStyle(
+                                      color: isDark ? Colors.white30 : Colors.grey.shade400,
+                                      fontSize: isTablet ? 24 : 20,
+                                    ),
+                                    filled: true,
+                                    fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: isTablet ? 16 : 14,
+                                      vertical: isTablet ? 16 : 14,
+                                    ),
+                                  ),
+                                  onChanged: (value) {
+                                    setDialogState(() {
+                                      tempDiscount = _parseDiscountInput(value, _subtotal);
+                                    });
+                                  },
+                                  onSubmitted: (value) {
+                                    final discount = _parseDiscountInput(value, _subtotal);
+                                    setState(() {
+                                      _discountValue = discount;
+                                      _discountController.text = discount.toStringAsFixed(2);
+                                    });
+                                    Navigator.of(dialogContext).pop();
+                                  },
+                                ),
+                                SizedBox(height: isTablet ? 12 : 10),
+                                // Current discount display
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isTablet ? 14 : 12,
+                                    vertical: isTablet ? 10 : 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: kPrimaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Discount:",
+                                        style: TextStyle(
+                                          fontSize: isTablet ? 15 : 13,
+                                          color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+                                        ),
+                                      ),
+                                      Text(
+                                        "\$${tempDiscount.toStringAsFixed(2)}",
+                                        style: TextStyle(
+                                          fontSize: isTablet ? 18 : 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: kPrimaryColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: isTablet ? 8 : 6),
+                                // New total display
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isTablet ? 14 : 12,
+                                    vertical: isTablet ? 10 : 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? colors.surface : Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "New Total:",
+                                        style: TextStyle(
+                                          fontSize: isTablet ? 15 : 13,
+                                          color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+                                        ),
+                                      ),
+                                      Text(
+                                        "\$${(_subtotal - tempDiscount).toStringAsFixed(2)}",
+                                        style: TextStyle(
+                                          fontSize: isTablet ? 18 : 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: isDark ? Colors.white : Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(width: isTablet ? 24 : 16),
+                          // Profit breakdown section
+                          Expanded(
+                            flex: 2,
+                            child: Padding(
+                              padding: EdgeInsets.only(top: isTablet ? 32 : 24),
+                              child: Container(
+                                padding: EdgeInsets.all(isTablet ? 20 : 16),
+                                decoration: BoxDecoration(
+                                  color: isDark ? colors.surface : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isDark ? Colors.white12 : Colors.grey.shade300,
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Profit Preview",
+                                      style: TextStyle(
+                                        fontSize: isTablet ? 16 : 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+                                      ),
+                                    ),
+                                    SizedBox(height: isTablet ? 18 : 14),
+                                    _buildProfitRow("Cost:", totalCost, isDark, isTablet),
+                                    SizedBox(height: isTablet ? 14 : 12),
+                                    _buildProfitRow("eGP:", egp, isDark, isTablet, highlight: true),
+                                    SizedBox(height: isTablet ? 14 : 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          "eGP%:",
+                                          style: TextStyle(
+                                            fontSize: isTablet ? 16 : 14,
+                                            color: egp < 0 ? Colors.redAccent : const Color(0xFF30B24C),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        Text(
+                                          "${egpPercent.toStringAsFixed(1)}%",
+                                          style: TextStyle(
+                                            fontSize: isTablet ? 16 : 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: egp < 0 ? Colors.redAccent : const Color(0xFF30B24C),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: isTablet ? 24 : 20),
+
+                      // Action buttons
+                      Row(
+                        children: [
+                          if (_discountValue > 0) ...[
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _discountValue = 0.0;
+                                    _discountController.text = "0.00";
+                                  });
+                                  Navigator.of(dialogContext).pop();
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 12),
+                                  side: const BorderSide(color: Colors.redAccent),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Text(
+                                  "Clear Discount",
+                                  style: TextStyle(
+                                    color: Colors.redAccent,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: isTablet ? 15 : 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: isTablet ? 16 : 12),
+                          ],
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                final discount = _parseDiscountInput(
+                                  discountController.text,
+                                  _subtotal,
+                                );
+                                setState(() {
+                                  _discountValue = discount;
+                                  _discountController.text = discount.toStringAsFixed(2);
+                                });
+                                Navigator.of(dialogContext).pop();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kPrimaryColor,
+                                padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: Text(
+                                "Apply Discount",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: isTablet ? 15 : 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildProfitRow(String label, double amount, bool isDark, bool isTablet, {bool highlight = false}) {
+    final isNegative = amount < 0;
+    final highlightColor = isNegative ? Colors.redAccent : const Color(0xFF30B24C);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isTablet ? 16 : 14,
+            color: highlight ? highlightColor : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
+            fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+        Text(
+          "\$${amount.toStringAsFixed(2)}",
+          style: TextStyle(
+            fontSize: isTablet ? 16 : 14,
+            fontWeight: FontWeight.bold,
+            color: highlight ? highlightColor : (isDark ? Colors.white : Colors.black87),
+          ),
+        ),
+      ],
     );
   }
 
@@ -3107,7 +3225,6 @@ class _SalesScreenState extends State<SalesScreen>
     final buttonPosition = button.localToGlobal(Offset.zero, ancestor: overlay);
 
     bool surveyExpanded = false;
-    bool discountExpanded = false;
     _surveyController.text = _surveyValue;
 
     showGeneralDialog(
@@ -3200,17 +3317,72 @@ class _SalesScreenState extends State<SalesScreen>
                                                     },
                                                   )
                                                 : item == "Add Discount"
-                                                ? _buildDiscountMenuItem(
-                                                    context,
-                                                    colors,
-                                                    isDark,
-                                                    discountExpanded,
-                                                    (expanded) {
-                                                      setDialogState(() {
-                                                        discountExpanded =
-                                                            expanded;
+                                                ? InkWell(
+                                                    onTap: () {
+                                                      Navigator.of(context).pop();
+                                                      setState(() {
+                                                        _showActions = false;
+                                                        _actionsAnimationController.reverse();
                                                       });
+                                                      _showDiscountDialog(
+                                                        this.context,
+                                                        colors,
+                                                        isDark,
+                                                      );
                                                     },
+                                                    borderRadius: BorderRadius.circular(10),
+                                                    child: Container(
+                                                      padding: EdgeInsets.symmetric(
+                                                        horizontal: MediaQuery.of(context).size.shortestSide >= 600 ? 16 : 12,
+                                                        vertical: MediaQuery.of(context).size.shortestSide >= 600 ? 14 : 10,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                                                        borderRadius: BorderRadius.circular(10),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                                                            blurRadius: 8,
+                                                            offset: const Offset(0, 2),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      child: Row(
+                                                        children: [
+                                                          Icon(
+                                                            Icons.discount_outlined,
+                                                            size: MediaQuery.of(context).size.shortestSide >= 600 ? 22 : 18,
+                                                            color: kPrimaryColor,
+                                                          ),
+                                                          SizedBox(width: MediaQuery.of(context).size.shortestSide >= 600 ? 16 : 12),
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                              mainAxisSize: MainAxisSize.min,
+                                                              children: [
+                                                                Text(
+                                                                  "Add Discount",
+                                                                  style: TextStyle(
+                                                                    color: isDark ? Colors.white : Colors.blueGrey.shade800,
+                                                                    fontWeight: FontWeight.w500,
+                                                                    fontSize: MediaQuery.of(context).size.shortestSide >= 600 ? 15 : 13,
+                                                                  ),
+                                                                ),
+                                                                if (_discountValue > 0)
+                                                                  Text(
+                                                                    "\$${_discountValue.toStringAsFixed(2)}",
+                                                                    style: TextStyle(
+                                                                      color: kPrimaryColor,
+                                                                      fontWeight: FontWeight.bold,
+                                                                      fontSize: MediaQuery.of(context).size.shortestSide >= 600 ? 13 : 11,
+                                                                    ),
+                                                                  ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
                                                   )
                                                 : InkWell(
                                                     onTap: () {
