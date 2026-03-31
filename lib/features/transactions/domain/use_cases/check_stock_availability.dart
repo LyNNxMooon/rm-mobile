@@ -39,7 +39,7 @@ class CheckStockAvailability {
   /// - StockAvailabilityResult.allowed otherwise
   StockAvailabilityResult call({
     required StockVO stock,
-    required int saleQty,
+    required double saleQty,
     required bool preventAddIfNoStock,
   }) {
     // If the setting is disabled, always allow

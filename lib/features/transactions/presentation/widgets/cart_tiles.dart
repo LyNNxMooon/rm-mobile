@@ -19,6 +19,16 @@ String formatSellPriceForDisplay(double price) {
   return fixed2;
 }
 
+/// Helper to format qty for display
+/// - For fractional items (allowFractions=true): always shows 3 decimal places
+/// - For non-fractional items: shows whole number only
+String formatQtyForDisplay(double qty, bool allowFractions) {
+  if (allowFractions) {
+    return qty.toStringAsFixed(3);
+  }
+  return qty.toInt().toString();
+}
+
 /// Wraps a cart tile with slide-to-delete functionality
 class DismissibleCartTile extends StatelessWidget {
   final Widget child;
@@ -61,7 +71,7 @@ class ExpandedEditCartTile extends StatefulWidget {
   final AppThemeColors colors;
   final bool isDark;
   final bool isTablet;
-  final Function(int qty) onQtyChanged;
+  final Function(double qty) onQtyChanged;
   final Function(double price) onPriceChanged;
   final Function(String serial) onSerialChanged;
   final Function(String description)? onDescriptionChanged;
@@ -102,8 +112,17 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   late TextEditingController _descriptionController;
 
   bool get _allowRenaming => widget.item.stock?.allowRenaming ?? false;
+  bool get _allowFractions => widget.item.stock?.allowFractions ?? false;
 
   int get _priceDecimalPlaces => widget.roundSellPriceTo2Decimals ? 2 : 4;
+
+  /// Format qty for display - always 3 decimals for fractional items, integer for others
+  String _formatQty(double qty) {
+    if (_allowFractions) {
+      return qty.toStringAsFixed(3);
+    }
+    return qty.toInt().toString();
+  }
 
   String _formatSellPrice(double price) {
     if (widget.roundSellPriceTo2Decimals) {
@@ -121,7 +140,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   @override
   void initState() {
     super.initState();
-    _qtyController = TextEditingController(text: widget.item.qty.toString());
+    _qtyController = TextEditingController(text: _formatQty(widget.item.qty));
     _priceController = TextEditingController(
       text: _formatSellPrice(_displayPrice),
     );
@@ -137,7 +156,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   void didUpdateWidget(ExpandedEditCartTile oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.item.qty != widget.item.qty) {
-      _qtyController.text = widget.item.qty.toString();
+      _qtyController.text = _formatQty(widget.item.qty);
     }
     // Update price when incPrice/exPrice changes or tax toggle changes
     final oldDisplayPrice = oldWidget.isIncTax
@@ -169,16 +188,16 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
       : widget.item.extensionEx;
 
   void _incrementQty() {
-    final current = int.tryParse(_qtyController.text) ?? 1;
+    final current = double.tryParse(_qtyController.text) ?? 1.0;
     final newQty = current + 1;
-    _qtyController.text = newQty.toString();
+    _qtyController.text = _formatQty(newQty);
     widget.onQtyChanged(newQty);
   }
 
   void _decrementQty() {
-    final current = int.tryParse(_qtyController.text) ?? 1;
+    final current = double.tryParse(_qtyController.text) ?? 1.0;
     final newQty = current - 1;
-    _qtyController.text = newQty.toString();
+    _qtyController.text = _formatQty(newQty);
     widget.onQtyChanged(newQty);
   }
 
@@ -323,9 +342,10 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                   controller: _qtyController,
                   isTablet: isTablet,
                   textAlign: TextAlign.center,
-                  isNumber: true,
+                  isNumber: !_allowFractions,
+                  maxDecimals: _allowFractions ? 3 : null,
                   onChanged: (value) {
-                    final qty = int.tryParse(value);
+                    final qty = double.tryParse(value);
                     if (qty != null && qty != 0) widget.onQtyChanged(qty);
                   },
                 ),
@@ -639,7 +659,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
       context: context,
       barcode: widget.item.code,
       description: widget.item.description,
-      targetQuantity: widget.item.qty,
+      targetQuantity: widget.item.qty.toInt(),
       availableSerials: sampleSerials,
       initialSelected: widget.item.serialNumber?.isNotEmpty == true
           ? [widget.item.serialNumber!]
@@ -767,7 +787,7 @@ class MobileCartTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  "${item.qty}",
+                  formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -916,7 +936,7 @@ class TabletCartTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  "${item.qty}",
+                  formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -1012,7 +1032,7 @@ class CompactCartTile extends StatelessWidget {
               SizedBox(
                 width: isTablet ? 80 : 30,
                 child: Text(
-                  "${item.qty}",
+                  formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: isTablet ? 15 : 12,

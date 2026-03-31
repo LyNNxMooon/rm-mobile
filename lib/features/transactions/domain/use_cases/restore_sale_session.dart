@@ -3,6 +3,7 @@ import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../entities/vos/customer_vo.dart';
 import '../../../../entities/vos/stock_vo.dart';
 import '../../../../entities/vos/sale_session_vo.dart';
+import '../../../../utils/tax_calculation_utils.dart';
 
 /// Result of restoring a sale session
 class RestoreSessionResult {
@@ -47,6 +48,12 @@ class RestoreSaleSession {
         stock = stockSearch.duplicates.first;
       }
 
+      // Calculate tax for the cart item (using stock's salesTax if available)
+      final taxResult = await TaxCalculationUtils.calculateSellTax(
+        sell: itemData.sellPrice,
+        salesTax: stock?.salesTax,
+      );
+
       final cartItem = CartItemVO(
         code: itemData.code,
         description: itemData.description,
@@ -56,6 +63,10 @@ class RestoreSaleSession {
         stock: stock,
         serialNumber: itemData.serialNumber,
         isEditing: false,
+        taxPercentage: taxResult.percentage,
+        taxType: taxResult.taxType,
+        incPrice: taxResult.incPrice,
+        exPrice: taxResult.exPrice,
       );
       cartItems.add(cartItem);
     }

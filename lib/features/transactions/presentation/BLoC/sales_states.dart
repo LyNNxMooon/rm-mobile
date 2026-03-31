@@ -51,6 +51,12 @@ class StockNotPermitted extends SalesState {
   const StockNotPermitted({required this.message, required super.cartItems, super.selectedCustomer});
 }
 
+/// Fractional item found - needs special handling based on settings
+class FractionalItemFound extends SalesState {
+  final StockVO stock;
+  const FractionalItemFound({required this.stock, required super.cartItems, super.selectedCustomer});
+}
+
 /// Cart updated (item added, removed, or modified)
 class CartUpdated extends SalesState {
   final String? message;

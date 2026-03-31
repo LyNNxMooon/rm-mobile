@@ -99,8 +99,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         final existingIndex = _cartItems.indexWhere(
           (item) => item.code == result.stock!.barcode,
         );
-        final int qtyToAdd = 1;
-        final int totalQty = existingIndex >= 0 
+        final double qtyToAdd = 1.0;
+        final double totalQty = existingIndex >= 0 
             ? _cartItems[existingIndex].qty + qtyToAdd 
             : qtyToAdd;
         
@@ -114,6 +114,17 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         if (!availability.canAdd) {
           emit(StockNotPermitted(
             message: availability.message ?? '',
+            cartItems: List.from(_cartItems),
+            selectedCustomer: _selectedCustomer,
+          ));
+          return;
+        }
+        
+        // Check if this is a fractional item and skipEditMode was requested
+        // If so, let the UI handle the fractional item settings
+        if (event.skipEditMode && result.stock!.allowFractions) {
+          emit(FractionalItemFound(
+            stock: result.stock!,
             cartItems: List.from(_cartItems),
             selectedCustomer: _selectedCustomer,
           ));
@@ -162,8 +173,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     final existingIndex = _cartItems.indexWhere(
       (item) => item.code == event.stock.barcode,
     );
-    final int qtyToAdd = 1;
-    final int totalQty = existingIndex >= 0 
+    final double qtyToAdd = 1.0;
+    final double totalQty = existingIndex >= 0 
         ? _cartItems[existingIndex].qty + qtyToAdd 
         : qtyToAdd;
     
@@ -177,6 +188,18 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     if (!availability.canAdd) {
       emit(StockNotPermitted(
         message: availability.message ?? '',
+        cartItems: List.from(_cartItems),
+        selectedCustomer: _selectedCustomer,
+      ));
+      return;
+    }
+    
+    // Check if this is a fractional item and skipEditMode was requested
+    // If so, let the UI handle the fractional item settings
+    // (but not if already being handled - check via skipFractionalCheck flag)
+    if (event.skipEditMode && event.stock.allowFractions && !event.skipFractionalCheck) {
+      emit(FractionalItemFound(
+        stock: event.stock,
         cartItems: List.from(_cartItems),
         selectedCustomer: _selectedCustomer,
       ));
@@ -209,7 +232,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     final existingIndex = _cartItems.indexWhere(
       (item) => item.code == event.stock.barcode,
     );
-    final int totalQty = existingIndex >= 0 
+    final double totalQty = existingIndex >= 0 
         ? _cartItems[existingIndex].qty + event.qty 
         : event.qty;
     
@@ -260,13 +283,13 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   }
 
   /// Adds stock to cart and returns the total quantity in cart for this item
-  Future<int> _addStockToCart(StockVO stock, {int qty = 1, bool skipEditMode = false}) async {
+  Future<double> _addStockToCart(StockVO stock, {double qty = 1.0, bool skipEditMode = false}) async {
     // Check if item already exists in cart (by barcode)
     final existingIndex = _cartItems.indexWhere(
       (item) => item.code == stock.barcode,
     );
 
-    int totalQty = qty;
+    double totalQty = qty;
     
     if (existingIndex >= 0) {
       // Update quantity of existing item

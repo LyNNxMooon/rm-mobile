@@ -24,24 +24,26 @@ class SelectStock extends SalesEvent {
   final bool skipEditMode;
   final bool autoRemindLowStock;
   final bool preventAddIfNoStock;
+  final bool skipFractionalCheck;
   SelectStock({
     required this.stock,
     this.skipEditMode = false,
     this.autoRemindLowStock = false,
     this.preventAddIfNoStock = false,
+    this.skipFractionalCheck = false,
   });
 }
 
 /// Add stock to cart
 class AddToCart extends SalesEvent {
   final StockVO stock;
-  final int qty;
+  final double qty;
   final bool skipEditMode;
   final bool autoRemindLowStock;
   final bool preventAddIfNoStock;
   AddToCart({
     required this.stock,
-    this.qty = 1,
+    this.qty = 1.0,
     this.skipEditMode = false,
     this.autoRemindLowStock = false,
     this.preventAddIfNoStock = false,
@@ -57,7 +59,7 @@ class AddCartItemDirect extends SalesEvent {
 /// Update cart item quantity
 class UpdateCartItemQty extends SalesEvent {
   final int index;
-  final int qty;
+  final double qty;
   UpdateCartItemQty({required this.index, required this.qty});
 }
 

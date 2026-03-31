@@ -18,7 +18,7 @@ class CheckLowStockWarning {
   ///    If sale qty > stock qty → "Warning! inventory level is below sale quantity"
   LowStockWarning call({
     required StockVO stock,
-    required int saleQty,
+    required double saleQty,
     required bool autoRemindEnabled,
   }) {
     // If the setting is disabled, return no warning

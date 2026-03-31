@@ -49,7 +49,7 @@ class SaleSessionVO {
   int get itemCount => cartItems.length;
 
   /// Total quantity across all items
-  int get totalQuantity => cartItems.fold(0, (sum, item) => sum + item.qty);
+  double get totalQuantity => cartItems.fold(0.0, (sum, item) => sum + item.qty);
 
   /// Formatted total for display
   String get formattedTotal => '\$${subtotal.toStringAsFixed(2)}';
@@ -146,7 +146,7 @@ class SaleSessionVO {
 class CartItemData {
   final String code;
   final String description;
-  final int qty;
+  final double qty;
   final double sellPrice;
   final double? costPrice;
   final String? serialNumber;
@@ -166,7 +166,7 @@ class CartItemData {
     return CartItemData(
       code: json['code'] as String,
       description: json['description'] as String,
-      qty: json['qty'] as int,
+      qty: (json['qty'] as num).toDouble(),
       sellPrice: (json['sell_price'] as num).toDouble(),
       costPrice: (json['cost_price'] as num?)?.toDouble(),
       serialNumber: json['serial_number'] as String?,

@@ -341,6 +341,8 @@ class _SalesScreenState extends State<SalesScreen>
         _preventFinaliseIfOutOfStock = settings.preventFinaliseIfOutOfStock;
         _displayCustomerMessagesAsPrompt = settings.displayCustomerMessagesAsPrompt;
         _roundSellPriceTo2Decimals = settings.roundSellPriceTo2Decimals;
+        _scanIndividualUnitsForFractional = settings.scanIndividualUnitsForFractional;
+        _promptScanIndividualFractional = settings.promptScanIndividualFractional;
       });
     }
   }
@@ -396,6 +398,92 @@ class _SalesScreenState extends State<SalesScreen>
     }
 
     return parts.isEmpty ? "Unknown Customer" : parts.join(' ');
+  }
+
+  /// Handle fractional item based on settings
+  Future<void> _handleFractionalItem(StockVO stock, AppThemeColors colors, bool isDark) async {
+    // If "Scan Individual Units for Fractional Quantities" is ON, auto-add like normal items
+    if (_scanIndividualUnitsForFractional) {
+      _salesBloc.add(
+        SelectStock(
+          stock: stock,
+          skipEditMode: true,
+          skipFractionalCheck: true,
+          autoRemindLowStock: _autoRemindLowStock,
+          preventAddIfNoStock: _preventAddIfNoStock,
+        ),
+      );
+      return;
+    }
+    
+    // Default: add with expanded edit mode (skipEditMode = false)
+    // This allows user to enter the fractional quantity manually
+    _salesBloc.add(
+      SelectStock(
+        stock: stock,
+        skipEditMode: false,
+        skipFractionalCheck: true,
+        autoRemindLowStock: _autoRemindLowStock,
+        preventAddIfNoStock: _preventAddIfNoStock,
+      ),
+    );
+  }
+
+  /// Show prompt dialog for fractional item handling
+  Future<bool?> _showFractionalPromptDialog(AppThemeColors colors, bool isDark) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E2733) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            "Fractional Quantity Item",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+          content: Text(
+            "Would you like to Scan Individual Units for Fractional Quantity Items?",
+            style: TextStyle(
+              fontSize: 15,
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(
+                "No",
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : Colors.black54,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                "Yes",
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -458,6 +546,9 @@ class _SalesScreenState extends State<SalesScreen>
               colors: colors,
               isDark: isDark,
             );
+          } else if (state is FractionalItemFound) {
+            // Handle fractional item based on settings
+            await _handleFractionalItem(state.stock, colors, isDark);
           } else if (state is CartUpdated && state.message != null) {
             AlertInfo.show(
               context: context,
@@ -2322,13 +2413,26 @@ class _SalesScreenState extends State<SalesScreen>
                                 _buildSettingsSwitch(
                                   'Scan Individual Units',
                                   _scanIndividualUnits,
-                                  (v) {
+                                  (v) async {
                                     setDialogState(() => _scanIndividualUnits = v);
                                     setState(() {});
                                     _salesBloc.saveSalesSetting(
                                       key: kSalesScanIndividualUnitsKey,
                                       value: v,
                                     );
+                                    
+                                    // When turning ON and prompt setting is enabled, show fractional prompt
+                                    if (v && _promptScanIndividualFractional) {
+                                      final result = await _showFractionalPromptDialog(colors, isDark);
+                                      setDialogState(() {
+                                        _scanIndividualUnitsForFractional = result == true;
+                                      });
+                                      setState(() {});
+                                      _salesBloc.saveSalesSetting(
+                                        key: kSalesScanIndividualUnitsForFractionalKey,
+                                        value: result == true,
+                                      );
+                                    }
                                   },
                                   isDark,
                                   colors,
@@ -2423,6 +2527,10 @@ class _SalesScreenState extends State<SalesScreen>
                                       () => _scanIndividualUnitsForFractional = v,
                                     );
                                     setState(() {});
+                                    _salesBloc.saveSalesSetting(
+                                      key: kSalesScanIndividualUnitsForFractionalKey,
+                                      value: v,
+                                    );
                                   },
                                   isDark,
                                   colors,
@@ -2529,6 +2637,10 @@ class _SalesScreenState extends State<SalesScreen>
                                       () => _promptScanIndividualFractional = v,
                                     );
                                     setState(() {});
+                                    _salesBloc.saveSalesSetting(
+                                      key: kSalesPromptScanIndividualFractionalKey,
+                                      value: v,
+                                    );
                                   },
                                   isDark,
                                   colors,

@@ -5,7 +5,7 @@ import 'stock_vo.dart';
 class CartItemVO {
   final String code;
   final String description;
-  int qty;
+  double qty;
   double sellPrice; // Base sell price from stock (could be ex or inc depending on taxType)
   final double? costPrice;
   final StockVO? stock; // Full stock data for reference
@@ -22,7 +22,7 @@ class CartItemVO {
   CartItemVO({
     required this.code,
     required this.description,
-    this.qty = 1,
+    this.qty = 1.0,
     required this.sellPrice,
     this.costPrice,
     this.stock,
@@ -46,7 +46,7 @@ class CartItemVO {
   bool get trackSerial => stock?.trackSerial ?? false;
 
   /// Create CartItemVO from StockVO
-  factory CartItemVO.fromStock(StockVO stock, {int qty = 1}) {
+  factory CartItemVO.fromStock(StockVO stock, {double qty = 1.0}) {
     return CartItemVO(
       code: stock.barcode,
       description: stock.description,
@@ -63,7 +63,7 @@ class CartItemVO {
   CartItemVO copyWith({
     String? code,
     String? description,
-    int? qty,
+    double? qty,
     double? sellPrice,
     double? costPrice,
     StockVO? stock,
