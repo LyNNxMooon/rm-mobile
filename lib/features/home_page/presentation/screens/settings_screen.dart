@@ -20,11 +20,13 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
+import '../../../../constants/modern_dialog_styles.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
+import '../../../../utils/responsive_utils.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_bloc.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_events.dart';
 import '../../../stocktake/presentation/widgets/delete_all_confirmation_dialog.dart';
@@ -362,142 +364,124 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _manualIpController.text = "";
     _manualCodeController.text = "";
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.50)
-        .clamp(300.0, 460.0);
+        .clamp(320.0, 480.0);
 
     showDialog(
       context: context,
       builder: (_) => Dialog(
         insetPadding: dialogInsetPadding(context),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: 10,
-        backgroundColor: isDark ? const Color(0xFF2B3644) : colors.surface,
-        child: Container(
-          constraints: BoxConstraints(maxHeight: maxDialogHeight),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ModernDialogStyles.dialogRadius),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: ModernDialogContainer(
+          maxHeight: maxDialogHeight,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 20,
-                ),
-                decoration: BoxDecoration(
-                  gradient: isDark ? kGColor : colors.heroGradient,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.link_rounded,
-                      color: isDark ? Colors.white : colors.onHero,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Manual Connection",
-                        style: getSmartTitle(
-                          fontSize: 16,
-                          color: isDark ? Colors.white : colors.onHero,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              // Modern header
+              const ModernDialogHeader(
+                title: "Manual Connection",
+                icon: Icons.link_rounded,
+                subtitle: "Enter server details to connect",
               ),
+              // Content
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    SizedBox(
-                      height: 45,
-                      child: TextField(
-                        controller: _manualIpController,
-                        style: TextStyle(
-                          color: isDark ? Colors.white : colors.onSurface,
-                        ),
-                        onEditingComplete: () {
-                          final trimmedValue = _manualIpController.text.trim();
-                          if (_manualIpController.text != trimmedValue) {
-                            _manualIpController.value = _manualIpController.value.copyWith(
-                              text: trimmedValue,
-                              selection: TextSelection.collapsed(offset: trimmedValue.length),
-                            );
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: "Host IP",
-                          hintStyle: TextStyle(
-                            color: isDark
-                                ? Colors.white70
-                                : colors.onSurfaceMuted,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                        ),
+                    // Host IP input
+                    TextField(
+                      controller: _manualIpController,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : colors.onSurface,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      onEditingComplete: () {
+                        final trimmedValue = _manualIpController.text.trim();
+                        if (_manualIpController.text != trimmedValue) {
+                          _manualIpController.value = _manualIpController.value.copyWith(
+                            text: trimmedValue,
+                            selection: TextSelection.collapsed(offset: trimmedValue.length),
+                          );
+                        }
+                      },
+                      decoration: ModernDialogStyles.inputDecoration(
+                        context,
+                        hintText: "Host IP Address",
+                        prefixIcon: Icons.computer_outlined,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 45,
-                      child: TextField(
-                        controller: _manualCodeController,
-                        style: TextStyle(
-                          color: isDark ? Colors.white : colors.onSurface,
-                        ),
-                        onEditingComplete: () {
-                          final trimmedValue = _manualCodeController.text.trim();
-                          if (_manualCodeController.text != trimmedValue) {
-                            _manualCodeController.value = _manualCodeController.value.copyWith(
-                              text: trimmedValue,
-                              selection: TextSelection.collapsed(offset: trimmedValue.length),
-                            );
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: "Pairing Code",
-                          hintStyle: TextStyle(
-                            color: isDark
-                                ? Colors.white70
-                                : colors.onSurfaceMuted,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                        ),
+                    const SizedBox(height: 16),
+                    // Pairing code input
+                    TextField(
+                      controller: _manualCodeController,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : colors.onSurface,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      onEditingComplete: () {
+                        final trimmedValue = _manualCodeController.text.trim();
+                        if (_manualCodeController.text != trimmedValue) {
+                          _manualCodeController.value = _manualCodeController.value.copyWith(
+                            text: trimmedValue,
+                            selection: TextSelection.collapsed(offset: trimmedValue.length),
+                          );
+                        }
+                      },
+                      decoration: ModernDialogStyles.inputDecoration(
+                        context,
+                        hintText: "Pairing Code",
+                        prefixIcon: Icons.key_outlined,
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 24),
+                    // Connect button with gradient
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => _startManualConnection(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          foregroundColor: colors.onHero,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: ModernDialogStyles.headerGradient,
+                          borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
+                          boxShadow: [
+                            BoxShadow(
+                              color: kPrimaryColor.withOpacity(0.35),
+                              blurRadius: 14,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          "Connect",
-                          style: TextStyle(
-                            color: isDark ? Colors.white : colors.onHero,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _startManualConnection(context),
+                            borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.wifi_tethering_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  const Text(
+                                    "Connect",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -745,37 +729,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           GestureDetector(
                                             onTap: _isRefreshingShopfront ? null : () => _refreshShopfront(context),
                                             child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: context.isTablet ? 8 : 6,
+                                                vertical: context.isTablet ? 6 : 4,
+                                              ),
                                               decoration: BoxDecoration(
                                                 color: Colors.green.withOpacity(0.15),
                                                 borderRadius: BorderRadius.circular(6),
                                               ),
                                               child: _isRefreshingShopfront
-                                                  ? const SizedBox(
-                                                      width: 18,
-                                                      height: 18,
-                                                      child: CircularProgressIndicator(
+                                                  ? SizedBox(
+                                                      width: context.isTablet ? 24 : 18,
+                                                      height: context.isTablet ? 24 : 18,
+                                                      child: const CircularProgressIndicator(
                                                         strokeWidth: 2,
                                                         color: Colors.white,
                                                       ),
                                                     )
-                                                  : const Icon(
+                                                  : Icon(
                                                       Icons.refresh,
-                                                      size: 18,
+                                                      size: context.isTablet ? 24 : 18,
                                                       color: Colors.white,
                                                     ),
                                             ),
                                           ),
                                           const SizedBox(width: 6),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: context.isTablet ? 8 : 6,
+                                              vertical: context.isTablet ? 6 : 4,
+                                            ),
                                             decoration: BoxDecoration(
                                               color: kPrimaryColor.withOpacity(0.15),
                                               borderRadius: BorderRadius.circular(6),
                                             ),
-                                            child: const Icon(
+                                            child: Icon(
                                               Icons.settings,
-                                              size: 18,
+                                              size: context.isTablet ? 24 : 18,
                                               color: Colors.white,
                                             ),
                                           ),

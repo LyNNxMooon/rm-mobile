@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
@@ -8,9 +7,8 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 import '../../../../constants/colors.dart';
-import '../../../../constants/global_widgets.dart';
-import '../../../../constants/txt_styles.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../constants/modern_dialog_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
@@ -192,253 +190,64 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
       ],
       child: Dialog(
         insetPadding: dialogInsetPadding(context),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: 10,
-        backgroundColor: isDark ? const Color(0xFF2B3644) : colors.surface,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: maxDialogHeight),
+        shape: ModernDialogStyles.dialogShape,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: ModernDialogContainer(
+          maxHeight: maxDialogHeight,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 20,
-                ),
-                decoration: BoxDecoration(
-                  gradient: isDark ? kGColor : colors.heroGradient,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.storefront_rounded,
-                      color: isDark ? Colors.white : colors.onHero,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Choose Shopfront",
-                        style: getSmartTitle(
-                          fontSize: 16,
-                          color: isDark ? Colors.white : colors.onHero,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              const ModernDialogHeader(
+                title: "Choose Shopfront",
+                icon: Icons.storefront_rounded,
+                subtitle: "Select your store location",
               ),
               Flexible(
                 child: BlocBuilder<ShopfrontBloc, ShopFrontStates>(
                   builder: (context, state) {
                     if (state is ShopsLoading) {
-                      return Padding(
-                        padding: const EdgeInsets.all(40.0),
-                        child: Center(
-                          child: CupertinoActivityIndicator(
-                            color: isDark ? Colors.white : colors.onHero,
-                          ),
-                        ),
+                      return const ModernLoadingState(
+                        message: "Loading Shopfronts",
+                        subtitle: "Please wait...",
                       );
                     }
 
                     if (state is ShopsError) {
                       logger.e(widget.previousPath);
                       if (widget.isPairedFlow) {
-                        return Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.error_outline,
-                                  color: kErrorColor,
-                                  size: 40,
+                        return ModernErrorState(
+                          message: state.message,
+                          onRetry: () {
+                            if (widget.port != null && widget.apiKey != null) {
+                              context.read<ShopfrontBloc>().add(
+                                FetchShopsFromApi(
+                                  ipAddress: widget.pc.ipAddress,
+                                  port: widget.port!,
+                                  apiKey: widget.apiKey!,
                                 ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  state.message,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: isDark
-                                        ? Colors.white70
-                                        : colors.onSurfaceMuted,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextButton(
-                                  onPressed: () {
-                                    if (widget.port != null &&
-                                        widget.apiKey != null) {
-                                      context.read<ShopfrontBloc>().add(
-                                        FetchShopsFromApi(
-                                          ipAddress: widget.pc.ipAddress,
-                                          port: widget.port!,
-                                          apiKey: widget.apiKey!,
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: const Text(
-                                    "Retry",
-                                    style: TextStyle(color: kPrimaryColor),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                              );
+                            }
+                          },
                         );
                       }
 
-                      return Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: kErrorColor,
-                                size: 40,
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                state.message,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white70
-                                      : colors.onSurfaceMuted,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              SizedBox(
-                                height: errorFieldHeight,
-                                child: CustomTextField(
-                                  hintText: 'UserName',
-                                  controller: _userNameController,
-                                  leadingIcon: Icons.people,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              SizedBox(
-                                height: errorFieldHeight,
-                                child: CustomTextField(
-                                  hintText: 'Password',
-                                  controller: _pwdController,
-                                  leadingIcon: Icons.password,
-                                ),
-                              ),
-                              const SizedBox(height: 25),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: () {
-                                        context.read<ShopfrontBloc>().add(
-                                          FetchShops(
-                                            ipAddress: widget.pc.ipAddress,
-                                            path: widget.previousPath,
-                                          ),
-                                        );
-                                      },
-                                      style: OutlinedButton.styleFrom(
-                                        side: BorderSide(
-                                          color: kPrimaryColor.withOpacity(0.5),
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        padding: EdgeInsets.symmetric(
-                                          vertical: errorButtonVerticalPadding,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        "Retry as Guest",
-                                        style: TextStyle(
-                                          color: kPrimaryColor,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        context.read<ShopfrontBloc>().add(
-                                          FetchShops(
-                                            ipAddress: widget.pc.ipAddress,
-                                            path: widget.previousPath,
-                                            userName: _userNameController.text,
-                                            pwd: _pwdController.text,
-                                          ),
-                                        );
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: kPrimaryColor,
-                                        foregroundColor: colors.onHero,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        padding: EdgeInsets.symmetric(
-                                          vertical: errorButtonVerticalPadding,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        "Try Logging in",
-                                        style: TextStyle(
-                                          color: colors.onHero,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
+                      return _buildErrorWithCredentials(
+                        context, state, colors, isDark, errorFieldHeight, errorButtonVerticalPadding);
                     }
 
                     if (state is ShopsLoaded) {
                       if (state.shops.shopfronts.isEmpty) {
-                        return Padding(
-                          padding: const EdgeInsets.all(30),
-                          child: Text(
-                            "No shopfronts found.",
-                            style: TextStyle(
-                              color: isDark ? Colors.white70 : colors.onSurface,
-                            ),
-                          ),
+                        return const ModernEmptyState(
+                          message: "No shopfronts found",
+                          icon: Icons.storefront_outlined,
                         );
                       }
 
-                      return ListView.separated(
+                      return ListView.builder(
                         shrinkWrap: true,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                         itemCount: state.shops.shopfronts.length,
-                        separatorBuilder: (ctx, i) => Divider(
-                          color: isDark
-                              ? Colors.white24
-                              : colors.divider,
-                          height: 1,
-                          indent: 16,
-                          endIndent: 16,
-                        ),
                         itemBuilder: (context, index) {
                           final shopName = state.shops.shopfronts[index];
                           return _buildShopTile(shopName, context);
@@ -457,144 +266,333 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
     );
   }
 
+  Widget _buildErrorWithCredentials(
+    BuildContext context,
+    ShopsError state,
+    AppThemeColors colors,
+    bool isDark,
+    double errorFieldHeight,
+    double errorButtonVerticalPadding,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: kErrorColor.withOpacity(isDark ? 0.15 : 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                color: kErrorColor,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              state.message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: colors.onSurfaceMuted,
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: errorFieldHeight,
+              child: TextField(
+                controller: _userNameController,
+                style: TextStyle(
+                  color: isDark ? Colors.white : colors.onSurface,
+                  fontSize: 14,
+                ),
+                decoration: ModernDialogStyles.inputDecoration(
+                  context,
+                  hintText: 'Username',
+                  prefixIcon: Icons.person_outline_rounded,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: errorFieldHeight,
+              child: TextField(
+                controller: _pwdController,
+                obscureText: true,
+                style: TextStyle(
+                  color: isDark ? Colors.white : colors.onSurface,
+                  fontSize: 14,
+                ),
+                decoration: ModernDialogStyles.inputDecoration(
+                  context,
+                  hintText: 'Password',
+                  prefixIcon: Icons.lock_outline_rounded,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 46,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        context.read<ShopfrontBloc>().add(
+                          FetchShops(
+                            ipAddress: widget.pc.ipAddress,
+                            path: widget.previousPath,
+                          ),
+                        );
+                      },
+                      style: ModernDialogStyles.outlinedButtonStyle(context),
+                      child: const Text(
+                        "Retry as Guest",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 46,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context.read<ShopfrontBloc>().add(
+                          FetchShops(
+                            ipAddress: widget.pc.ipAddress,
+                            path: widget.previousPath,
+                            userName: _userNameController.text,
+                            pwd: _pwdController.text,
+                          ),
+                        );
+                      },
+                      style: ModernDialogStyles.primaryButtonStyle(context),
+                      child: const Text(
+                        "Log In",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildShopTile(String shopName, BuildContext ctx) {
     final bool expanded = _expandedShop == shopName;
     final colors = ctx.appColors;
     final bool isDark = colors.isDark;
 
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _expandedShop = expanded ? null : shopName;
-          _staffNoController.clear();
-          _staffPwdController.clear();
-        });
-      },
-      splashColor: kPrimaryColor.withOpacity(0.1),
-      highlightColor: kPrimaryColor.withOpacity(0.05),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            child: Row(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _expandedShop = expanded ? null : shopName;
+              _staffNoController.clear();
+              _staffPwdController.clear();
+            });
+          },
+          borderRadius: BorderRadius.circular(14),
+          splashColor: kPrimaryColor.withOpacity(0.08),
+          highlightColor: kPrimaryColor.withOpacity(0.04),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: expanded
+                  ? kPrimaryColor.withOpacity(isDark ? 0.1 : 0.06)
+                  : (isDark
+                      ? Colors.white.withOpacity(0.04)
+                      : colors.surfaceAlt.withOpacity(0.5)),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: expanded
+                    ? kPrimaryColor.withOpacity(0.3)
+                    : (isDark
+                        ? Colors.white.withOpacity(0.08)
+                        : colors.divider.withOpacity(0.5)),
+                width: 1,
+              ),
+            ),
+            child: Column(
               children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: kPrimaryColor.withOpacity(0.4),
-                    shape: BoxShape.circle,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              kPrimaryColor.withOpacity(isDark ? 0.25 : 0.15),
+                              kPrimaryColor.withOpacity(isDark ? 0.15 : 0.08),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.storefront_rounded,
+                          color: kPrimaryColor,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          shopName.split(r'\\').last,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : colors.onSurface,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      AnimatedRotation(
+                        turns: expanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: kPrimaryColor.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 20,
+                            color: kPrimaryColor,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    shopName.split(r'\\').last,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : colors.onSurface,
-                    ),
+                if (expanded)
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 200),
+                    child: _buildStaffSignInSection(shopName, ctx),
                   ),
-                ),
-                Icon(
-                  expanded
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
-                  size: 18,
-                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                ),
               ],
             ),
           ),
-          if (expanded) _buildStaffSignInSection(shopName, ctx),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildStaffSignInSection(String shopName, BuildContext ctx) {
-    final bool loading =
-        ctx.watch<StaffAuthBloc>().state is StaffAuthenticating;
+    final bool loading = ctx.watch<StaffAuthBloc>().state is StaffAuthenticating;
     final colors = ctx.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = ctx.isTablet;
     final double textScale = MediaQuery.textScalerOf(ctx).scale(14) / 14;
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.65)).clamp(1.0, 1.42);
-    final double fieldHeight = isTablet
-        ? (44 * uiScale).clamp(44.0, 58.0)
-        : 36.0;
-    final double buttonHeight = isTablet
-        ? (42 * uiScale).clamp(42.0, 56.0)
-        : 34.0;
-    final double sectionPadding = isTablet ? 12.0 : 10.0;
-    final double verticalGap1 = isTablet ? 8.0 : 6.0;
-    final double verticalGap2 = isTablet ? 10.0 : 8.0;
+    final double fieldHeight = isTablet ? (48 * uiScale).clamp(48.0, 58.0) : 46.0;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-      padding: EdgeInsets.fromLTRB(
-        sectionPadding,
-        sectionPadding,
-        sectionPadding,
-        isTablet ? 10 : 8,
-      ),
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2F3B4B) : colors.surfaceAlt,
-        borderRadius: BorderRadius.circular(8),
+        color: isDark
+            ? Colors.white.withOpacity(0.04)
+            : colors.surface,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.white24 : colors.divider,
+          color: isDark
+              ? Colors.white.withOpacity(0.08)
+              : colors.divider.withOpacity(0.5),
         ),
       ),
       child: Column(
         children: [
           SizedBox(
             height: fieldHeight,
-            child: CustomTextField(
+            child: TextField(
               controller: _staffNoController,
               keyboardType: TextInputType.number,
-              hintText: 'Staff ID',
-              leadingIcon: Icons.badge_outlined,
+              style: TextStyle(
+                color: isDark ? Colors.white : colors.onSurface,
+                fontSize: 14,
+              ),
+              decoration: ModernDialogStyles.inputDecoration(
+                ctx,
+                hintText: 'Staff ID',
+                prefixIcon: Icons.badge_outlined,
+              ),
             ),
           ),
-          SizedBox(height: verticalGap1),
+          const SizedBox(height: 12),
           SizedBox(
             height: fieldHeight,
-            child: CustomTextField(
+            child: TextField(
               controller: _staffPwdController,
-              hintText: 'Password',
-              leadingIcon: Icons.lock_outline,
               obscureText: true,
+              style: TextStyle(
+                color: isDark ? Colors.white : colors.onSurface,
+                fontSize: 14,
+              ),
+              decoration: ModernDialogStyles.inputDecoration(
+                ctx,
+                hintText: 'Password',
+                prefixIcon: Icons.lock_outline_rounded,
+              ),
             ),
           ),
-          SizedBox(height: verticalGap2),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            height: buttonHeight,
+            height: isTablet ? 54 : 48,
             child: ElevatedButton(
-              onPressed: loading
-                  ? null
-                  : () => _onTapStaffSignIn(shopName, ctx),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryColor,
-                foregroundColor: colors.onHero,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(isTablet ? 9 : 7),
-                ),
-                padding: EdgeInsets.zero,
-              ),
+              onPressed: loading ? null : () => _onTapStaffSignIn(shopName, ctx),
+              style: ModernDialogStyles.primaryButtonStyle(ctx),
               child: loading
                   ? SizedBox(
-                      height: isTablet ? 22 : 18,
-                      width: isTablet ? 22 : 18,
-                          child: CupertinoActivityIndicator(
-                            color: colors.onHero,
-                          ),
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
                     )
-                  : Text(
-                      'Sign In',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: Colors.white,
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.login_rounded, size: isTablet ? 22 : 20),
+                          SizedBox(width: isTablet ? 10 : 8),
+                          Text(
+                            'Sign In',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: isTablet ? 16 : 15,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
             ),

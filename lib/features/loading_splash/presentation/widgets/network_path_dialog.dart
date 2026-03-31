@@ -6,7 +6,7 @@ import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loadin
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
-import '../../../../constants/txt_styles.dart';
+import '../../../../constants/modern_dialog_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 
 class NetworkPathDialog extends StatelessWidget {
@@ -16,7 +16,6 @@ class NetworkPathDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
     if (paths.length == 1) {
       context.read<NetworkSavedPathValidationBloc>().add(
         ConnectionCheckingEvent(paths[0]['path']),
@@ -26,47 +25,24 @@ class NetworkPathDialog extends StatelessWidget {
 
     return Dialog(
       insetPadding: dialogInsetPadding(context),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      elevation: 10,
-      backgroundColor: colors.surface,
-      child: Container(
-        constraints: const BoxConstraints(maxHeight: 500),
+      shape: ModernDialogStyles.dialogShape,
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: ModernDialogContainer(
+        maxHeight: 520,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-              decoration: BoxDecoration(
-                gradient: colors.heroGradient,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.folder_copy_rounded, color: colors.onHero),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "Saved Locations",
-                      style: getSmartTitle(fontSize: 16, color: colors.onHero),
-                    ),
-                  ),
-                ],
-              ),
+            const ModernDialogHeader(
+              title: "Saved Locations",
+              icon: Icons.folder_copy_rounded,
+              subtitle: "Select a saved network path",
             ),
             Flexible(
-              child: ListView.separated(
+              child: ListView.builder(
                 shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: paths.length,
-                separatorBuilder: (ctx, i) => Divider(
-                  color: colors.divider,
-                  height: 1,
-                  indent: 16,
-                  endIndent: 16,
-                ),
                 itemBuilder: (context, index) {
                   final pathData = paths[index];
                   final String path = pathData['path'];
@@ -94,73 +70,121 @@ class NetworkPathDialog extends StatelessWidget {
     BuildContext ctx,
   ) {
     final colors = ctx.appColors;
-    return Slidable(
-      key: ValueKey(realPath),
-
-      endActionPane: ActionPane(
-        motion: const DrawerMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (context) {
-              if (paths.length != 1) {
-                 ctx
-                     .read<NetworkSavedPathValidationBloc>()
-                     .add(DeleteSavedPathEvent(realPath));
-                 context.navigateBack();
-              }
-            },
-            backgroundColor: kErrorColor,
-            foregroundColor: colors.onHero,
-            icon: Icons.delete,
-            label: 'Delete',
-          ),
-        ],
-      ),
-
-      child: InkWell(
-        onTap: () {
-          ctx.read<NetworkSavedPathValidationBloc>().add(
-            ConnectionCheckingEvent(realPath),
-          );
-          ctx.navigateBack();
-        },
-        splashColor: kPrimaryColor.withOpacity(0.1),
-        highlightColor: kPrimaryColor.withOpacity(0.05),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
+    final isDark = colors.isDark;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Slidable(
+        key: ValueKey(realPath),
+        endActionPane: ActionPane(
+          motion: const BehindMotion(),
+          extentRatio: 0.25,
+          children: [
+            CustomSlidableAction(
+              onPressed: (context) {
+                if (paths.length != 1) {
+                  ctx
+                      .read<NetworkSavedPathValidationBloc>()
+                      .add(DeleteSavedPathEvent(realPath));
+                  context.navigateBack();
+                }
+              },
+              backgroundColor: Colors.transparent,
+              child: Container(
+                margin: const EdgeInsets.only(left: 8),
                 decoration: BoxDecoration(
-                  color: kPrimaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: kErrorColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(
-                  Icons.folder_shared_rounded,
-                  color: kPrimaryColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  displayPath,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colors.onSurface,
-                    fontSize: 12,
+                child: Center(
+                  child: Icon(
+                    Icons.delete_outline_rounded,
+                    color: kErrorColor,
+                    size: 24,
                   ),
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: colors.onSurfaceMuted,
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            onTap: () {
+              ctx.read<NetworkSavedPathValidationBloc>().add(
+                ConnectionCheckingEvent(realPath),
+              );
+              ctx.navigateBack();
+            },
+            borderRadius: BorderRadius.circular(14),
+            splashColor: kPrimaryColor.withOpacity(0.08),
+            highlightColor: kPrimaryColor.withOpacity(0.04),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withOpacity(0.04)
+                    : colors.surfaceAlt.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.08)
+                      : colors.divider.withOpacity(0.5),
+                  width: 1,
+                ),
               ),
-            ],
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          kPrimaryColor.withOpacity(isDark ? 0.25 : 0.15),
+                          kPrimaryColor.withOpacity(isDark ? 0.15 : 0.08),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.folder_shared_rounded,
+                      color: kPrimaryColor,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      displayPath,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : colors.onSurface,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: kPrimaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: kPrimaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

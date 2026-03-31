@@ -1,5 +1,4 @@
 import 'package:alert_info/alert_info.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,9 +6,8 @@ import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
-import '../../../../constants/global_widgets.dart';
 import '../../../../constants/theme_colors.dart';
-import '../../../../constants/txt_styles.dart';
+import '../../../../constants/modern_dialog_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/responsive_utils.dart';
 
@@ -79,55 +77,29 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double fieldHeight = (isTablet ? 50 : 45) * uiScale;
-    final double buttonPad = (isTablet ? 14 : 12) * uiScale;
-    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.42)
-        .clamp(240.0, 340.0);
+    final double fieldHeight = (isTablet ? 52 : 48) * uiScale;
+    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.45)
+        .clamp(260.0, 380.0);
 
     showDialog(
       context: context,
       builder: (_) => Dialog(
         insetPadding: dialogInsetPadding(context),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: 10,
-        backgroundColor: isDark ? const Color(0xFF2B3644) : colors.surface,
-        child: Container(
-          constraints: BoxConstraints(maxHeight: maxDialogHeight),
+        shape: ModernDialogStyles.dialogShape,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: ModernDialogContainer(
+          maxHeight: maxDialogHeight,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                decoration: BoxDecoration(
-                  gradient: isDark ? kGColor : colors.heroGradient,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.settings_ethernet,
-                      color: isDark ? Colors.white : colors.onHero,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Enter Port",
-                        style: getSmartTitle(
-                          color: isDark ? Colors.white : colors.onHero,
-                          fontSize: 16,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+              const ModernDialogHeader(
+                title: "Enter Port",
+                icon: Icons.settings_ethernet_rounded,
+                subtitle: "Specify custom port number",
               ),
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -139,6 +111,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         style: TextStyle(
                           color: isDark ? Colors.white : colors.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
                         ),
                         onEditingComplete: () {
                           final trimmedValue = _manualPortController.text.trim();
@@ -149,24 +123,17 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                             );
                           }
                         },
-                        decoration: InputDecoration(
+                        decoration: ModernDialogStyles.inputDecoration(
+                          context,
                           hintText: "Port (e.g. 5000)",
-                          hintStyle: TextStyle(
-                            color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          prefixIcon: Icons.numbers_rounded,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
+                      height: 48,
                       child: ElevatedButton(
                         onPressed: () {
                           final int? manualPort = int.tryParse(
@@ -183,21 +150,12 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                           Navigator.of(context).pop();
                           _retryDiscoverWithPort(context, manualPort);
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          foregroundColor: colors.onHero,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: buttonPad),
-                        ),
-                        child: Text(
+                        style: ModernDialogStyles.primaryButtonStyle(context),
+                        child: const Text(
                           "Try Port",
                           style: TextStyle(
-                            color: colors.onHero,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -221,164 +179,204 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double fieldHeight = (isTablet ? 50 : 45) * uiScale;
-    final double buttonPad = (isTablet ? 14 : 12) * uiScale;
-    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.52)
-        .clamp(300.0, 500.0);
+    final double fieldHeight = (isTablet ? 52 : 48) * uiScale;
+    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.56)
+        .clamp(340.0, 520.0);
 
     showDialog(
       context: context,
       builder: (_) => Dialog(
         insetPadding: dialogInsetPadding(context),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: 10,
-        backgroundColor: isDark ? const Color(0xFF2B3644) : colors.surface,
-        child: Container(
-          constraints: BoxConstraints(maxHeight: maxDialogHeight),
+        shape: ModernDialogStyles.dialogShape,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: ModernDialogContainer(
+          maxHeight: maxDialogHeight,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                decoration: BoxDecoration(
-                  gradient: isDark ? kGColor : colors.heroGradient,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.key_rounded,
-                      color: isDark ? Colors.white : colors.onHero,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Pair With Host",
-                        style: getSmartTitle(
-                          color: isDark ? Colors.white : colors.onHero,
-                          fontSize: 16,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+              const ModernDialogHeader(
+                title: "Pair With Host",
+                icon: Icons.link_rounded,
+                subtitle: "Enter the code shown on the host",
               ),
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Display code section
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: colors.divider),
-                        color: colors.surfaceAlt,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            kPrimaryColor.withOpacity(isDark ? 0.15 : 0.08),
+                            kPrimaryColor.withOpacity(isDark ? 0.08 : 0.04),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: kPrimaryColor.withOpacity(0.2),
+                          width: 1,
+                        ),
                       ),
-                      child: Row(
+                      child: Column(
                         children: [
-                          Expanded(
-                            child: SelectableText(
-                              pairCode,
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: isDark ? Colors.white : colors.onSurface,
-                              ),
+                          Text(
+                            "Your Code",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: colors.onSurfaceMuted,
+                              letterSpacing: 0.5,
                             ),
                           ),
-                          IconButton(
-                            onPressed: () {
-                              Clipboard.setData(ClipboardData(text: pairCode));
-                              AlertInfo.show(
-                                context: context,
-                                text: "Pair code copied",
-                                typeInfo: TypeInfo.success,
-                                backgroundColor: colors.surface,
-                                iconColor: kPrimaryColor,
-                                textColor: colors.onSurface,
-                                padding: 70,
-                                position: MessagePosition.top,
-                              );
-                            },
-                            icon: const Icon(Icons.copy_rounded, size: 20),
-                            color: kPrimaryColor,
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: SelectableText(
+                                  pairCode,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark ? Colors.white : colors.onSurface,
+                                    letterSpacing: 4,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: kPrimaryColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: IconButton(
+                                  onPressed: () {
+                                    Clipboard.setData(ClipboardData(text: pairCode));
+                                    AlertInfo.show(
+                                      context: context,
+                                      text: "Pair code copied",
+                                      typeInfo: TypeInfo.success,
+                                      backgroundColor: colors.surface,
+                                      iconColor: kPrimaryColor,
+                                      textColor: colors.onSurface,
+                                      padding: 70,
+                                      position: MessagePosition.top,
+                                    );
+                                  },
+                                  icon: Icon(Icons.copy_rounded, size: 20),
+                                  color: kPrimaryColor,
+                                  tooltip: "Copy code",
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 20),
+                    // Input section
                     SizedBox(
                       height: fieldHeight,
-                      child: CustomTextField(
-                        hintText: "Enter Code",
+                      child: TextField(
                         controller: _connectCodeController,
-                        leadingIcon: Icons.keyboard_alt_outlined,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : colors.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        decoration: ModernDialogStyles.inputDecoration(
+                          context,
+                          hintText: "Enter Host Code",
+                          prefixIcon: Icons.keyboard_alt_outlined,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
                       child: BlocBuilder<PairDeviceBloc, PairDeviceStates>(
                         builder: (context, pairState) {
-                          return ElevatedButton(
-                            onPressed: pairState is PairingDevice
-                                ? null
-                                : () {
-                                    if (_selectedPc == null) return;
-
-                                    final pairingCode = _connectCodeController.text
-                                        .trim();
-                                    if (pairingCode.isEmpty) {
-                                      _showError(
-                                        context,
-                                        "Please enter pairing code.",
-                                      );
-                                      return;
-                                    }
-
-                                    context.read<PairDeviceBloc>().add(
-                                      PairDeviceEvent(
-                                        ip: _selectedPc!.ipAddress,
-                                        hostName:
-                                            _selectedPc!.hostName ?? "Unknown-Server",
-                                        port: _selectedPort,
-                                        pairingCode: pairingCode,
-                                      ),
-                                    );
-                                  },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: kPrimaryColor,
-                              foregroundColor: colors.onHero,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              padding: EdgeInsets.symmetric(vertical: buttonPad),
+                          final isLoading = pairState is PairingDevice;
+                          return Container(
+                            decoration: BoxDecoration(
+                              gradient: ModernDialogStyles.headerGradient,
+                              borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: kPrimaryColor.withOpacity(0.35),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
                             ),
-                            child: pairState is PairingDevice
-                                ? SizedBox(
-                                    height: 16,
-                                    width: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colors.onHero,
-                                      ),
-                                    ),
-                                  )
-                                : Text(
-                                    "Connect",
-                                    style: TextStyle(
-                                      color: colors.onHero,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: isLoading
+                                    ? null
+                                    : () {
+                                        if (_selectedPc == null) return;
+
+                                        final pairingCode = _connectCodeController.text.trim();
+                                        if (pairingCode.isEmpty) {
+                                          _showError(context, "Please enter pairing code.");
+                                          return;
+                                        }
+
+                                        context.read<PairDeviceBloc>().add(
+                                          PairDeviceEvent(
+                                            ip: _selectedPc!.ipAddress,
+                                            hostName: _selectedPc!.hostName ?? "Unknown-Server",
+                                            port: _selectedPort,
+                                            pairingCode: pairingCode,
+                                          ),
+                                        );
+                                      },
+                                borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: isLoading
+                                        ? [
+                                            SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2.5,
+                                                valueColor: AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ]
+                                        : [
+                                            const Icon(
+                                              Icons.link_rounded,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 10),
+                                            const Text(
+                                              "Connect",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w600,
+                                                letterSpacing: 0.2,
+                                              ),
+                                            ),
+                                          ],
                                   ),
+                                ),
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -396,7 +394,6 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final bool isDark = colors.isDark;
     // Calculate a safe max height (e.g., 70% of screen)
     final double safeMaxHeight = (MediaQuery.of(context).size.height * 0.72)
         .clamp(380.0, 760.0);
@@ -508,138 +505,48 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
       ],
       child: Dialog(
         insetPadding: dialogInsetPadding(context),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: 10,
-        backgroundColor: isDark ? const Color(0xFF2B3644) : colors.surface,
-        child: Container(
-          constraints: BoxConstraints(maxHeight: safeMaxHeight),
+        shape: ModernDialogStyles.dialogShape,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: ModernDialogContainer(
+          maxHeight: safeMaxHeight,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 26),
-                decoration: BoxDecoration(
-                  gradient: isDark ? kGColor : colors.heroGradient,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.dns_rounded,
-                      color: isDark ? Colors.white : colors.onHero,
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Text(
-                        "Network Servers",
-                        style: getSmartTitle(
-                          color: isDark ? Colors.white : colors.onHero,
-                          fontSize: 18,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+              const ModernDialogHeader(
+                title: "Network Servers",
+                icon: Icons.dns_rounded,
+                subtitle: "Select a server to connect",
               ),
               Flexible(
                 child: BlocBuilder<FetchingNetworkServerBloc, FetchingNetworkServerStates>(
                   builder: (context, state) {
                     if (state is FetchingNetworkServers) {
-                      return Center(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Finding Network Servers...",
-                                style: getSmartTitle(
-                                  color: isDark ? Colors.white : colors.onSurface,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              Container(
-                                width: 200,
-                                padding: const EdgeInsets.only(top: 25, bottom: 5),
-                                child: ModernLoadingBar(),
-                              ),
-                              Text(
-                                "This may take a few seconds.",
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      return const ModernLoadingState(
+                        message: "Finding Network Servers",
+                        subtitle: "This may take a few seconds...",
                       );
                     } else if (state is ErrorFetchingNetworkServers) {
-                      return Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: kErrorColor,
-                                size: 40,
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                state.message,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white70
-                                      : colors.onSurfaceMuted,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              TextButton(
-                                onPressed: () {
-                                  context.read<FetchingNetworkServerBloc>().add(
-                                    FetchNetworkServerEvent(),
-                                  );
-                                },
-                                child: const Text(
-                                  "Retry",
-                                  style: TextStyle(color: kPrimaryColor),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      return ModernErrorState(
+                        message: state.message,
+                        onRetry: () {
+                          context.read<FetchingNetworkServerBloc>().add(
+                            FetchNetworkServerEvent(),
+                          );
+                        },
                       );
                     } else if (state is NetworkServersLoaded) {
                       if (state.pcList.isEmpty) {
-                        return Padding(
-                          padding: const EdgeInsets.all(30),
-                          child: Text(
-                            "No servers found on the network.",
-                            style: TextStyle(
-                              color: isDark ? Colors.white70 : colors.onSurface,
-                            ),
-                          ),
+                        return const ModernEmptyState(
+                          message: "No servers found on the network",
+                          icon: Icons.dns_outlined,
                         );
                       }
 
-                      return ListView.separated(
+                      return ListView.builder(
                         shrinkWrap: true,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                         itemCount: state.pcList.length,
-                        separatorBuilder: (ctx, i) => Divider(
-                          color: colors.divider,
-                          height: 1,
-                          indent: 16,
-                          endIndent: 16,
-                        ),
                         itemBuilder: (context, index) {
                           return _buildServerTile(state.pcList[index], context);
                         },
@@ -663,123 +570,106 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
     final colors = ctx.appColors;
+    final isDark = colors.isDark;
+    final isLoading = _isPairFlowLoading && _selectedPc?.ipAddress == pc.ipAddress;
 
-    return InkWell(
-      onTap: () {
-        _startPairingFlow(pc, ctx);
-
-        // Auto-connection flow intentionally disabled for now.
-        // ctx.read<AutoConnectionBloc>().add(
-        //   AutoConnectToDefaultFolderEvent(
-        //     ipAddress: pc.ipAddress,
-        //     hostName: pc.hostName,
-        //   ),
-        // );
-      },
-      splashColor: kPrimaryColor.withOpacity(0.1),
-      highlightColor: kPrimaryColor.withOpacity(0.05),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Row(
-          children: [
-            SizedBox(
-              height: (isTablet ? 40 : 35) * uiScale,
-              width: (isTablet ? 40 : 35) * uiScale,
-              child: Image.asset("assets/images/pc.png", fit: BoxFit.fill),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: () {
+            _startPairingFlow(pc, ctx);
+          },
+          borderRadius: BorderRadius.circular(14),
+          splashColor: kPrimaryColor.withOpacity(0.08),
+          highlightColor: kPrimaryColor.withOpacity(0.04),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withOpacity(0.04)
+                  : colors.surfaceAlt.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withOpacity(0.08)
+                    : colors.divider.withOpacity(0.5),
+                width: 1,
+              ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                pc.hostName ?? "Unknown-Server",
-                style: TextStyle(
-                  color: colors.isDark ? Colors.white : colors.onSurface,
+            child: Row(
+              children: [
+                Container(
+                  width: (isTablet ? 48 : 44) * uiScale,
+                  height: (isTablet ? 48 : 44) * uiScale,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        kPrimaryColor.withOpacity(isDark ? 0.25 : 0.15),
+                        kPrimaryColor.withOpacity(isDark ? 0.15 : 0.08),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Image.asset("assets/images/pc.png", fit: BoxFit.contain),
                 ),
-                maxLines: 1, // Fix overflow
-                overflow: TextOverflow.ellipsis, // Fix overflow
-              ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        pc.hostName ?? "Unknown-Server",
+                        style: TextStyle(
+                          color: isDark ? Colors.white : colors.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        pc.ipAddress,
+                        style: TextStyle(
+                          color: colors.onSurfaceMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (isLoading)
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: kPrimaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: kPrimaryColor,
+                    ),
+                  ),
+              ],
             ),
-            if (_isPairFlowLoading && _selectedPc?.ipAddress == pc.ipAddress)
-              CupertinoActivityIndicator(
-                color: colors.isDark ? Colors.white70 : colors.onSurfaceMuted,
-              )
-            else
-              Icon(
-                Icons.arrow_forward_ios,
-                color: colors.isDark ? Colors.white70 : colors.onSurfaceMuted,
-                size: 14,
-              ),
-
-            // Auto-connection flow intentionally disabled for now.
-            // BlocConsumer<AutoConnectionBloc, AutoConnectionStates>(
-            //   listenWhen: (previous, current) => previous != current,
-            //   listener: (context, state) {
-            //     if (state is AutoConnectedToPublicFolder) {
-            //       AlertInfo.show(
-            //         context: ctx,
-            //         text: state.message,
-            //         typeInfo: TypeInfo.success,
-            //         backgroundColor: kSecondaryColor,
-            //         iconColor: kPrimaryColor,
-            //         textColor: kThirdColor,
-            //         padding: 70,
-            //         position: MessagePosition.top,
-            //       );
-            //
-            //       ctx.navigateUntilFirst();
-            //
-            //       ctx.read<ShopfrontBloc>().add(
-            //         FetchShops(
-            //           path:
-            //               AppGlobals.instance.currentPath ??
-            //               "//${AppGlobals.instance.currentHostIp ?? ""}/C/AAAPOS RM-Mobile",
-            //           ipAddress: AppGlobals.instance.currentHostIp ?? "",
-            //         ),
-            //       );
-            //
-            //       showDialog(
-            //         context: ctx,
-            //         builder: (_) => ShopfrontsDialog(
-            //           pc: NetworkServerVO(
-            //             ipAddress: AppGlobals.instance.currentHostIp ?? "",
-            //             hostName: AppGlobals.instance.hostName ?? "",
-            //           ),
-            //           previousPath:
-            //               AppGlobals.instance.currentPath ??
-            //               "//${AppGlobals.instance.currentHostIp ?? ""}/C/AAAPOS RM-Mobile",
-            //         ),
-            //       );
-            //     }
-            //
-            //     if (state is ErrorAutoConnection) {
-            //       Navigator.of(ctx, rootNavigator: true).pop();
-            //
-            //       ctx.read<GettingDirectoryBloc>().add(
-            //         GetDirectoryEvent(
-            //           ipAddress: state.pcHolder.ipAddress,
-            //           path: "",
-            //         ),
-            //       );
-            //
-            //       showDialog(
-            //         context: ctx,
-            //         builder: (context) => FoldersDialog(pc: state.pcHolder),
-            //       );
-            //     }
-            //   },
-            //   builder: (_, state) {
-            //     if (state is LoadingAutoConnection &&
-            //         state.ipAddress == pc.ipAddress) {
-            //       return const CupertinoActivityIndicator();
-            //     } else {
-            //       return const Icon(
-            //         Icons.arrow_forward_ios,
-            //         color: kGreyColor,
-            //         size: 14,
-            //       );
-            //     }
-            //   },
-            // ),
-          ],
+          ),
         ),
       ),
     );

@@ -2683,12 +2683,15 @@ class _SalesScreenState extends State<SalesScreen>
                       ),
                       child: SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton(
+                        child: OutlinedButton(
                           onPressed: () => Navigator.pop(dialogContext),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kPrimaryColor,
-                            foregroundColor: Colors.white,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: kPrimaryColor,
                             padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(
+                              color: kPrimaryColor,
+                              width: 1.5,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
