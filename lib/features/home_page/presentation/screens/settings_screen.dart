@@ -223,127 +223,115 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showManualPortDialog(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.42)
-        .clamp(240.0, 340.0);
+    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.45)
+        .clamp(280.0, 400.0);
     showDialog(
       context: context,
       builder: (_) => Dialog(
         insetPadding: dialogInsetPadding(context),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: 10,
-        backgroundColor: isDark ? const Color(0xFF2B3644) : colors.surface,
-        child: Container(
-          constraints: BoxConstraints(maxHeight: maxDialogHeight),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ModernDialogStyles.dialogRadius),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: ModernDialogContainer(
+          maxHeight: maxDialogHeight,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 20,
-                ),
-                decoration: BoxDecoration(
-                  gradient: isDark ? kGColor : colors.heroGradient,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.settings_ethernet,
-                      color: isDark ? Colors.white : colors.onHero,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Enter Port",
-                        style: getSmartTitle(
-                          fontSize: 16,
-                          color: isDark ? Colors.white : colors.onHero,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              const ModernDialogHeader(
+                title: "Enter Port",
+                icon: Icons.settings_ethernet_rounded,
+                subtitle: "Specify custom port number",
               ),
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(
-                      height: 45,
-                      child: TextField(
-                        controller: _manualPortController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        style: TextStyle(
-                          color: isDark ? Colors.white : colors.onSurface,
-                        ),
-                        onEditingComplete: () {
-                          final trimmedValue = _manualPortController.text.trim();
-                          if (_manualPortController.text != trimmedValue) {
-                            _manualPortController.value = _manualPortController.value.copyWith(
-                              text: trimmedValue,
-                              selection: TextSelection.collapsed(offset: trimmedValue.length),
-                            );
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: "Port (e.g. 5000)",
-                          hintStyle: TextStyle(
-                            color: isDark
-                                ? Colors.white70
-                                : colors.onSurfaceMuted,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
+                    TextField(
+                      controller: _manualPortController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      style: TextStyle(
+                        color: isDark ? Colors.white : colors.onSurface,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      onEditingComplete: () {
+                        final trimmedValue = _manualPortController.text.trim();
+                        if (_manualPortController.text != trimmedValue) {
+                          _manualPortController.value = _manualPortController.value.copyWith(
+                            text: trimmedValue,
+                            selection: TextSelection.collapsed(offset: trimmedValue.length),
+                          );
+                        }
+                      },
+                      decoration: ModernDialogStyles.inputDecoration(
+                        context,
+                        hintText: "Port (e.g. 5000)",
+                        prefixIcon: Icons.numbers_rounded,
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          final int? manualPort = int.tryParse(
-                            _manualPortController.text.trim(),
-                          );
-
-                          if (manualPort == null ||
-                              manualPort <= 0 ||
-                              manualPort > 65535) {
-                            _showError(context, "Please enter a valid port.");
-                            return;
-                          }
-
-                          Navigator.of(context).pop();
-                          _retryDiscoverWithPort(context, manualPort);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          foregroundColor: colors.onHero,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: ModernDialogStyles.headerGradient,
+                          borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
+                          boxShadow: [
+                            BoxShadow(
+                              color: kPrimaryColor.withOpacity(0.35),
+                              blurRadius: 14,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          "Try Port",
-                          style: TextStyle(
-                            color: colors.onHero,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              final int? manualPort = int.tryParse(
+                                _manualPortController.text.trim(),
+                              );
+
+                              if (manualPort == null ||
+                                  manualPort <= 0 ||
+                                  manualPort > 65535) {
+                                _showError(context, "Please enter a valid port.");
+                                return;
+                              }
+
+                              Navigator.of(context).pop();
+                              _retryDiscoverWithPort(context, manualPort);
+                            },
+                            borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.send_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    "Try Port",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),

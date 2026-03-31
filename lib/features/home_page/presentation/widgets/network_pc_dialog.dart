@@ -133,29 +133,60 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          final int? manualPort = int.tryParse(
-                            _manualPortController.text.trim(),
-                          );
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: ModernDialogStyles.headerGradient,
+                          borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
+                          boxShadow: [
+                            BoxShadow(
+                              color: kPrimaryColor.withOpacity(0.35),
+                              blurRadius: 14,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              final int? manualPort = int.tryParse(
+                                _manualPortController.text.trim(),
+                              );
 
-                          if (manualPort == null ||
-                              manualPort <= 0 ||
-                              manualPort > 65535) {
-                            _showError(context, "Please enter a valid port.");
-                            return;
-                          }
+                              if (manualPort == null ||
+                                  manualPort <= 0 ||
+                                  manualPort > 65535) {
+                                _showError(context, "Please enter a valid port.");
+                                return;
+                              }
 
-                          Navigator.of(context).pop();
-                          _retryDiscoverWithPort(context, manualPort);
-                        },
-                        style: ModernDialogStyles.primaryButtonStyle(context),
-                        child: const Text(
-                          "Try Port",
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                              Navigator.of(context).pop();
+                              _retryDiscoverWithPort(context, manualPort);
+                            },
+                            borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.send_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    "Try Port",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),

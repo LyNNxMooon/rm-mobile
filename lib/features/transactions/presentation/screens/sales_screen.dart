@@ -3394,7 +3394,6 @@ class _SalesScreenState extends State<SalesScreen>
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
             return Stack(
               children: [
                 Positioned(
@@ -3402,8 +3401,7 @@ class _SalesScreenState extends State<SalesScreen>
                   bottom:
                       MediaQuery.of(context).size.height -
                       buttonPosition.dy +
-                      8 +
-                      keyboardHeight,
+                      8,
                   child: Material(
                     color: Colors.transparent,
                     child: SizedBox(
