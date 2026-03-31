@@ -84,14 +84,20 @@ class TaxBreakdownWidget extends StatelessWidget {
           ),
         ),
         SizedBox(width: isTablet ? 24 : 16),
-        Text(
-          "\$${amount.toStringAsFixed(2)}",
-          style: TextStyle(
-            color: highlight
-                ? kPrimaryColor
-                : (isDark ? Colors.white : Colors.black87),
-            fontSize: isTablet ? 18 : 16,
-            fontWeight: FontWeight.bold,
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: true,
+            child: Text(
+              "\$${amount.toStringAsFixed(2)}",
+              style: TextStyle(
+                color: highlight
+                    ? kPrimaryColor
+                    : (isDark ? Colors.white : Colors.black87),
+                fontSize: isTablet ? 18 : 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       ],
@@ -179,14 +185,20 @@ class ProfitBreakdownWidget extends StatelessWidget {
           ),
         ),
         SizedBox(width: isTablet ? 24 : 16),
-        Text(
-          "\$${amount.toStringAsFixed(2)}",
-          style: TextStyle(
-            color: highlight
-                ? const Color(0xFF30B24C)
-                : (isDark ? Colors.white : Colors.black87),
-            fontSize: isTablet ? 18 : 16,
-            fontWeight: FontWeight.bold,
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: true,
+            child: Text(
+              "\$${amount.toStringAsFixed(2)}",
+              style: TextStyle(
+                color: highlight
+                    ? const Color(0xFF30B24C)
+                    : (isDark ? Colors.white : Colors.black87),
+                fontSize: isTablet ? 18 : 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       ],
@@ -213,14 +225,20 @@ class ProfitBreakdownWidget extends StatelessWidget {
           ),
         ),
         SizedBox(width: isTablet ? 24 : 16),
-        Text(
-          "${percent.toStringAsFixed(1)}%",
-          style: TextStyle(
-            color: highlight
-                ? const Color(0xFF30B24C)
-                : (isDark ? Colors.white : Colors.black87),
-            fontSize: isTablet ? 18 : 16,
-            fontWeight: FontWeight.bold,
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: true,
+            child: Text(
+              "${percent.toStringAsFixed(1)}%",
+              style: TextStyle(
+                color: highlight
+                    ? const Color(0xFF30B24C)
+                    : (isDark ? Colors.white : Colors.black87),
+                fontSize: isTablet ? 18 : 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       ],

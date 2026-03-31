@@ -745,15 +745,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           GestureDetector(
                                             onTap: _isRefreshingShopfront ? null : () => _refreshShopfront(context),
                                             child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                                               decoration: BoxDecoration(
                                                 color: Colors.green.withOpacity(0.15),
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius: BorderRadius.circular(6),
                                               ),
                                               child: _isRefreshingShopfront
                                                   ? const SizedBox(
-                                                      width: 26,
-                                                      height: 26,
+                                                      width: 18,
+                                                      height: 18,
                                                       child: CircularProgressIndicator(
                                                         strokeWidth: 2,
                                                         color: Colors.white,
@@ -761,21 +761,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                     )
                                                   : const Icon(
                                                       Icons.refresh,
-                                                      size: 26,
+                                                      size: 18,
                                                       color: Colors.white,
                                                     ),
                                             ),
                                           ),
-                                          const SizedBox(width: 8),
+                                          const SizedBox(width: 6),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                                             decoration: BoxDecoration(
                                               color: kPrimaryColor.withOpacity(0.15),
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius: BorderRadius.circular(6),
                                             ),
                                             child: const Icon(
                                               Icons.settings,
-                                              size: 26,
+                                              size: 18,
                                               color: Colors.white,
                                             ),
                                           ),
@@ -1125,14 +1125,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: Colors.blue.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(
               Icons.point_of_sale_outlined,
-              size: 20,
+              size: 16,
               color: isDark ? Colors.white : colors.onHero,
             ),
           ),
@@ -1164,19 +1164,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               color: kPrimaryColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: DropdownButton<String>(
               value: _cashDrawerIdentifier,
               icon: Icon(
                 Icons.arrow_drop_down,
+                size: 20,
                 color: isDark ? Colors.white : colors.onHero,
               ),
               underline: const SizedBox(),
               dropdownColor: isDark ? colors.surfaceAlt : Colors.white,
+              isDense: true,
               selectedItemBuilder: (BuildContext context) {
                 return drawerOptions.map<Widget>((String value) {
                   return Center(

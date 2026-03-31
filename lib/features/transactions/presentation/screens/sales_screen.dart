@@ -2992,32 +2992,37 @@ class _SalesScreenState extends State<SalesScreen>
             final double totalCost = _subtotal * 0.6; // Using default cost ratio
             final double egp = _subtotal - totalCost - tempDiscount;
             final double egpPercent = _subtotal > 0 ? (egp / _subtotal) * 100 : 0;
+            final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-            return Center(
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  width: isTablet ? 600 : MediaQuery.of(context).size.width * 0.92,
-                  padding: EdgeInsets.all(isTablet ? 28 : 20),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E2733) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 150),
+              padding: EdgeInsets.only(bottom: bottomInset),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Container(
+                      width: isTablet ? 600 : MediaQuery.of(context).size.width * 0.92,
+                      padding: EdgeInsets.all(isTablet ? 28 : 20),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Header
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
                           Text(
                             "Add Discount",
                             style: TextStyle(
@@ -3117,12 +3122,19 @@ class _SalesScreenState extends State<SalesScreen>
                                           color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
                                         ),
                                       ),
-                                      Text(
-                                        "\$${tempDiscount.toStringAsFixed(2)}",
-                                        style: TextStyle(
-                                          fontSize: isTablet ? 18 : 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: kPrimaryColor,
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          reverse: true,
+                                          child: Text(
+                                            "\$${tempDiscount.toStringAsFixed(2)}",
+                                            style: TextStyle(
+                                              fontSize: isTablet ? 18 : 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: kPrimaryColor,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -3149,12 +3161,19 @@ class _SalesScreenState extends State<SalesScreen>
                                           color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
                                         ),
                                       ),
-                                      Text(
-                                        "\$${(_subtotal - tempDiscount).toStringAsFixed(2)}",
-                                        style: TextStyle(
-                                          fontSize: isTablet ? 18 : 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: isDark ? Colors.white : Colors.black87,
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          reverse: true,
+                                          child: Text(
+                                            "\$${(_subtotal - tempDiscount).toStringAsFixed(2)}",
+                                            style: TextStyle(
+                                              fontSize: isTablet ? 18 : 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: isDark ? Colors.white : Colors.black87,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -3206,12 +3225,19 @@ class _SalesScreenState extends State<SalesScreen>
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
-                                        Text(
-                                          "${egpPercent.toStringAsFixed(1)}%",
-                                          style: TextStyle(
-                                            fontSize: isTablet ? 16 : 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: egp < 0 ? Colors.redAccent : const Color(0xFF30B24C),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            reverse: true,
+                                            child: Text(
+                                              "${egpPercent.toStringAsFixed(1)}%",
+                                              style: TextStyle(
+                                                fontSize: isTablet ? 16 : 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: egp < 0 ? Colors.redAccent : const Color(0xFF30B24C),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -3293,7 +3319,8 @@ class _SalesScreenState extends State<SalesScreen>
                   ),
                 ),
               ),
-            );
+            ),
+          ),);
           },
         );
       },
@@ -3314,12 +3341,19 @@ class _SalesScreenState extends State<SalesScreen>
             fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
-        Text(
-          "\$${amount.toStringAsFixed(2)}",
-          style: TextStyle(
-            fontSize: isTablet ? 16 : 14,
-            fontWeight: FontWeight.bold,
-            color: highlight ? highlightColor : (isDark ? Colors.white : Colors.black87),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: true,
+            child: Text(
+              "\$${amount.toStringAsFixed(2)}",
+              style: TextStyle(
+                fontSize: isTablet ? 16 : 14,
+                fontWeight: FontWeight.bold,
+                color: highlight ? highlightColor : (isDark ? Colors.white : Colors.black87),
+              ),
+            ),
           ),
         ),
       ],
