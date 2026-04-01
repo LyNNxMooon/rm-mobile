@@ -1,6 +1,8 @@
+import 'package:rmstock_scanner/entities/response/validate_response.dart';
+
 abstract class LoadingSplashRepo {
   Future<List<Map<String, dynamic>>> getSavedPaths();
-  Future<bool> validateConnection({
+  Future<ValidateResponse> validateConnection({
     required String ip,
     required int port,
     required String apiKey,

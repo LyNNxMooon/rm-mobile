@@ -539,6 +539,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final navigator = Navigator.of(context, rootNavigator: true);
               navigator.popUntil((route) => route is! PopupRoute);
 
+              // Save cash drawer from API response if available
+              if (state.response.cashDrawer != null &&
+                  state.response.cashDrawer!.isNotEmpty) {
+                LocalDbDAO.instance.saveAppConfig(
+                  _kCashDrawerIdentifierKey,
+                  state.response.cashDrawer!,
+                );
+                setState(() {
+                  _cashDrawerIdentifier = state.response.cashDrawer!;
+                });
+              }
+
               setState(() {
                 _savedPort = _selectedPort;
                 _savedApiKey = state.response.apiKey;
@@ -1090,7 +1102,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildCashDrawerDropdown() {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final List<String> drawerOptions = List.generate(26, (i) => String.fromCharCode(65 + i));
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
@@ -1114,7 +1125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Set Active Cash Drawer Identifier",
+                  "Active Cash Drawer",
                   style: TextStyle(
                     fontSize: 13,
                     color: isDark ? Colors.white70 : colors.onHero,
@@ -1136,54 +1147,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: kPrimaryColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: DropdownButton<String>(
-              value: _cashDrawerIdentifier,
-              icon: Icon(
-                Icons.arrow_drop_down,
-                size: 20,
-                color: isDark ? Colors.white : colors.onHero,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: kPrimaryColor.withOpacity(0.3),
+                width: 1,
               ),
-              underline: const SizedBox(),
-              dropdownColor: isDark ? colors.surfaceAlt : Colors.white,
-              isDense: true,
-              selectedItemBuilder: (BuildContext context) {
-                return drawerOptions.map<Widget>((String value) {
-                  return Center(
-                    child: Text(
-                      value,
-                      style: getSmartTitle(
-                        fontSize: 16,
-                        color: isDark ? Colors.white : colors.onHero,
-                      ),
-                    ),
-                  );
-                }).toList();
-              },
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  if (!AppGlobals.instance.hasPermission("Reconciliation_SetActiveCashDrawer")) {
-                    _showError(context, "You do not have permission to change Cash Drawer.");
-                    return;
-                  }
-                  _saveCashDrawerIdentifier(newValue);
-                }
-              },
-              items: drawerOptions.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
-                  ),
-                );
-              }).toList(),
+            ),
+            child: Text(
+              _cashDrawerIdentifier,
+              style: getSmartTitle(
+                fontSize: 18,
+                color: kPrimaryColor,
+              ),
             ),
           ),
         ],

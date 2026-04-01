@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
+import '../../../../local_db/local_db_dao.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
@@ -481,6 +482,15 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
             if (state is PairDeviceSuccess) {
               final selectedPc = _selectedPc;
               if (selectedPc == null) return;
+
+              // Save cash drawer from API response if available
+              if (state.response.cashDrawer != null &&
+                  state.response.cashDrawer!.isNotEmpty) {
+                LocalDbDAO.instance.saveAppConfig(
+                  'cash_drawer_identifier',
+                  state.response.cashDrawer!,
+                );
+              }
 
               final navigator = Navigator.of(context, rootNavigator: true);
               navigator.popUntil((route) => route.isFirst);

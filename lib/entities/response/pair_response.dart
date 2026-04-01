@@ -6,6 +6,7 @@ class PairResponse {
   final bool success;
   final String apiKey;
   final String deviceId;
+  final String? cashDrawer;
   final String message;
   final String? expiresAt;
 
@@ -13,8 +14,9 @@ class PairResponse {
     required this.success,
     required this.apiKey,
     required this.deviceId,
+    this.cashDrawer,
     required this.message,
-    required this.expiresAt,
+    this.expiresAt,
   });
 
   factory PairResponse.fromJson(Map<String, dynamic> json) =>

@@ -1,6 +1,7 @@
 import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
+import '../../../entities/response/validate_response.dart';
 import '../../../local_db/local_db_dao.dart';
 import '../../../network/LAN_sharing/lan_network_service_impl.dart';
 import '../../../network/data_agent/data_agent_impl.dart';
@@ -54,14 +55,14 @@ class LoadingSplashModels implements LoadingSplashRepo {
   }
 
   @override
-  Future<bool> validateConnection({
+  Future<ValidateResponse> validateConnection({
     required String ip,
     required int port,
     required String apiKey,
   }) async {
     try {
       final response = await DataAgentImpl.instance.validate(ip, port, apiKey);
-      return response.success;
+      return response;
     } on Exception catch (error) {
       return Future.error(error);
     }

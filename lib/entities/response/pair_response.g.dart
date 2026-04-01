@@ -10,6 +10,7 @@ PairResponse _$PairResponseFromJson(Map<String, dynamic> json) => PairResponse(
       success: json['success'] as bool,
       apiKey: json['apiKey'] as String,
       deviceId: json['deviceId'] as String,
+      cashDrawer: json['cashDrawer'] as String?,
       message: json['message'] as String,
       expiresAt: json['expiresAt'] as String?,
     );
@@ -19,6 +20,7 @@ Map<String, dynamic> _$PairResponseToJson(PairResponse instance) =>
       'success': instance.success,
       'apiKey': instance.apiKey,
       'deviceId': instance.deviceId,
+      'cashDrawer': instance.cashDrawer,
       'message': instance.message,
       'expiresAt': instance.expiresAt,
     };

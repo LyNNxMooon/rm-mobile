@@ -45,7 +45,7 @@ class CheckPathConnection {
 
       try {
         if (await InternetConnectionUtils.instance.checkInternetConnection()) {
-          final isValid = await repository
+          final validateResponse = await repository
               .validateConnection(
                 ip: savedIp!,
                 port: port,
@@ -53,13 +53,22 @@ class CheckPathConnection {
               )
               .timeout(_validateTimeout);
 
-          if (!isValid) {
+          if (!validateResponse.success) {
             await _hydrateGlobalsFromLocalConfig(
               savedShopfrontName: savedShopfrontName,
             );
             AppGlobals.instance.currentHostIp = null;
             AppGlobals.instance.hostName = null;
             return false;
+          }
+
+          // Save cash drawer from API response if available
+          if (validateResponse.cashDrawer != null && 
+              validateResponse.cashDrawer!.isNotEmpty) {
+            await LocalDbDAO.instance.saveAppConfig(
+              'cash_drawer_identifier',
+              validateResponse.cashDrawer!,
+            );
           }
 
           AppGlobals.instance.currentHostIp = savedIp;
