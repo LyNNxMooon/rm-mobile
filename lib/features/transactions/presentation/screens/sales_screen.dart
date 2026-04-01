@@ -136,7 +136,6 @@ class _SalesScreenState extends State<SalesScreen>
   bool _scanIndividualUnitsForFractional = false;
   bool _preventAddIfNoStock = false;
   bool _preventFinaliseIfOutOfStock = false;
-  bool _acceptLeadingZeros = false;
   bool _autoRemindLowStock = false;
   bool _promptScanIndividualFractional = false;
   bool _displayCustomerMessagesAsPrompt = false;
@@ -163,6 +162,8 @@ class _SalesScreenState extends State<SalesScreen>
           : "Add Survey";
 
   List<String> get _optionItems {
+    final hideCostPriceAndProfit = AppGlobals.instance.restrictedPermissions
+        .contains("Miscellaneous_HideCostPriceAndProfit");
     final items = <String>[
       _surveyLabel,
       "Add Comment",
@@ -170,7 +171,9 @@ class _SalesScreenState extends State<SalesScreen>
         "Add Discount",
       "Add Delivery",
       "View Tax",
-      "View Profit",
+      if (!hideCostPriceAndProfit) "View Profit",
+      "Save Session",
+      "Clear Session",
     ];
     return items;
   }
@@ -691,9 +694,8 @@ class _SalesScreenState extends State<SalesScreen>
                             ? (mode) => setState(() => _cartViewMode = mode)
                             : null,
                       ),
-                      // Scanner Area (hidden when keyboard is visible to prevent overflow)
-                      if (_showScanner &&
-                          MediaQuery.of(context).viewInsets.bottom == 0)
+                      // Scanner Area
+                      if (_showScanner)
                         SalesScannerArea(
                           scannerController: _scannerController,
                           onBarcodeScanned: _onBarcodeScanned,
@@ -751,28 +753,32 @@ class _SalesScreenState extends State<SalesScreen>
   PreferredSizeWidget _buildAppBar(AppThemeColors colors, bool isDark) {
     return AppBar(
       elevation: 0,
+      toolbarHeight: 40,
       backgroundColor: widget.themeColor,
       centerTitle: true,
+      leadingWidth: 40,
       leading: IconButton(
         icon: const Icon(
           Icons.arrow_back_ios_new,
           size: 20,
           color: Colors.white,
         ),
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
         onPressed: () => context.navigateBack(),
       ),
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(widget.icon, color: Colors.white, size: 20),
+            child: Icon(widget.icon, color: Colors.white, size: 18),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 6),
           Text(
             widget.title,
             style: const TextStyle(
@@ -908,82 +914,92 @@ class _SalesScreenState extends State<SalesScreen>
       return _buildCartLargeIconView(colors, isDark);
     }
 
-    // Default list view
-    return Column(
-      children: [
-        // Optional Tablet Header Row mimicking the desktop grid (not shown in compact view)
-        if (isTablet && !_isCompactView)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: isDark ? colors.surface : Colors.grey.shade200,
-              border: Border(
-                bottom: BorderSide(
-                  color: isDark ? Colors.white12 : Colors.grey.shade300,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                // Space for thumbnail
-                const SizedBox(width: 40),
-                Expanded(flex: 2, child: _buildGridHeader("Code", colors)),
-                const SizedBox(width: 30),
-                Expanded(
-                  flex: 4,
-                  child: _buildGridHeader("Description", colors),
-                ),
-                SizedBox(
-                  width: 120,
-                  child: _buildGridHeader("Price", colors, alignRight: true),
-                ),
-                SizedBox(
-                  width: 140,
-                  child: Center(child: _buildGridHeader("Qty", colors)),
-                ),
-                SizedBox(
-                  width: 130,
-                  child: _buildGridHeader("Ext", colors, alignRight: true),
-                ),
-              ],
-            ),
-          ),
-
-        // Cart List
-        Expanded(
-          child: AnimationLimiter(
-            child: ListView.separated(
-              controller: _scrollController,
-              padding: EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: _isCompactView ? 2 : 6,
-              ),
-              itemCount: _cartItems.length,
-              separatorBuilder: (context, index) =>
-                  SizedBox(height: _isCompactView ? 0 : 4),
-              itemBuilder: (context, index) {
-                final item = _cartItems[index];
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  duration: const Duration(milliseconds: 300),
-                  child: SlideAnimation(
-                    verticalOffset: 20.0,
-                    child: FadeInAnimation(
-                      child: _buildCartTileWithEditMode(
-                        item,
-                        index,
-                        colors,
-                        isDark,
-                        isTablet,
-                      ),
+    // Default list view - use CustomScrollView so header scrolls with content
+    // This prevents overflow when keyboard appears on tablets
+    return AnimationLimiter(
+      child: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          // Optional Tablet Header Row mimicking the desktop grid (not shown in compact view)
+          if (isTablet && !_isCompactView)
+            SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isDark ? colors.surface : Colors.grey.shade200,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey.shade300,
                     ),
                   ),
-                );
-              },
+                ),
+                child: Row(
+                  children: [
+                    // Space for thumbnail
+                    const SizedBox(width: 40),
+                    Expanded(flex: 2, child: _buildGridHeader("Code", colors)),
+                    const SizedBox(width: 30),
+                    Expanded(
+                      flex: 4,
+                      child: _buildGridHeader("Description", colors),
+                    ),
+                    SizedBox(
+                      width: 120,
+                      child: _buildGridHeader("Price", colors, alignRight: true),
+                    ),
+                    SizedBox(
+                      width: 140,
+                      child: Center(child: _buildGridHeader("Qty", colors)),
+                    ),
+                    SizedBox(
+                      width: 130,
+                      child: _buildGridHeader("Ext", colors, alignRight: true),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Cart List
+          SliverPadding(
+            padding: EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: _isCompactView ? 2 : 6,
+            ),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = _cartItems[index];
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: index < _cartItems.length - 1
+                          ? (_isCompactView ? 0 : 4)
+                          : 0,
+                    ),
+                    child: AnimationConfiguration.staggeredList(
+                      position: index,
+                      duration: const Duration(milliseconds: 300),
+                      child: SlideAnimation(
+                        verticalOffset: 20.0,
+                        child: FadeInAnimation(
+                          child: _buildCartTileWithEditMode(
+                            item,
+                            index,
+                            colors,
+                            isDark,
+                            isTablet,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                childCount: _cartItems.length,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1620,7 +1636,7 @@ class _SalesScreenState extends State<SalesScreen>
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1675,10 +1691,10 @@ class _SalesScreenState extends State<SalesScreen>
                                 ),
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: (_total - _totalPaid) <= 0
-                                        ? const Color(0xFF30B24C)
-                                        : Colors.redAccent,
-                                    width: 2,
+                                    color: isDark
+                                        ? Colors.white38
+                                        : Colors.grey.shade500,
+                                    width: 1.5,
                                   ),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
@@ -1687,9 +1703,7 @@ class _SalesScreenState extends State<SalesScreen>
                                   style: TextStyle(
                                     fontSize: isTablet ? 22 : 18,
                                     letterSpacing: -0.5,
-                                    color: (_total - _totalPaid) <= 0
-                                        ? const Color(0xFF30B24C)
-                                        : Colors.redAccent,
+                                    color: isDark ? Colors.white : colors.onSurface,
                                   ),
                                 ),
                               ),
@@ -2164,6 +2178,7 @@ class _SalesScreenState extends State<SalesScreen>
                   controller: controller,
                   autofocus: true,
                   maxLines: 4,
+                  maxLength: 225,
                   style: TextStyle(
                     fontSize: 14,
                     color: isDark ? Colors.white : Colors.black87,
@@ -2180,6 +2195,10 @@ class _SalesScreenState extends State<SalesScreen>
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.all(12),
+                    counterStyle: TextStyle(
+                      color: isDark ? Colors.white54 : Colors.grey.shade600,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2189,6 +2208,157 @@ class _SalesScreenState extends State<SalesScreen>
                     onTap: () {
                       setState(() {
                         _commentValue = controller.text.trim();
+                      });
+                      Navigator.of(dialogContext).pop();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF30B24C), Color(0xFF60D394)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        "Save",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSalesCustomerDialog(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    _surveyController.text = _surveyValue;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (dialogContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
+          ),
+          child: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _surveyLabel,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    if (_surveyValue.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _surveyValue = '';
+                            _surveyController.clear();
+                          });
+                          Navigator.of(dialogContext).pop();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            "Remove",
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _surveyController,
+                  autofocus: true,
+                  maxLines: 1,
+                  maxLength: 20,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: "Enter value...",
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.white30 : Colors.grey.shade400,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    counterStyle: TextStyle(
+                      color: isDark ? Colors.white54 : Colors.grey.shade600,
+                      fontSize: 11,
+                    ),
+                  ),
+                  onSubmitted: (value) {
+                    setState(() {
+                      _surveyValue = value.trim();
+                    });
+                    Navigator.of(dialogContext).pop();
+                  },
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _surveyValue = _surveyController.text.trim();
                       });
                       Navigator.of(dialogContext).pop();
                     },
@@ -2587,20 +2757,6 @@ class _SalesScreenState extends State<SalesScreen>
                               isDark,
                               colors,
                               [
-                                _buildSettingsSwitch(
-                                  'Accept Leading Zeros on Barcodes',
-                                  _acceptLeadingZeros,
-                                  (v) {
-                                    setDialogState(() => _acceptLeadingZeros = v);
-                                    setState(() {});
-                                  },
-                                  isDark,
-                                  colors,
-                                ),
-                                Divider(
-                                  height: 1,
-                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
-                                ),
                                 _buildSettingsSwitch(
                                   'Auto Remind - Low Stock',
                                   _autoRemindLowStock,
@@ -3375,6 +3531,8 @@ class _SalesScreenState extends State<SalesScreen>
 
     bool surveyExpanded = false;
     _surveyController.text = _surveyValue;
+    final isTablet = context.isTablet;
+    final gridWidth = isTablet ? 440.0 : 360.0;
 
     showGeneralDialog(
       context: context,
@@ -3404,401 +3562,104 @@ class _SalesScreenState extends State<SalesScreen>
                       8,
                   child: Material(
                     color: Colors.transparent,
-                    child: SizedBox(
-                      width: context.isTablet ? 280 : 220,
-                      child: AnimatedBuilder(
-                        animation: curvedAnimation,
-                        builder: (context, child) {
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              ..._optionItems.reversed
-                                  .toList()
-                                  .asMap()
-                                  .entries
-                                  .map((entry) {
-                                    final reverseIndex = entry.key;
-                                    final index =
-                                        _optionItems.length - 1 - reverseIndex;
-                                    final item = entry.value;
-                                    final isFirst = index == 0;
-
-                                    // Stagger the reveal: bottom items appear first, slower rollout
-                                    final staggerFactor =
-                                        _optionItems.length + 3;
-                                    final itemProgress =
-                                        ((curvedAnimation.value *
-                                                    staggerFactor) -
-                                                reverseIndex)
-                                            .clamp(0.0, 1.0);
-
-                                    return ClipRect(
-                                      child: Align(
-                                        alignment: Alignment.bottomCenter,
-                                        heightFactor: itemProgress,
-                                        child: Opacity(
-                                          opacity: itemProgress,
-                                          child: Padding(
-                                            padding: EdgeInsets.only(
-                                              left: 0,
-                                              right: 40,
-                                              top: isFirst ? 8 : 4,
-                                              bottom:
-                                                  index ==
-                                                      _optionItems.length - 1
-                                                  ? 8
-                                                  : 4,
-                                            ),
-                                            child: item == _surveyLabel
-                                                ? _buildSurveyMenuItem(
-                                                    context,
-                                                    colors,
-                                                    isDark,
-                                                    surveyExpanded,
-                                                    (expanded) {
-                                                      setDialogState(() {
-                                                        surveyExpanded =
-                                                            expanded;
-                                                      });
-                                                    },
-                                                  )
-                                                : item == "Add Discount"
-                                                ? InkWell(
-                                                    onTap: () {
-                                                      Navigator.of(context).pop();
-                                                      setState(() {
-                                                        _showActions = false;
-                                                        _actionsAnimationController.reverse();
-                                                      });
-                                                      _showDiscountDialog(
-                                                        this.context,
-                                                        colors,
-                                                        isDark,
-                                                      );
-                                                    },
-                                                    borderRadius: BorderRadius.circular(10),
-                                                    child: Container(
-                                                      padding: EdgeInsets.symmetric(
-                                                        horizontal: MediaQuery.of(context).size.shortestSide >= 600 ? 16 : 12,
-                                                        vertical: MediaQuery.of(context).size.shortestSide >= 600 ? 14 : 10,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color: isDark ? const Color(0xFF1E2733) : Colors.white,
-                                                        borderRadius: BorderRadius.circular(10),
-                                                        boxShadow: [
-                                                          BoxShadow(
-                                                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                                                            blurRadius: 8,
-                                                            offset: const Offset(0, 2),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      child: Row(
-                                                        children: [
-                                                          Icon(
-                                                            Icons.discount_outlined,
-                                                            size: MediaQuery.of(context).size.shortestSide >= 600 ? 22 : 18,
-                                                            color: kPrimaryColor,
-                                                          ),
-                                                          SizedBox(width: MediaQuery.of(context).size.shortestSide >= 600 ? 16 : 12),
-                                                          Expanded(
-                                                            child: Column(
-                                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                                              mainAxisSize: MainAxisSize.min,
-                                                              children: [
-                                                                Text(
-                                                                  "Add Discount",
-                                                                  style: TextStyle(
-                                                                    color: isDark ? Colors.white : Colors.blueGrey.shade800,
-                                                                    fontWeight: FontWeight.w500,
-                                                                    fontSize: MediaQuery.of(context).size.shortestSide >= 600 ? 15 : 13,
-                                                                  ),
-                                                                ),
-                                                                if (_discountValue > 0)
-                                                                  Text(
-                                                                    "\$${_discountValue.toStringAsFixed(2)}",
-                                                                    style: TextStyle(
-                                                                      color: kPrimaryColor,
-                                                                      fontWeight: FontWeight.bold,
-                                                                      fontSize: MediaQuery.of(context).size.shortestSide >= 600 ? 13 : 11,
-                                                                    ),
-                                                                  ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  )
-                                                : InkWell(
-                                                    onTap: () {
-                                                      if (item ==
-                                                          "Add Comment") {
-                                                        Navigator.of(
-                                                          context,
-                                                        ).pop();
-                                                        // Use a microtask to show dialog after pop completes
-                                                        Future.microtask(() {
-                                                          if (mounted) {
-                                                            _showCommentDialog(
-                                                              this.context,
-                                                              colors,
-                                                              isDark,
-                                                            );
-                                                          }
-                                                        });
-                                                      } else if (item ==
-                                                          "Add Delivery") {
-                                                        Navigator.of(
-                                                          context,
-                                                        ).pop();
-                                                        setState(() {
-                                                          _showActions = false;
-                                                          _actionsAnimationController
-                                                              .reverse();
-                                                        });
-                                                        // Check if customer is selected
-                                                        if (_selectedCustomer ==
-                                                            null) {
-                                                          Future.microtask(() {
-                                                            if (mounted) {
-                                                              AlertInfo.show(
-                                                                context: this
-                                                                    .context,
-                                                                text:
-                                                                    "Please select a customer before adding delivery details",
-                                                                typeInfo:
-                                                                    TypeInfo
-                                                                        .warning,
-                                                                backgroundColor:
-                                                                    isDark
-                                                                    ? colors
-                                                                          .surface
-                                                                    : kSecondaryColor,
-                                                                iconColor:
-                                                                    Colors
-                                                                        .orange,
-                                                                textColor:
-                                                                    Colors
-                                                                        .orange,
-                                                                position:
-                                                                    MessagePosition
-                                                                        .top,
-                                                                padding: 70,
-                                                              );
-                                                            }
-                                                          });
-                                                          return;
-                                                        }
-                                                        // Navigate to Delivery Details screen
-                                                        Future.microtask(() async {
-                                                          if (mounted) {
-                                                            final result =
-                                                                await Navigator.of(
-                                                                  this.context,
-                                                                ).push<
-                                                                  DeliveryInfoVO
-                                                                >(
-                                                                  MaterialPageRoute(
-                                                                    builder: (ctx) => DeliveryDetailsScreen(
-                                                                      initialCustomer:
-                                                                          _selectedCustomer,
-                                                                      existingDelivery:
-                                                                          _deliveryInfo,
-                                                                    ),
-                                                                  ),
-                                                                );
-                                                            if (result !=
-                                                                    null &&
-                                                                mounted) {
-                                                              setState(
-                                                                () =>
-                                                                    _deliveryInfo =
-                                                                        result,
-                                                              );
-                                                            }
-                                                          }
-                                                        });
-                                                      } else if (item ==
-                                                          "View Tax") {
-                                                        Navigator.of(
-                                                          context,
-                                                        ).pop();
-                                                        setState(() {
-                                                          _showActions = false;
-                                                          _actionsAnimationController
-                                                              .reverse();
-                                                        });
-                                                        _showTaxDialog(
-                                                          context,
-                                                          colors,
-                                                          isDark,
-                                                        );
-                                                      } else if (item ==
-                                                          "View Profit") {
-                                                        Navigator.of(
-                                                          context,
-                                                        ).pop();
-                                                        setState(() {
-                                                          _showActions = false;
-                                                          _actionsAnimationController
-                                                              .reverse();
-                                                        });
-                                                        _showProfitDialog(
-                                                          context,
-                                                          colors,
-                                                          isDark,
-                                                        );
-                                                      } else {
-                                                        Navigator.of(
-                                                          context,
-                                                        ).pop();
-                                                        setState(() {
-                                                          _selectedOption =
-                                                              item;
-                                                          _showActions = false;
-                                                          _actionsAnimationController
-                                                              .reverse();
-                                                        });
-                                                      }
-                                                    },
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          10,
-                                                        ),
-                                                    child: Container(
-                                                      padding: EdgeInsets.symmetric(
-                                                        horizontal:
-                                                            MediaQuery.of(
-                                                                      context,
-                                                                    )
-                                                                    .size
-                                                                    .shortestSide >=
-                                                                600
-                                                            ? 16
-                                                            : 12,
-                                                        vertical:
-                                                            MediaQuery.of(
-                                                                      context,
-                                                                    )
-                                                                    .size
-                                                                    .shortestSide >=
-                                                                600
-                                                            ? 14
-                                                            : 10,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color: isDark
-                                                            ? const Color(
-                                                                0xFF1E2733,
-                                                              )
-                                                            : Colors.white,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              10,
-                                                            ),
-                                                        boxShadow: [
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                  isDark
-                                                                      ? 0.3
-                                                                      : 0.1,
-                                                                ),
-                                                            blurRadius: 8,
-                                                            offset:
-                                                                const Offset(
-                                                                  0,
-                                                                  2,
-                                                                ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      child: Row(
-                                                        children: [
-                                                          Icon(
-                                                            _getActionIcon(
-                                                              item,
-                                                            ),
-                                                            size:
-                                                                MediaQuery.of(
-                                                                      context,
-                                                                    ).size.shortestSide >=
-                                                                    600
-                                                                ? 22
-                                                                : 18,
-                                                            color:
-                                                                kPrimaryColor,
-                                                          ),
-                                                          SizedBox(
-                                                            width:
-                                                                MediaQuery.of(
-                                                                      context,
-                                                                    ).size.shortestSide >=
-                                                                    600
-                                                                ? 16
-                                                                : 12,
-                                                          ),
-                                                          Expanded(
-                                                            child: Text(
-                                                              item,
-                                                              style: TextStyle(
-                                                                color: isDark
-                                                                    ? Colors
-                                                                          .white
-                                                                    : Colors
-                                                                          .blueGrey
-                                                                          .shade800,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w500,
-                                                                fontSize:
-                                                                    MediaQuery.of(
-                                                                          context,
-                                                                        ).size.shortestSide >=
-                                                                        600
-                                                                    ? 15
-                                                                    : 13,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          // Arrow icon for Comment when has value
-                                                          if (item ==
-                                                                  "Add Comment" &&
-                                                              _commentValue
-                                                                  .isNotEmpty)
-                                                            Icon(
-                                                              Icons
-                                                                  .arrow_forward_ios,
-                                                              size:
-                                                                  MediaQuery.of(
-                                                                        context,
-                                                                      ).size.shortestSide >=
-                                                                      600
-                                                                  ? 16
-                                                                  : 14,
-                                                              color:
-                                                                  kPrimaryColor,
-                                                            ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  })
-                                  .toList()
-                                  .reversed,
+                    child: AnimatedBuilder(
+                      animation: curvedAnimation,
+                      builder: (context, child) {
+                        return ClipRect(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            heightFactor: curvedAnimation.value,
+                            child: Opacity(
+                              opacity: curvedAnimation.value,
+                              child: child,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: gridWidth,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Row 1: Sales Customer | Add Discount
+                            Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildGridActionTile(
+                                      context, colors, isDark, _surveyLabel,
+                                      isSurvey: true,
+                                      surveyExpanded: surveyExpanded,
+                                      onSurveyExpandChanged: (expanded) {
+                                        setDialogState(() => surveyExpanded = expanded);
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: AppGlobals.instance.hasPermission("Miscellaneous_LockDiscount")
+                                        ? _buildGridActionTile(context, colors, isDark, "Add Discount")
+                                        : const SizedBox.shrink(),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              // Row 2: Add Comment | View Tax
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildGridActionTile(context, colors, isDark, "Add Comment"),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: _buildGridActionTile(context, colors, isDark, "View Tax"),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              // Row 3: Add Delivery | View Profit
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildGridActionTile(context, colors, isDark, "Add Delivery"),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: !AppGlobals.instance.restrictedPermissions.contains("Miscellaneous_HideCostPriceAndProfit")
+                                        ? _buildGridActionTile(context, colors, isDark, "View Profit")
+                                        : const SizedBox.shrink(),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              // Row 4: Save Session | Clear Session
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildGridActionTile(
+                                      context, colors, isDark, "Save Session",
+                                      tileColor: kPrimaryColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: _buildGridActionTile(
+                                      context, colors, isDark, "Clear Session",
+                                      tileColor: kErrorColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
-                          );
-                        },
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                
               ],
             );
           },
@@ -3948,11 +3809,343 @@ class _SalesScreenState extends State<SalesScreen>
         return Icons.receipt_long_outlined;
       case "View Profit":
         return Icons.trending_up_outlined;
+      case "Save Session":
+        return Icons.save_outlined;
+      case "Clear Session":
+        return Icons.delete_outline;
       case "Finalise":
         return Icons.check_circle_outline;
       default:
         return Icons.more_horiz;
     }
+  }
+
+  Widget _buildGridActionTile(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+    String item, {
+    Color? tileColor,
+    bool isSurvey = false,
+    bool surveyExpanded = false,
+    Function(bool)? onSurveyExpandChanged,
+  }) {
+    final isTablet = context.isTablet;
+    // When tileColor is set (Save/Clear Session), use white for icon and text
+    final iconColor = tileColor != null ? Colors.white : kPrimaryColor;
+    final textColor = tileColor != null
+        ? Colors.white
+        : (isDark ? Colors.white : Colors.blueGrey.shade800);
+
+    if (isSurvey) {
+      return _buildSurveyGridTile(
+        context, colors, isDark, surveyExpanded, onSurveyExpandChanged!,
+      );
+    }
+
+    return InkWell(
+      onTap: () => _handleGridActionTap(context, colors, isDark, item),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 16 : 14,
+          vertical: isTablet ? 16 : 14,
+        ),
+        decoration: BoxDecoration(
+          color: tileColor ?? (isDark ? const Color(0xFF1E2733) : Colors.white),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _getActionIcon(item),
+              size: isTablet ? 24 : 22,
+              color: iconColor,
+            ),
+            SizedBox(width: isTablet ? 12 : 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item,
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: isTablet ? 15 : 13,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (item == "Add Discount" && _discountValue > 0)
+                    Text(
+                      "\$${_discountValue.toStringAsFixed(2)}",
+                      style: TextStyle(
+                        color: kPrimaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: isTablet ? 13 : 11,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (item == "Add Comment" && _commentValue.isNotEmpty)
+              Icon(
+                Icons.check_circle,
+                size: isTablet ? 18 : 16,
+                color: kPrimaryColor,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSurveyGridTile(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+    bool expanded,
+    Function(bool) onExpandChanged,
+  ) {
+    final isTablet = context.isTablet;
+
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).pop();
+        setState(() {
+          _showActions = false;
+          _actionsAnimationController.reverse();
+        });
+        Future.microtask(() {
+          if (mounted) {
+            _showSalesCustomerDialog(this.context, colors, isDark);
+          }
+        });
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 16 : 14,
+          vertical: isTablet ? 16 : 14,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E2733) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.poll_outlined,
+              size: isTablet ? 24 : 22,
+              color: kPrimaryColor,
+            ),
+            SizedBox(width: isTablet ? 12 : 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _surveyLabel,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.blueGrey.shade800,
+                      fontWeight: FontWeight.w600,
+                      fontSize: isTablet ? 15 : 13,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (_surveyValue.isNotEmpty)
+                    Text(
+                      _surveyValue,
+                      style: TextStyle(
+                        color: kPrimaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: isTablet ? 13 : 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            if (_surveyValue.isNotEmpty)
+              Icon(
+                Icons.check_circle,
+                size: isTablet ? 18 : 16,
+                color: kPrimaryColor,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleGridActionTap(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+    String item,
+  ) {
+    Navigator.of(context).pop();
+    setState(() {
+      _showActions = false;
+      _actionsAnimationController.reverse();
+    });
+
+    if (item == "Add Comment") {
+      Future.microtask(() {
+        if (mounted) {
+          _showCommentDialog(this.context, colors, isDark);
+        }
+      });
+    } else if (item == "Add Discount") {
+      _showDiscountDialog(this.context, colors, isDark);
+    } else if (item == "Add Delivery") {
+      if (_selectedCustomer == null) {
+        Future.microtask(() {
+          if (mounted) {
+            AlertInfo.show(
+              context: this.context,
+              text: "Please select a customer before adding delivery details",
+              typeInfo: TypeInfo.warning,
+              backgroundColor: isDark ? colors.surface : kSecondaryColor,
+              iconColor: Colors.orange,
+              textColor: Colors.orange,
+              position: MessagePosition.top,
+              padding: 70,
+            );
+          }
+        });
+        return;
+      }
+      Future.microtask(() async {
+        if (mounted) {
+          final result = await Navigator.of(this.context).push<DeliveryInfoVO>(
+            MaterialPageRoute(
+              builder: (ctx) => DeliveryDetailsScreen(
+                initialCustomer: _selectedCustomer,
+                existingDelivery: _deliveryInfo,
+              ),
+            ),
+          );
+          if (result != null && mounted) {
+            setState(() => _deliveryInfo = result);
+          }
+        }
+      });
+    } else if (item == "View Tax") {
+      _showTaxDialog(this.context, colors, isDark);
+    } else if (item == "View Profit") {
+      _showProfitDialog(this.context, colors, isDark);
+    } else if (item == "Save Session") {
+      _saveAndShowConfirmation();
+    } else if (item == "Clear Session") {
+      _showClearSessionDialog(colors, isDark);
+    }
+  }
+
+  Future<void> _saveAndShowConfirmation() async {
+    // Session is auto-saved, this button just provides user assurance
+    if (mounted) {
+      AlertInfo.show(
+        context: context,
+        text: "Session saved",
+        typeInfo: TypeInfo.success,
+        backgroundColor: context.appColors.surface,
+        iconColor: kPrimaryColor,
+        textColor: kPrimaryColor,
+        position: MessagePosition.top,
+        padding: 70,
+      );
+    }
+  }
+
+  void _showClearSessionDialog(AppThemeColors colors, bool isDark) {
+    if (_cartItems.isEmpty && _currentSessionId == null) {
+      return;
+    }
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E2733) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          "Clear Session",
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          "Are you sure you want to clear this session? This will delete it permanently.",
+          style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black54,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: isDark ? Colors.white70 : Colors.grey),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              // Delete session from database
+              if (_currentSessionId != null) {
+                await _salesBloc.deleteSaleSession(sessionId: _currentSessionId!);
+              }
+              // Clear cart and reset all state
+              _salesBloc.add(ClearCart());
+              setState(() {
+                _selectedCustomer = null;
+                _deliveryInfo = null;
+                _commentValue = "";
+                _surveyValue = "";
+                _discountValue = 0;
+                _currentSessionId = null;
+              });
+              if (mounted) {
+                AlertInfo.show(
+                  context: context,
+                  text: "Session cleared",
+                  typeInfo: TypeInfo.info,
+                  backgroundColor: colors.surface,
+                  iconColor: kPrimaryColor,
+                  textColor: colors.onSurface,
+                  position: MessagePosition.top,
+                  padding: 70,
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kErrorColor,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text("Clear"),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTaxBreakdown(AppThemeColors colors, bool isDark) {

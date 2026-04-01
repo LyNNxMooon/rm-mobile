@@ -3829,6 +3829,28 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<Map<String, int>> getSaleSessionCounts(String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.rawQuery(
+        'SELECT session_type, COUNT(*) as count FROM SaleSessions WHERE shopfront = ? GROUP BY session_type',
+        [shopfront],
+      );
+      
+      final counts = <String, int>{};
+      for (final row in result) {
+        final sessionType = row['session_type'] as String;
+        final count = row['count'] as int;
+        counts[sessionType] = count;
+      }
+      return counts;
+    } catch (error) {
+      logger.e('Error getting sale session counts: $error');
+      return {};
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Tax Codes
   // ---------------------------------------------------------------------------

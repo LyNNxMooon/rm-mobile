@@ -33,9 +33,9 @@ class SalesSearchBar extends StatelessWidget {
     final bool isTablet = context.isTablet;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Container(
-        height: isTablet ? 50 : 44,
+        height: isTablet ? 46 : 40,
         decoration: BoxDecoration(
           color: isDark ? colors.surface : Colors.white,
           borderRadius: BorderRadius.circular(8),

@@ -9,6 +9,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/responsive_utils.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
@@ -39,7 +40,38 @@ class GlassDrawer extends StatefulWidget {
   State<GlassDrawer> createState() => _GlassDrawerState();
 }
 
-class _GlassDrawerState extends State<GlassDrawer> {
+class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
+  Map<String, int> _sessionCounts = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSessionCounts();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh counts when returning to this screen
+    _loadSessionCounts();
+  }
+
+  Future<void> _loadSessionCounts() async {
+    final shopfront = AppGlobals.instance.shopfront;
+    if (shopfront == null || shopfront.isEmpty) return;
+    
+    try {
+      final counts = await LocalDbDAO.instance.getSaleSessionCounts(shopfront);
+      if (mounted) {
+        setState(() {
+          _sessionCounts = counts;
+        });
+      }
+    } catch (e) {
+      // Silently handle errors
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
@@ -188,12 +220,32 @@ class _GlassDrawerState extends State<GlassDrawer> {
                 ),
                 itemCount: _transactionItems.length,
                 itemBuilder: (context, index) {
+                  final item = _transactionItems[index];
+                  // Map action to session type for badge count
+                  String? sessionType;
+                  switch (item['action']) {
+                    case 'account_sales':
+                      sessionType = 'Account Sales';
+                      break;
+                    case 'sales_order':
+                      sessionType = 'Sales Order';
+                      break;
+                    case 'quotes':
+                      sessionType = 'Quotes';
+                      break;
+                    case 'lay_bys':
+                      sessionType = 'Lay-bys';
+                      break;
+                  }
+                  final badgeCount = sessionType != null ? (_sessionCounts[sessionType] ?? 0) : 0;
+                  
                   return _buildGridItem(
-                    _transactionItems[index],
+                    item,
                     context,
                     index,
                     crossAxisCount,
                     isTransaction: true,
+                    badgeCount: badgeCount,
                   );
                 },
               ),
@@ -285,7 +337,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
         title: "Account Sales",
         themeColor: Color.fromARGB(255, 238, 130, 166),
         icon: Icons.receipt_long_outlined,
-      ));
+      )).then((_) => _loadSessionCounts());
     } else if (action == "sales_order") {
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
@@ -300,7 +352,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
         title: "Sales Order",
         themeColor: Color.fromARGB(255, 44, 133, 211),
         icon: Icons.shopping_cart_outlined,
-      ));
+      )).then((_) => _loadSessionCounts());
     } else if (action == "quotes") {
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
@@ -315,7 +367,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
         title: "Quotes",
         themeColor: Colors.orange,
         icon: Icons.request_quote_outlined,
-      ));
+      )).then((_) => _loadSessionCounts());
     } else if (action == "lay_bys") {
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
@@ -330,7 +382,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
         title: "Lay-bys",
         themeColor: Color.fromARGB(255, 152, 86, 165),
         icon: Icons.inventory_2_outlined,
-      ));
+      )).then((_) => _loadSessionCounts());
     } else {
       context.navigateToNext(const ComingSoonScreen());
     }
@@ -342,6 +394,7 @@ class _GlassDrawerState extends State<GlassDrawer> {
     int index,
     int columnCount, {
     bool isTransaction = false,
+    int badgeCount = 0,
   }) {
     final colors = context.appColors;
     final bool isTablet = context.isTablet;
@@ -467,25 +520,40 @@ class _GlassDrawerState extends State<GlassDrawer> {
                       ),
                     ),
                   ),
-                // Corner badge for transaction items (commented out)
-                // if (isTransaction && !isComingSoon)
-                //   Positioned(
-                //     top: 0,
-                //     left: 0,
-                //     child: ClipPath(
-                //       clipper: _CornerTriangleClipper(),
-                //       child: Container(
-                //         width: 30,
-                //         height: 30,
-                //         decoration: BoxDecoration(
-                //           color: itemColor,
-                //           borderRadius: const BorderRadius.only(
-                //             topLeft: Radius.circular(15),
-                //           ),
-                //         ),
-                //       ),
-                //     ),
-                //   ),
+                // Session count badge
+                if (isTransaction && !isComingSoon && badgeCount > 0)
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Container(
+                      constraints: BoxConstraints(
+                        minWidth: isTablet ? 22 : 18,
+                        minHeight: isTablet ? 22 : 18,
+                      ),
+                      padding: EdgeInsets.all(isTablet ? 4 : 3),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.4),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          badgeCount > 99 ? '99+' : badgeCount.toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isTablet ? 11 : 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

@@ -109,7 +109,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     final bool isTablet = context.isTablet;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(16, isTablet ? 12 : 8, 16, isTablet ? 12 : 8),
+      padding: EdgeInsets.fromLTRB(12, isTablet ? 8 : 5, 12, isTablet ? 8 : 5),
       decoration: BoxDecoration(
         color: isDark ? colors.surfaceAlt : Colors.white,
         border: Border(
@@ -149,7 +149,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
               _buildTaxToggle(colors, isDark, isTablet),
             ],
           ),
-          SizedBox(height: isTablet ? 12 : 8),
+          SizedBox(height: isTablet ? 8 : 5),
 
           // Customer Search Field or Selected Customer Display
           _isSearchMode || !widget.hasCustomer
@@ -258,7 +258,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
 
   Widget _buildCustomerSearchField(AppThemeColors colors, bool isDark, bool isTablet) {
     return Container(
-      height: isTablet ? 50 : 44,
+      height: isTablet ? 46 : 40,
       decoration: BoxDecoration(
         color: isDark ? colors.surface : Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -324,7 +324,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
 
   Widget _buildCustomerSelector(AppThemeColors colors, bool isDark, bool isTablet) {
     return Container(
-      height: isTablet ? 50 : 44,
+      height: isTablet ? 46 : 40,
       decoration: BoxDecoration(
         color: isDark ? colors.surface : Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -363,10 +363,10 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
           GestureDetector(
             onTap: widget.onViewCustomerTransactions,
             child: Padding(
-              padding: const EdgeInsets.only(left: 8, right: 4),
+              padding: EdgeInsets.only(left: 8, right: isTablet ? 0 : 4),
               child: Icon(
                 Icons.receipt_long_outlined,
-                size: 22,
+                size: isTablet ? 26 : 22,
                 color: kPrimaryColor,
               ),
             ),
@@ -375,10 +375,10 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
           GestureDetector(
             onTap: widget.onCustomerClear,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: EdgeInsets.only(left: isTablet ? 15 : 0, right: 12),
               child: Icon(
                 Icons.close,
-                size: 22,
+                size: isTablet ? 26 : 22,
                 color: colors.onSurfaceMuted,
               ),
             ),

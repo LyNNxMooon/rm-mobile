@@ -276,7 +276,7 @@ class SaleSessionPickerDialog extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            session.customerName ?? "Walk-in Customer",
+                            session.customerName ?? "Customer",
                             style: TextStyle(
                               fontSize: isTablet ? 16 : 14,
                               fontWeight: FontWeight.w600,
