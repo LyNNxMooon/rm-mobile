@@ -253,76 +253,85 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: Image.asset(
-                            "assets/images/cus1.png",
-                            fit: BoxFit.fill,
+                  SizedBox(
+                    width: 120,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        widget.custom1Label,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: onGlass,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(width: (isTablet ? 45 : 35) * uiScale),
-                  Expanded(
-                    child: SizedBox(
-                      height: customFieldHeight,
-                      child: TextField(
-                        controller: widget.custom1Controller,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: onGlass,
-                        ),
-                        onEditingComplete: () {
-                          final trimmedValue = widget.custom1Controller.text.trim();
-                          if (widget.custom1Controller.text != trimmedValue) {
-                            widget.custom1Controller.value = widget.custom1Controller.value.copyWith(
-                              text: trimmedValue,
-                              selection: TextSelection.collapsed(offset: trimmedValue.length),
-                            );
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: widget.custom1Label,
-                          hintStyle: TextStyle(
-                            color: onGlassMuted,
-                            fontSize: 14,
-                          ),
-                          filled: true,
-                          fillColor: Colors.transparent,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(7),
-                            borderSide: BorderSide(
-                              color: isDark ? Colors.white : Colors.grey[300]!,
-                              width: 0.5,
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: Image.asset(
+                              "assets/images/cus1.png",
+                              fit: BoxFit.fill,
                             ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(7),
-                            borderSide: const BorderSide(
-                              color: kPrimaryColor,
-                              width: 1,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            widget.custom1Label,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: onGlass,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 350),
+                      child: SizedBox(
+                        height: customFieldHeight,
+                        child: TextField(
+                          controller: widget.custom1Controller,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: onGlass,
+                          ),
+                          onEditingComplete: () {
+                            final trimmedValue = widget.custom1Controller.text.trim();
+                            if (widget.custom1Controller.text != trimmedValue) {
+                              widget.custom1Controller.value = widget.custom1Controller.value.copyWith(
+                                text: trimmedValue,
+                                selection: TextSelection.collapsed(offset: trimmedValue.length),
+                              );
+                            }
+                          },
+                          decoration: InputDecoration(
+                            hintText: widget.custom1Label,
+                            hintStyle: TextStyle(
+                              color: onGlassMuted,
+                              fontSize: 14,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(7),
+                              borderSide: BorderSide(
+                                color: isDark ? Colors.white : Colors.grey[300]!,
+                                width: 0.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(7),
+                              borderSide: const BorderSide(
+                                color: kPrimaryColor,
+                                width: 1,
+                              ),
                             ),
                           ),
                         ),
@@ -336,76 +345,85 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: Colors.deepOrange.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: Image.asset(
-                            "assets/images/cus2.png",
-                            fit: BoxFit.fill,
+                  SizedBox(
+                    width: 120,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.deepOrange.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        widget.custom2Label,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: onGlass,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(width: (isTablet ? 45 : 35) * uiScale),
-                  Expanded(
-                    child: SizedBox(
-                      height: customFieldHeight,
-                      child: TextField(
-                        controller: widget.custom2Controller,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: onGlass,
-                        ),
-                        onEditingComplete: () {
-                          final trimmedValue = widget.custom2Controller.text.trim();
-                          if (widget.custom2Controller.text != trimmedValue) {
-                            widget.custom2Controller.value = widget.custom2Controller.value.copyWith(
-                              text: trimmedValue,
-                              selection: TextSelection.collapsed(offset: trimmedValue.length),
-                            );
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: widget.custom2Label,
-                          hintStyle: TextStyle(
-                            color: onGlassMuted,
-                            fontSize: 14,
-                          ),
-                          filled: true,
-                          fillColor: Colors.transparent,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(7),
-                            borderSide: BorderSide(
-                              color: isDark ? Colors.white : Colors.grey[300]!,
-                              width: 0.5,
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: Image.asset(
+                              "assets/images/cus2.png",
+                              fit: BoxFit.fill,
                             ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(7),
-                            borderSide: const BorderSide(
-                              color: kPrimaryColor,
-                              width: 1,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            widget.custom2Label,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: onGlass,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 350),
+                      child: SizedBox(
+                        height: customFieldHeight,
+                        child: TextField(
+                          controller: widget.custom2Controller,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: onGlass,
+                          ),
+                          onEditingComplete: () {
+                            final trimmedValue = widget.custom2Controller.text.trim();
+                            if (widget.custom2Controller.text != trimmedValue) {
+                              widget.custom2Controller.value = widget.custom2Controller.value.copyWith(
+                                text: trimmedValue,
+                                selection: TextSelection.collapsed(offset: trimmedValue.length),
+                              );
+                            }
+                          },
+                          decoration: InputDecoration(
+                            hintText: widget.custom2Label,
+                            hintStyle: TextStyle(
+                              color: onGlassMuted,
+                              fontSize: 14,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(7),
+                              borderSide: BorderSide(
+                                color: isDark ? Colors.white : Colors.grey[300]!,
+                                width: 0.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(7),
+                              borderSide: const BorderSide(
+                                color: kPrimaryColor,
+                                width: 1,
+                              ),
                             ),
                           ),
                         ),

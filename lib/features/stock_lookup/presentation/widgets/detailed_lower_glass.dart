@@ -3,8 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:languagetool_textfield/languagetool_textfield.dart';
+import 'package:rmstock_scanner/entities/vos/package_component.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/package_components_screen.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/price_calculator_dialog.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/pricing_button.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/pricing_dialog.dart';
@@ -28,6 +30,9 @@ class DetailedLowerGlass extends StatefulWidget {
     required this.custom2Controller,
     required this.canUpdateSellPrice,
     required this.pricingRules,
+    this.isPackage = false,
+    this.packageComponents,
+    this.packageDescription,
   });
 
   final double sell;
@@ -41,6 +46,9 @@ class DetailedLowerGlass extends StatefulWidget {
   final TextEditingController custom2Controller;
   final bool canUpdateSellPrice;
   final PricingRules? pricingRules;
+  final bool isPackage;
+  final List<PackageComponent>? packageComponents;
+  final String? packageDescription;
 
   @override
   State<DetailedLowerGlass> createState() => _DetailedLowerGlassState();
@@ -276,31 +284,34 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                       ),
                     ],
                   ),
-                  SizedBox(width: (isTablet ? 34 : 30) * uiScale),
-                  Expanded(
-                    child: SizedBox(
-                      height: fieldHeight,
-                      child: TextField(
-                        enabled: widget.canUpdateSellPrice,
-                        controller: _exRrpController,
-                        focusNode: _exRrpFocus,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
+                  const Spacer(),
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 350),
+                      child: SizedBox(
+                        height: fieldHeight,
+                        child: TextField(
+                          enabled: widget.canUpdateSellPrice,
+                          controller: _exRrpController,
+                          focusNode: _exRrpFocus,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: onGlass,
+                          ),
+                          onEditingComplete: () {
+                            final trimmedValue = _exRrpController.text.trim();
+                            if (_exRrpController.text != trimmedValue) {
+                              _exRrpController.value = _exRrpController.value.copyWith(
+                                text: trimmedValue,
+                                selection: TextSelection.collapsed(offset: trimmedValue.length),
+                              );
+                            }
+                          },
+                          decoration: _inputDecoration(),
                         ),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: onGlass,
-                        ),
-                        onEditingComplete: () {
-                          final trimmedValue = _exRrpController.text.trim();
-                          if (_exRrpController.text != trimmedValue) {
-                            _exRrpController.value = _exRrpController.value.copyWith(
-                              text: trimmedValue,
-                              selection: TextSelection.collapsed(offset: trimmedValue.length),
-                            );
-                          }
-                        },
-                        decoration: _inputDecoration(),
                       ),
                     ),
                   ),
@@ -334,32 +345,35 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                       ),
                     ],
                   ),
-                  SizedBox(width: (isTablet ? 34 : 30) * uiScale),
-                  Expanded(
-                    child: SizedBox(
-                      height: fieldHeight,
-                      child: TextField(
-                        enabled: widget.canUpdateSellPrice,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
+                  const Spacer(),
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 350),
+                      child: SizedBox(
+                        height: fieldHeight,
+                        child: TextField(
+                          enabled: widget.canUpdateSellPrice,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          controller: _rrpController,
+                          focusNode: _rrpFocus,
+                          //keyboardType: TextInputType.number,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: onGlass,
+                          ),
+                          onEditingComplete: () {
+                            final trimmedValue = _rrpController.text.trim();
+                            if (_rrpController.text != trimmedValue) {
+                              _rrpController.value = _rrpController.value.copyWith(
+                                text: trimmedValue,
+                                selection: TextSelection.collapsed(offset: trimmedValue.length),
+                              );
+                            }
+                          },
+                          decoration: _inputDecoration(),
                         ),
-                        controller: _rrpController,
-                        focusNode: _rrpFocus,
-                        //keyboardType: TextInputType.number,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: onGlass,
-                        ),
-                        onEditingComplete: () {
-                          final trimmedValue = _rrpController.text.trim();
-                          if (_rrpController.text != trimmedValue) {
-                            _rrpController.value = _rrpController.value.copyWith(
-                              text: trimmedValue,
-                              selection: TextSelection.collapsed(offset: trimmedValue.length),
-                            );
-                          }
-                        },
-                        decoration: _inputDecoration(),
                       ),
                     ),
                   ),
@@ -369,6 +383,48 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
 
               Builder(
                 builder: (context) {
+                  final viewComponentsButton = InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PackageComponentsScreen(
+                            packageDescription: widget.packageDescription ?? '',
+                            components: widget.packageComponents ?? [],
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: buttonVertical),
+                      decoration: _buttonDecoration(),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            color: kPrimaryColor,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                "COMPONENTS",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: kPrimaryColor,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+
                   final calculatorButton = InkWell(
                     onTap: widget.canUpdateSellPrice ? _openCalculator : null,
                     child: Container(
@@ -460,11 +516,21 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                     ),
                   );
 
+                  // Determine which first button to show
+                  final bool showViewComponents = widget.isPackage && 
+                      (widget.packageComponents?.isNotEmpty ?? false);
+                  final bool showCalculator = !widget.isPackage && widget.canUpdateSellPrice;
+
                   if (isTablet) {
                     return Row(
                       children: [
-                        Expanded(child: calculatorButton),
-                        SizedBox(width: buttonGap),
+                        if (showViewComponents) ...[
+                          Expanded(child: viewComponentsButton),
+                          SizedBox(width: buttonGap),
+                        ] else if (showCalculator) ...[
+                          Expanded(child: calculatorButton),
+                          SizedBox(width: buttonGap),
+                        ],
                         Expanded(child: pricingButton),
                         SizedBox(width: buttonGap),
                         Expanded(child: updateButton),
@@ -474,8 +540,13 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
 
                   return Column(
                     children: [
-                      SizedBox(width: double.infinity, child: calculatorButton),
-                      SizedBox(height: buttonGap),
+                      if (showViewComponents) ...[
+                        SizedBox(width: double.infinity, child: viewComponentsButton),
+                        SizedBox(height: buttonGap),
+                      ] else if (showCalculator) ...[
+                        SizedBox(width: double.infinity, child: calculatorButton),
+                        SizedBox(height: buttonGap),
+                      ],
                       SizedBox(width: double.infinity, child: pricingButton),
                       SizedBox(height: buttonGap),
                       SizedBox(width: double.infinity, child: updateButton),

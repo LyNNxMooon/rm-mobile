@@ -21,6 +21,7 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lo
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
+import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
@@ -58,6 +59,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   bool _taxLoaded = false;
   String? _localSelectedImagePath;
   bool _shouldSyncOnExit = false;
+  int _descriptionCharLimit = 40; // Default limit, changes to 100 for RM 14+
 
   late final LanguageToolController _descriptionController;
   late final TextEditingController _custom1Controller;
@@ -65,24 +67,21 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
   @override
   void initState() {
+    _loadDescriptionCharLimit();
+    
     _descriptionController = LanguageToolController();
     _descriptionController.text = widget.stock.description;
-    _descriptionController.addListener(() {
-      if (_descriptionController.text.length > 40) {
-        final truncated = _descriptionController.text.substring(0, 40);
-        _descriptionController.value = TextEditingValue(
-          text: truncated,
-          selection: TextSelection.collapsed(offset: truncated.length),
-        );
-      }
-    });
+    _descriptionController.addListener(_enforceDescriptionLimit);
 
     _custom1Controller = TextEditingController(
       text: widget.stock.custom1 ?? "",
     );
+    _custom1Controller.addListener(() => _enforceCharLimit(_custom1Controller, 50));
+    
     _custom2Controller = TextEditingController(
       text: widget.stock.custom2 ?? "",
     );
+    _custom2Controller.addListener(() => _enforceCharLimit(_custom2Controller, 50));
     // Old setup disabled:
     // final pic = widget.stock.pictureFileName;
     // if (pic != null && pic.isNotEmpty) {
@@ -110,8 +109,69 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     super.initState();
   }
 
+  Future<void> _loadDescriptionCharLimit() async {
+    try {
+      final version = await LocalDbDAO.instance.getRMVersion();
+      if (version != null) {
+        // Parse major version number (e.g., "14.0" -> 14)
+        final majorVersion = int.tryParse(version.split('.').first) ?? 0;
+        if (majorVersion >= 14) {
+          setState(() {
+            _descriptionCharLimit = 100;
+          });
+        }
+      }
+    } catch (e) {
+      logger.e('Error loading RM version: $e');
+    }
+  }
+
+  void _enforceDescriptionLimit() {
+    if (_descriptionController.text.length > _descriptionCharLimit) {
+      final truncated = _descriptionController.text.substring(0, _descriptionCharLimit);
+      _descriptionController.value = TextEditingValue(
+        text: truncated,
+        selection: TextSelection.collapsed(offset: truncated.length),
+      );
+    }
+  }
+
+  void _enforceCharLimit(TextEditingController controller, int limit) {
+    if (controller.text.length > limit) {
+      final truncated = controller.text.substring(0, limit);
+      controller.value = TextEditingValue(
+        text: truncated,
+        selection: TextSelection.collapsed(offset: truncated.length),
+      );
+    }
+  }
+
   Future<void> _calculateTaxAsync() async {
     try {
+      // For package items, use pre-calculated values from server
+      if (widget.stock.isPackage == true) {
+        logger.i('=== Package Item - Using Pre-calculated Prices ===');
+        logger.i('Stock ID: ${widget.stock.stockID}, Description: ${widget.stock.description}');
+        logger.i('  Sell Ex: ${widget.stock.sellEx}, Sell Inc: ${widget.stock.sellInc}');
+        logger.i('  Cost Ex: ${widget.stock.costEx}, Cost Inc: ${widget.stock.costInc}');
+
+        if (mounted) {
+          setState(() {
+            sell = widget.stock.sellInc ?? widget.stock.sell;
+            exSell = widget.stock.sellEx ?? widget.stock.sell;
+            cost = widget.stock.costInc ?? widget.stock.cost;
+            exCost = widget.stock.costEx ?? widget.stock.cost;
+            // No tax percentage for package items as it's already calculated
+            sellTaxPercentage = 0;
+            sellTaxType = 0;
+            costTaxPercentage = 0;
+            costTaxType = 0;
+            _taxLoaded = true;
+          });
+        }
+        return;
+      }
+
       // Calculate sell price tax (uses sales_tax)
       final sellResult = await TaxCalculationUtils.calculateSellTax(
         sell: widget.stock.sell,
@@ -502,6 +562,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         .contains("Miscellaneous_HideCostPriceAndProfit");
     final bool lockSellPrice = AppGlobals.instance.restrictedPermissions
         .contains("Miscellaneous_LockSellPrice");
+    // Package items cannot have their sell price updated (prices are calculated by server)
+    final bool isPackage = widget.stock.isPackage == true;
     final String custom1Label = AppGlobals.instance.stockCustom1Label;
     final String custom2Label = AppGlobals.instance.stockCustom2Label;
 
@@ -748,8 +810,11 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           incCost: cost,
                           exCost: exCost,
                           taxPercentage: sellTaxPercentage,
-                          canUpdateSellPrice: !lockSellPrice,
+                          canUpdateSellPrice: !lockSellPrice && !isPackage,
                           pricingRules: widget.stock.pricingRules,
+                          isPackage: isPackage,
+                          packageComponents: widget.stock.packageComponents,
+                          packageDescription: widget.stock.description,
                         ),
                       ),
 

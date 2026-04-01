@@ -40,6 +40,12 @@ const stocksTableCreationQuery = '''
     last_sale_date TEXT,
     allow_renaming INTEGER,
     pricing_rules TEXT,
+    is_package INTEGER,
+    package_components TEXT,
+    cost_ex REAL,
+    cost_inc REAL,
+    sell_ex REAL,
+    sell_inc REAL,
     PRIMARY KEY (stock_id, shopfront)
   )
 ''';
@@ -120,6 +126,7 @@ const String kHostPortKey = "host_port";
 const String kApiKey = "api_key";
 const String kHostNameKey = "host_name";
 const String kShopfrontIdKey = "shopfront_id";
+const String kRMVersionKey = "rm_version";
 const String kCustomerMaxIdPrefix = "customer_max_id_";
 const String kShopfrontNameKey = "shopfront_name";
 const String kDeviceIdKey = "device_id";

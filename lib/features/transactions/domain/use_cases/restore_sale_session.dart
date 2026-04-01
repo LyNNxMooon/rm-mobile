@@ -48,11 +48,30 @@ class RestoreSaleSession {
         stock = stockSearch.duplicates.first;
       }
 
-      // Calculate tax for the cart item (using stock's salesTax if available)
-      final taxResult = await TaxCalculationUtils.calculateSellTax(
-        sell: itemData.sellPrice,
-        salesTax: stock?.salesTax,
-      );
+      // Calculate tax for the cart item
+      double incPrice;
+      double exPrice;
+      double taxPercentage;
+      int taxType;
+
+      // For package items, use sell_ex/sell_inc directly from stock
+      if (stock != null && stock.isPackage == true && stock.sellEx != null && stock.sellInc != null) {
+        incPrice = stock.sellInc!;
+        exPrice = stock.sellEx!;
+        // Calculate percentage from prices
+        taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
+        taxType = 2; // Inc-tax base
+      } else {
+        // Regular items - calculate using tax tables
+        final taxResult = await TaxCalculationUtils.calculateSellTax(
+          sell: itemData.sellPrice,
+          salesTax: stock?.salesTax,
+        );
+        incPrice = taxResult.incPrice;
+        exPrice = taxResult.exPrice;
+        taxPercentage = taxResult.percentage;
+        taxType = taxResult.taxType;
+      }
 
       final cartItem = CartItemVO(
         code: itemData.code,
@@ -63,10 +82,10 @@ class RestoreSaleSession {
         stock: stock,
         serialNumber: itemData.serialNumber,
         isEditing: false,
-        taxPercentage: taxResult.percentage,
-        taxType: taxResult.taxType,
-        incPrice: taxResult.incPrice,
-        exPrice: taxResult.exPrice,
+        taxPercentage: taxPercentage,
+        taxType: taxType,
+        incPrice: incPrice,
+        exPrice: exPrice,
       );
       cartItems.add(cartItem);
     }

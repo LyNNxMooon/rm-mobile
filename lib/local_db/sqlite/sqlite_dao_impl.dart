@@ -686,6 +686,16 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
+  Future<String?> getRMVersion() async {
+    try {
+      return await getAppConfig(kRMVersionKey);
+    } catch (error) {
+      logger.e('Error getting RM version from local db: $error');
+      return Future.error("Error getting RM version from local db: $error");
+    }
+  }
+
+  @override
   Future<String?> getDeviceId() async {
     try {
       return await getAppConfig(kDeviceIdKey);
@@ -818,6 +828,27 @@ class SQLiteDAOImpl extends LocalDbDAO {
       return null;
     } catch (error) {
       logger.e('Error getting stock by ID $stockId in $shopfront: $error');
+      return null;
+    }
+  }
+
+  @override
+  Future<StockVO?> getStockByIdAnyShopfront(int stockId) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'Stocks',
+        where: 'stock_id = ?',
+        whereArgs: [stockId],
+        limit: 1,
+      );
+
+      if (result.isNotEmpty) {
+        return StockVO.fromJson(result.first);
+      }
+      return null;
+    } catch (error) {
+      logger.e('Error getting stock by ID $stockId (any shopfront): $error');
       return null;
     }
   }
@@ -1118,6 +1149,16 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error saving shopfront name to local db: $error');
       return Future.error("Error saving shopfront name to local db: $error");
+    }
+  }
+
+  @override
+  Future<void> saveRMVersion(String version) async {
+    try {
+      await saveAppConfig(kRMVersionKey, version);
+    } catch (error) {
+      logger.e('Error saving RM version to local db: $error');
+      return Future.error("Error saving RM version to local db: $error");
     }
   }
 

@@ -300,10 +300,29 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       );
     } else {
       // Add new item - calculate tax first
-      final taxResult = await TaxCalculationUtils.calculateSellTax(
-        sell: stock.sell,
-        salesTax: stock.salesTax,
-      );
+      double incPrice;
+      double exPrice;
+      double taxPercentage;
+      int taxType;
+      
+      // For package items, use sell_ex/sell_inc directly
+      if (stock.isPackage && stock.sellEx != null && stock.sellInc != null) {
+        incPrice = stock.sellInc!;
+        exPrice = stock.sellEx!;
+        // Calculate percentage from prices
+        taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
+        taxType = 2; // Inc-tax base
+      } else {
+        // Regular items - calculate using tax tables
+        final taxResult = await TaxCalculationUtils.calculateSellTax(
+          sell: stock.sell,
+          salesTax: stock.salesTax,
+        );
+        incPrice = taxResult.incPrice;
+        exPrice = taxResult.exPrice;
+        taxPercentage = taxResult.percentage;
+        taxType = taxResult.taxType;
+      }
       
       final newItem = CartItemVO(
         code: stock.barcode,
@@ -314,10 +333,10 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         stock: stock,
         isEditing: !skipEditMode, // New items start in edit mode unless skipEditMode
         isNewlyAdded: !skipEditMode, // Mark as newly added for auto-save check
-        taxPercentage: taxResult.percentage,
-        taxType: taxResult.taxType,
-        incPrice: taxResult.incPrice,
-        exPrice: taxResult.exPrice,
+        taxPercentage: taxPercentage,
+        taxType: taxType,
+        incPrice: incPrice,
+        exPrice: exPrice,
       );
       
       _cartItems.insert(0, newItem);

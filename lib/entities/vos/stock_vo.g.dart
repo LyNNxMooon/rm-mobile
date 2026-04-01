@@ -44,6 +44,12 @@ StockVO _$StockVOFromJson(Map<String, dynamic> json) => StockVO(
   lastSaleDate: json['last_sale_date'] as String?,
   allowRenaming: json['allow_renaming'] == 1,
   pricingRules: StockVO._pricingRulesFromJson(json['pricing_rules']),
+  isPackage: json['is_package'] == 1,
+  packageComponents: StockVO._packageComponentsFromJson(json['package_components']),
+  costEx: (json['cost_ex'] as num?)?.toDouble(),
+  costInc: (json['cost_inc'] as num?)?.toDouble(),
+  sellEx: (json['sell_ex'] as num?)?.toDouble(),
+  sellInc: (json['sell_inc'] as num?)?.toDouble(),
 );
 
 StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
@@ -84,6 +90,12 @@ StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
   lastSaleDate: json['last_sale_date'] as String?,
   allowRenaming: json['allow_renaming'] ?? false,
   pricingRules: StockVO._pricingRulesFromJson(json['pricing_rules']),
+  isPackage: json['is_package'] ?? false,
+  packageComponents: StockVO._packageComponentsFromJson(json['package_components']),
+  costEx: (json['cost_ex'] as num?)?.toDouble(),
+  costInc: (json['cost_inc'] as num?)?.toDouble(),
+  sellEx: (json['sell_ex'] as num?)?.toDouble(),
+  sellInc: (json['sell_inc'] as num?)?.toDouble(),
 );
 
 Map<String, dynamic> _$StockVOToJson(
@@ -128,4 +140,10 @@ Map<String, dynamic> _$StockVOToJson(
   'last_sale_date': instance.lastSaleDate,
   'allow_renaming': instance.allowRenaming ? 1 : 0,
   'pricing_rules': StockVO._pricingRulesToJson(instance.pricingRules),
+  'is_package': instance.isPackage ? 1 : 0,
+  'package_components': StockVO._packageComponentsToJson(instance.packageComponents),
+  'cost_ex': instance.costEx,
+  'cost_inc': instance.costInc,
+  'sell_ex': instance.sellEx,
+  'sell_inc': instance.sellInc,
 };

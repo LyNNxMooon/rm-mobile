@@ -60,6 +60,7 @@ abstract class LocalDbDAO {
   Future<String?> getHostName();
   Future<String?> getShopfrontId();
   Future<String?> getShopfrontName();
+  Future<String?> getRMVersion();
   Future<String?> getDeviceId();
   Future<Map<num, StockVO>> getStocksByIds({
     required String shopfront,
@@ -75,6 +76,7 @@ abstract class LocalDbDAO {
   Future<int> getHistoryRetentionDays();
   Future<StockVO?> getStockByIDSearch(String query, String shopfront);
   Future<StockVO?> getStockById(int stockId, String shopfront);
+  Future<StockVO?> getStockByIdAnyShopfront(int stockId);
   Future<int> getUnsyncedStocksCount({
     required String shopfront,
     String? query,
@@ -207,6 +209,7 @@ abstract class LocalDbDAO {
   Future<void> saveHostName(String hostName);
   Future<void> saveShopfrontId(String shopfrontId);
   Future<void> saveShopfrontName(String shopfrontName);
+  Future<void> saveRMVersion(String version);
   Future<void> saveDeviceId(String deviceId);
   Future<void> saveStocktakeHistorySession({
     required String sessionId,

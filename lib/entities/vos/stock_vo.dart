@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:json_annotation/json_annotation.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
+import 'package:rmstock_scanner/entities/vos/package_component.dart';
 part 'stock_vo.g.dart';
 
 @JsonSerializable()
@@ -72,6 +73,22 @@ class StockVO {
     toJson: _pricingRulesToJson,
   )
   final PricingRules? pricingRules;
+  @JsonKey(name: 'is_package')
+  final bool isPackage;
+  @JsonKey(
+    name: 'package_components',
+    fromJson: _packageComponentsFromJson,
+    toJson: _packageComponentsToJson,
+  )
+  final List<PackageComponent>? packageComponents;
+  @JsonKey(name: 'cost_ex')
+  final double? costEx;
+  @JsonKey(name: 'cost_inc')
+  final double? costInc;
+  @JsonKey(name: 'sell_ex')
+  final double? sellEx;
+  @JsonKey(name: 'sell_inc')
+  final double? sellInc;
 
   factory StockVO.fromJson(Map<String, dynamic> json) =>
       _$StockVOFromJson(json);
@@ -125,6 +142,12 @@ class StockVO {
       "last_sale_date": _asNullableString(item["last_sale_date"]),
       "allow_renaming": _asBool(item["allow_renaming"]),
       "pricing_rules": item["pricing_rules"],
+      "is_package": _asBool(item["is_package"]),
+      "package_components": item["package_components"],
+      "cost_ex": _asNullableDouble(item["cost_ex"]),
+      "cost_inc": _asNullableDouble(item["cost_inc"]),
+      "sell_ex": _asNullableDouble(item["sell_ex"]),
+      "sell_inc": _asNullableDouble(item["sell_inc"]),
     };
 
     return StockVO.fromJsonNetwork(mapped);
@@ -168,6 +191,12 @@ class StockVO {
     required this.lastSaleDate,
     this.allowRenaming = false,
     this.pricingRules,
+    this.isPackage = false,
+    this.packageComponents,
+    this.costEx,
+    this.costInc,
+    this.sellEx,
+    this.sellInc,
   });
 
   static String _asString(dynamic value) {
@@ -192,6 +221,13 @@ class StockVO {
     if (value is num) return value;
     final parsed = num.tryParse(value.toString());
     return parsed ?? 0;
+  }
+
+  static double? _asNullableDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 
   static bool _asBool(dynamic value) {
@@ -232,5 +268,51 @@ class StockVO {
   static Object? _pricingRulesToJson(PricingRules? rules) {
     if (rules == null) return null;
     return jsonEncode(rules.toJson());
+  }
+
+  static List<PackageComponent>? _packageComponentsFromJson(Object? value) {
+    if (value == null) return null;
+    if (value is List<PackageComponent>) return value;
+    if (value is List) {
+      return value
+          .map((e) {
+            if (e is Map<String, dynamic>) {
+              return PackageComponent.fromJson(e);
+            }
+            if (e is Map) {
+              return PackageComponent.fromJson(Map<String, dynamic>.from(e));
+            }
+            return null;
+          })
+          .whereType<PackageComponent>()
+          .toList();
+    }
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return null;
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is List) {
+          return decoded
+              .map((e) {
+                if (e is Map<String, dynamic>) {
+                  return PackageComponent.fromJson(e);
+                }
+                if (e is Map) {
+                  return PackageComponent.fromJson(Map<String, dynamic>.from(e));
+                }
+                return null;
+              })
+              .whereType<PackageComponent>()
+              .toList();
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  static Object? _packageComponentsToJson(List<PackageComponent>? components) {
+    if (components == null) return null;
+    return jsonEncode(components.map((e) => e.toJson()).toList());
   }
 }

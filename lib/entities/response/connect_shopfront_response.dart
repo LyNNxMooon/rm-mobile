@@ -8,6 +8,7 @@ class ConnectShopfrontResponse {
   final String shopfrontId;
   final String shopfrontName;
   final String message;
+  final String? version;
   final String? salesCustom;
   final List<TaxCodeVO>? taxCodes;
 
@@ -16,6 +17,7 @@ class ConnectShopfrontResponse {
     required this.shopfrontId,
     required this.shopfrontName,
     required this.message,
+    this.version,
     this.salesCustom,
     this.taxCodes,
   });

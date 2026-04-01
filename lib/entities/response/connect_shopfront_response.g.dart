@@ -13,6 +13,7 @@ ConnectShopfrontResponse _$ConnectShopfrontResponseFromJson(
       shopfrontId: json['shopfrontId'] as String,
       shopfrontName: json['shopfrontName'] as String,
       message: json['message'] as String,
+      version: json['version'] as String?,
       salesCustom: json['salesCustom'] as String?,
       taxCodes: (json['taxCodes'] as List<dynamic>?)
           ?.map((e) => TaxCodeVO.fromJson(e as Map<String, dynamic>))
@@ -26,6 +27,7 @@ Map<String, dynamic> _$ConnectShopfrontResponseToJson(
       'shopfrontId': instance.shopfrontId,
       'shopfrontName': instance.shopfrontName,
       'message': instance.message,
+      'version': instance.version,
       'salesCustom': instance.salesCustom,
       'taxCodes': instance.taxCodes,
     };
