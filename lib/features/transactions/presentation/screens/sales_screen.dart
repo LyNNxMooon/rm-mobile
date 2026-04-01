@@ -603,7 +603,8 @@ class _SalesScreenState extends State<SalesScreen>
               } else {
                 _salesBloc.add(SelectCustomer(customer: selected));
                 setState(() => _selectedCustomer = selected);
-                _checkAndShowCustomerComments(selected);
+                // Note: Don't call _checkAndShowCustomerComments here - 
+                // it will be triggered by CustomerSelected state listener
               }
             } else {
               _salesBloc.add(ResetSearchState());

@@ -9,7 +9,6 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/responsive_utils.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
@@ -17,6 +16,7 @@ import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dar
 import '../../../transactions/presentation/screens/sales_screen.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_states.dart';
+import '../BLoC/session_counts_cubit.dart';
 import '../screens/coming_soon_screen.dart';
 
 // IMPORTANT: Adjust this import to match your folder structure
@@ -41,8 +41,6 @@ class GlassDrawer extends StatefulWidget {
 }
 
 class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
-  Map<String, int> _sessionCounts = {};
-
   @override
   void initState() {
     super.initState();
@@ -56,20 +54,8 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
     _loadSessionCounts();
   }
 
-  Future<void> _loadSessionCounts() async {
-    final shopfront = AppGlobals.instance.shopfront;
-    if (shopfront == null || shopfront.isEmpty) return;
-    
-    try {
-      final counts = await LocalDbDAO.instance.getSaleSessionCounts(shopfront);
-      if (mounted) {
-        setState(() {
-          _sessionCounts = counts;
-        });
-      }
-    } catch (e) {
-      // Silently handle errors
-    }
+  void _loadSessionCounts() {
+    context.read<SessionCountsCubit>().loadSessionCounts();
   }
 
   @override
@@ -207,48 +193,53 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
           children: [
             // --- SECTION 1: TRANSACTIONS ---
             _buildSectionTitle("Transactions", context),
-            AnimationLimiter(
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 25),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: spacing,
-                  mainAxisSpacing: spacing,
-                  childAspectRatio: childAspectRatio,
-                ),
-                itemCount: _transactionItems.length,
-                itemBuilder: (context, index) {
-                  final item = _transactionItems[index];
-                  // Map action to session type for badge count
-                  String? sessionType;
-                  switch (item['action']) {
-                    case 'account_sales':
-                      sessionType = 'Account Sales';
-                      break;
-                    case 'sales_order':
-                      sessionType = 'Sales Order';
-                      break;
-                    case 'quotes':
-                      sessionType = 'Quotes';
-                      break;
-                    case 'lay_bys':
-                      sessionType = 'Lay-bys';
-                      break;
-                  }
-                  final badgeCount = sessionType != null ? (_sessionCounts[sessionType] ?? 0) : 0;
-                  
-                  return _buildGridItem(
-                    item,
-                    context,
-                    index,
-                    crossAxisCount,
-                    isTransaction: true,
-                    badgeCount: badgeCount,
-                  );
-                },
-              ),
+            BlocBuilder<SessionCountsCubit, SessionCountsState>(
+              builder: (context, sessionState) {
+                final sessionCounts = sessionState.counts;
+                return AnimationLimiter(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 25),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: spacing,
+                      mainAxisSpacing: spacing,
+                      childAspectRatio: childAspectRatio,
+                    ),
+                    itemCount: _transactionItems.length,
+                    itemBuilder: (context, index) {
+                      final item = _transactionItems[index];
+                      // Map action to session type for badge count
+                      String? sessionType;
+                      switch (item['action']) {
+                        case 'account_sales':
+                          sessionType = 'Account Sales';
+                          break;
+                        case 'sales_order':
+                          sessionType = 'Sales Order';
+                          break;
+                        case 'quotes':
+                          sessionType = 'Quotes';
+                          break;
+                        case 'lay_bys':
+                          sessionType = 'Lay-bys';
+                          break;
+                      }
+                      final badgeCount = sessionType != null ? (sessionCounts[sessionType] ?? 0) : 0;
+                      
+                      return _buildGridItem(
+                        item,
+                        context,
+                        index,
+                        crossAxisCount,
+                        isTransaction: true,
+                        badgeCount: badgeCount,
+                      );
+                    },
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 24),

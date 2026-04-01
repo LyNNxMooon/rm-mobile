@@ -200,6 +200,52 @@ class SettingsStocktakeDeleted extends SettingsState {
   SettingsStocktakeDeleted(this.message);
 }
 
+class CashDrawerIdentifierLoaded extends SettingsState {
+  final String identifier;
+  final int retentionDays;
+  final bool autoBackupEnabled;
+
+  CashDrawerIdentifierLoaded({
+    required this.identifier,
+    required this.retentionDays,
+    required this.autoBackupEnabled,
+  });
+}
+
+class CashDrawerIdentifierSaved extends SettingsState {
+  final String identifier;
+  final int retentionDays;
+  final bool autoBackupEnabled;
+
+  CashDrawerIdentifierSaved({
+    required this.identifier,
+    required this.retentionDays,
+    required this.autoBackupEnabled,
+  });
+}
+
+class DatabaseExported extends SettingsState {
+  final int retentionDays;
+  final bool autoBackupEnabled;
+
+  DatabaseExported({
+    required this.retentionDays,
+    required this.autoBackupEnabled,
+  });
+}
+
+class DatabaseExportError extends SettingsState {
+  final String message;
+  final int retentionDays;
+  final bool autoBackupEnabled;
+
+  DatabaseExportError({
+    required this.message,
+    required this.retentionDays,
+    required this.autoBackupEnabled,
+  });
+}
+
 abstract class DiscoverHostStates {}
 
 class DiscoverHostInitial extends DiscoverHostStates {}

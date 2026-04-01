@@ -108,6 +108,15 @@ class CheckAutoBackupNowEvent extends SettingsEvent {
 
 class DeleteAllStocktakeEvent extends SettingsEvent {}
 
+class LoadCashDrawerIdentifierEvent extends SettingsEvent {}
+
+class SaveCashDrawerIdentifierEvent extends SettingsEvent {
+  final String identifier;
+  SaveCashDrawerIdentifierEvent(this.identifier);
+}
+
+class ExportDatabaseEvent extends SettingsEvent {}
+
 abstract class DiscoverHostEvents {}
 
 class DiscoverHostEvent extends DiscoverHostEvents {

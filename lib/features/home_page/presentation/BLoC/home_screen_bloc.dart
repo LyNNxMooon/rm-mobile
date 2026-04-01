@@ -1,6 +1,11 @@
+import 'dart:io';
 import 'package:bloc/bloc.dart';
+import 'package:path/path.dart' as p;
+import 'package:share_plus/share_plus.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_history.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_host.dart';
+import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/authenticate_staff.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
@@ -335,6 +340,8 @@ class FetchStockBloc extends Bloc<FetchStockEvents, FetchStockStates> {
 }
 
 class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
+  static const String _kCashDrawerIdentifierKey = 'cash_drawer_identifier';
+
   final LoadRetentionDays loadRetentionDays;
   final UpdateRetentionDays updateRetentionDays;
   final CleanupHistory cleanupHistory;
@@ -345,6 +352,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   int _currentRetentionDays = 30;
   bool _autoBackupEnabled = true;
+  String _cashDrawerIdentifier = 'A';
 
   SettingsBloc({
     required this.loadRetentionDays,
@@ -361,7 +369,12 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<ToggleAutoBackupEvent>(_onToggleAutoBackup);
     on<CheckAutoBackupNowEvent>(_onCheckAutoBackupNow);
     on<DeleteAllStocktakeEvent>(_onDeleteAllStocktake);
+    on<LoadCashDrawerIdentifierEvent>(_onLoadCashDrawerIdentifier);
+    on<SaveCashDrawerIdentifierEvent>(_onSaveCashDrawerIdentifier);
+    on<ExportDatabaseEvent>(_onExportDatabase);
   }
+
+  String get cashDrawerIdentifier => _cashDrawerIdentifier;
 
   Future<void> _onLoad(
     LoadSettingsEvent event,
@@ -468,6 +481,78 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       emit(SettingsStocktakeDeleted("All stocktake data deleted."));
     } catch (e) {
       emit(SettingsError(e.toString()));
+    }
+  }
+
+  Future<void> _onLoadCashDrawerIdentifier(
+    LoadCashDrawerIdentifierEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      final value = await LocalDbDAO.instance.getAppConfig(_kCashDrawerIdentifierKey);
+      _cashDrawerIdentifier = (value != null && value.isNotEmpty) ? value : 'A';
+      emit(CashDrawerIdentifierLoaded(
+        identifier: _cashDrawerIdentifier,
+        retentionDays: _currentRetentionDays,
+        autoBackupEnabled: _autoBackupEnabled,
+      ));
+    } catch (e) {
+      emit(SettingsError(e.toString()));
+    }
+  }
+
+  Future<void> _onSaveCashDrawerIdentifier(
+    SaveCashDrawerIdentifierEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(_kCashDrawerIdentifierKey, event.identifier);
+      _cashDrawerIdentifier = event.identifier;
+      emit(CashDrawerIdentifierSaved(
+        identifier: _cashDrawerIdentifier,
+        retentionDays: _currentRetentionDays,
+        autoBackupEnabled: _autoBackupEnabled,
+      ));
+    } catch (e) {
+      emit(SettingsError(e.toString()));
+    }
+  }
+
+  Future<void> _onExportDatabase(
+    ExportDatabaseEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      final dbPath = await getDatabasesPath();
+      final path = p.join(dbPath, 'rm-mobile.db');
+      final dbFile = File(path);
+
+      if (!await dbFile.exists()) {
+        emit(DatabaseExportError(
+          message: 'Database file not found',
+          retentionDays: _currentRetentionDays,
+          autoBackupEnabled: _autoBackupEnabled,
+        ));
+        return;
+      }
+
+      final xFile = XFile(path);
+      await Share.shareXFiles(
+        [xFile],
+        subject: 'RM Mobile Database Export',
+        text: 'Exported database file from RM Mobile app',
+      );
+
+      emit(DatabaseExported(
+        retentionDays: _currentRetentionDays,
+        autoBackupEnabled: _autoBackupEnabled,
+      ));
+    } catch (e) {
+      emit(DatabaseExportError(
+        message: e.toString(),
+        retentionDays: _currentRetentionDays,
+        autoBackupEnabled: _autoBackupEnabled,
+      ));
     }
   }
 }

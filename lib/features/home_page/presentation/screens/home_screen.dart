@@ -20,6 +20,7 @@ import '../../../stocktake/presentation/screens/scanner_screen.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
 import '../BLoC/home_screen_states.dart';
+import '../BLoC/session_counts_cubit.dart';
 import '../widgets/app_bar_session.dart';
 import '../widgets/network_pc_dialog.dart';
 import 'staff_login_screen.dart';
@@ -356,11 +357,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                GlassDrawer(
-                  initialChildSize: drawerSizes.initialChildSize,
-                  minChildSize: drawerSizes.minChildSize,
-                  maxChildSize: drawerSizes.maxChildSize,
-                  onStocktakeTap: _handleStocktakeTap,
+                BlocProvider(
+                  create: (_) => SessionCountsCubit(),
+                  child: GlassDrawer(
+                    initialChildSize: drawerSizes.initialChildSize,
+                    minChildSize: drawerSizes.minChildSize,
+                    maxChildSize: drawerSizes.maxChildSize,
+                    onStocktakeTap: _handleStocktakeTap,
+                  ),
                 ),
               ],
             ),

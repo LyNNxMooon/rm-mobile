@@ -84,25 +84,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       context.read<SettingsBloc>().add(CheckAutoBackupNowEvent());
     });
-    _loadCashDrawerIdentifier();
-  }
-
-  Future<void> _loadCashDrawerIdentifier() async {
-    final value = await LocalDbDAO.instance.getAppConfig(_kCashDrawerIdentifierKey);
-    if (mounted) {
-      setState(() {
-        _cashDrawerIdentifier = (value != null && value.isNotEmpty) ? value : "A";
-      });
-    }
-  }
-
-  Future<void> _saveCashDrawerIdentifier(String value) async {
-    await LocalDbDAO.instance.saveAppConfig(_kCashDrawerIdentifierKey, value);
-    if (mounted) {
-      setState(() {
-        _cashDrawerIdentifier = value;
-      });
-    }
+    context.read<SettingsBloc>().add(LoadCashDrawerIdentifierEvent());
   }
 
   @override
@@ -119,6 +101,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       Overlay.of(context),
       CustomSnackBar.error(message: message),
     );
+  }
+
+  void _saveCashDrawerIdentifier(String value) {
+    setState(() {
+      _cashDrawerIdentifier = value;
+    });
+    LocalDbDAO.instance.saveAppConfig(_kCashDrawerIdentifierKey, value);
   }
 
   String _getShopfrontLabel() {
@@ -505,6 +494,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 position: MessagePosition.top,
                 padding: 70,
               );
+            }
+            if (state is CashDrawerIdentifierLoaded) {
+              setState(() {
+                _cashDrawerIdentifier = state.identifier;
+              });
             }
           },
         ),
