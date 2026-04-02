@@ -734,8 +734,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               ),
                                               child: _isRefreshingShopfront
                                                   ? SizedBox(
-                                                      width: context.isTablet ? 28 : 18,
-                                                      height: context.isTablet ? 28 : 18,
+                                                      width: context.isTablet ? 28 : 24,
+                                                      height: context.isTablet ? 28 : 24,
                                                       child: const CircularProgressIndicator(
                                                         strokeWidth: 2,
                                                         color: Colors.white,
@@ -743,7 +743,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                     )
                                                   : Icon(
                                                       Icons.refresh,
-                                                      size: context.isTablet ? 28 : 18,
+                                                      size: context.isTablet ? 28 : 24,
                                                       color: Colors.white,
                                                     ),
                                             ),
@@ -760,7 +760,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             ),
                                             child: Icon(
                                               Icons.settings,
-                                              size: context.isTablet ? 28 : 18,
+                                              size: context.isTablet ? 28 : 24,
                                               color: Colors.white,
                                             ),
                                           ),
@@ -1118,7 +1118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: Icon(
               Icons.point_of_sale_outlined,
-              size: isTablet ? 20 : 16,
+              size: 20,
               color: isDark ? Colors.white : colors.onHero,
             ),
           ),
