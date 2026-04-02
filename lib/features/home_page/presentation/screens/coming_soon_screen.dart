@@ -41,145 +41,156 @@ class ComingSoonScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: sidePadding),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Spacer(),
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: outerCircle,
-                  height: outerCircle,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: kPrimaryColor.withOpacity(0.1),
-                  ),
-                ),
-                Container(
-                  width: innerCircle,
-                  height: innerCircle,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: kPrimaryColor.withOpacity(0.3),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.rocket_launch_rounded,
-                      size: iconSize,
-                      color: kPrimaryColor,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: sidePadding),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(height: constraints.maxHeight * 0.1),
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: outerCircle,
+                          height: outerCircle,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: kPrimaryColor.withOpacity(0.1),
+                          ),
+                        ),
+                        Container(
+                          width: innerCircle,
+                          height: innerCircle,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: kPrimaryColor.withOpacity(0.3),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.rocket_launch_rounded,
+                              size: iconSize,
+                              color: kPrimaryColor,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
-            Text(
-              "We're working on it!",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: colors.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "$featureName is currently under construction. We're working hard to bring it to you soon.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: colors.onSurfaceMuted,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              height: buttonHeight,
-              child: ElevatedButton(
-                onPressed: () {
-                  AlertInfo.show(
-                    context: context,
-                    text: "You'll be notified when it is ready!",
-                    typeInfo: TypeInfo.success,
-                    backgroundColor: colors.surface,
-                    iconColor: kPrimaryColor,
-                    textColor: colors.onSurface,
-                    padding: 70,
-                    position: MessagePosition.top,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
-                  foregroundColor: colors.onHero,
-                  minimumSize: Size(double.infinity, buttonHeight),
-                  padding: EdgeInsets.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
-                  textStyle: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    "Notify Me When Ready",
-                    textScaler: TextScaler.noScaling,
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                    const SizedBox(height: 40),
+                    Text(
+                      "We're working on it!",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: colors.onSurface,
+                      ),
                     ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: buttonHeight,
-              child: TextButton(
-                onPressed: () => context.navigateBack(),
-                style: TextButton.styleFrom(
-                  foregroundColor: kPrimaryColor,
-                  minimumSize: Size(double.infinity, buttonHeight),
-                  padding: EdgeInsets.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                child: const Center(
-                  child: Text(
-                    "Go Back",
-                    textScaler: TextScaler.noScaling,
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: kPrimaryColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                    const SizedBox(height: 16),
+                    Text(
+                      "$featureName is currently under construction. We're working hard to bring it to you soon.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: colors.onSurfaceMuted,
+                        height: 1.5,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 40),
+                    SizedBox(
+                      width: double.infinity,
+                      height: buttonHeight,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          AlertInfo.show(
+                            context: context,
+                            text: "You'll be notified when it is ready!",
+                            typeInfo: TypeInfo.success,
+                            backgroundColor: colors.surface,
+                            iconColor: kPrimaryColor,
+                            textColor: colors.onSurface,
+                            padding: 70,
+                            position: MessagePosition.top,
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryColor,
+                          foregroundColor: colors.onHero,
+                          minimumSize: Size(double.infinity, buttonHeight),
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                          textStyle: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "Notify Me When Ready",
+                            textScaler: TextScaler.noScaling,
+                            maxLines: 1,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: buttonHeight,
+                      child: TextButton(
+                        onPressed: () => context.navigateBack(),
+                        style: TextButton.styleFrom(
+                          foregroundColor: kPrimaryColor,
+                          minimumSize: Size(double.infinity, buttonHeight),
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            "Go Back",
+                            textScaler: TextScaler.noScaling,
+                            maxLines: 1,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: kPrimaryColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: constraints.maxHeight * 0.15),
+                  ],
                 ),
               ),
             ),
-
-            const Spacer(flex: 2),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

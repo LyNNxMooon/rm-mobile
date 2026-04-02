@@ -69,87 +69,97 @@ class SaleSessionPickerDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: kPrimaryColor.withOpacity(0.1),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor.withOpacity(0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.restore,
-                      color: kPrimaryColor,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Resume $sessionType?",
-                          style: TextStyle(
-                            fontSize: isTablet ? 20 : 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "You have ${sessions.length} unsaved ${sessions.length == 1 ? 'session' : 'sessions'}",
-                          style: TextStyle(
-                            fontSize: isTablet ? 14 : 12,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context, (
-                      result: SessionPickerResult.cancelled,
-                      session: null,
-                    )),
-                    icon: Icon(
-                      Icons.close,
-                      color: isDark ? Colors.white54 : Colors.black45,
-                    ),
-                    tooltip: 'Cancel',
-                  ),
-                ],
-              ),
-            ),
-
-            // Sessions List
+            // Scrollable content (Header + Sessions List)
             Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                padding: const EdgeInsets.all(16),
-                itemCount: sessions.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  final session = sessions[index];
-                  return _buildSessionTile(
-                    context,
-                    session,
-                    colors,
-                    isDark,
-                    isTablet,
-                    dateFormat,
-                  );
-                },
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor.withOpacity(0.1),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(16),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: kPrimaryColor.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.restore,
+                              color: kPrimaryColor,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Resume $sessionType?",
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 20 : 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "You have ${sessions.length} unsaved ${sessions.length == 1 ? 'session' : 'sessions'}",
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 14 : 12,
+                                    color: isDark ? Colors.white70 : Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context, (
+                              result: SessionPickerResult.cancelled,
+                              session: null,
+                            )),
+                            icon: Icon(
+                              Icons.close,
+                              color: isDark ? Colors.white54 : Colors.black45,
+                            ),
+                            tooltip: 'Cancel',
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Sessions List
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      itemCount: sessions.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final session = sessions[index];
+                        return _buildSessionTile(
+                          context,
+                          session,
+                          colors,
+                          isDark,
+                          isTablet,
+                          dateFormat,
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
 

@@ -343,16 +343,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     const AppBarSession(),
                     SizedBox(
                       height: contentAreaHeight,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          logo(),
-                          SizedBox(
-                            height: isTablet ? (isPortrait ? 24 : 16) : 22,
+                      child: SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: contentAreaHeight,
                           ),
-                          headerTitle(),
-                          syncWatcher(),
-                        ],
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              logo(),
+                              SizedBox(
+                                height: isTablet ? (isPortrait ? 24 : 16) : 22,
+                              ),
+                              headerTitle(),
+                              syncWatcher(),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],

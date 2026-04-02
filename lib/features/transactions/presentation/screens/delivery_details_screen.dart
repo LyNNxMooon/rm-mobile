@@ -557,48 +557,37 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         // Date & Time Row
                         Row(
                           children: [
+                            SizedBox(
+                              width: isTablet ? 120 : 80,
+                              child: Text(
+                                "Delivery Date",
+                                style: TextStyle(
+                                  color: colors.onSurfaceMuted,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
                             Expanded(
-                              child: Row(
-                                children: [
-                                  SizedBox(
-                                    width: isTablet ? 120 : 80,
-                                    child: Text(
-                                      "Delivery Date",
-                                      style: TextStyle(
-                                        color: colors.onSurfaceMuted,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: _buildDateTimePicker(
-                                      isDate: true,
-                                      isDark: isDark,
-                                      colors: colors,
-                                    ),
-                                  ),
-                                ],
+                              child: _buildDateTimePicker(
+                                isDate: true,
+                                isDark: isDark,
+                                colors: colors,
                               ),
                             ),
                             const SizedBox(width: 12),
+                            Text(
+                              "Time",
+                              style: TextStyle(
+                                color: colors.onSurfaceMuted,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             Expanded(
-                              child: Row(
-                                children: [
-                                  Text(
-                                    "Time ",
-                                    style: TextStyle(
-                                      color: colors.onSurfaceMuted,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: _buildDateTimePicker(
-                                      isDate: false,
-                                      isDark: isDark,
-                                      colors: colors,
-                                    ),
-                                  ),
-                                ],
+                              child: _buildDateTimePicker(
+                                isDate: false,
+                                isDark: isDark,
+                                colors: colors,
                               ),
                             ),
                           ],

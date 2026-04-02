@@ -7,6 +7,7 @@ import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 import 'serial_number_dialog.dart';
+import 'breakdown_widgets.dart';
 
 /// Helper to format sell price - shows 4 decimals if the price has significant 
 /// digits beyond 2 decimal places, otherwise shows 2 decimals
@@ -305,83 +306,94 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
 
           SizedBox(height: isTablet ? 10 : 8),
 
-          // Edit fields and actions row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // Action buttons
-              if (widget.item.trackSerial) ...[
-                _buildSerialButton(
-                  onTap: () => _showSerialDialog(context),
+          // Edit fields and actions row - horizontally scrollable for narrow screens
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Action buttons
+                if (widget.item.trackSerial) ...[
+                  _buildSerialButton(
+                    onTap: () => _showSerialDialog(context),
+                    isTablet: isTablet,
+                    hasValue: widget.item.serialNumber?.isNotEmpty == true,
+                  ),
+                  SizedBox(width: isTablet ? 6 : 4),
+                ],
+
+                // Tax button
+                _buildTaxButton(
+                  onTap: () => _showItemTaxDialog(context),
                   isTablet: isTablet,
-                  hasValue: widget.item.serialNumber?.isNotEmpty == true,
                 ),
                 SizedBox(width: isTablet ? 6 : 4),
+
+                // Sell Price field
+                SizedBox(
+                  width: isTablet ? 180 : 70,
+                  height: isTablet ? 52 : 30,
+                  child: _buildCompactField(
+                    label: "Price",
+                    controller: _priceController,
+                    prefix: "\$",
+                    isTablet: isTablet,
+                    maxDecimals: _priceDecimalPlaces,
+                    enabled: widget.allowPriceEdit,
+                    onChanged: (value) {
+                      final price = double.tryParse(value);
+                      if (price != null) widget.onPriceChanged(price);
+                    },
+                  ),
+                ),
+
+                SizedBox(width: isTablet ? 20 : 8),
+
+                // Qty with +/- buttons
+                _buildQtyButton(
+                  icon: Icons.remove,
+                  onTap: _decrementQty,
+                  isTablet: isTablet,
+                ),
+                SizedBox(width: isTablet ? 10 : 3),
+                SizedBox(
+                  width: isTablet ? 90 : 40,
+                  height: isTablet ? 52 : 30,
+                  child: _buildCompactField(
+                    controller: _qtyController,
+                    isTablet: isTablet,
+                    textAlign: TextAlign.center,
+                    isNumber: !_allowFractions,
+                    maxDecimals: _allowFractions ? 3 : null,
+                    onChanged: (value) {
+                      final qty = double.tryParse(value);
+                      if (qty != null && qty != 0) widget.onQtyChanged(qty);
+                    },
+                  ),
+                ),
+                SizedBox(width: isTablet ? 10 : 3),
+                _buildQtyButton(
+                  icon: Icons.add,
+                  onTap: _incrementQty,
+                  isTablet: isTablet,
+                ),
+
+                SizedBox(width: isTablet ? 6 : 4),
+
+                _buildIconButton(
+                  icon: Icons.delete_outline,
+                  onTap: widget.onDelete,
+                  isTablet: isTablet,
+                  isDestructive: true,
+                ),
+
+                SizedBox(width: isTablet ? 6 : 4),
+
+                // Save button
+                _buildCompactSaveButton(isTablet: isTablet),
               ],
-
-              // Sell Price field
-              SizedBox(
-                width: isTablet ? 180 : 70,
-                height: isTablet ? 52 : 30,
-                child: _buildCompactField(
-                  label: "Price",
-                  controller: _priceController,
-                  prefix: "\$",
-                  isTablet: isTablet,
-                  maxDecimals: _priceDecimalPlaces,
-                  enabled: widget.allowPriceEdit,
-                  onChanged: (value) {
-                    final price = double.tryParse(value);
-                    if (price != null) widget.onPriceChanged(price);
-                  },
-                ),
-              ),
-
-              SizedBox(width: isTablet ? 20 : 8),
-
-              // Qty with +/- buttons
-              _buildQtyButton(
-                icon: Icons.remove,
-                onTap: _decrementQty,
-                isTablet: isTablet,
-              ),
-              SizedBox(width: isTablet ? 10 : 3),
-              SizedBox(
-                width: isTablet ? 90 : 40,
-                height: isTablet ? 52 : 30,
-                child: _buildCompactField(
-                  controller: _qtyController,
-                  isTablet: isTablet,
-                  textAlign: TextAlign.center,
-                  isNumber: !_allowFractions,
-                  maxDecimals: _allowFractions ? 3 : null,
-                  onChanged: (value) {
-                    final qty = double.tryParse(value);
-                    if (qty != null && qty != 0) widget.onQtyChanged(qty);
-                  },
-                ),
-              ),
-              SizedBox(width: isTablet ? 10 : 3),
-              _buildQtyButton(
-                icon: Icons.add,
-                onTap: _incrementQty,
-                isTablet: isTablet,
-              ),
-
-              SizedBox(width: isTablet ? 6 : 4),
-
-              _buildIconButton(
-                icon: Icons.delete_outline,
-                onTap: widget.onDelete,
-                isTablet: isTablet,
-                isDestructive: true,
-              ),
-
-              SizedBox(width: isTablet ? 6 : 4),
-
-              // Save button
-              _buildCompactSaveButton(isTablet: isTablet),
-            ],
+            ),
           ),
         ],
       ),
@@ -698,6 +710,122 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
       widget.onSerialChanged(result.join(', '));
       _serialController.text = result.join(', ');
     }
+  }
+
+  Widget _buildTaxButton({
+    required VoidCallback onTap,
+    required bool isTablet,
+  }) {
+    final size = isTablet ? 52.0 : 30.0;
+    final Color bgColor = widget.isDark ? widget.colors.surface : Colors.grey.shade100;
+    final Color fgColor = widget.isDark ? Colors.white70 : Colors.blueGrey.shade700;
+    final Color borderColor = widget.isDark ? Colors.white24 : Colors.grey.shade300;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: borderColor),
+        ),
+        child: Icon(
+          Icons.receipt_long_outlined,
+          size: isTablet ? 22 : 14,
+          color: fgColor,
+        ),
+      ),
+    );
+  }
+
+  void _showItemTaxDialog(BuildContext context) {
+    final isTablet = widget.isTablet;
+    final isDark = widget.isDark;
+    final colors = widget.colors;
+    final item = widget.item;
+    
+    // Calculate tax values for this item
+    final double incTotal = item.extension;
+    final double exTotal = item.extensionEx;
+    final double taxAmount = incTotal - exTotal;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (dialogContext) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: isTablet ? 500 : MediaQuery.of(context).size.width * 0.85,
+              padding: EdgeInsets.all(isTablet ? 28 : 24),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Item Tax",
+                        style: TextStyle(
+                          fontSize: isTablet ? 20 : 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.of(dialogContext).pop(),
+                        child: Icon(
+                          Icons.close,
+                          size: isTablet ? 26 : 24,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: isTablet ? 16 : 12),
+                  // Item description
+                  Text(
+                    item.description,
+                    style: TextStyle(
+                      fontSize: isTablet ? 14 : 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : Colors.black54,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: isTablet ? 20 : 16),
+                  TaxBreakdownWidget(
+                    incTotal: incTotal,
+                    exTotal: exTotal,
+                    taxAmount: taxAmount,
+                    colors: colors,
+                    isDark: isDark,
+                  ),
+                  SizedBox(height: isTablet ? 16 : 12),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

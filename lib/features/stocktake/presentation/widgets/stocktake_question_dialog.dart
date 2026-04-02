@@ -36,44 +36,54 @@ class StocktakeQuestionDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Question Icon Bubble
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: kPrimaryColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.help_outline_rounded,
-                  color: kPrimaryColor,
-                  size: 32,
+            // Scrollable content
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Question Icon Bubble
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.help_outline_rounded,
+                          color: kPrimaryColor,
+                          size: 32,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Title
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : colors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Message Body
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Title
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : colors.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Message Body
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                height: 1.5,
               ),
             ),
             const SizedBox(height: 24),
