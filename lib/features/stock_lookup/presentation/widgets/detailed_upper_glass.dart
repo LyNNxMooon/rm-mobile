@@ -251,41 +251,34 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               SizedBox(height: rowGap),
               // Custom1 Editable Field
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  SizedBox(
-                    width: 120,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: Image.asset(
-                              "assets/images/cus1.png",
-                              fit: BoxFit.fill,
-                            ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: Image.asset(
+                            "assets/images/cus1.png",
+                            fit: BoxFit.fill,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            widget.custom1Label,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: onGlass,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.custom1Label,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: onGlass,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                   const Spacer(),
                   Flexible(
@@ -343,41 +336,34 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               SizedBox(height: rowGap),
               // Custom2 Editable Field
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  SizedBox(
-                    width: 120,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: Colors.deepOrange.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: Image.asset(
-                              "assets/images/cus2.png",
-                              fit: BoxFit.fill,
-                            ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Colors.deepOrange.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: Image.asset(
+                            "assets/images/cus2.png",
+                            fit: BoxFit.fill,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            widget.custom2Label,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: onGlass,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.custom2Label,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: onGlass,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                   const Spacer(),
                   Flexible(

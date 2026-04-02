@@ -9,6 +9,7 @@ class SearchFilterBar extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onFilterTap;
   final VoidCallback? onScannerTap;
+  final VoidCallback? onSearchFocus;
   final SearchMode searchMode;
   final ValueChanged<SearchMode>? onSearchModeChanged;
 
@@ -17,6 +18,7 @@ class SearchFilterBar extends StatelessWidget {
     this.onChanged,
     this.onFilterTap,
     this.onScannerTap,
+    this.onSearchFocus,
     this.searchMode = SearchMode.partial,
     this.onSearchModeChanged,
   });
@@ -40,6 +42,7 @@ class SearchFilterBar extends StatelessWidget {
           Expanded(
             child: TextField(
               onChanged: onChanged,
+              onTap: onSearchFocus,
               style: TextStyle(
                 color: isDark ? Colors.white : colors.onSurface,
                 fontSize: 14,
@@ -94,6 +97,7 @@ class SearchFilterBar extends StatelessWidget {
         Expanded(
           child: TextField(
             onChanged: onChanged,
+            onTap: onSearchFocus,
             style: TextStyle(
               color: isDark ? Colors.white : colors.onSurface,
               fontSize: 14,

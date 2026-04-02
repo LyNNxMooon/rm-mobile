@@ -224,12 +224,13 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   Future<void> _onCameraTap() async {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) {
         return Container(
-          margin: const EdgeInsets.all(12),
+          margin: EdgeInsets.fromLTRB(12, 12, 12, 12 + bottomPadding),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: isDark ? colors.surface : kSecondaryColor,
@@ -556,7 +557,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         ? (screenWidth * (isLandscape ? 0.045 : 0.04)).clamp(24.0, 56.0)
         : 20.0;
     final double sectionGap = isTablet ? (isLandscape ? 16.0 : 20.0) : 20.0;
-    final double bottomGap = isTablet ? 40.0 : 100.0;
+    final double bottomSafeArea = MediaQuery.of(context).padding.bottom;
+    final double bottomGap = (isTablet ? 40.0 : 100.0) + bottomSafeArea;
 
     final bool hideCostPrice = AppGlobals.instance.restrictedPermissions
         .contains("Miscellaneous_HideCostPriceAndProfit");

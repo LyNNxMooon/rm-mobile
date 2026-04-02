@@ -984,6 +984,19 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+
+          // Cancel Button
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context, (
+                result: FinaliseSaleResult.cancelled,
+                emailData: null,
+                paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
+              ));
+            },
+            child: Text("Cancel", style: TextStyle(color: colors.onSurfaceMuted)),
+          ),
         ],
       ),
     );

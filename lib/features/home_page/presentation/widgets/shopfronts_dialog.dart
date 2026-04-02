@@ -564,37 +564,61 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            height: isTablet ? 54 : 48,
-            child: ElevatedButton(
-              onPressed: loading ? null : () => _onTapStaffSignIn(shopName, ctx),
-              style: ModernDialogStyles.primaryButtonStyle(ctx),
-              child: loading
-                  ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.login_rounded, size: isTablet ? 22 : 20),
-                          SizedBox(width: isTablet ? 10 : 8),
-                          Text(
-                            'Sign In',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: isTablet ? 16 : 15,
-                            ),
-                          ),
-                        ],
-                      ),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: ModernDialogStyles.headerGradient,
+                borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
+                boxShadow: [
+                  BoxShadow(
+                    color: kPrimaryColor.withOpacity(0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: loading ? null : () => _onTapStaffSignIn(shopName, ctx),
+                  borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: loading
+                          ? [
+                              SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ]
+                          : [
+                              Icon(
+                                Icons.login_rounded,
+                                color: Colors.white,
+                                size: isTablet ? 22 : 20,
+                              ),
+                              SizedBox(width: isTablet ? 10 : 8),
+                              Text(
+                                'Sign In',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isTablet ? 16 : 15,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
                     ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],

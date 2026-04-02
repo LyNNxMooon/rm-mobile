@@ -232,13 +232,14 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                 icon: Icons.link_rounded,
                 subtitle: "Enter the code shown on the host",
               ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Display code section
-                    Container(
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Display code section
+                      Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -415,7 +416,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                     ),
                   ],
                 ),
-              ),
+              ),)
             ],
           ),
         ),

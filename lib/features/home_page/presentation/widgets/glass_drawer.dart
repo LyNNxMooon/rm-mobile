@@ -186,9 +186,10 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
         final double itemWidth = availableWidth / crossAxisCount;
         final double childAspectRatio = itemWidth / targetHeight;
 
+        final bottomPadding = MediaQuery.of(context).padding.bottom;
         return ListView(
           controller: scrollController,
-          padding: EdgeInsets.only(top: isTablet ? 10 : 8, bottom: 40),
+          padding: EdgeInsets.only(top: isTablet ? 10 : 8, bottom: 40 + bottomPadding),
           physics: const ClampingScrollPhysics(),
           children: [
             // --- SECTION 1: TRANSACTIONS ---

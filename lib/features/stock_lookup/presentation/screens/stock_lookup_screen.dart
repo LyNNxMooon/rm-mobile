@@ -527,7 +527,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final colors = context.appColors;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
       decoration: BoxDecoration(
         color: isDark ? colors.surface.withOpacity(0.8) : kSecondaryColor,
         borderRadius: BorderRadius.circular(8),
@@ -546,7 +546,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               });
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
                 color: isSelected
                     ? kPrimaryColor.withOpacity(0.2)
@@ -555,7 +555,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               ),
               child: Icon(
                 mode.icon,
-                size: 28,
+                size: 22,
                 color: isSelected
                     ? kPrimaryColor
                     : (isDark ? Colors.white70 : kThirdColor),
@@ -603,6 +603,11 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           ),
           child: SearchFilterBar(
             searchMode: _searchMode,
+            onSearchFocus: () {
+              if (isScanner) {
+                setState(() => isScanner = false);
+              }
+            },
             onSearchModeChanged: (newMode) {
               setState(() {
                 _searchMode = newMode;

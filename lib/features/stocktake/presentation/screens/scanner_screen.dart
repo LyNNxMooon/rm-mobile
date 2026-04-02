@@ -140,10 +140,22 @@ class _ScannerScreenState extends State<ScannerScreen> {
       returnImage: false,
     );
     super.initState();
+    
+    // Close scanner when text fields gain focus
+    qtyFocusNode.addListener(_onFocusChange);
+    txtFieldFocusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if ((qtyFocusNode.hasFocus || txtFieldFocusNode.hasFocus) && isScan) {
+      setState(() => isScan = false);
+    }
   }
 
   @override
   void dispose() {
+    qtyFocusNode.removeListener(_onFocusChange);
+    txtFieldFocusNode.removeListener(_onFocusChange);
     scannerController.dispose();
     qtyController.dispose();
     qtyFocusNode.dispose();

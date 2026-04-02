@@ -19,6 +19,7 @@ class SalesTopHeader extends StatefulWidget {
   final CartViewMode? viewMode;
   final ValueChanged<CartViewMode>? onViewModeChanged;
   final VoidCallback? onViewCustomerTransactions;
+  final VoidCallback? onCustomerFieldFocus;
 
   const SalesTopHeader({
     super.key,
@@ -34,6 +35,7 @@ class SalesTopHeader extends StatefulWidget {
     this.autoFocusCustomer = false,
     this.viewMode,
     this.onViewModeChanged,
+    this.onCustomerFieldFocus,
   });
 
   @override
@@ -48,11 +50,19 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
   @override
   void initState() {
     super.initState();
+    // Listen to focus changes on customer search field
+    _searchFocusNode.addListener(_onSearchFocusChange);
     // Auto-focus customer field if requested
     if (widget.autoFocusCustomer) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _searchFocusNode.requestFocus();
       });
+    }
+  }
+
+  void _onSearchFocusChange() {
+    if (_searchFocusNode.hasFocus) {
+      widget.onCustomerFieldFocus?.call();
     }
   }
 
@@ -71,6 +81,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
 
   @override
   void dispose() {
+    _searchFocusNode.removeListener(_onSearchFocusChange);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();

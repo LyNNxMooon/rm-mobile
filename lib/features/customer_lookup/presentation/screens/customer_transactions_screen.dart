@@ -178,8 +178,9 @@ class _CustomerTransactionsScreenState
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bottomSafeArea = MediaQuery.of(context).padding.bottom;
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0 + bottomSafeArea),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(

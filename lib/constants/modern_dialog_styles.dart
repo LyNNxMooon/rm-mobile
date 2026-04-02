@@ -561,7 +561,7 @@ class _ModernLoadingStateState extends State<ModernLoadingState>
     final colors = context.appColors;
     final isDark = colors.isDark;
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(48),
       child: Column(
         mainAxisSize: MainAxisSize.min,

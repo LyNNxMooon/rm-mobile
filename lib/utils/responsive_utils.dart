@@ -91,10 +91,10 @@ extension ResponsiveContext on BuildContext {
     if (shortestSide >= Breakpoints.tablet) {
       if (shortestSide >= Breakpoints.largeTablet || longestSide >= Breakpoints.longSideXLarge) {
         // Large Tablet (≥900)
-        textScale = 1.55;
+        textScale = 1.2;
       } else {
         // Medium Tablet (600-900) - reduced scaling
-        textScale = 1.20;
+        textScale = 1;
       }
     }
 

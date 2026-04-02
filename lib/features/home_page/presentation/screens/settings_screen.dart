@@ -364,12 +364,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: "Enter server details to connect",
               ),
               // Content
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    // Host IP input
-                    TextField(
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      // Host IP input
+                      TextField(
                       controller: _manualIpController,
                       style: TextStyle(
                         color: isDark ? Colors.white : colors.onSurface,
@@ -465,7 +466,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ],
                 ),
-              ),
+              ),)
             ],
           ),
         ),
@@ -724,17 +725,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             onTap: _isRefreshingShopfront ? null : () => _refreshShopfront(context),
                                             child: Container(
                                               padding: EdgeInsets.symmetric(
-                                                horizontal: context.isTablet ? 8 : 6,
-                                                vertical: context.isTablet ? 6 : 4,
+                                                horizontal: context.isTablet ? 12 : 6,
+                                                vertical: context.isTablet ? 8 : 4,
                                               ),
                                               decoration: BoxDecoration(
                                                 color: Colors.green.withOpacity(0.15),
-                                                borderRadius: BorderRadius.circular(6),
+                                                borderRadius: BorderRadius.circular(context.isTablet ? 8 : 6),
                                               ),
                                               child: _isRefreshingShopfront
                                                   ? SizedBox(
-                                                      width: context.isTablet ? 24 : 18,
-                                                      height: context.isTablet ? 24 : 18,
+                                                      width: context.isTablet ? 28 : 18,
+                                                      height: context.isTablet ? 28 : 18,
                                                       child: const CircularProgressIndicator(
                                                         strokeWidth: 2,
                                                         color: Colors.white,
@@ -742,7 +743,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                     )
                                                   : Icon(
                                                       Icons.refresh,
-                                                      size: context.isTablet ? 24 : 18,
+                                                      size: context.isTablet ? 28 : 18,
                                                       color: Colors.white,
                                                     ),
                                             ),
@@ -750,16 +751,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           const SizedBox(width: 6),
                                           Container(
                                             padding: EdgeInsets.symmetric(
-                                              horizontal: context.isTablet ? 8 : 6,
-                                              vertical: context.isTablet ? 6 : 4,
+                                              horizontal: context.isTablet ? 12 : 6,
+                                              vertical: context.isTablet ? 8 : 4,
                                             ),
                                             decoration: BoxDecoration(
                                               color: kPrimaryColor.withOpacity(0.15),
-                                              borderRadius: BorderRadius.circular(6),
+                                              borderRadius: BorderRadius.circular(context.isTablet ? 8 : 6),
                                             ),
                                             child: Icon(
                                               Icons.settings,
-                                              size: context.isTablet ? 24 : 18,
+                                              size: context.isTablet ? 28 : 18,
                                               color: Colors.white,
                                             ),
                                           ),
@@ -1103,19 +1104,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     
+    final bool isTablet = context.isTablet;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: EdgeInsets.all(isTablet ? 8 : 6),
             decoration: BoxDecoration(
               color: Colors.blue.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
             ),
             child: Icon(
               Icons.point_of_sale_outlined,
-              size: 16,
+              size: isTablet ? 20 : 16,
               color: isDark ? Colors.white : colors.onHero,
             ),
           ),

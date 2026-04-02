@@ -63,6 +63,73 @@ class PackageComponentsScreen extends StatelessWidget {
             ),
           ],
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDark 
+                        ? Colors.white.withOpacity(0.1) 
+                        : Colors.black.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Items: ',
+                        style: TextStyle(
+                          color: colors.onSurfaceMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        '${components.length}',
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black87,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: kPrimaryColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Total: ',
+                        style: TextStyle(
+                          color: kPrimaryColor.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        '\$${_calculateGrandTotal().toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: kPrimaryColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         toolbarHeight: 56,
       ),
       body: Column(
@@ -147,7 +214,10 @@ class PackageComponentsScreen extends StatelessWidget {
           // Components list
           Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.only(
+                top: 8,
+                bottom: 8 + MediaQuery.of(context).padding.bottom,
+              ),
               itemCount: components.length,
               itemBuilder: (context, index) {
                 final component = components[index];
@@ -245,41 +315,6 @@ class PackageComponentsScreen extends StatelessWidget {
                   ],
                 );
               },
-            ),
-          ),
-          // Total summary
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isTablet ? 20 : 16,
-              vertical: 16,
-            ),
-            decoration: BoxDecoration(
-              color: isDark ? colors.surfaceAlt : kSecondaryColor,
-              border: Border(
-                top: BorderSide(
-                  color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${components.length} component${components.length != 1 ? 's' : ''}',
-                  style: TextStyle(
-                    color: colors.onSurfaceMuted,
-                    fontSize: isTablet ? 14 : 13,
-                  ),
-                ),
-                Text(
-                  'Total: \$${_calculateGrandTotal().toStringAsFixed(2)}',
-                  style: TextStyle(
-                    color: kPrimaryColor,
-                    fontSize: isTablet ? 16 : 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
             ),
           ),
         ],

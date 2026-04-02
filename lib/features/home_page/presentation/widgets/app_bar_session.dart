@@ -72,7 +72,7 @@ class AppBarSession extends StatelessWidget {
                             child: Text(
                               'Offline Mode',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: isTablet ? 18 : 16,
                                 color: Colors.grey.shade900,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -85,7 +85,7 @@ class AppBarSession extends StatelessWidget {
                         return Text(
                           "Server: $host",
                           style: getSmartTitle(
-                            fontSize: 16,
+                            fontSize: isTablet ? 18 : 16,
                             color: isDark ? Colors.white : colors.onHero,
                           ),
                           maxLines: 1,

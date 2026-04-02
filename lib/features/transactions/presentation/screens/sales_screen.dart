@@ -200,6 +200,29 @@ class _SalesScreenState extends State<SalesScreen>
   double get _totalPaid =>
       _paymentAmounts.values.fold(0.0, (sum, amount) => sum + amount);
 
+  /// Closes the scanner if open - call before showing dialogs that need keyboard
+  void _closeScanner() {
+    if (_showScanner) {
+      setState(() => _showScanner = false);
+    }
+  }
+
+  /// Toggles the scanner with proper keyboard dismissal to prevent overflow
+  Future<void> _toggleScanner() async {
+    if (_showScanner) {
+      // Closing scanner - do it immediately
+      setState(() => _showScanner = false);
+    } else {
+      // Opening scanner - first dismiss keyboard, wait for animation, then open
+      FocusScope.of(context).unfocus();
+      // Wait for keyboard to close to prevent overflow during transition
+      await Future.delayed(const Duration(milliseconds: 150));
+      if (mounted) {
+        setState(() => _showScanner = true);
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -219,8 +242,8 @@ class _SalesScreenState extends State<SalesScreen>
     );
     // Close scanner when search field is focused
     _searchFocusNode.addListener(() {
-      if (_searchFocusNode.hasFocus && _showScanner) {
-        setState(() => _showScanner = false);
+      if (_searchFocusNode.hasFocus) {
+        _closeScanner();
       }
     });
     _loadSalesSettings();
@@ -694,6 +717,7 @@ class _SalesScreenState extends State<SalesScreen>
                         onViewModeChanged: isTablet
                             ? (mode) => setState(() => _cartViewMode = mode)
                             : null,
+                        onCustomerFieldFocus: _closeScanner,
                       ),
                       // Scanner Area
                       if (_showScanner)
@@ -711,14 +735,7 @@ class _SalesScreenState extends State<SalesScreen>
                         searchFocusNode: _searchFocusNode,
                         showScanner: _showScanner,
                         isTorchOn: _isTorchOn,
-                        onScannerToggle: () {
-                          setState(() {
-                            _showScanner = !_showScanner;
-                            if (_showScanner) {
-                              _searchFocusNode.unfocus();
-                            }
-                          });
-                        },
+                        onScannerToggle: () => _toggleScanner(),
                         onTorchToggle: () {
                           setState(() {
                             _scannerController.toggleTorch();
@@ -2105,6 +2122,7 @@ class _SalesScreenState extends State<SalesScreen>
     AppThemeColors colors,
     bool isDark,
   ) {
+    _closeScanner();
     final controller = TextEditingController(text: _commentValue);
 
     showModalBottomSheet(
@@ -2249,6 +2267,7 @@ class _SalesScreenState extends State<SalesScreen>
     AppThemeColors colors,
     bool isDark,
   ) {
+    _closeScanner();
     _surveyController.text = _surveyValue;
 
     showModalBottomSheet(
@@ -3136,6 +3155,7 @@ class _SalesScreenState extends State<SalesScreen>
     AppThemeColors colors,
     bool isDark,
   ) {
+    _closeScanner();
     final isTablet = context.isTablet;
     final discountController = TextEditingController(
       text: _discountValue > 0 ? _discountValue.toStringAsFixed(2) : '',
