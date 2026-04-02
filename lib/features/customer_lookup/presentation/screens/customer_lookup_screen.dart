@@ -48,7 +48,9 @@ class Debouncer {
 }
 
 class CustomerLookupScreen extends StatefulWidget {
-  const CustomerLookupScreen({super.key});
+  final bool showBackArrow;
+  
+  const CustomerLookupScreen({super.key, this.showBackArrow = false});
 
   @override
   State<CustomerLookupScreen> createState() => _CustomerLookupScreenState();
@@ -137,7 +139,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
             Column(
               children: [
                 const SizedBox(height: 25),
-                const CustomerLookupAppbar(),
+                CustomerLookupAppbar(showBackArrow: widget.showBackArrow),
                 const SizedBox(height: 5),
                 const PendingCustomerUpdatesTile(),
                

@@ -258,7 +258,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                       Text(
                         widget.item.description,
                         style: TextStyle(
-                          fontSize: isTablet ? 13 : 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: widget.isDark ? Colors.white : Colors.black87,
                         ),
@@ -269,7 +269,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                       widget.item.code,
                       style: TextStyle(
                         fontFamily: 'monospace',
-                        fontSize: isTablet ? 11 : 10,
+                        fontSize: 13,
                         fontWeight: FontWeight.w900,
                         color: kPrimaryColor,
                       ),
@@ -307,10 +307,21 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
 
           // Edit fields and actions row
           Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              // Action buttons
+              if (widget.item.trackSerial) ...[
+                _buildSerialButton(
+                  onTap: () => _showSerialDialog(context),
+                  isTablet: isTablet,
+                  hasValue: widget.item.serialNumber?.isNotEmpty == true,
+                ),
+                SizedBox(width: isTablet ? 6 : 4),
+              ],
+
               // Sell Price field
               SizedBox(
-                width: isTablet ? 140 : 70,
+                width: isTablet ? 180 : 70,
                 height: isTablet ? 52 : 30,
                 child: _buildCompactField(
                   label: "Price",
@@ -357,18 +368,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                 isTablet: isTablet,
               ),
 
-              const Spacer(),
-
-              // Action buttons
-              if (widget.item.trackSerial) ...[
-                _buildIconButton(
-                  icon: Icons.label_important_outline,
-                  onTap: () => _showSerialDialog(context),
-                  isTablet: isTablet,
-                  hasValue: widget.item.serialNumber?.isNotEmpty == true,
-                ),
-                SizedBox(width: isTablet ? 6 : 4),
-              ],
+              SizedBox(width: isTablet ? 6 : 4),
 
               _buildIconButton(
                 icon: Icons.delete_outline,
@@ -608,38 +608,65 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: borderColor),
         ),
-        child: Icon(icon, size: isTablet ? 18 : 16, color: fgColor),
+        child: Icon(icon, size: isTablet ? 22 : 16, color: fgColor),
+      ),
+    );
+  }
+
+  Widget _buildSerialButton({
+    required VoidCallback onTap,
+    required bool isTablet,
+    bool hasValue = false,
+  }) {
+    final size = isTablet ? 52.0 : 30.0;
+    final Color bgColor = hasValue
+        ? kPrimaryColor.withOpacity(0.15)
+        : (widget.isDark ? widget.colors.surface : Colors.grey.shade100);
+    final Color fgColor = hasValue
+        ? kPrimaryColor
+        : (widget.isDark ? Colors.white70 : Colors.blueGrey.shade700);
+    final Color borderColor = hasValue
+        ? kPrimaryColor.withOpacity(0.3)
+        : (widget.isDark ? Colors.white24 : Colors.grey.shade300);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: borderColor),
+        ),
+        child: Center(
+          child: Text(
+            "S/N",
+            style: TextStyle(
+              fontSize: isTablet ? 14 : 10,
+              fontWeight: FontWeight.w700,
+              color: fgColor,
+            ),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildCompactSaveButton({required bool isTablet}) {
-    final height = isTablet ? 52.0 : 30.0;
+    final size = isTablet ? 52.0 : 30.0;
     return InkWell(
       onTap: widget.onSave,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        height: height,
-        padding: EdgeInsets.symmetric(horizontal: isTablet ? 22 : 12),
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: kPrimaryColor,
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.check, size: isTablet ? 24 : 14, color: Colors.white),
-            SizedBox(width: isTablet ? 8 : 3),
-            Text(
-              "Save",
-              style: TextStyle(
-                fontSize: isTablet ? 16 : 11,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
+        child: Icon(Icons.check, size: isTablet ? 24 : 16, color: Colors.white),
       ),
     );
   }

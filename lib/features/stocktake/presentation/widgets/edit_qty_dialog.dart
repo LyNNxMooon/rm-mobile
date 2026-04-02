@@ -327,13 +327,19 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                 decoration: BoxDecoration(
                   color: isDark
                       ? colors.surfaceAlt
-                      : kSecondaryColor.withOpacity(0.1),
+                      : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.white38
-                        : kPrimaryColor.withOpacity(0.3),
+                    color: kPrimaryColor,
+                    width: 1.5,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: kPrimaryColor.withOpacity(0.15),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: TextField(
                   controller: _qtyController,
@@ -356,8 +362,21 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                       );
                     }
                   },
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: InputBorder.none,
+                    suffixIcon: Container(
+                      margin: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.edit,
+                        size: 22,
+                        color: kPrimaryColor,
+                      ),
+                    ),
                     //contentPadding: EdgeInsets.symmetric(vertical: 8),
                   ),
                   onSubmitted: (_) => _handleUpdate(),

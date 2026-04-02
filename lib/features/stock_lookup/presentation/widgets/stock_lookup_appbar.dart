@@ -15,7 +15,9 @@ import '../../../home_page/presentation/BLoC/home_screen_events.dart';
 import '../../../home_page/presentation/BLoC/home_screen_states.dart';
 
 class StockLookupAppbar extends StatefulWidget {
-  const StockLookupAppbar({super.key});
+  final bool showBackArrow;
+  
+  const StockLookupAppbar({super.key, this.showBackArrow = false});
 
   @override
   State<StockLookupAppbar> createState() => _StockLookupAppbarState();
@@ -122,8 +124,8 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                       width: 1,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.home_filled,
+                  child: Icon(
+                    widget.showBackArrow ? Icons.arrow_back_ios_new_rounded : Icons.home_filled,
                     color: kPrimaryColor,
                     size: 24,
                   ),

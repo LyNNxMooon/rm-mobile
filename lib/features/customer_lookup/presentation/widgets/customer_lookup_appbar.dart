@@ -11,7 +11,9 @@ import '../BLoC/customer_lookup_events.dart';
 import '../BLoC/customer_lookup_states.dart';
 
 class CustomerLookupAppbar extends StatelessWidget {
-  const CustomerLookupAppbar({super.key});
+  final bool showBackArrow;
+  
+  const CustomerLookupAppbar({super.key, this.showBackArrow = false});
 
   @override
   Widget build(BuildContext context) {
@@ -93,8 +95,8 @@ class CustomerLookupAppbar extends StatelessWidget {
                       width: 1,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.home_filled,
+                  child: Icon(
+                    showBackArrow ? Icons.arrow_back_ios_new_rounded : Icons.home_filled,
                     color: kPrimaryColor,
                     size: 24,
                   ),

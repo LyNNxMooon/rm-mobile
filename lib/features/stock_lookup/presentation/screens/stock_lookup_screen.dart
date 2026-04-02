@@ -77,7 +77,9 @@ enum StockViewMode {
 }
 
 class StockLookupScreen extends StatefulWidget {
-  const StockLookupScreen({super.key});
+  final bool showBackArrow;
+  
+  const StockLookupScreen({super.key, this.showBackArrow = false});
 
   @override
   State<StockLookupScreen> createState() => _StockLookupScreenState();
@@ -294,7 +296,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         Column(
           children: [
             const SizedBox(height: 25),
-            const StockLookupAppbar(), // Added const
+            StockLookupAppbar(showBackArrow: widget.showBackArrow),
             const SizedBox(height: 5),
             const PendingStockUpdatesTile(),
             Divider(

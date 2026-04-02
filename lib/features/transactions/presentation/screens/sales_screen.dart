@@ -40,6 +40,8 @@ import '../../../../utils/internet_connection_utils.dart';
 import '../../../../entities/vos/delivery_info_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 import 'delivery_details_screen.dart';
+import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
+import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
 
 final _sl = GetIt.instance;
 
@@ -718,6 +720,13 @@ class _SalesScreenState extends State<SalesScreen>
                             ? (mode) => setState(() => _cartViewMode = mode)
                             : null,
                         onCustomerFieldFocus: _closeScanner,
+                        onGoToCustomerLookup: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const CustomerLookupScreen(showBackArrow: true),
+                            ),
+                          );
+                        },
                       ),
                       // Scanner Area
                       if (_showScanner)
@@ -750,6 +759,13 @@ class _SalesScreenState extends State<SalesScreen>
                                   _scanIndividualUnits && _skipSellPrice,
                               autoRemindLowStock: _autoRemindLowStock,
                               preventAddIfNoStock: _preventAddIfNoStock,
+                            ),
+                          );
+                        },
+                        onGoToStockLookup: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const StockLookupScreen(showBackArrow: true),
                             ),
                           );
                         },
@@ -1284,7 +1300,7 @@ class _SalesScreenState extends State<SalesScreen>
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  "×${item.qty}",
+                                  "×${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
                                   style: TextStyle(
                                     fontSize: 11 * uiScale,
                                     fontWeight: FontWeight.bold,
@@ -1440,7 +1456,7 @@ class _SalesScreenState extends State<SalesScreen>
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            "×${item.qty}",
+                            "×${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
                             style: TextStyle(
                               fontSize: 11 * uiScale,
                               fontWeight: FontWeight.bold,

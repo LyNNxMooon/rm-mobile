@@ -701,8 +701,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
                                     BackdropFilter(
                                       filter: ImageFilter.blur(
-                                        sigmaX: 2.0,
-                                        sigmaY: 2.0,
+                                        sigmaX: 9.0,
+                                        sigmaY: 9.0,
                                       ),
                                       child: Container(
                                         color: Colors.black.withOpacity(0.04),

@@ -20,6 +20,7 @@ class SalesTopHeader extends StatefulWidget {
   final ValueChanged<CartViewMode>? onViewModeChanged;
   final VoidCallback? onViewCustomerTransactions;
   final VoidCallback? onCustomerFieldFocus;
+  final VoidCallback? onGoToCustomerLookup;
 
   const SalesTopHeader({
     super.key,
@@ -36,6 +37,7 @@ class SalesTopHeader extends StatefulWidget {
     this.viewMode,
     this.onViewModeChanged,
     this.onCustomerFieldFocus,
+    this.onGoToCustomerLookup,
   });
 
   @override
@@ -325,6 +327,19 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
                   Icons.close,
                   size: 22,
                   color: colors.onSurfaceMuted,
+                ),
+              ),
+            ),
+          // Go to Customer Lookup button (only show when no customer)
+          if (!widget.hasCustomer && widget.onGoToCustomerLookup != null)
+            GestureDetector(
+              onTap: widget.onGoToCustomerLookup,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Icon(
+                  Icons.double_arrow_rounded,
+                  size: 22,
+                  color: kPrimaryColor,
                 ),
               ),
             ),

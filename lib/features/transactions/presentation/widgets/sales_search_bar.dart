@@ -14,6 +14,7 @@ class SalesSearchBar extends StatelessWidget {
   final VoidCallback onScannerToggle;
   final VoidCallback onTorchToggle;
   final ValueChanged<String> onSearch;
+  final VoidCallback? onGoToStockLookup;
 
   const SalesSearchBar({
     super.key,
@@ -24,6 +25,7 @@ class SalesSearchBar extends StatelessWidget {
     required this.onScannerToggle,
     required this.onTorchToggle,
     required this.onSearch,
+    this.onGoToStockLookup,
   });
 
   @override
@@ -54,7 +56,7 @@ class SalesSearchBar extends StatelessWidget {
                   fontSize: 14,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Scan barcode or type to search (F2)',
+                  hintText: 'Scan barcode or type to search',
                   hintStyle: TextStyle(color: colors.onSurfaceMuted, fontSize: 13),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
@@ -95,6 +97,19 @@ class SalesSearchBar extends StatelessWidget {
                 ),
               ),
             ),
+            // Go to Stock Lookup button
+            if (onGoToStockLookup != null)
+              GestureDetector(
+                onTap: onGoToStockLookup,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Icon(
+                    Icons.double_arrow_rounded,
+                    color: kPrimaryColor,
+                    size: 22,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
