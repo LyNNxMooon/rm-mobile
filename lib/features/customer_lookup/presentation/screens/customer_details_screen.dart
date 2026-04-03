@@ -1221,24 +1221,31 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: _iconSize(context, 20),
-                          color: kPrimaryColor,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Secondary Addresses",
-                          style: TextStyle(
-                            fontSize: _font(context, 16),
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? colors.onSurface : Colors.black87,
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: _iconSize(context, 20),
+                            color: kPrimaryColor,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              "Secondary Addresses",
+                              style: TextStyle(
+                                fontSize: _font(context, 16),
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? colors.onSurface : Colors.black87,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     // Close Button in header instead of actions
                     InkWell(
                       onTap: () => Navigator.pop(context),
@@ -1952,8 +1959,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ],
 
           // Quick Action Buttons Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Wrap(
+            alignment: WrapAlignment.spaceEvenly,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               _buildActionButton(Icons.phone_outlined, "Call", () {
                 final String resolvedNumber =
@@ -2237,15 +2246,20 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Secondary Addresses",
-                        style: TextStyle(
-                          fontSize: baseSize,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? colors.onSurface : Colors.black87,
+                      Flexible(
+                        child: Text(
+                          "Secondary Addresses",
+                          style: TextStyle(
+                            fontSize: baseSize,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? colors.onSurface : Colors.black87,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             "View All Addr",
@@ -2767,39 +2781,47 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Metadata",
-                style: TextStyle(
-                  fontSize: baseSize,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? colors.onSurface : Colors.black87,
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Metadata",
+                  style: TextStyle(
+                    fontSize: baseSize,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? colors.onSurface : Colors.black87,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Created: ${_formatDate(widget.customer.dateCreated)}",
-                style: TextStyle(
-                  fontSize: smallSize,
-                  color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+                const SizedBox(height: 8),
+                Text(
+                  "Created: ${_formatDate(widget.customer.dateCreated)}",
+                  style: TextStyle(
+                    fontSize: smallSize,
+                    color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const SizedBox(height: 22),
-              Text(
-                "Modified: ${_formatDate(widget.customer.dateModified)}",
-                style: TextStyle(
-                  fontSize: smallSize,
-                  color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const SizedBox(height: 22),
+                Text(
+                  "Modified: ${_formatDate(widget.customer.dateModified)}",
+                  style: TextStyle(
+                    fontSize: smallSize,
+                    color: isDark ? colors.onSurfaceMuted : Colors.grey[600],
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

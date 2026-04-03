@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:json_annotation/json_annotation.dart';
+import 'package:rmstock_scanner/entities/vos/pricing_grades.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/entities/vos/package_component.dart';
 part 'stock_vo.g.dart';
@@ -89,6 +90,24 @@ class StockVO {
   final double? sellEx;
   @JsonKey(name: 'sell_inc')
   final double? sellInc;
+  @JsonKey(
+    name: 'pricing_grades_stock',
+    fromJson: _pricingGradesFromJson,
+    toJson: _pricingGradesToJson,
+  )
+  final PricingGrades? pricingGradesStock;
+  @JsonKey(
+    name: 'pricing_grades_categories',
+    fromJson: _pricingGradesFromJson,
+    toJson: _pricingGradesToJson,
+  )
+  final PricingGrades? pricingGradesCategories;
+  @JsonKey(
+    name: 'pricing_grades_global',
+    fromJson: _pricingGradesFromJson,
+    toJson: _pricingGradesToJson,
+  )
+  final PricingGrades? pricingGradesGlobal;
 
   factory StockVO.fromJson(Map<String, dynamic> json) =>
       _$StockVOFromJson(json);
@@ -148,6 +167,9 @@ class StockVO {
       "cost_inc": _asNullableDouble(item["cost_inc"]),
       "sell_ex": _asNullableDouble(item["sell_ex"]),
       "sell_inc": _asNullableDouble(item["sell_inc"]),
+      "pricing_grades_stock": item["pricing_grades_stock"],
+      "pricing_grades_categories": item["pricing_grades_categories"],
+      "pricing_grades_global": item["pricing_grades_global"],
     };
 
     return StockVO.fromJsonNetwork(mapped);
@@ -197,6 +219,9 @@ class StockVO {
     this.costInc,
     this.sellEx,
     this.sellInc,
+    this.pricingGradesStock,
+    this.pricingGradesCategories,
+    this.pricingGradesGlobal,
   });
 
   static String _asString(dynamic value) {
@@ -314,5 +339,95 @@ class StockVO {
   static Object? _packageComponentsToJson(List<PackageComponent>? components) {
     if (components == null) return null;
     return jsonEncode(components.map((e) => e.toJson()).toList());
+  }
+
+  static PricingGrades? _pricingGradesFromJson(Object? value) {
+    if (value == null) return null;
+    if (value is PricingGrades) return value;
+    if (value is Map<String, dynamic>) {
+      return PricingGrades.fromJson(value);
+    }
+    if (value is Map) {
+      return PricingGrades.fromJson(Map<String, dynamic>.from(value));
+    }
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return null;
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is Map<String, dynamic>) {
+          return PricingGrades.fromJson(decoded);
+        }
+        if (decoded is Map) {
+          return PricingGrades.fromJson(Map<String, dynamic>.from(decoded));
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  static Object? _pricingGradesToJson(PricingGrades? grades) {
+    if (grades == null) return null;
+    return jsonEncode(grades.toJson());
+  }
+
+  /// Returns the effective sell price for a given customer grade,
+  /// and whether a pricing grade override was applied.
+  /// 
+  /// Hierarchy (from lowest to highest priority):
+  /// - RRP (sell price) as base
+  /// - Global overrides RRP
+  /// - Depts/Cats overrides Global
+  /// - Stock overrides Depts/Cats
+  /// 
+  /// Customer grade: 0 = Def, 1 = A, 2 = B, 3 = C, 4 = D
+  /// 
+  /// Returns a record with:
+  /// - price: the effective sell price
+  /// - isPricingGradeApplied: true if a pricing grade override was applied
+  ///   (price is already inc-tax), false if using base RRP
+  ({double price, bool isPricingGradeApplied}) getEffectiveSellPrice(int customerGrade) {
+    final String gradeKey = _gradeIntToString(customerGrade);
+    double effectivePrice = sell;
+    bool pricingGradeApplied = false;
+    
+    // Apply hierarchy: RRP -> Global -> Categories -> Stock
+    final globalPrice = pricingGradesGlobal?.priceForGrade(gradeKey);
+    if (globalPrice != null) {
+      effectivePrice = globalPrice;
+      pricingGradeApplied = true;
+    }
+    
+    final catPrice = pricingGradesCategories?.priceForGrade(gradeKey);
+    if (catPrice != null) {
+      effectivePrice = catPrice;
+      pricingGradeApplied = true;
+    }
+    
+    final stockPrice = pricingGradesStock?.priceForGrade(gradeKey);
+    if (stockPrice != null) {
+      effectivePrice = stockPrice;
+      pricingGradeApplied = true;
+    }
+    
+    return (price: effectivePrice, isPricingGradeApplied: pricingGradeApplied);
+  }
+
+  /// Converts customer grade int to grade string key
+  static String _gradeIntToString(int grade) {
+    switch (grade) {
+      case 0:
+        return 'Def';
+      case 1:
+        return 'A';
+      case 2:
+        return 'B';
+      case 3:
+        return 'C';
+      case 4:
+        return 'D';
+      default:
+        return 'Def';
+    }
   }
 }

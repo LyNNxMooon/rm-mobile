@@ -305,6 +305,11 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       double taxPercentage;
       int taxType;
       
+      // Get effective sell price based on customer grade
+      final int customerGrade = _selectedCustomer?.grade ?? 0;
+      final effectiveResult = stock.getEffectiveSellPrice(customerGrade);
+      final double effectiveSell = effectiveResult.price;
+      
       // For package items, use sell_ex/sell_inc directly
       if (stock.isPackage && stock.sellEx != null && stock.sellInc != null) {
         incPrice = stock.sellInc!;
@@ -312,10 +317,24 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         // Calculate percentage from prices
         taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
         taxType = 2; // Inc-tax base
-      } else {
-        // Regular items - calculate using tax tables
+      } else if (effectiveResult.isPricingGradeApplied) {
+        // Pricing grade prices are already inc-tax
+        // Get tax percentage from tax tables, then calculate ex-tax from inc
         final taxResult = await TaxCalculationUtils.calculateSellTax(
           sell: stock.sell,
+          salesTax: stock.salesTax,
+        );
+        taxPercentage = taxResult.percentage;
+        taxType = taxResult.taxType;
+        
+        // effectiveSell is already inc-tax
+        incPrice = effectiveSell;
+        final multiplier = 1 + (taxPercentage / 100);
+        exPrice = taxPercentage > 0 ? effectiveSell / multiplier : effectiveSell;
+      } else {
+        // Regular items - calculate using tax tables with base sell price
+        final taxResult = await TaxCalculationUtils.calculateSellTax(
+          sell: effectiveSell,
           salesTax: stock.salesTax,
         );
         incPrice = taxResult.incPrice;
@@ -328,7 +347,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         code: stock.barcode,
         description: stock.description,
         qty: qty,
-        sellPrice: stock.sell,
+        sellPrice: effectiveSell,
         costPrice: stock.cost,
         stock: stock,
         isEditing: !skipEditMode, // New items start in edit mode unless skipEditMode
@@ -528,19 +547,85 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     }
   }
 
-  void _onSelectCustomer(SelectCustomer event, Emitter<SalesState> emit) {
+  Future<void> _onSelectCustomer(SelectCustomer event, Emitter<SalesState> emit) async {
     _selectedCustomer = event.customer;
+    
+    // Recalculate cart prices based on new customer's grade
+    await _recalculateCartPricesForGrade(event.customer.grade);
+    
     emit(CustomerSelected(
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
     ));
   }
 
-  void _onClearCustomer(ClearCustomer event, Emitter<SalesState> emit) {
+  Future<void> _onClearCustomer(ClearCustomer event, Emitter<SalesState> emit) async {
     _selectedCustomer = null;
+    
+    // Recalculate cart prices back to default grade (0)
+    await _recalculateCartPricesForGrade(0);
+    
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
       selectedCustomer: null,
     ));
+  }
+
+  /// Recalculates all cart item prices based on the given customer grade
+  Future<void> _recalculateCartPricesForGrade(int customerGrade) async {
+    for (int i = 0; i < _cartItems.length; i++) {
+      final item = _cartItems[i];
+      final stock = item.stock;
+      
+      if (stock == null) continue; // Skip items without stock reference
+      
+      // Skip package items as they have fixed pricing
+      if (stock.isPackage && stock.sellEx != null && stock.sellInc != null) {
+        continue;
+      }
+      
+      // Get effective sell price based on customer grade
+      final effectiveResult = stock.getEffectiveSellPrice(customerGrade);
+      final double effectiveSell = effectiveResult.price;
+      
+      double incPrice;
+      double exPrice;
+      double taxPercentage;
+      int taxType;
+      
+      if (effectiveResult.isPricingGradeApplied) {
+        // Pricing grade prices are already inc-tax
+        // Get tax percentage from tax tables, then calculate ex-tax from inc
+        final taxResult = await TaxCalculationUtils.calculateSellTax(
+          sell: stock.sell,
+          salesTax: stock.salesTax,
+        );
+        taxPercentage = taxResult.percentage;
+        taxType = taxResult.taxType;
+        
+        // effectiveSell is already inc-tax
+        incPrice = effectiveSell;
+        final multiplier = 1 + (taxPercentage / 100);
+        exPrice = taxPercentage > 0 ? effectiveSell / multiplier : effectiveSell;
+      } else {
+        // Regular RRP - calculate using tax tables
+        final taxResult = await TaxCalculationUtils.calculateSellTax(
+          sell: effectiveSell,
+          salesTax: stock.salesTax,
+        );
+        incPrice = taxResult.incPrice;
+        exPrice = taxResult.exPrice;
+        taxPercentage = taxResult.percentage;
+        taxType = taxResult.taxType;
+      }
+      
+      _cartItems[i] = item.copyWith(
+        sellPrice: effectiveSell,
+        incPrice: incPrice,
+        exPrice: exPrice,
+        taxPercentage: taxPercentage,
+        taxType: taxType,
+      );
+    }
   }
 }

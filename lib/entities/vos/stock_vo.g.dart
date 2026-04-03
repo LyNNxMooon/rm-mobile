@@ -50,6 +50,9 @@ StockVO _$StockVOFromJson(Map<String, dynamic> json) => StockVO(
   costInc: (json['cost_inc'] as num?)?.toDouble(),
   sellEx: (json['sell_ex'] as num?)?.toDouble(),
   sellInc: (json['sell_inc'] as num?)?.toDouble(),
+  pricingGradesStock: StockVO._pricingGradesFromJson(json['pricing_grades_stock']),
+  pricingGradesCategories: StockVO._pricingGradesFromJson(json['pricing_grades_categories']),
+  pricingGradesGlobal: StockVO._pricingGradesFromJson(json['pricing_grades_global']),
 );
 
 StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
@@ -96,6 +99,9 @@ StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
   costInc: (json['cost_inc'] as num?)?.toDouble(),
   sellEx: (json['sell_ex'] as num?)?.toDouble(),
   sellInc: (json['sell_inc'] as num?)?.toDouble(),
+  pricingGradesStock: StockVO._pricingGradesFromJson(json['pricing_grades_stock']),
+  pricingGradesCategories: StockVO._pricingGradesFromJson(json['pricing_grades_categories']),
+  pricingGradesGlobal: StockVO._pricingGradesFromJson(json['pricing_grades_global']),
 );
 
 Map<String, dynamic> _$StockVOToJson(
@@ -146,4 +152,7 @@ Map<String, dynamic> _$StockVOToJson(
   'cost_inc': instance.costInc,
   'sell_ex': instance.sellEx,
   'sell_inc': instance.sellInc,
+  'pricing_grades_stock': StockVO._pricingGradesToJson(instance.pricingGradesStock),
+  'pricing_grades_categories': StockVO._pricingGradesToJson(instance.pricingGradesCategories),
+  'pricing_grades_global': StockVO._pricingGradesToJson(instance.pricingGradesGlobal),
 };

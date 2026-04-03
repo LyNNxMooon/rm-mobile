@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
 import 'package:rmstock_scanner/constants/theme_colors.dart';
+import 'package:rmstock_scanner/entities/vos/pricing_grades.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
 import 'package:rmstock_scanner/utils/responsive_utils.dart';
@@ -14,6 +15,9 @@ class PricingDialog extends StatefulWidget {
     required this.cost,
     required this.onUpdate,
     required this.onDelete,
+    this.pricingGradesStock,
+    this.pricingGradesCategories,
+    this.pricingGradesGlobal,
   });
 
   final PricingRules pricingRules;
@@ -21,14 +25,21 @@ class PricingDialog extends StatefulWidget {
   final double cost;
   final ValueChanged<PricingRules> onUpdate;
   final VoidCallback onDelete;
+  final PricingGrades? pricingGradesStock;
+  final PricingGrades? pricingGradesCategories;
+  final PricingGrades? pricingGradesGlobal;
 
   @override
   State<PricingDialog> createState() => _PricingDialogState();
 }
 
+/// Pricing level for display: Stock, Depts&Cats, Global
+enum _PricingLevel { stock, categories, global }
+
 class _PricingDialogState extends State<PricingDialog> {
   late final List<_EditablePricingRow> _rows;
   String _selectedGrade = 'Def';
+  _PricingLevel _currentLevel = _PricingLevel.stock;
 
   @override
   void initState() {
@@ -104,8 +115,6 @@ class _PricingDialogState extends State<PricingDialog> {
     final double inputHeight = isTablet ? 42.0 : 34.0;
     final double rowSpacing = isTablet ? 18.0 : 10.0;
     final double stockColWidth = isTablet ? 0.0 : 84.0;
-
-    final bool hasPricingApplied = _hasPricingApplied();
 
     final EdgeInsets customInsetPadding = isTablet
         ? dialogInsetPadding(context)
@@ -233,52 +242,25 @@ class _PricingDialogState extends State<PricingDialog> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    "Stock",
-                                    style: TextStyle(
-                                      fontSize: headerSize,
-                                      color: textColor,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
+                                  _buildLevelHeader(headerSize, textColor, isTablet),
                                   SizedBox(height: isTablet ? 16 : 10),
-                                  if (!hasPricingApplied)
-                                    Expanded(
-                                      child: Center(
-                                        child: Text(
-                                          "No pricing grade applied.",
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            fontSize: textSize,
-                                                color: mutedText,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  else
-                                    ..._rows.map((row) => Container(
-                                          height: inputHeight,
-                                          margin: EdgeInsets.only(bottom: rowSpacing),
+                                  ..._rows.map((row) => Container(
+                                        height: inputHeight,
+                                        margin: EdgeInsets.only(bottom: rowSpacing),
+                                        alignment: Alignment.centerLeft,
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
                                           alignment: Alignment.centerLeft,
-                                          child: FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(
-                                              _formatMoney(
-                                                _calculatePrice(
-                                                  row.ruleType,
-                                                  _parseValue(row.controller.text),
-                                                ),
-                                              ),
-                                              style: TextStyle(
-                                                fontSize: priceSize,
-                                                fontWeight: FontWeight.w700,
-                                                color: kPrimaryColor,
-                                              ),
+                                          child: Text(
+                                            _formatPriceForGrade(row.grade),
+                                            style: TextStyle(
+                                              fontSize: priceSize,
+                                              fontWeight: FontWeight.w700,
+                                              color: kPrimaryColor,
                                             ),
                                           ),
-                                        )),
+                                        ),
+                                      )),
                                 ],
                               ),
                             ),
@@ -287,6 +269,8 @@ class _PricingDialogState extends State<PricingDialog> {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            _buildLevelHeader(headerSize, textColor, isTablet),
+                            SizedBox(height: isTablet ? 16 : 10),
                             ..._rows.map((row) => _buildMobileInputRow(
                                   row,
                                   textSize,
@@ -295,23 +279,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                   stockColWidth,
                                   middleGap,
                                   rowSpacing,
-                                  hasPricingApplied,
                                 )),
-                            if (!hasPricingApplied)
-                              Padding(
-                                padding: EdgeInsets.only(top: rowSpacing),
-                                child: Center(
-                                  child: Text(
-                                    "No pricing grade applied.",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: textSize,
-                                      color: mutedText,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                 ),
@@ -526,8 +494,7 @@ class _PricingDialogState extends State<PricingDialog> {
       double amountColWidth,
       double stockColWidth,
       double middleGap,
-      double rowSpacing,
-      bool hasPricingApplied) {
+      double rowSpacing) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final Color textColor = isDark ? colors.onSurface : kThirdColor;
@@ -664,14 +631,7 @@ class _PricingDialogState extends State<PricingDialog> {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      hasPricingApplied
-                          ? _formatMoney(
-                              _calculatePrice(
-                                row.ruleType,
-                                _parseValue(row.controller.text),
-                              ),
-                            )
-                          : "-",
+                      _formatPriceForGrade(row.grade),
                       style: TextStyle(
                         fontSize: textSize,
                         fontWeight: FontWeight.w700,
@@ -710,16 +670,6 @@ class _PricingDialogState extends State<PricingDialog> {
     return _rows.firstWhere((row) => row.grade == grade);
   }
 
-  bool _hasPricingApplied() {
-    for (final row in _rows) {
-      final value = _parseValue(row.controller.text);
-      if (row.ruleType != 0 || value != 0) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   double _calculatePrice(int ruleType, double value) {
     switch (ruleType) {
       case 1:
@@ -751,6 +701,184 @@ class _PricingDialogState extends State<PricingDialog> {
   String _formatValue(double value) {
     if (value == 0) return "";
     return value.toStringAsFixed(2);
+  }
+
+  /// Returns the label for the current pricing level
+  String _getLevelLabel() {
+    switch (_currentLevel) {
+      case _PricingLevel.stock:
+        return "Stock";
+      case _PricingLevel.categories:
+        return "Depts/Cats";
+      case _PricingLevel.global:
+        return "Global";
+    }
+  }
+
+  /// Format the price for a given grade at the current level.
+  /// 
+  /// Hierarchy (from lowest to highest priority):
+  /// - RRP (sell price) as base
+  /// - Global overrides RRP
+  /// - Depts/Cats overrides Global
+  /// - Stock overrides Depts/Cats
+  ///
+  /// Based on the current viewing level, we show the effective price
+  /// up to that level in the hierarchy.
+  String _formatPriceForGrade(String grade) {
+    double? effectivePrice;
+    
+    // Start with RRP as the base
+    effectivePrice = widget.sell;
+    
+    // Apply hierarchy based on current viewing level
+    switch (_currentLevel) {
+      case _PricingLevel.global:
+        // Global level: RRP -> Global
+        final globalPrice = widget.pricingGradesGlobal?.priceForGrade(grade);
+        if (globalPrice != null) effectivePrice = globalPrice;
+        break;
+        
+      case _PricingLevel.categories:
+        // Categories level: RRP -> Global -> Depts/Cats
+        final globalPrice = widget.pricingGradesGlobal?.priceForGrade(grade);
+        if (globalPrice != null) effectivePrice = globalPrice;
+        final catPrice = widget.pricingGradesCategories?.priceForGrade(grade);
+        if (catPrice != null) effectivePrice = catPrice;
+        break;
+        
+      case _PricingLevel.stock:
+        // Stock level: RRP -> Global -> Depts/Cats -> Stock
+        final globalPrice = widget.pricingGradesGlobal?.priceForGrade(grade);
+        if (globalPrice != null) effectivePrice = globalPrice;
+        final catPrice = widget.pricingGradesCategories?.priceForGrade(grade);
+        if (catPrice != null) effectivePrice = catPrice;
+        final stockPrice = widget.pricingGradesStock?.priceForGrade(grade);
+        if (stockPrice != null) effectivePrice = stockPrice;
+        break;
+    }
+    
+    return _formatMoney(effectivePrice);
+  }
+
+  /// Cycles to the next pricing level (up)
+  void _cycleLevelUp() {
+    setState(() {
+      switch (_currentLevel) {
+        case _PricingLevel.stock:
+          _currentLevel = _PricingLevel.categories;
+          break;
+        case _PricingLevel.categories:
+          _currentLevel = _PricingLevel.global;
+          break;
+        case _PricingLevel.global:
+          _currentLevel = _PricingLevel.stock;
+          break;
+      }
+    });
+  }
+
+  /// Cycles to the previous pricing level (down)
+  void _cycleLevelDown() {
+    setState(() {
+      switch (_currentLevel) {
+        case _PricingLevel.stock:
+          _currentLevel = _PricingLevel.global;
+          break;
+        case _PricingLevel.categories:
+          _currentLevel = _PricingLevel.stock;
+          break;
+        case _PricingLevel.global:
+          _currentLevel = _PricingLevel.categories;
+          break;
+      }
+    });
+  }
+
+  /// Builds the level header with up/down navigation arrows
+  Widget _buildLevelHeader(double fontSize, Color textColor, bool isTablet) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final double iconSize = isTablet ? 14.0 : 12.0;
+    final double buttonHeight = isTablet ? 20.0 : 16.0;
+    final double buttonWidth = isTablet ? 22.0 : 18.0;
+    final Color buttonBg = isDark 
+        ? colors.surface 
+        : Colors.grey.shade100;
+    final Color buttonBorder = isDark 
+        ? colors.divider 
+        : Colors.grey.shade300;
+    final Color iconColor = isDark 
+        ? colors.onSurfaceMuted 
+        : Colors.grey.shade600;
+    
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          _getLevelLabel(),
+          style: TextStyle(
+            fontSize: fontSize,
+            color: textColor,
+            fontWeight: FontWeight.w700,
+            height: 1.0,
+          ),
+        ),
+        SizedBox(width: isTablet ? 8 : 6),
+        Container(
+          decoration: BoxDecoration(
+            color: buttonBg,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: buttonBorder, width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InkWell(
+                onTap: _cycleLevelUp,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(5),
+                  bottomLeft: Radius.circular(5),
+                ),
+                child: Container(
+                  width: buttonWidth,
+                  height: buttonHeight,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.keyboard_arrow_up,
+                    size: iconSize,
+                    color: iconColor,
+                  ),
+                ),
+              ),
+              Container(
+                width: 1,
+                height: buttonHeight * 0.7,
+                color: buttonBorder,
+              ),
+              InkWell(
+                onTap: _cycleLevelDown,
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(5),
+                  bottomRight: Radius.circular(5),
+                ),
+                child: Container(
+                  width: buttonWidth,
+                  height: buttonHeight,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    size: iconSize,
+                    color: iconColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 

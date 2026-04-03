@@ -13,6 +13,7 @@ class SalesTopHeader extends StatefulWidget {
   final VoidCallback? onCustomerClear;
   final String? customerBarcode;
   final String? customerName;
+  final int? customerGrade;
   final String staffName;
   final bool hasCustomer;
   final bool autoFocusCustomer;
@@ -32,6 +33,7 @@ class SalesTopHeader extends StatefulWidget {
     this.onViewCustomerTransactions,
     this.customerBarcode,
     this.customerName,
+    this.customerGrade,
     this.hasCustomer = false,
     this.autoFocusCustomer = false,
     this.viewMode,
@@ -385,6 +387,31 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
               ),
             ),
           ),
+          // Customer grade badge
+          if (widget.customerGrade != null)
+            Container(
+              margin: EdgeInsets.only(right: isTablet ? 8 : 6),
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 10 : 8,
+                vertical: isTablet ? 4 : 3,
+              ),
+              decoration: BoxDecoration(
+                color: kPrimaryColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: kPrimaryColor.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                _gradeLabel(widget.customerGrade!),
+                style: TextStyle(
+                  fontSize: isTablet ? 13 : 11,
+                  fontWeight: FontWeight.w700,
+                  color: kPrimaryColor,
+                ),
+              ),
+            ),
           // View transactions button
           GestureDetector(
             onTap: widget.onViewCustomerTransactions,
@@ -412,5 +439,23 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
         ],
       ),
     );
+  }
+
+  /// Returns display label for customer grade
+  String _gradeLabel(int grade) {
+    switch (grade) {
+      case 0:
+        return "Def";
+      case 1:
+        return "A";
+      case 2:
+        return "B";
+      case 3:
+        return "C";
+      case 4:
+        return "D";
+      default:
+        return "Def";
+    }
   }
 }

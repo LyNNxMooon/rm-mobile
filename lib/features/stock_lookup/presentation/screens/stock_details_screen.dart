@@ -817,6 +817,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           isPackage: isPackage,
                           packageComponents: widget.stock.packageComponents,
                           packageDescription: widget.stock.description,
+                          pricingGradesStock: widget.stock.pricingGradesStock,
+                          pricingGradesCategories: widget.stock.pricingGradesCategories,
+                          pricingGradesGlobal: widget.stock.pricingGradesGlobal,
                         ),
                       ),
 

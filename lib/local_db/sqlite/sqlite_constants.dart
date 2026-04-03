@@ -46,6 +46,9 @@ const stocksTableCreationQuery = '''
     cost_inc REAL,
     sell_ex REAL,
     sell_inc REAL,
+    pricing_grades_stock TEXT,
+    pricing_grades_categories TEXT,
+    pricing_grades_global TEXT,
     PRIMARY KEY (stock_id, shopfront)
   )
 ''';

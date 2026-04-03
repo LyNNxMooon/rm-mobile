@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:languagetool_textfield/languagetool_textfield.dart';
 import 'package:rmstock_scanner/entities/vos/package_component.dart';
+import 'package:rmstock_scanner/entities/vos/pricing_grades.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/package_components_screen.dart';
@@ -33,6 +34,9 @@ class DetailedLowerGlass extends StatefulWidget {
     this.isPackage = false,
     this.packageComponents,
     this.packageDescription,
+    this.pricingGradesStock,
+    this.pricingGradesCategories,
+    this.pricingGradesGlobal,
   });
 
   final double sell;
@@ -49,6 +53,9 @@ class DetailedLowerGlass extends StatefulWidget {
   final bool isPackage;
   final List<PackageComponent>? packageComponents;
   final String? packageDescription;
+  final PricingGrades? pricingGradesStock;
+  final PricingGrades? pricingGradesCategories;
+  final PricingGrades? pricingGradesGlobal;
 
   @override
   State<DetailedLowerGlass> createState() => _DetailedLowerGlassState();
@@ -170,6 +177,9 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
         pricingRules: rules,
         sell: widget.sell,
         cost: widget.incCost,
+        pricingGradesStock: widget.pricingGradesStock,
+        pricingGradesCategories: widget.pricingGradesCategories,
+        pricingGradesGlobal: widget.pricingGradesGlobal,
         onUpdate: (updatedRules) {
           _submitPricingUpdate(updatedRules);
           Navigator.pop(context);

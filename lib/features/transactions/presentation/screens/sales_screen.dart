@@ -704,6 +704,7 @@ class _SalesScreenState extends State<SalesScreen>
                         customerName: _selectedCustomer != null
                             ? _buildCustomerDisplayName(_selectedCustomer!)
                             : null,
+                        customerGrade: _selectedCustomer?.grade,
                         autoFocusCustomer: widget.title != "Sales",
                         onCustomerSearch: (query) {
                           _salesBloc.add(SearchCustomer(query: query));
