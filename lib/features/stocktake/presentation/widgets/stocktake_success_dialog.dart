@@ -27,7 +27,7 @@ class StocktakeSuccessDialog extends StatelessWidget {
       ),
       elevation: 10,
       backgroundColor: isDark ? colors.surfaceAlt : colors.surface,
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,

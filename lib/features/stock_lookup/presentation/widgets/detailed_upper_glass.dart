@@ -280,57 +280,112 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       ),
                     ],
                   ),
-                  const Spacer(),
-                  Flexible(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: 350),
-                      child: SizedBox(
-                        height: customFieldHeight,
-                        child: TextField(
-                          controller: widget.custom1Controller,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: onGlass,
-                          ),
-                          onEditingComplete: () {
-                            final trimmedValue = widget.custom1Controller.text.trim();
-                            if (widget.custom1Controller.text != trimmedValue) {
-                              widget.custom1Controller.value = widget.custom1Controller.value.copyWith(
-                                text: trimmedValue,
-                                selection: TextSelection.collapsed(offset: trimmedValue.length),
-                              );
-                            }
-                          },
-                          decoration: InputDecoration(
-                            hintText: widget.custom1Label,
-                            hintStyle: TextStyle(
-                              color: onGlassMuted,
-                              fontSize: 14,
-                            ),
-                            filled: true,
-                            fillColor: Colors.transparent,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(7),
-                              borderSide: BorderSide(
-                                color: isDark ? Colors.white : Colors.grey[300]!,
-                                width: 0.5,
+                  if (isTablet) const Spacer(),
+                  if (!isTablet) const SizedBox(width: 12),
+                  isTablet
+                      ? Flexible(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: 350),
+                            child: SizedBox(
+                              height: customFieldHeight,
+                              child: TextField(
+                                controller: widget.custom1Controller,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: onGlass,
+                                ),
+                                onEditingComplete: () {
+                                  final trimmedValue = widget.custom1Controller.text.trim();
+                                  if (widget.custom1Controller.text != trimmedValue) {
+                                    widget.custom1Controller.value = widget.custom1Controller.value.copyWith(
+                                      text: trimmedValue,
+                                      selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                    );
+                                  }
+                                },
+                                decoration: InputDecoration(
+                                  hintText: widget.custom1Label,
+                                  hintStyle: TextStyle(
+                                    color: onGlassMuted,
+                                    fontSize: 14,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.transparent,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(7),
+                                    borderSide: BorderSide(
+                                      color: isDark ? Colors.white : Colors.grey[300]!,
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(7),
+                                    borderSide: const BorderSide(
+                                      color: kPrimaryColor,
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(7),
-                              borderSide: const BorderSide(
-                                color: kPrimaryColor,
-                                width: 1,
+                          ),
+                        )
+                      : Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(maxWidth: 160),
+                              child: SizedBox(
+                                height: customFieldHeight,
+                                child: TextField(
+                                  controller: widget.custom1Controller,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: onGlass,
+                                  ),
+                                  onEditingComplete: () {
+                                    final trimmedValue = widget.custom1Controller.text.trim();
+                                    if (widget.custom1Controller.text != trimmedValue) {
+                                      widget.custom1Controller.value = widget.custom1Controller.value.copyWith(
+                                        text: trimmedValue,
+                                        selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                      );
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: widget.custom1Label,
+                                    hintStyle: TextStyle(
+                                      color: onGlassMuted,
+                                      fontSize: 14,
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.transparent,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(7),
+                                      borderSide: BorderSide(
+                                        color: isDark ? Colors.white : Colors.grey[300]!,
+                                        width: 0.5,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(7),
+                                      borderSide: const BorderSide(
+                                        color: kPrimaryColor,
+                                        width: 1,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
               SizedBox(height: rowGap),
@@ -365,57 +420,112 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                       ),
                     ],
                   ),
-                  const Spacer(),
-                  Flexible(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: 350),
-                      child: SizedBox(
-                        height: customFieldHeight,
-                        child: TextField(
-                          controller: widget.custom2Controller,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: onGlass,
-                          ),
-                          onEditingComplete: () {
-                            final trimmedValue = widget.custom2Controller.text.trim();
-                            if (widget.custom2Controller.text != trimmedValue) {
-                              widget.custom2Controller.value = widget.custom2Controller.value.copyWith(
-                                text: trimmedValue,
-                                selection: TextSelection.collapsed(offset: trimmedValue.length),
-                              );
-                            }
-                          },
-                          decoration: InputDecoration(
-                            hintText: widget.custom2Label,
-                            hintStyle: TextStyle(
-                              color: onGlassMuted,
-                              fontSize: 14,
-                            ),
-                            filled: true,
-                            fillColor: Colors.transparent,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(7),
-                              borderSide: BorderSide(
-                                color: isDark ? Colors.white : Colors.grey[300]!,
-                                width: 0.5,
+                  if (isTablet) const Spacer(),
+                  if (!isTablet) const SizedBox(width: 12),
+                  isTablet
+                      ? Flexible(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: 350),
+                            child: SizedBox(
+                              height: customFieldHeight,
+                              child: TextField(
+                                controller: widget.custom2Controller,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: onGlass,
+                                ),
+                                onEditingComplete: () {
+                                  final trimmedValue = widget.custom2Controller.text.trim();
+                                  if (widget.custom2Controller.text != trimmedValue) {
+                                    widget.custom2Controller.value = widget.custom2Controller.value.copyWith(
+                                      text: trimmedValue,
+                                      selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                    );
+                                  }
+                                },
+                                decoration: InputDecoration(
+                                  hintText: widget.custom2Label,
+                                  hintStyle: TextStyle(
+                                    color: onGlassMuted,
+                                    fontSize: 14,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.transparent,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(7),
+                                    borderSide: BorderSide(
+                                      color: isDark ? Colors.white : Colors.grey[300]!,
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(7),
+                                    borderSide: const BorderSide(
+                                      color: kPrimaryColor,
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(7),
-                              borderSide: const BorderSide(
-                                color: kPrimaryColor,
-                                width: 1,
+                          ),
+                        )
+                      : Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(maxWidth: 160),
+                              child: SizedBox(
+                                height: customFieldHeight,
+                                child: TextField(
+                                  controller: widget.custom2Controller,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: onGlass,
+                                  ),
+                                  onEditingComplete: () {
+                                    final trimmedValue = widget.custom2Controller.text.trim();
+                                    if (widget.custom2Controller.text != trimmedValue) {
+                                      widget.custom2Controller.value = widget.custom2Controller.value.copyWith(
+                                        text: trimmedValue,
+                                        selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                      );
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: widget.custom2Label,
+                                    hintStyle: TextStyle(
+                                      color: onGlassMuted,
+                                      fontSize: 14,
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.transparent,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(7),
+                                      borderSide: BorderSide(
+                                        color: isDark ? Colors.white : Colors.grey[300]!,
+                                        width: 0.5,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(7),
+                                      borderSide: const BorderSide(
+                                        color: kPrimaryColor,
+                                        width: 1,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
               SizedBox(height: rowGap),

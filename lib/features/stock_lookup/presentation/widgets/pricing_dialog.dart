@@ -269,7 +269,7 @@ class _PricingDialogState extends State<PricingDialog> {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLevelHeader(headerSize, textColor, isTablet),
+                            _buildLevelHeader(16, textColor, isTablet),
                             SizedBox(height: isTablet ? 16 : 10),
                             ..._rows.map((row) => _buildMobileInputRow(
                                   row,

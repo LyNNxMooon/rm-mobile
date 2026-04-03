@@ -209,46 +209,46 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      mainAxisSize: MainAxisSize.min, // Wrap content height
-      children: [
-        // --- HEADER ---
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-          child: Column(
-            children: [
-              Text(
-                "Stock Details",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: kPrimaryColor,
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // --- HEADER ---
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+            child: Column(
+              children: [
+                Text(
+                  "Stock Details",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: kPrimaryColor,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                widget.stock.description,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: isDark ? Colors.white : kThirdColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                const SizedBox(height: 5),
+                Text(
+                  widget.stock.description,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: isDark ? Colors.white : kThirdColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
 
-        Divider(
-          height: 1,
-          color: isDark ? Colors.white24 : null,
-        ),
+          Divider(
+            height: 1,
+            color: isDark ? Colors.white24 : null,
+          ),
 
-        // --- SCROLLABLE DETAILS LIST ---
-        Flexible(
-          child: SingleChildScrollView(
+          // --- DETAILS LIST ---
+          Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
               children: [
@@ -293,144 +293,141 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                   "In-Stock",
                   qty,
                 ),
-
-                // Add more fields here if needed from StockVO
               ],
             ),
           ),
-        ),
 
-        Divider(
-          height: 1,
-          color: isDark ? Colors.white24 : null,
-        ),
+          Divider(
+            height: 1,
+            color: isDark ? Colors.white24 : null,
+          ),
 
-        // --- EDIT QUANTITY SECTION (Fixed at bottom) ---
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Update Count:",
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white70 : kGreyColor,
+          // --- EDIT QUANTITY SECTION ---
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Update Count:",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white70 : kGreyColor,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? colors.surfaceAlt
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: kPrimaryColor,
-                    width: 1.5,
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? colors.surfaceAlt
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: kPrimaryColor,
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: kPrimaryColor.withOpacity(0.15),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: kPrimaryColor.withOpacity(0.15),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
+                  child: TextField(
+                    controller: _qtyController,
+                    focusNode: _focusNode,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : kThirdColor,
+                    ),
+                    onEditingComplete: () {
+                      final trimmedValue = _qtyController.text.trim();
+                      if (_qtyController.text != trimmedValue) {
+                        _qtyController.value = _qtyController.value.copyWith(
+                          text: trimmedValue,
+                          selection: TextSelection.collapsed(offset: trimmedValue.length),
+                        );
+                      }
+                    },
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      suffixIcon: Container(
+                        margin: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: kPrimaryColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.edit,
+                          size: 22,
+                          color: kPrimaryColor,
+                        ),
+                      ),
+                    ),
+                    onSubmitted: (_) => _handleUpdate(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          side: BorderSide(color: kPrimaryColor),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          "Cancel",
+                          style: TextStyle(
+                            color: kPrimaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _handleUpdate,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          "Update",
+                          style: TextStyle(
+                            color: isDark ? colors.onHero : Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                child: TextField(
-                  controller: _qtyController,
-                  focusNode: _focusNode,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : kThirdColor,
-                  ),
-                  onEditingComplete: () {
-                    final trimmedValue = _qtyController.text.trim();
-                    if (_qtyController.text != trimmedValue) {
-                      _qtyController.value = _qtyController.value.copyWith(
-                        text: trimmedValue,
-                        selection: TextSelection.collapsed(offset: trimmedValue.length),
-                      );
-                    }
-                  },
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    suffixIcon: Container(
-                      margin: const EdgeInsets.all(8),
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.edit,
-                        size: 22,
-                        color: kPrimaryColor,
-                      ),
-                    ),
-                    //contentPadding: EdgeInsets.symmetric(vertical: 8),
-                  ),
-                  onSubmitted: (_) => _handleUpdate(),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        side: BorderSide(color: kPrimaryColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        "Cancel",
-                        style: TextStyle(
-                          color: kPrimaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _handleUpdate,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        "Update",
-                        style: TextStyle(
-                          color: isDark ? colors.onHero : Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

@@ -54,7 +54,7 @@ class _LoadingStocktakeDialogState extends State<LoadingStocktakeDialog>
               icon: Icons.inventory_2_outlined,
             ),
             Expanded(
-              child: Center(
+              child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(32),
                   child: Column(

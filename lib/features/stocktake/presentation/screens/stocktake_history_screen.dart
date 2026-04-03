@@ -81,78 +81,89 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
     
                   if (state is StocktakeHistorySessionsLoaded) {
                     if (state.sessions.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                // Outer Decorative Ring
-                                Container(
-                                  width: 160,
-                                  height: 160,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: kPrimaryColor.withOpacity(0.2),
-                                      width: 2,
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: constraints.maxHeight,
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        // Outer Decorative Ring
+                                        Container(
+                                          width: 160,
+                                          height: 160,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: kPrimaryColor.withOpacity(0.2),
+                                              width: 2,
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Inner Filled Circle
+                                        Container(
+                                          width: 130,
+                                          height: 130,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: isDark
+                                                ? kPrimaryColor.withOpacity(0.25)
+                                                : kPrimaryColor.withOpacity(0.1),
+                                          ),
+                                          child: Center(
+                                            // Using an "Open Box" icon usually signifies "Empty" better than a rocket
+                                            child: SizedBox(
+                                              width: 80,
+                                              height: 80,
+                                              child: Image.asset(
+                                                "assets/images/box.png",
+                                                fit: BoxFit.fill,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ),
-    
-                                // Inner Filled Circle
-                                Container(
-                                  width: 130,
-                                  height: 130,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: isDark
-                                        ? kPrimaryColor.withOpacity(0.25)
-                                        : kPrimaryColor.withOpacity(0.1),
-                                  ),
-                                  child: Center(
-                                    // Using an "Open Box" icon usually signifies "Empty" better than a rocket
-                                    child: SizedBox(
-                                      width: 80,
-                                      height: 80,
-                                      child: Image.asset(
-                                        "assets/images/box.png",
-                                        fit: BoxFit.fill,
+
+                                    const SizedBox(height: 24),
+
+                                    Text(
+                                      "No stocktake history found!",
+                                      style: TextStyle(
+                                        color: colors.onSurfaceMuted,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                  ),
+
+                                    const SizedBox(height: 16),
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        context.read<StocktakeHistoryBloc>().add(
+                                          LoadHistorySessionsEvent(),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.refresh, size: 18),
+                                      label: const Text("Refresh List"),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: kPrimaryColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 55),
+                                  ],
                                 ),
-                              ],
-                            ),
-    
-                            const SizedBox(height: 24),
-    
-                            Text(
-                              "No stocktake history found!",
-                              style: TextStyle(
-                                color: colors.onSurfaceMuted,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
                               ),
                             ),
-    
-                            const SizedBox(height: 16),
-                            TextButton.icon(
-                              onPressed: () {
-                                context.read<StocktakeHistoryBloc>().add(
-                                  LoadHistorySessionsEvent(),
-                                );
-                              },
-                              icon: const Icon(Icons.refresh, size: 18),
-                              label: const Text("Refresh List"),
-                              style: TextButton.styleFrom(
-                                foregroundColor: kPrimaryColor,
-                              ),
-                            ),
-                            const SizedBox(height: 55),
-                          ],
-                        ),
+                          );
+                        },
                       );
                     }
     

@@ -294,37 +294,72 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                       ),
                     ],
                   ),
-                  const Spacer(),
-                  Flexible(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: 350),
-                      child: SizedBox(
-                        height: fieldHeight,
-                        child: TextField(
-                          enabled: widget.canUpdateSellPrice,
-                          controller: _exRrpController,
-                          focusNode: _exRrpFocus,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
+                  if (isTablet) const Spacer(),
+                  if (!isTablet) const SizedBox(width: 12),
+                  isTablet
+                      ? Flexible(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: 350),
+                            child: SizedBox(
+                              height: fieldHeight,
+                              child: TextField(
+                                enabled: widget.canUpdateSellPrice,
+                                controller: _exRrpController,
+                                focusNode: _exRrpFocus,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: onGlass,
+                                ),
+                                onEditingComplete: () {
+                                  final trimmedValue = _exRrpController.text.trim();
+                                  if (_exRrpController.text != trimmedValue) {
+                                    _exRrpController.value = _exRrpController.value.copyWith(
+                                      text: trimmedValue,
+                                      selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                    );
+                                  }
+                                },
+                                decoration: _inputDecoration(),
+                              ),
+                            ),
                           ),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: onGlass,
+                        )
+                      : Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(maxWidth: 160),
+                              child: SizedBox(
+                                height: fieldHeight,
+                                child: TextField(
+                                  enabled: widget.canUpdateSellPrice,
+                                  controller: _exRrpController,
+                                  focusNode: _exRrpFocus,
+                                  keyboardType: const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: onGlass,
+                                  ),
+                                  onEditingComplete: () {
+                                    final trimmedValue = _exRrpController.text.trim();
+                                    if (_exRrpController.text != trimmedValue) {
+                                      _exRrpController.value = _exRrpController.value.copyWith(
+                                        text: trimmedValue,
+                                        selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                      );
+                                    }
+                                  },
+                                  decoration: _inputDecoration(),
+                                ),
+                              ),
+                            ),
                           ),
-                          onEditingComplete: () {
-                            final trimmedValue = _exRrpController.text.trim();
-                            if (_exRrpController.text != trimmedValue) {
-                              _exRrpController.value = _exRrpController.value.copyWith(
-                                text: trimmedValue,
-                                selection: TextSelection.collapsed(offset: trimmedValue.length),
-                              );
-                            }
-                          },
-                          decoration: _inputDecoration(),
                         ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
               SizedBox(height: rowGap),
@@ -355,38 +390,72 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                       ),
                     ],
                   ),
-                  const Spacer(),
-                  Flexible(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: 350),
-                      child: SizedBox(
-                        height: fieldHeight,
-                        child: TextField(
-                          enabled: widget.canUpdateSellPrice,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
+                  if (isTablet) const Spacer(),
+                  if (!isTablet) const SizedBox(width: 12),
+                  isTablet
+                      ? Flexible(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: 350),
+                            child: SizedBox(
+                              height: fieldHeight,
+                              child: TextField(
+                                enabled: widget.canUpdateSellPrice,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                ),
+                                controller: _rrpController,
+                                focusNode: _rrpFocus,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: onGlass,
+                                ),
+                                onEditingComplete: () {
+                                  final trimmedValue = _rrpController.text.trim();
+                                  if (_rrpController.text != trimmedValue) {
+                                    _rrpController.value = _rrpController.value.copyWith(
+                                      text: trimmedValue,
+                                      selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                    );
+                                  }
+                                },
+                                decoration: _inputDecoration(),
+                              ),
+                            ),
                           ),
-                          controller: _rrpController,
-                          focusNode: _rrpFocus,
-                          //keyboardType: TextInputType.number,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: onGlass,
+                        )
+                      : Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(maxWidth: 160),
+                              child: SizedBox(
+                                height: fieldHeight,
+                                child: TextField(
+                                  enabled: widget.canUpdateSellPrice,
+                                  keyboardType: const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                                  controller: _rrpController,
+                                  focusNode: _rrpFocus,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: onGlass,
+                                  ),
+                                  onEditingComplete: () {
+                                    final trimmedValue = _rrpController.text.trim();
+                                    if (_rrpController.text != trimmedValue) {
+                                      _rrpController.value = _rrpController.value.copyWith(
+                                        text: trimmedValue,
+                                        selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                      );
+                                    }
+                                  },
+                                  decoration: _inputDecoration(),
+                                ),
+                              ),
+                            ),
                           ),
-                          onEditingComplete: () {
-                            final trimmedValue = _rrpController.text.trim();
-                            if (_rrpController.text != trimmedValue) {
-                              _rrpController.value = _rrpController.value.copyWith(
-                                text: trimmedValue,
-                                selection: TextSelection.collapsed(offset: trimmedValue.length),
-                              );
-                            }
-                          },
-                          decoration: _inputDecoration(),
                         ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
               SizedBox(height: rowGap),
