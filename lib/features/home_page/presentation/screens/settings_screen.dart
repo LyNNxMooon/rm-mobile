@@ -182,6 +182,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _startManualConnection(BuildContext context) {
     final ip = _manualIpController.text.trim();
     final code = _manualCodeController.text.trim();
+    final portText = _manualPortController.text.trim();
 
     if (ip.isEmpty) {
       _showError(context, "Please enter host IP.");
@@ -192,146 +193,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
+    int port = _defaultAgentPort;
+    if (portText.isNotEmpty) {
+      final parsedPort = int.tryParse(portText);
+      if (parsedPort == null || parsedPort <= 0 || parsedPort > 65535) {
+        _showError(context, "Please enter a valid port (1-65535).");
+        return;
+      }
+      port = parsedPort;
+    }
+
     _selectedIp = ip;
     _selectedHostName = ip;
-    _selectedPort = _defaultAgentPort;
+    _selectedPort = port;
     _isManualConnectionFlow = true;
 
     context.read<DiscoverHostBloc>().add(
       DiscoverHostEvent(ip: _selectedIp, port: _selectedPort),
-    );
-  }
-
-  void _retryDiscoverWithPort(BuildContext context, int port) {
-    _selectedPort = port;
-    context.read<DiscoverHostBloc>().add(
-      DiscoverHostEvent(ip: _selectedIp, port: _selectedPort),
-    );
-  }
-
-  void _showManualPortDialog(BuildContext context) {
-    final colors = context.appColors;
-    final bool isDark = colors.isDark;
-    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.45)
-        .clamp(280.0, 400.0);
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        insetPadding: dialogInsetPadding(context),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ModernDialogStyles.dialogRadius),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        child: ModernDialogContainer(
-          maxHeight: maxDialogHeight,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const ModernDialogHeader(
-                title: "Enter Port",
-                icon: Icons.settings_ethernet_rounded,
-                subtitle: "Specify custom port number",
-              ),
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: _manualPortController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      style: TextStyle(
-                        color: isDark ? Colors.white : colors.onSurface,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      onEditingComplete: () {
-                        final trimmedValue = _manualPortController.text.trim();
-                        if (_manualPortController.text != trimmedValue) {
-                          _manualPortController.value = _manualPortController.value.copyWith(
-                            text: trimmedValue,
-                            selection: TextSelection.collapsed(offset: trimmedValue.length),
-                          );
-                        }
-                      },
-                      decoration: ModernDialogStyles.inputDecoration(
-                        context,
-                        hintText: "Port (e.g. 5000)",
-                        prefixIcon: Icons.numbers_rounded,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: ModernDialogStyles.headerGradient,
-                          borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
-                          boxShadow: [
-                            BoxShadow(
-                              color: kPrimaryColor.withOpacity(0.35),
-                              blurRadius: 14,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              final int? manualPort = int.tryParse(
-                                _manualPortController.text.trim(),
-                              );
-
-                              if (manualPort == null ||
-                                  manualPort <= 0 ||
-                                  manualPort > 65535) {
-                                _showError(context, "Please enter a valid port.");
-                                return;
-                              }
-
-                              Navigator.of(context).pop();
-                              _retryDiscoverWithPort(context, manualPort);
-                            },
-                            borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.send_rounded,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  SizedBox(width: 10),
-                                  Text(
-                                    "Try Port",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -340,8 +218,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool isDark = colors.isDark;
     _manualIpController.text = "";
     _manualCodeController.text = "";
-    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.50)
-        .clamp(320.0, 480.0);
+    _manualPortController.text = _defaultAgentPort.toString();
+    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.55)
+        .clamp(380.0, 540.0);
 
     showDialog(
       context: context,
@@ -414,6 +293,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         context,
                         hintText: "Pairing Code",
                         prefixIcon: Icons.key_outlined,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Port input (optional)
+                    TextField(
+                      controller: _manualPortController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      style: TextStyle(
+                        color: isDark ? Colors.white : colors.onSurface,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      onEditingComplete: () {
+                        final trimmedValue = _manualPortController.text.trim();
+                        if (_manualPortController.text != trimmedValue) {
+                          _manualPortController.value = _manualPortController.value.copyWith(
+                            text: trimmedValue,
+                            selection: TextSelection.collapsed(offset: trimmedValue.length),
+                          );
+                        }
+                      },
+                      decoration: ModernDialogStyles.inputDecoration(
+                        context,
+                        hintText: "Port (default: 5000)",
+                        prefixIcon: Icons.numbers_rounded,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -528,7 +435,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             if (state is DiscoverHostError) {
               _showError(context, state.message);
-              _showManualPortDialog(context);
+              // Port field is now in the Manual Connection dialog
             }
           },
         ),

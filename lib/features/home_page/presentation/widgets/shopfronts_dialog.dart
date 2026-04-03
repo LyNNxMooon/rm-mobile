@@ -207,28 +207,32 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                 child: BlocBuilder<ShopfrontBloc, ShopFrontStates>(
                   builder: (context, state) {
                     if (state is ShopsLoading) {
-                      return const ModernLoadingState(
-                        message: "Loading Shopfronts",
-                        subtitle: "Please wait...",
+                      return const SingleChildScrollView(
+                        child: ModernLoadingState(
+                          message: "Loading Shopfronts",
+                          subtitle: "Please wait...",
+                        ),
                       );
                     }
 
                     if (state is ShopsError) {
                       logger.e(widget.previousPath);
                       if (widget.isPairedFlow) {
-                        return ModernErrorState(
-                          message: state.message,
-                          onRetry: () {
-                            if (widget.port != null && widget.apiKey != null) {
-                              context.read<ShopfrontBloc>().add(
-                                FetchShopsFromApi(
-                                  ipAddress: widget.pc.ipAddress,
-                                  port: widget.port!,
-                                  apiKey: widget.apiKey!,
-                                ),
-                              );
-                            }
-                          },
+                        return SingleChildScrollView(
+                          child: ModernErrorState(
+                            message: state.message,
+                            onRetry: () {
+                              if (widget.port != null && widget.apiKey != null) {
+                                context.read<ShopfrontBloc>().add(
+                                  FetchShopsFromApi(
+                                    ipAddress: widget.pc.ipAddress,
+                                    port: widget.port!,
+                                    apiKey: widget.apiKey!,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
                         );
                       }
 
@@ -238,9 +242,11 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
 
                     if (state is ShopsLoaded) {
                       if (state.shops.shopfronts.isEmpty) {
-                        return const ModernEmptyState(
-                          message: "No shopfronts found",
-                          icon: Icons.storefront_outlined,
+                        return const SingleChildScrollView(
+                          child: ModernEmptyState(
+                            message: "No shopfronts found",
+                            icon: Icons.storefront_outlined,
+                          ),
                         );
                       }
 

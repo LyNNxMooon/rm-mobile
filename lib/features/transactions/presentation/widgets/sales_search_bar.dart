@@ -132,60 +132,68 @@ class SalesScannerArea extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final scannerHeight = MediaQuery.of(context).size.height * 0.18;
 
-    return Container(
-      height: scannerHeight,
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: isDark ? colors.surface : kThirdColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.white24 : Colors.grey.shade400,
-        ),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: kThirdColor.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Use parent constraint if available, otherwise fall back to percentage
+        final scannerHeight = constraints.maxHeight.isFinite 
+            ? constraints.maxHeight 
+            : MediaQuery.of(context).size.height * 0.18;
+        
+        return Container(
+          height: scannerHeight,
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDark ? colors.surface : kThirdColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? Colors.white24 : Colors.grey.shade400,
+            ),
+            boxShadow: isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: kThirdColor.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(11),
+            child: Stack(
+              children: [
+                MobileScanner(
+                  controller: scannerController,
+                  onDetect: (capture) {
+                    final barcodes = capture.barcodes;
+                    if (barcodes.isEmpty) return;
+
+                    final String currentBarcode = barcodes.first.rawValue ?? "";
+                    if (currentBarcode.isEmpty) return;
+
+                    onBarcodeScanned(currentBarcode);
+                  },
+                ),
+                // Scanner frame overlay
+                Center(
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.55,
+                    height: scannerHeight * 0.7,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: kPrimaryColor.withOpacity(0.7),
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(11),
-        child: Stack(
-          children: [
-            MobileScanner(
-              controller: scannerController,
-              onDetect: (capture) {
-                final barcodes = capture.barcodes;
-                if (barcodes.isEmpty) return;
-
-                final String currentBarcode = barcodes.first.rawValue ?? "";
-                if (currentBarcode.isEmpty) return;
-
-                onBarcodeScanned(currentBarcode);
-              },
             ),
-            // Scanner frame overlay
-            Center(
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.55,
-                height: scannerHeight * 0.7,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: kPrimaryColor.withOpacity(0.7),
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

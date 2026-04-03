@@ -73,14 +73,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     if (_selectedPc == null) return;
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = context.isTablet;
-    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    final double uiScale = isTablet
-        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
-        : 1.0;
-    final double fieldHeight = (isTablet ? 52 : 48) * uiScale;
-    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.45)
-        .clamp(260.0, 380.0);
+    final double maxDialogHeight =
+        (MediaQuery.of(context).size.height * 0.50).clamp(320.0, 480.0);
 
     showDialog(
       context: context,
@@ -99,28 +93,31 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                 icon: Icons.settings_ethernet_rounded,
                 subtitle: "Specify custom port number",
               ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      height: fieldHeight,
-                      child: TextField(
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      TextField(
                         controller: _manualPortController,
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
                         style: TextStyle(
                           color: isDark ? Colors.white : colors.onSurface,
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
                         ),
                         onEditingComplete: () {
-                          final trimmedValue = _manualPortController.text.trim();
+                          final trimmedValue =
+                              _manualPortController.text.trim();
                           if (_manualPortController.text != trimmedValue) {
-                            _manualPortController.value = _manualPortController.value.copyWith(
+                            _manualPortController.value =
+                                _manualPortController.value.copyWith(
                               text: trimmedValue,
-                              selection: TextSelection.collapsed(offset: trimmedValue.length),
+                              selection: TextSelection.collapsed(
+                                  offset: trimmedValue.length),
                             );
                           }
                         },
@@ -130,69 +127,72 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                           prefixIcon: Icons.numbers_rounded,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: ModernDialogStyles.headerGradient,
-                          borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
-                          boxShadow: [
-                            BoxShadow(
-                              color: kPrimaryColor.withOpacity(0.35),
-                              blurRadius: 14,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              final int? manualPort = int.tryParse(
-                                _manualPortController.text.trim(),
-                              );
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: ModernDialogStyles.headerGradient,
+                            borderRadius: BorderRadius.circular(
+                                ModernDialogStyles.buttonRadius),
+                            boxShadow: [
+                              BoxShadow(
+                                color: kPrimaryColor.withOpacity(0.35),
+                                blurRadius: 14,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                final int? manualPort = int.tryParse(
+                                  _manualPortController.text.trim(),
+                                );
 
-                              if (manualPort == null ||
-                                  manualPort <= 0 ||
-                                  manualPort > 65535) {
-                                _showError(context, "Please enter a valid port.");
-                                return;
-                              }
+                                if (manualPort == null ||
+                                    manualPort <= 0 ||
+                                    manualPort > 65535) {
+                                  _showError(
+                                      context, "Please enter a valid port.");
+                                  return;
+                                }
 
-                              Navigator.of(context).pop();
-                              _retryDiscoverWithPort(context, manualPort);
-                            },
-                            borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.send_rounded,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  SizedBox(width: 10),
-                                  Text(
-                                    "Try Port",
-                                    style: TextStyle(
+                                Navigator.of(context).pop();
+                                _retryDiscoverWithPort(context, manualPort);
+                              },
+                              borderRadius: BorderRadius.circular(
+                                  ModernDialogStyles.buttonRadius),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.send_rounded,
                                       color: Colors.white,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.2,
+                                      size: 20,
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(width: 10),
+                                    Text(
+                                      "Try Port",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -564,24 +564,30 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                 child: BlocBuilder<FetchingNetworkServerBloc, FetchingNetworkServerStates>(
                   builder: (context, state) {
                     if (state is FetchingNetworkServers) {
-                      return const ModernLoadingState(
-                        message: "Finding Network Servers",
-                        subtitle: "This may take a few seconds...",
+                      return const SingleChildScrollView(
+                        child: ModernLoadingState(
+                          message: "Finding Network Servers",
+                          subtitle: "This may take a few seconds...",
+                        ),
                       );
                     } else if (state is ErrorFetchingNetworkServers) {
-                      return ModernErrorState(
-                        message: state.message,
-                        onRetry: () {
-                          context.read<FetchingNetworkServerBloc>().add(
-                            FetchNetworkServerEvent(),
-                          );
-                        },
+                      return SingleChildScrollView(
+                        child: ModernErrorState(
+                          message: state.message,
+                          onRetry: () {
+                            context.read<FetchingNetworkServerBloc>().add(
+                              FetchNetworkServerEvent(),
+                            );
+                          },
+                        ),
                       );
                     } else if (state is NetworkServersLoaded) {
                       if (state.pcList.isEmpty) {
-                        return const ModernEmptyState(
-                          message: "No servers found on the network",
-                          icon: Icons.dns_outlined,
+                        return const SingleChildScrollView(
+                          child: ModernEmptyState(
+                            message: "No servers found on the network",
+                            icon: Icons.dns_outlined,
+                          ),
                         );
                       }
 

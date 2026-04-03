@@ -307,93 +307,101 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
           SizedBox(height: isTablet ? 10 : 8),
 
           // Edit fields and actions row - horizontally scrollable for narrow screens
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // Action buttons
-                if (widget.item.trackSerial) ...[
-                  _buildSerialButton(
-                    onTap: () => _showSerialDialog(context),
-                    isTablet: isTablet,
-                    hasValue: widget.item.serialNumber?.isNotEmpty == true,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Flexible(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  reverse: true,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Action buttons
+                      if (widget.item.trackSerial) ...[
+                        _buildSerialButton(
+                          onTap: () => _showSerialDialog(context),
+                          isTablet: isTablet,
+                          hasValue: widget.item.serialNumber?.isNotEmpty == true,
+                        ),
+                        SizedBox(width: isTablet ? 6 : 4),
+                      ],
+
+                      // Tax button
+                      _buildTaxButton(
+                        onTap: () => _showItemTaxDialog(context),
+                        isTablet: isTablet,
+                      ),
+                      SizedBox(width: isTablet ? 6 : 4),
+
+                      // Sell Price field
+                      SizedBox(
+                        width: isTablet ? 180 : 70,
+                        height: isTablet ? 52 : 30,
+                        child: _buildCompactField(
+                          label: "Price",
+                          controller: _priceController,
+                          prefix: "\$",
+                          isTablet: isTablet,
+                          maxDecimals: _priceDecimalPlaces,
+                          enabled: widget.allowPriceEdit,
+                          onChanged: (value) {
+                            final price = double.tryParse(value);
+                            if (price != null) widget.onPriceChanged(price);
+                          },
+                        ),
+                      ),
+
+                      SizedBox(width: isTablet ? 20 : 8),
+
+                      // Qty with +/- buttons
+                      _buildQtyButton(
+                        icon: Icons.remove,
+                        onTap: _decrementQty,
+                        isTablet: isTablet,
+                      ),
+                      SizedBox(width: isTablet ? 10 : 3),
+                      SizedBox(
+                        width: isTablet ? 90 : 40,
+                        height: isTablet ? 52 : 30,
+                        child: _buildCompactField(
+                          controller: _qtyController,
+                          isTablet: isTablet,
+                          textAlign: TextAlign.center,
+                          isNumber: !_allowFractions,
+                          maxDecimals: _allowFractions ? 3 : null,
+                          onChanged: (value) {
+                            final qty = double.tryParse(value);
+                            if (qty != null && qty != 0) widget.onQtyChanged(qty);
+                          },
+                        ),
+                      ),
+                      SizedBox(width: isTablet ? 10 : 3),
+                      _buildQtyButton(
+                        icon: Icons.add,
+                        onTap: _incrementQty,
+                        isTablet: isTablet,
+                      ),
+
+                      SizedBox(width: isTablet ? 6 : 4),
+
+                      _buildIconButton(
+                        icon: Icons.delete_outline,
+                        onTap: widget.onDelete,
+                        isTablet: isTablet,
+                        isDestructive: true,
+                      ),
+
+                      SizedBox(width: isTablet ? 6 : 4),
+
+                      // Save button
+                      _buildCompactSaveButton(isTablet: isTablet),
+                    ],
                   ),
-                  SizedBox(width: isTablet ? 6 : 4),
-                ],
-
-                // Tax button
-                _buildTaxButton(
-                  onTap: () => _showItemTaxDialog(context),
-                  isTablet: isTablet,
                 ),
-                SizedBox(width: isTablet ? 6 : 4),
-
-                // Sell Price field
-                SizedBox(
-                  width: isTablet ? 180 : 70,
-                  height: isTablet ? 52 : 30,
-                  child: _buildCompactField(
-                    label: "Price",
-                    controller: _priceController,
-                    prefix: "\$",
-                    isTablet: isTablet,
-                    maxDecimals: _priceDecimalPlaces,
-                    enabled: widget.allowPriceEdit,
-                    onChanged: (value) {
-                      final price = double.tryParse(value);
-                      if (price != null) widget.onPriceChanged(price);
-                    },
-                  ),
-                ),
-
-                SizedBox(width: isTablet ? 20 : 8),
-
-                // Qty with +/- buttons
-                _buildQtyButton(
-                  icon: Icons.remove,
-                  onTap: _decrementQty,
-                  isTablet: isTablet,
-                ),
-                SizedBox(width: isTablet ? 10 : 3),
-                SizedBox(
-                  width: isTablet ? 90 : 40,
-                  height: isTablet ? 52 : 30,
-                  child: _buildCompactField(
-                    controller: _qtyController,
-                    isTablet: isTablet,
-                    textAlign: TextAlign.center,
-                    isNumber: !_allowFractions,
-                    maxDecimals: _allowFractions ? 3 : null,
-                    onChanged: (value) {
-                      final qty = double.tryParse(value);
-                      if (qty != null && qty != 0) widget.onQtyChanged(qty);
-                    },
-                  ),
-                ),
-                SizedBox(width: isTablet ? 10 : 3),
-                _buildQtyButton(
-                  icon: Icons.add,
-                  onTap: _incrementQty,
-                  isTablet: isTablet,
-                ),
-
-                SizedBox(width: isTablet ? 6 : 4),
-
-                _buildIconButton(
-                  icon: Icons.delete_outline,
-                  onTap: widget.onDelete,
-                  isTablet: isTablet,
-                  isDestructive: true,
-                ),
-
-                SizedBox(width: isTablet ? 6 : 4),
-
-                // Save button
-                _buildCompactSaveButton(isTablet: isTablet),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
