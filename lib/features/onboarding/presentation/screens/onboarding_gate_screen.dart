@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:rmstock_scanner/constants/colors.dart';
 import 'package:rmstock_scanner/constants/theme_colors.dart';
-import 'package:rmstock_scanner/constants/global_widgets.dart';
+//import 'package:rmstock_scanner/constants/global_widgets.dart';
 import 'package:rmstock_scanner/constants/txt_styles.dart';
 import 'package:rmstock_scanner/features/loading_splash/presentation/screens/index_screen.dart';
 import 'package:rmstock_scanner/features/onboarding/onboarding_content.dart';
@@ -66,7 +66,7 @@ class _OnboardingGateScreenState extends State<OnboardingGateScreen> {
       body = Scaffold(
         body: Container(
           decoration: BoxDecoration(gradient: context.appColors.heroGradient),
-          child: const Center(child: ModernLoadingBar()),
+          child: SizedBox()
         ),
       );
     } else if (!_termsAccepted && !_movedToTermsInCurrentLaunch) {

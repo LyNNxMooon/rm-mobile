@@ -62,12 +62,22 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
   Widget build(BuildContext context) {
     final colors = context.appColors;
 
-    final sheet = DraggableScrollableSheet(
-      initialChildSize: widget.initialChildSize ?? 0.55,
-      minChildSize: widget.minChildSize ?? 0.55,
-      maxChildSize: widget.maxChildSize ?? 0.90,
-      builder: (context, scrollController) {
-        return ClipRRect(
+    final sheet = ScrollConfiguration(
+      // Allow mouse drag for tablets/desktop in addition to touch
+      behavior: ScrollConfiguration.of(context).copyWith(
+        dragDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.stylus,
+          PointerDeviceKind.trackpad,
+        },
+      ),
+      child: DraggableScrollableSheet(
+        initialChildSize: widget.initialChildSize ?? 0.55,
+        minChildSize: widget.minChildSize ?? 0.55,
+        maxChildSize: widget.maxChildSize ?? 0.90,
+        builder: (context, scrollController) {
+          return ClipRRect(
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
@@ -138,6 +148,7 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
           ),
         );
       },
+      ),
     );
 
     return sheet;

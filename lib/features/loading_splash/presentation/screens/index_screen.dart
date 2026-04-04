@@ -79,7 +79,8 @@ class _IndexScreenState extends State<IndexScreen> {
         }
         
         // Normal flow - show loading screen only during active loading states
-        if (state is FetchingSavedPaths ||
+        if (state is LoadingSplashInitial ||
+            state is FetchingSavedPaths ||
             state is CheckingConnection ||
             state is SavedPathFetchingCompleted) {
           return LoadingScreen();

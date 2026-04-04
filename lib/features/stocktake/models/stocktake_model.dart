@@ -155,7 +155,6 @@ class StocktakeModel implements StocktakeRepo {
               stocktakeDate: currentStock.stocktakeDate,
               quantity: newQuantity,
               dateModified: DateTime.now(),
-              isSynced: currentStock.isSynced,
               barcode: currentStock.barcode,
               description: currentStock.description,
               inStock: currentStock.inStock,
@@ -240,7 +239,7 @@ class StocktakeModel implements StocktakeRepo {
   @override
   Future<bool> hasUnsyncedStocktakes(String shopfront) async {
     try {
-      final unSyncedList = await LocalDbDAO.instance.getUnsyncedStocks(
+      final unSyncedList = await LocalDbDAO.instance.getStocktakeItemsToCommit(
         shopfront,
       );
       return unSyncedList.isNotEmpty;
@@ -283,7 +282,6 @@ class StocktakeModel implements StocktakeRepo {
         'inStock': stock.inStock,
         'stocktake_date': stock.stocktakeDate.toIso8601String(),
         'date_modified': stock.dateModified.toIso8601String(),
-        'is_synced': stock.isSynced ? 1 : 0,
         'description': stock.description,
         'barcode': stock.barcode,
       };
@@ -305,7 +303,6 @@ class StocktakeModel implements StocktakeRepo {
           quantity: map['quantity'],
           stocktakeDate: DateTime.parse(map['stocktake_date']),
           dateModified: DateTime.parse(map['date_modified']),
-          isSynced: map['is_synced'] == 1,
           description: map['description'],
           barcode: map['barcode'],
           inStock: map['inStock'],
@@ -418,12 +415,12 @@ class StocktakeModel implements StocktakeRepo {
   }) async {
     final offset = pageIndex * pageSize;
 
-    final total = await LocalDbDAO.instance.getUnsyncedStocksCount(
+    final total = await LocalDbDAO.instance.getStocktakeItemsToCommitCount(
       shopfront: shopfront,
       query: query,
     );
 
-    final items = await LocalDbDAO.instance.getUnsyncedStocksPaged(
+    final items = await LocalDbDAO.instance.getStocktakeItemsToCommitPaged(
       shopfront: shopfront,
       limit: pageSize,
       offset: offset,

@@ -48,14 +48,25 @@ class RestoreSaleSession {
         stock = stockSearch.duplicates.first;
       }
 
-      // Calculate tax for the cart item
+      // Use saved tax values if available, otherwise calculate
       double incPrice;
       double exPrice;
       double taxPercentage;
       int taxType;
 
-      // For package items, use sell_ex/sell_inc directly from stock
-      if (stock != null && stock.isPackage == true && stock.sellEx != null && stock.sellInc != null) {
+      final hasSavedTax = itemData.incPrice != null &&
+          itemData.exPrice != null &&
+          itemData.taxPercentage != null &&
+          itemData.taxType != null;
+
+      if (hasSavedTax) {
+        // Use the persisted tax values (prevents double-taxation for pricing grade items)
+        incPrice = itemData.incPrice!;
+        exPrice = itemData.exPrice!;
+        taxPercentage = itemData.taxPercentage!;
+        taxType = itemData.taxType!;
+      } else if (stock != null && stock.isPackage == true && stock.sellEx != null && stock.sellInc != null) {
+        // For package items, use sell_ex/sell_inc directly from stock
         incPrice = stock.sellInc!;
         exPrice = stock.sellEx!;
         // Calculate percentage from prices

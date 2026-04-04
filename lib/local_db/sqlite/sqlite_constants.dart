@@ -61,7 +61,6 @@ const stocktakeTableCreationQuery = '''
     inStock INTEGER NOT NULL,
     stocktake_date TEXT NOT NULL,
     date_modified TEXT NOT NULL,
-    is_synced INTEGER NOT NULL,
     description TEXT NOT NULL,
     barcode TEXT NOT NULL,
     PRIMARY KEY (stock_id, shopfront)

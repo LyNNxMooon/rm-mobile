@@ -35,7 +35,7 @@ class CommitStocktake {
 
       if (await InternetConnectionUtils.instance.checkInternetConnection()) {
         final List<CountedStockVO> unsyncedStocks = await LocalDbDAO.instance
-            .getUnsyncedStocks(shopfront);
+            .getStocktakeItemsToCommit(shopfront);
 
         String? user;
         String? pwd;

@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmstock_scanner/features/theme/presentation/bloc/theme_cubit.dart';
-//import 'package:rmstock_scanner/features/loading_splash/presentation/screens/loading_screen.dart';
+import 'package:rmstock_scanner/features/loading_splash/presentation/screens/loading_screen.dart';
 import 'package:rmstock_scanner/features/onboarding/presentation/screens/onboarding_gate_screen.dart';
 import 'package:rmstock_scanner/features/onboarding/presentation/BLoC/onboarding_bloc.dart';
 //import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
@@ -261,8 +261,8 @@ class _MyAppState extends State<MyApp> {
                 ),
               );
             },
-            home: const OnboardingGateScreen(),
-            //home: const LoadingScreen(),
+            //home: const OnboardingGateScreen(),
+            home: const LoadingScreen(),
           );
         },
       ),

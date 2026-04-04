@@ -22,7 +22,7 @@ class SendFinalStocktakeToRm {
 
       if (await InternetConnectionUtils.instance.checkInternetConnection()) {
         final List<CountedStockVO> unsyncedStocks = await LocalDbDAO.instance
-            .getUnsyncedStocks(shopfront);
+            .getStocktakeItemsToCommit(shopfront);
 
         String? user;
         String? pwd;
@@ -99,7 +99,6 @@ class SendFinalStocktakeToRm {
                 stocktakeDate: currentStock.stocktakeDate,
                 quantity: newQuantity,
                 dateModified: DateTime.now(),
-                isSynced: currentStock.isSynced,
                 barcode: currentStock.barcode,
                 description: currentStock.description,
                 inStock: currentStock.inStock

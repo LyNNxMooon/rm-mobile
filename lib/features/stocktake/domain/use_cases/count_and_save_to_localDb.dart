@@ -53,7 +53,6 @@ class CountAndSaveToLocaldb {
         inStock: inStock,
         stocktakeDate: DateTime.now(),
         dateModified: DateTime.now(),
-        isSynced: false,
         description: stock.description,
         barcode: stock.barcode,
       );

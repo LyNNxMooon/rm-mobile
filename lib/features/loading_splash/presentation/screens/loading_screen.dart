@@ -13,11 +13,12 @@ import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/utils/responsive_utils.dart';
 
 import '../../../../constants/theme_colors.dart';
-import '../../../../constants/global_widgets.dart';
+//import '../../../../constants/global_widgets.dart';
 import '../../../../constants/images.dart';
 import '../../../../constants/txt_styles.dart';
 import '../BLoC/loading_splash_events.dart';
 import '../BLoC/loading_splash_states.dart';
+import 'dart:ui';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
@@ -26,7 +27,8 @@ class LoadingScreen extends StatefulWidget {
   State<LoadingScreen> createState() => _LoadingScreenState();
 }
 
-class _LoadingScreenState extends State<LoadingScreen> {
+class _LoadingScreenState extends State<LoadingScreen>
+    with SingleTickerProviderStateMixin {
   String _loadingMessage = "Checking Connection...";
   String? _savedStaffNo;
   String? _savedPassword;
@@ -39,6 +41,27 @@ class _LoadingScreenState extends State<LoadingScreen> {
   bool _loginPrompted = false;
   bool _logoPrecached = false;
   bool _logoReady = false;
+
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -273,8 +296,51 @@ class _LoadingScreenState extends State<LoadingScreen> {
                           ),
                         ),
 
-                   
-                        LottieLoadingBar(),
+                        const SizedBox(height: 30),
+                        AnimatedBuilder(
+                          animation: _pulseAnimation,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: _pulseAnimation.value,
+                              child: child,
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.white.withOpacity(0.25),
+                                  Colors.white.withOpacity(0.15),
+                                ],
+                              ),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.white.withOpacity(0.2),
+                                  blurRadius: 20,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: SizedBox(
+                              height: 32,
+                              width: 32,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // LottieLoadingBar(),
                        
                         Text(
                           _loadingMessage,

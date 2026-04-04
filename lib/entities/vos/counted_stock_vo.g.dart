@@ -13,7 +13,6 @@ CountedStockVO _$CountedStockVOFromJson(Map<String, dynamic> json) =>
       stockID: (json['stock_id'] as num).toInt(),
       quantity: json['quantity'] as num,
       dateModified: DateTime.parse(json['date_modified'] as String),
-      isSynced: json['is_synced'] as bool,
       description: json['description'] as String,
       barcode: json['barcode'] as String,
     );
@@ -25,7 +24,6 @@ Map<String, dynamic> _$CountedStockVOToJson(CountedStockVO instance) =>
       'quantity': instance.quantity,
       'inStock': instance.inStock,
       'date_modified': instance.dateModified.toIso8601String(),
-      'is_synced': instance.isSynced,
       'barcode': instance.barcode,
       'description': instance.description,
     };

@@ -1,3 +1,5 @@
+
+/*
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
@@ -53,11 +55,7 @@ class HiveDAOImpl
     throw UnimplementedError();
   }
 
-  Future<List<Map<String, dynamic>>> getSyncedStocks(String shopfront) {
-    throw UnimplementedError();
-  }
-
-  Future<List<CountedStockVO>> getUnsyncedStocks(String shopfront) {
+  Future<List<CountedStockVO>> getStocktakeItemsToCommit(String shopfront) {
     throw UnimplementedError();
   }
 
@@ -190,11 +188,11 @@ class HiveDAOImpl
     throw UnimplementedError();
   }
 
-  Future<int> getUnsyncedStocksCount(String shopfront) {
+  Future<int> getStocktakeItemsToCommitCount(String shopfront) {
     throw UnimplementedError();
   }
 
-  Future<List<CountedStockVO>> getUnsyncedStocksPaged({
+  Future<List<CountedStockVO>> getStocktakeItemsToCommitPaged({
     required String shopfront,
     required int limit,
     required int offset,
@@ -202,3 +200,4 @@ class HiveDAOImpl
     throw UnimplementedError();
   }
 }
+*/

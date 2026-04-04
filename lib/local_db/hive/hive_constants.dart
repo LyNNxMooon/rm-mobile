@@ -1,3 +1,4 @@
+/*
 //Key
 const kHiveKeyForHostIP = "kHiveKeyForHostIP";
 const kHiveKeyForHostName = "kHiveKeyForHostName";
@@ -15,3 +16,4 @@ const kHiveBoxForHostName = "kHiveBoxForHostName";
 const kHiveBoxForStocktakeList = "kHiveBoxForStocktakeList";
 const kHiveBoxForLastStockID = "kHiveBoxForLastStockID";
 const kHiveBoxForConnectedShop = "kHiveBoxForConnectedShop";
+*/

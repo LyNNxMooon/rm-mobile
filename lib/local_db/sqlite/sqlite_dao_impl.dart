@@ -1,6 +1,65 @@
 import 'dart:convert';
 
 import 'package:path/path.dart';
+
+/// =============================================================================
+/// SQLite DAO Implementation
+/// =============================================================================
+///
+/// This file contains all local database operations for the RM Mobile app.
+/// Methods are organized by screen/feature for easier navigation:
+///
+/// 1. DATABASE INITIALIZATION & MIGRATIONS
+///    - Database setup, table creation, schema upgrades
+///
+/// 2. APP CONFIG & HOST CONNECTION SETTINGS
+///    - Server IP, port, API key, shopfront info, device ID
+///    - Used during app startup and settings configuration
+///
+/// 3. NETWORK CREDENTIALS & PATHS (***These are only when we did with SMB POSTMAN Connection. Deprecated)
+///    - SMB/network share authentication and saved paths
+///    - Used in shopfront connection screen
+///
+/// 4. STOCK MASTER DATA (Stock Screen)
+///    - Bulk insert, search, filtering, sorting of stock items
+///    - Fetching stock by barcode, ID, or description
+///
+/// 5. STOCKTAKE / COUNTING (Stocktake Screen)
+///    - Recording counted stock, tracking sync status
+///    - Managing unsynced/synced stocktake entries
+///
+/// 6. STOCKTAKE HISTORY (History Screen)
+///    - Saving completed stocktake sessions
+///    - Retention policy and cleanup operations
+///
+/// 7. PENDING STOCK UPDATES (Offline Sync Queue)
+///    - Queue for stock edits made offline
+///    - Conflict detection and resolution
+///
+/// 8. CUSTOMER MASTER DATA (Customer Screen)
+///    - Customer records, addresses, search and filtering
+///    - Next ID generation for new customers
+///
+/// 9. PENDING CUSTOMER UPDATES (Offline Sync Queue)
+///    - Queue for customer edits made offline
+///    - Conflict detection and payload management
+///
+/// 10. PENDING CUSTOMER CREATIONS (Offline Sync Queue)
+///     - Queue for new customers created offline
+///     - ID renewal before server sync
+///
+/// 11. CUSTOMER TRANSACTIONS (Customer Details Screen)
+///     - Purchases, credits, invoices, laybys, CSO, SO/Quote data
+///     - Transaction history for each customer
+///
+/// 12. SALE SESSIONS (Sale/Cart Screen)
+///     - Parked sales, quotes, held transactions
+///     - Session management for POS workflow
+///
+/// 13. TAX CODES (Sale Configuration)
+///     - Tax code list for sales calculations
+///
+/// =============================================================================
 import 'package:rmstock_scanner/entities/response/customer_search_response.dart';
 import 'package:rmstock_scanner/entities/response/paginated_customer_response.dart';
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
@@ -24,6 +83,16 @@ import '../../utils/log_utils.dart';
 
 class SQLiteDAOImpl extends LocalDbDAO {
   Database? _database;
+
+  // ===========================================================================
+  // SECTION 1: DATABASE INITIALIZATION & MIGRATIONS
+  // ===========================================================================
+  // Handles SQLite database setup including:
+  // - Creating the database file and configuring pragmas for performance
+  // - Creating all required tables on first install
+  // - Running schema migrations when upgrading from older versions
+  // - Adding missing columns safely with _addColumnIfMissing helper
+  // ===========================================================================
 
   @override
   Future<void> initDB() async {
@@ -185,7 +254,18 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
-  //Get Data
+  // ===========================================================================
+  // SECTION 3: NETWORK CREDENTIALS & PATHS (Shopfront Connection Screen) (*****DEPRECATED***)
+  // ===========================================================================
+  // Manages SMB/Windows share authentication and saved network paths.
+  // Used when connecting to retail management servers via network shares.
+  //
+  // Features:
+  // - Stores username/password for network authentication per IP
+  // - Saves previously used network paths for quick reconnection
+  // - Tracks which shopfront is associated with each network path
+  // ===========================================================================
+
   @override
   Future<Map<String, dynamic>?> getNetworkCredential({
     required String ip,
@@ -272,6 +352,21 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  // ===========================================================================
+  // SECTION 5: STOCKTAKE / COUNTING (Stocktake Screen)
+  // ===========================================================================
+  // Handles all stocktake counting operations:
+  // - Recording counted quantities for each stock item
+  // - Updating quantities when same item is scanned multiple times
+  // - Deleting records after successful server commit
+  //
+  // The Stocktake table stores uncommitted counted items with:
+  // - stock_id, shopfront, quantity, inStock (original qty)
+  // - barcode, description for offline display
+  //
+  // When committed, records are saved to history tables then deleted.
+  // ===========================================================================
+
   @override
   Future<List<Map<String, dynamic>>> getStocktakeList({
     required String shopfront,
@@ -281,8 +376,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       return await db.query(
         'Stocktake',
-        where: 'shopfront = ? AND is_synced = ?',
-        whereArgs: [shopfront, 0],
+        where: 'shopfront = ?',
+        whereArgs: [shopfront],
         orderBy: 'date_modified DESC',
       );
     } catch (error) {
@@ -292,43 +387,40 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
-  Future<List<CountedStockVO>> getUnsyncedStocks(String shopfront) async {
+  Future<List<CountedStockVO>> getStocktakeItemsToCommit(String shopfront) async {
     try {
       final db = _database!;
       final List<Map<String, dynamic>> result = await db.query(
         'Stocktake',
-        where: 'shopfront = ? AND is_synced = ?',
-        whereArgs: [shopfront, 0],
+        where: 'shopfront = ?',
+        whereArgs: [shopfront],
         orderBy: 'stocktake_date ASC',
       );
 
       return result.map((map) {
-        final Map<String, dynamic> mutableMap = Map<String, dynamic>.from(map);
-        mutableMap['is_synced'] = mutableMap['is_synced'] == 1;
-        return CountedStockVO.fromJson(mutableMap);
+        return CountedStockVO.fromJson(map);
       }).toList();
     } catch (error) {
-      logger.e('Error getting unsynced stocktake list from local db: $error');
-      return Future.error("Error retrieving unsynced stocktake list: $error");
+      logger.e('Error getting stocktake items to commit from local db: $error');
+      return Future.error("Error retrieving stocktake items to commit: $error");
     }
   }
 
-  @override
-  Future<List<Map<String, dynamic>>> getSyncedStocks(String shopfront) async {
-    try {
-      final db = _database!;
-
-      return await db.query(
-        'Stocktake',
-        where: 'shopfront = ? AND is_synced = ?',
-        whereArgs: [shopfront, 1],
-        orderBy: 'date_modified DESC',
-      );
-    } catch (error) {
-      logger.e('Error retrieving stocktake list from local db: $error');
-      return Future.error("Error retrieving stocktake list: $error");
-    }
-  }
+  // ===========================================================================
+  // SECTION 4: STOCK MASTER DATA (Stock Screen / Stock Search)
+  // ===========================================================================
+  // Manages the local copy of stock master data synced from the server.
+  //
+  // Features:
+  // - Bulk insert/update of stock items during sync
+  // - Multi-column search (barcode, description, custom1, custom2)
+  // - Paginated search with sorting and filtering
+  // - Filter by department, category, supplier
+  // - Get distinct values for filter dropdowns
+  // - Update stock details locally after offline edits
+  //
+  // Search priority: Barcode > Description > Custom1 > Custom2
+  // ===========================================================================
 
   @override
   Future<StockSearchResult> getStockBySearch(
@@ -606,6 +698,20 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  // ===========================================================================
+  // SECTION 2: APP CONFIG & HOST CONNECTION SETTINGS (App Startup / Settings)
+  // ===========================================================================
+  // Stores application configuration including:
+  // - Server connection details (IP, port, API key, hostname)
+  // - Current shopfront selection (ID and name)
+  // - RM software version on server
+  // - Device ID for this mobile device
+  // - History retention settings
+  //
+  // These values are saved on successful connection and loaded on app startup
+  // to restore the previous session without requiring re-authentication.
+  // ===========================================================================
+
   @override
   Future<String?> getAppConfig(String key, {String? shopfront}) async {
     final db = _database!;
@@ -744,6 +850,23 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  // ===========================================================================
+  // SECTION 6: STOCKTAKE HISTORY (History Screen)
+  // ===========================================================================
+  // Manages the history of completed stocktake sessions.
+  //
+  // Features:
+  // - Save completed stocktake sessions with all counted items
+  // - View past stocktake sessions by date
+  // - Configurable retention period (1-30 days)
+  // - Automatic cleanup of old history entries
+  // - Restore stocktake from backup if needed
+  //
+  // Structure:
+  // - StocktakeHistorySession: Session metadata (date, device, total count)
+  // - StocktakeHistoryItems: Individual items counted in each session
+  // ===========================================================================
+
   @override
   Future<List<Map<String, dynamic>>> getStocktakeHistoryItems({
     required String sessionId,
@@ -854,7 +977,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
-  Future<int> getUnsyncedStocksCount({
+  Future<int> getStocktakeItemsToCommitCount({
     required String shopfront,
     String? query,
   }) async {
@@ -864,8 +987,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       if (q.isEmpty) {
         final result = await db.rawQuery(
-          'SELECT COUNT(*) as cnt FROM Stocktake WHERE shopfront = ? AND is_synced = ?',
-          [shopfront, 0],
+          'SELECT COUNT(*) as cnt FROM Stocktake WHERE shopfront = ?',
+          [shopfront],
         );
         return (result.first['cnt'] as int?) ?? 0;
       }
@@ -876,20 +999,19 @@ class SQLiteDAOImpl extends LocalDbDAO {
       SELECT COUNT(*) as cnt
       FROM Stocktake
       WHERE shopfront = ?
-        AND is_synced = ?
         AND (barcode LIKE ? OR description LIKE ?)
       ''',
-        [shopfront, 0, like, like],
+        [shopfront, like, like],
       );
 
       return (result.first['cnt'] as int?) ?? 0;
     } catch (e) {
-      return Future.error("Error counting stocktake list: $e");
+      return Future.error("Error counting stocktake items to commit: $e");
     }
   }
 
   @override
-  Future<List<CountedStockVO>> getUnsyncedStocksPaged({
+  Future<List<CountedStockVO>> getStocktakeItemsToCommitPaged({
     required String shopfront,
     required int limit,
     required int offset,
@@ -904,8 +1026,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
       if (q.isEmpty) {
         result = await db.query(
           'Stocktake',
-          where: 'shopfront = ? AND is_synced = ?',
-          whereArgs: [shopfront, 0],
+          where: 'shopfront = ?',
+          whereArgs: [shopfront],
           orderBy: 'stocktake_date ASC',
           limit: limit,
           offset: offset,
@@ -915,8 +1037,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
         result = await db.query(
           'Stocktake',
           where:
-              'shopfront = ? AND is_synced = ? AND (barcode LIKE ? OR description LIKE ?)',
-          whereArgs: [shopfront, 0, like, like],
+              'shopfront = ? AND (barcode LIKE ? OR description LIKE ?)',
+          whereArgs: [shopfront, like, like],
           orderBy: 'stocktake_date ASC',
           limit: limit,
           offset: offset,
@@ -924,12 +1046,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
       }
 
       return result.map((map) {
-        final mutableMap = Map<String, dynamic>.from(map);
-        mutableMap['is_synced'] = mutableMap['is_synced'] == 1;
-        return CountedStockVO.fromJson(mutableMap);
+        return CountedStockVO.fromJson(map);
       }).toList();
     } catch (e) {
-      return Future.error("Error retrieving paged stocktake list: $e");
+      return Future.error("Error retrieving paged stocktake items to commit: $e");
     }
   }
 
@@ -948,7 +1068,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
     return rows.map((e) => StockVO.fromJson(e)).toList();
   }
 
-  //Save Data
+  // ---------------------------------------------------------------------------
+  // STOCKTAKE HELPER METHODS
+  // ---------------------------------------------------------------------------
 
   Future<Map<int, Map<String, dynamic>>> _getStockBasicsByIds({
     required Database db,
@@ -1014,7 +1136,6 @@ class SQLiteDAOImpl extends LocalDbDAO {
           'inStock': inStock,
           'stocktake_date': it.stocktakeDate.toIso8601String(),
           'date_modified': it.dateModified.toIso8601String(),
-          'is_synced': 0,
           'description': desc,
           'barcode': barcode,
         }, conflictAlgorithm: ConflictAlgorithm.replace);
@@ -1312,7 +1433,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
-  //Removing Data
+  // ---------------------------------------------------------------------------
+  // NETWORK CREDENTIAL & PATH DELETION
+  // ---------------------------------------------------------------------------
+
   @override
   Future<void> removeNetworkCredential({required String ip}) async {
     try {
@@ -1409,7 +1533,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
-  //Update Data
+  // ---------------------------------------------------------------------------
+  // NETWORK PATH UPDATES
+  // ---------------------------------------------------------------------------
+
   @override
   Future<void> updateShopfrontByIp({
     required String ip,
@@ -1504,8 +1631,6 @@ class SQLiteDAOImpl extends LocalDbDAO {
       final Map<String, dynamic> valuesToUpdate = {
         'quantity': newQuantity,
         'date_modified': DateTime.now().toIso8601String(),
-
-        'is_synced': 0,
       };
 
       final rowsAffected = await db.update(
@@ -1528,6 +1653,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
       return Future.error("Error updating stock quantity: $error");
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // STOCK DETAIL UPDATES (Local edits before server sync)
+  // ---------------------------------------------------------------------------
 
   @override
   Future<void> updateStockDetails({
@@ -1568,6 +1697,25 @@ class SQLiteDAOImpl extends LocalDbDAO {
       return Future.error("Error updating stock details: $error");
     }
   }
+
+  // ===========================================================================
+  // SECTION 7: PENDING STOCK UPDATES (Offline Sync Queue)
+  // ===========================================================================
+  // Queue system for stock edits made while offline or failed to sync.
+  //
+  // Features:
+  // - Queue stock updates (description, price, custom fields)
+  // - Merge multiple updates to same stock into single entry
+  // - Track sync status and error messages
+  // - Detect conflicts when server data is newer than pending edit
+  // - Apply pending updates to local DB after successful sync
+  //
+  // Workflow:
+  // 1. User edits stock -> addPendingStockUpdate()
+  // 2. Sync attempts -> if fails, error stored
+  // 3. Next sync -> detectPendingStockConflicts() checks for conflicts
+  // 4. Successful sync -> deletePendingStockUpdates() removes from queue
+  // ===========================================================================
 
   @override
   Future<int> addPendingStockUpdate({
@@ -1853,6 +2001,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // HELPER: Parse pricing rules from various formats
+  // ---------------------------------------------------------------------------
+
   PricingRules? _parsePricingRules(dynamic payload) {
     if (payload is Map<String, dynamic>) {
       return PricingRules.fromJson(payload);
@@ -1875,6 +2027,23 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
     return null;
   }
+
+  // ===========================================================================
+  // SECTION 9: PENDING CUSTOMER UPDATES (Offline Sync Queue)
+  // ===========================================================================
+  // Queue system for customer edits made while offline.
+  //
+  // Features:
+  // - Queue customer field updates (address, contact info, etc.)
+  // - Store address changes in separate table for complex updates
+  // - Merge multiple updates to same customer into single entry
+  // - Track sync status and error messages
+  // - Detect conflicts when server data is newer
+  //
+  // Tables:
+  // - PendingCustomerUpdates: Main update queue with JSON payload
+  // - pending_customer_update_addresses: Address changes for each update
+  // ===========================================================================
 
   @override
   Future<int> addPendingCustomerUpdate({
@@ -2337,6 +2506,24 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  // ===========================================================================
+  // SECTION 10: PENDING CUSTOMER CREATIONS (Offline Sync Queue)
+  // ===========================================================================
+  // Queue for new customers created while offline.
+  //
+  // Features:
+  // - Queue new customer records with all details and addresses
+  // - Temporary local IDs that get renewed before server sync
+  // - renewPendingCustomerCreationIds() assigns proper sequential IDs
+  // - Track creation status and any sync errors
+  //
+  // Workflow:
+  // 1. User creates customer offline -> addPendingCustomerCreation()
+  // 2. Before sync -> renewPendingCustomerCreationIds() assigns IDs
+  // 3. Sync to server -> if success, delete from queue
+  // 4. On failure -> error stored for retry
+  // ===========================================================================
+
   @override
   Future<int> addPendingCustomerCreation({
     required String shopfront,
@@ -2682,6 +2869,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // CUSTOMER PAYLOAD HELPERS
+  // Used when applying pending updates/creations to local DB
+  // ---------------------------------------------------------------------------
+
   Future<void> _insertCustomerFromPayload(
     Map<String, dynamic> item,
     String shopfront,
@@ -2791,6 +2983,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  /// Converts various boolean representations to SQLite integer (0 or 1)
   int _asDbBool(dynamic value) {
     if (value is bool) return value ? 1 : 0;
     if (value is num) return value != 0 ? 1 : 0;
@@ -2801,7 +2994,25 @@ class SQLiteDAOImpl extends LocalDbDAO {
     return 0;
   }
 
-  // Customer Methods
+  // ===========================================================================
+  // SECTION 8: CUSTOMER MASTER DATA (Customer Screen)
+  // ===========================================================================
+  // Manages the local copy of customer records synced from the server.
+  //
+  // Features:
+  // - Bulk insert/update customers with addresses
+  // - Multi-column search (barcode, name, company, phone, email, address)
+  // - Paginated search with sorting and filtering
+  // - Get next available customer ID for offline creation
+  // - Generate numeric barcodes for new customers
+  // - Check for duplicate barcodes before creation
+  //
+  // Structure:
+  // - Customers: Main customer record
+  // - CustomerAddresses: Multiple addresses per customer
+  //
+  // Search priority: Barcode > Given Names > Surname > Company > Phone > Email
+  // ===========================================================================
 
   @override
   Future<void> insertCustomers(
@@ -3053,6 +3264,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         .toList();
   }
 
+  /// Converts a database row to CustomerVO with addresses
   CustomerVO _customerFromRow(
     Map<String, dynamic> row,
     List<CustomerAddressVO> addresses,
@@ -3427,6 +3639,25 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
 
+  // ===========================================================================
+  // SECTION 11: CUSTOMER TRANSACTIONS (Customer Details Screen)
+  // ===========================================================================
+  // Stores customer transaction history for offline viewing.
+  //
+  // Transaction Types:
+  // - Purchases: Items bought by customer
+  // - Credit: Store credit transactions
+  // - Invoices: Account invoices
+  // - IvPay: Invoice payments
+  // - Laybys: Layby transactions
+  // - LbPay: Layby payments
+  // - CSO: Customer special orders
+  // - SoQuote: Sales orders / quotes
+  // - SoPay: Sales order payments
+  //
+  // Data is replaced on each sync from server (not incrementally updated)
+  // ===========================================================================
+
   @override
   Future<void> replaceCustomerTransactions({
     required String shopfront,
@@ -3738,9 +3969,23 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Sale Sessions
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
+  // SECTION 12: SALE SESSIONS (Sale/Cart Screen)
+  // ===========================================================================
+  // Manages parked/held sale sessions for POS workflow.
+  //
+  // Features:
+  // - Save current sale cart as a session
+  // - Retrieve parked sales, quotes, or held transactions
+  // - Track session type (sale, quote, layby, etc.)
+  // - Count sessions by type for badge display
+  // - Delete individual or all sessions
+  //
+  // Used when:
+  // - Customer needs to leave but wants to hold their cart
+  // - Creating quotes for later conversion to sale
+  // - Switching between multiple customers at POS
+  // ===========================================================================
 
   @override
   Future<List<Map<String, dynamic>>> getSaleSessions({
@@ -3892,9 +4137,18 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Tax Codes
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
+  // SECTION 13: TAX CODES (Sale Configuration)
+  // ===========================================================================
+  // Stores tax codes synced from the server for sales calculations.
+  //
+  // Features:
+  // - Replace all tax codes on sync (full refresh)
+  // - Lookup tax code by code string
+  // - List all available tax codes for dropdown selection
+  //
+  // Used during sales to apply correct tax rates to items.
+  // ===========================================================================
 
   @override
   Future<void> saveTaxCodes(List<TaxCodeVO> taxCodes, String shopfront) async {

@@ -151,6 +151,10 @@ class CartItemData {
   final double? costPrice;
   final String? serialNumber;
   final int? stockId;
+  final double? incPrice;
+  final double? exPrice;
+  final double? taxPercentage;
+  final int? taxType;
 
   CartItemData({
     required this.code,
@@ -160,6 +164,10 @@ class CartItemData {
     this.costPrice,
     this.serialNumber,
     this.stockId,
+    this.incPrice,
+    this.exPrice,
+    this.taxPercentage,
+    this.taxType,
   });
 
   factory CartItemData.fromJson(Map<String, dynamic> json) {
@@ -171,6 +179,10 @@ class CartItemData {
       costPrice: (json['cost_price'] as num?)?.toDouble(),
       serialNumber: json['serial_number'] as String?,
       stockId: json['stock_id'] as int?,
+      incPrice: (json['inc_price'] as num?)?.toDouble(),
+      exPrice: (json['ex_price'] as num?)?.toDouble(),
+      taxPercentage: (json['tax_percentage'] as num?)?.toDouble(),
+      taxType: json['tax_type'] as int?,
     );
   }
 
@@ -183,6 +195,10 @@ class CartItemData {
       'cost_price': costPrice,
       'serial_number': serialNumber,
       'stock_id': stockId,
+      'inc_price': incPrice,
+      'ex_price': exPrice,
+      'tax_percentage': taxPercentage,
+      'tax_type': taxType,
     };
   }
 
@@ -196,6 +212,10 @@ class CartItemData {
       costPrice: item.costPrice,
       serialNumber: item.serialNumber,
       stockId: item.stock?.stockID.toInt(),
+      incPrice: item.incPrice,
+      exPrice: item.exPrice,
+      taxPercentage: item.taxPercentage,
+      taxType: item.taxType,
     );
   }
 }

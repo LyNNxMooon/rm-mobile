@@ -11,8 +11,6 @@ class CountedStockVO {
   final num inStock;
   @JsonKey(name: 'date_modified')
   final DateTime dateModified;
-  @JsonKey(name: 'is_synced')
-  final bool isSynced;
   final String barcode;
   final String description;
 
@@ -22,7 +20,6 @@ class CountedStockVO {
     required this.stockID,
     required this.quantity,
     required this.dateModified,
-    required this.isSynced,
     required this.description,
     required this.barcode,
   });
@@ -39,7 +36,7 @@ class CountedStockVO {
       quantity: m['quantity'] as num,
       inStock: m['inStock'] as num,
       dateModified: DateTime.parse(m['date_modified'].toString()),
-      isSynced: true, // history doesn’t care
+
       description: m['description'].toString(),
       barcode: m['barcode'].toString(),
     );

@@ -147,7 +147,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   void _onFocusChange() {
-    if ((qtyFocusNode.hasFocus || txtFieldFocusNode.hasFocus) && isScan) {
+    // Only close scanner when manual barcode field gains focus.
+    // Qty field should work alongside scanner.
+    if (txtFieldFocusNode.hasFocus && isScan) {
       setState(() => isScan = false);
     }
   }
@@ -740,7 +742,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         _autoQty = 0;
 
                         txtFieldFocusNode.unfocus();
-                        qtyFocusNode.unfocus();
+                        // Don't unfocus qty field - allow scanner and qty keyboard together
                       });
                     },
                     icon: Icons.qr_code_scanner,

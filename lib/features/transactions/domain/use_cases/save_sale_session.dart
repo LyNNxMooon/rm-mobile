@@ -73,7 +73,7 @@ class SaveSaleSession {
     // Properly encode cart items
     if (params.cartItems.isNotEmpty) {
       sessionMap['cart_items_json'] =
-          '[${cartItemsData.map((e) => '{"code":"${e.code}","description":"${e.description.replaceAll('"', '\\"')}","qty":${e.qty},"sell_price":${e.sellPrice},"cost_price":${e.costPrice ?? 0},"serial_number":${e.serialNumber != null ? '"${e.serialNumber}"' : 'null'},"stock_id":${e.stockId ?? 'null'}}').join(',')}]';
+          '[${cartItemsData.map((e) => '{"code":"${e.code}","description":"${e.description.replaceAll('"', '\\"')}","qty":${e.qty},"sell_price":${e.sellPrice},"cost_price":${e.costPrice ?? 0},"serial_number":${e.serialNumber != null ? '"${e.serialNumber}"' : 'null'},"stock_id":${e.stockId ?? 'null'},"inc_price":${e.incPrice ?? 'null'},"ex_price":${e.exPrice ?? 'null'},"tax_percentage":${e.taxPercentage ?? 'null'},"tax_type":${e.taxType ?? 'null'}}').join(',')}]';
     }
 
     // Properly encode payment amounts

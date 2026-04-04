@@ -38,8 +38,7 @@ abstract class LocalDbDAO {
     required String shopfront,
   });
   Future<Map<String, dynamic>?> getSinglePathByIp(String ipAddress);
-  Future<List<CountedStockVO>> getUnsyncedStocks(String shopfront);
-  Future<List<Map<String, dynamic>>> getSyncedStocks(String shopfront);
+  Future<List<CountedStockVO>> getStocktakeItemsToCommit(String shopfront);
   Future<StockSearchResult> getStockBySearch(String query, String shopfront);
   Future<PaginatedStockResult> searchAndSortStocks({
     required String shopfront,
@@ -77,11 +76,11 @@ abstract class LocalDbDAO {
   Future<StockVO?> getStockByIDSearch(String query, String shopfront);
   Future<StockVO?> getStockById(int stockId, String shopfront);
   Future<StockVO?> getStockByIdAnyShopfront(int stockId);
-  Future<int> getUnsyncedStocksCount({
+  Future<int> getStocktakeItemsToCommitCount({
     required String shopfront,
     String? query,
   });
-  Future<List<CountedStockVO>> getUnsyncedStocksPaged({
+  Future<List<CountedStockVO>> getStocktakeItemsToCommitPaged({
     required String shopfront,
     required int limit,
     required int offset,
