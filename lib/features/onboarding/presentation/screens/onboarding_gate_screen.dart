@@ -64,9 +64,10 @@ class _OnboardingGateScreenState extends State<OnboardingGateScreen> {
     final Widget body;
     if (_isLoading) {
       body = Scaffold(
+        backgroundColor: Colors.black,
         body: Container(
           decoration: BoxDecoration(gradient: context.appColors.heroGradient),
-          child: SizedBox()
+          child: const SizedBox()
         ),
       );
     } else if (!_termsAccepted && !_movedToTermsInCurrentLaunch) {

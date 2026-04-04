@@ -1,3 +1,4 @@
+import 'dart:ui'; // Required for ImageFilter (Blur)
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
@@ -12,13 +13,12 @@ import 'package:rmstock_scanner/utils/log_utils.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/utils/responsive_utils.dart';
 
-import '../../../../constants/theme_colors.dart';
+//import '../../../../constants/theme_colors.dart';
 //import '../../../../constants/global_widgets.dart';
 import '../../../../constants/images.dart';
-import '../../../../constants/txt_styles.dart';
+//import '../../../../constants/txt_styles.dart';
 import '../BLoC/loading_splash_events.dart';
 import '../BLoC/loading_splash_states.dart';
-import 'dart:ui';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
@@ -39,8 +39,8 @@ class _LoadingScreenState extends State<LoadingScreen>
   bool _authAttempted = false;
   bool _autoConnectAttempted = false;
   bool _loginPrompted = false;
-  bool _logoPrecached = false;
-  bool _logoReady = false;
+  bool _assetsPrecached = false;
+  bool _uiReady = false;
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -48,11 +48,14 @@ class _LoadingScreenState extends State<LoadingScreen>
   @override
   void initState() {
     super.initState();
+    // Slightly slower pulse for a more premium feel
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1500), 
     )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+    
+    // Subtle scaling for the logo
+    _pulseAnimation = Tween<double>(begin: 0.98, end: 1.02).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
   }
@@ -66,12 +69,18 @@ class _LoadingScreenState extends State<LoadingScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_logoPrecached) return;
-    _logoPrecached = true;
-    precacheImage(AssetImage(appLogo), context).then((_) {
+    if (_assetsPrecached) return;
+    _assetsPrecached = true;
+    
+    // Precache both the logo and the background images for smooth rendering
+    Future.wait([
+      precacheImage(const AssetImage(appLogoSquare), context), // Ensure this maps to your new blue square logo in images.dart
+      precacheImage(const AssetImage(bgPortrait), context),    // Ensure this maps to portrait.jpg
+      precacheImage(const AssetImage(bgLandscape), context),   // Ensure this maps to landscape.jpg
+    ]).then((_) {
       if (!mounted) return;
       setState(() {
-        _logoReady = true;
+        _uiReady = true;
       });
     });
   }
@@ -169,12 +178,13 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    final bool isDark = colors.isDark;
-    final bool isTablet = context.isTablet;
-    final double logoWidth = isTablet ? 260 : 160;
-    final double logoHeight = isTablet ? 188 : 120;
-    //final double loadingWidth = isTablet ? 280 : 220;
+    final isTablet = context.isTablet;
+    // Determine orientation to pick the right background image
+    final isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
+    
+    // Responsive sizing - made larger for better visual impact
+    final double logoSize = isTablet ? 180 : 130;
+    final String bgImage = isLandscape ? bgLandscape : bgPortrait;
 
     return MultiBlocListener(
       listeners: [
@@ -253,112 +263,215 @@ class _LoadingScreenState extends State<LoadingScreen>
         ),
       ],
       child: Scaffold(
-        body: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(gradient: colors.heroGradient),
-          child: SafeArea(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: logoWidth,
-                    height: logoHeight,
-                    child: Image.asset(
-                      appLogo,
-                      fit: BoxFit.fill,
-                      //gaplessPlayback: true,
-                    ),
+        backgroundColor: Colors.black, // Fallback color
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 1. Contextual Background Image
+            AnimatedOpacity(
+              opacity: _uiReady ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 800),
+              child: Image.asset(
+                bgImage,
+                fit: BoxFit.cover,
+              ),
+            ),
+
+            // 2. Dark Gradient & Blur Overlay
+            // This ensures text is ALWAYS readable regardless of the photo beneath
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.5),
+                      Colors.black.withOpacity(0.7), // Darker at bottom for footer
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  AnimatedOpacity(
-                    opacity: _logoReady ? 1 : 0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Column(
+                ),
+              ),
+            ),
+
+            // 3. Main Foreground Content
+            SafeArea(
+              child: AnimatedOpacity(
+                opacity: _uiReady ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 1000),
+                child: Column(
+                  children: [
+                    const Spacer(flex: 3), // Pushes content slightly above center
+
+                    // --- HERO LOGO ---
+                    AnimatedBuilder(
+                      animation: _pulseAnimation,
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: _pulseAnimation.value,
+                          child: child,
+                        );
+                      },
+                      child: Container(
+                        width: logoSize,
+                        height: logoSize,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(logoSize * 0.22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.5),
+                              blurRadius: 40,
+                              offset: const Offset(0, 20),
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(logoSize * 0.22),
+                          child: Image.asset(appLogoSquare, fit: BoxFit.cover),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: isTablet ? 36 : 28),
+
+                    // --- APP TITLE ---
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "RetailManager ",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isTablet ? 38 : 30,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          TextSpan(
+                            text: "Mobile",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: isTablet ? 38 : 30,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    SizedBox(height: isTablet ? 12 : 8),
+                    
+                    // --- TAGLINE ---
+                    Text(
+                      "Point of Sale, Simplified",
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: isTablet ? 16 : 14,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+
+                    const Spacer(flex: 2),
+
+                    // --- MODERN LOADING PILL ---
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(35),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? 28 : 24,
+                            vertical: isTablet ? 14 : 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(35),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.25),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: isTablet ? 20 : 16,
+                                height: isTablet ? 20 : 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: isTablet ? 2.5 : 2,
+                                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              ),
+                              SizedBox(width: isTablet ? 16 : 14),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 300),
+                                child: Text(
+                                  _loadingMessage,
+                                  key: ValueKey(_loadingMessage),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: isTablet ? 15 : 14,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const Spacer(flex: 2),
+
+                    // --- FOOTER (Powered By) ---
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "RetailManager Mobile",
-                          style: getSmartTitle(
-                            color: isDark ? Colors.white : colors.onHero,
-                            fontSize: 24,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          "AAAPOS Pty Ltd",
+                          "POWERED BY",
                           style: TextStyle(
-                            color: isDark
-                                ? Colors.white70
-                                : colors.onHero.withOpacity(0.8),
-                            fontWeight: FontWeight.w400,
-                            fontSize: 16,
+                            color: Colors.white54,
+                            fontSize: isTablet ? 12 : 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 2.0,
                           ),
                         ),
-
-                        const SizedBox(height: 30),
-                        AnimatedBuilder(
-                          animation: _pulseAnimation,
-                          builder: (context, child) {
-                            return Transform.scale(
-                              scale: _pulseAnimation.value,
-                              child: child,
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Colors.white.withOpacity(0.25),
-                                  Colors.white.withOpacity(0.15),
-                                ],
-                              ),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(0.2),
-                                  blurRadius: 20,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: SizedBox(
-                              height: 32,
-                              width: 32,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 3.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            ),
+                        SizedBox(height: isTablet ? 12 : 10),
+                        // Wrap AAAPOS in a white pill because the logo text is dark
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 5,
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        // LottieLoadingBar(),
-                       
-                        Text(
-                          _loadingMessage,
-                          style: TextStyle(
-                            color: isDark
-                                ? Colors.white70
-                                : colors.onHero.withOpacity(0.8),
-                            fontWeight: FontWeight.w400,
-                            fontSize: 12,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Image.asset(
+                            aaaposLogo,
+                            height: isTablet ? 32 : 22,
+                            fit: BoxFit.contain,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                    SizedBox(height: isTablet ? 40 : 32), // Bottom padding
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

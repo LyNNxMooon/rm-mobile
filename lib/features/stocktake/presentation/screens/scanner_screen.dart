@@ -590,13 +590,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
 
           Container(
-            margin: context.isMediumTablet
-                ? const EdgeInsets.only(top: 10, bottom: 0)
-                : isMediumTabletPortrait
-                    ? const EdgeInsets.only(top: 10, bottom: 0)
-                    : EdgeInsets.symmetric(
-                        vertical: (isTablet ? 15 : 8) * portraitBoost,
-                      ),
+            margin: EdgeInsets.only(
+              top: isTablet ? 12 : 8,
+              bottom: 0,
+            ),
             height: isMediumTabletPortrait
                 ? 42 * uiScale
                 : (isTablet ? 50 : 36) * uiScale * portraitBoost,
@@ -632,7 +629,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
 
           // Gap between Manual Barcode Entry and Counted Qty
-          SizedBox(height: context.isMediumTablet ? 4 : (isTablet ? 12 : 8)),
+          SizedBox(height: isTablet ? 12 : 6),
 
           Container(
             padding: EdgeInsets.symmetric(
@@ -697,11 +694,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
           ),
           SizedBox(
-            height: context.isMediumTablet
-                ? 6
-                : (isMediumTabletPortrait
-                    ? 8
-                    : (isTablet ? 15 : 3) * portraitBoost),
+            height: isTablet ? 4 : 6,
           ),
 
           SizedBox(
