@@ -1,5 +1,10 @@
 abstract class HomeScreenEvents {}
 
+// ============================================================================
+// SMB LEGACY EVENTS - Commented out (no longer used with API-based flow)
+// ============================================================================
+
+/*
 class FetchShops extends HomeScreenEvents {
   final String ipAddress;
   final String path;
@@ -27,9 +32,15 @@ class ConnectToShopfrontEvent extends HomeScreenEvents {
     this.pwd,
   });
 }
+*/
 
 class FetchNetworkServerEvent extends HomeScreenEvents {}
 
+// ============================================================================
+// SMB LEGACY EVENTS - Commented out (no longer used with API-based flow)
+// ============================================================================
+
+/*
 class GetDirectoryEvent extends HomeScreenEvents {
   final String ipAddress;
   final String path;
@@ -59,13 +70,20 @@ class ConnectToFolderEvent extends HomeScreenEvents {
     this.pwd,
   });
 }
+*/
 
+// ============================================================================
+// SMB LEGACY EVENT - Commented out (no longer used with API-based flow)
+// ============================================================================
+
+/*
 class AutoConnectToDefaultFolderEvent extends HomeScreenEvents {
   final String ipAddress;
   final String? hostName;
 
   AutoConnectToDefaultFolderEvent({required this.ipAddress, this.hostName});
 }
+*/
 
 class FetchStockDataEvent extends HomeScreenEvents {
   final String ipAddress;

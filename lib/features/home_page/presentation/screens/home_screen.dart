@@ -65,14 +65,14 @@ class _HomeScreenState extends State<HomeScreen> {
         maxChildSize = 0.90;
       }
     } else {
-      // Phone - drawer takes 65% of screen from bottom
+      // Phone - drawer takes 62% of screen from bottom (lowered to give more space for logo)
       if (isPortrait) {
-        initialChildSize = 0.65;
-        minChildSize = 0.65;
+        initialChildSize = 0.62;
+        minChildSize = 0.62;
         maxChildSize = 0.88;
       } else {
-        initialChildSize = 0.65;
-        minChildSize = 0.63;
+        initialChildSize = 0.62;
+        minChildSize = 0.60;
         maxChildSize = 0.86;
       }
     }
@@ -340,6 +340,8 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Column(
                   children: [
+                    // Extra top spacing for mobile only (above app bar)
+                    if (!isTablet) const SizedBox(height: 8),
                     const AppBarSession(),
                     SizedBox(
                       height: contentAreaHeight,
@@ -352,6 +354,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              // Extra top spacing for mobile only
+                              if (!isTablet) const SizedBox(height: 12),
                               logo(),
                               SizedBox(
                                 height: isTablet ? (isPortrait ? 24 : 16) : 22,

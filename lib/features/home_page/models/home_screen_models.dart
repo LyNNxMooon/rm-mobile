@@ -10,7 +10,6 @@ import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
-import 'package:rmstock_scanner/utils/log_utils.dart';
 
 import '../../../local_db/local_db_dao.dart';
 import '../../../local_db/sqlite/sqlite_constants.dart';
@@ -40,16 +39,8 @@ class HomeScreenModels implements HomeRepo {
     String? userName,
     String? pwd,
   ) {
-    try {
-      return LanNetworkServiceImpl.instance.getDirectoryListing(
-        address: address,
-        path: path,
-        username: userName ?? AppGlobals.instance.defaultUserName,
-        password: pwd ?? AppGlobals.instance.defaultPwd,
-      );
-    } on Exception catch (error) {
-      return Future.error(error);
-    }
+    // SMB - Legacy, unused (now using API-based flow)
+    throw UnsupportedError('SMB-based getDirectoryList is no longer supported');
   }
 
   @override
@@ -59,16 +50,8 @@ class HomeScreenModels implements HomeRepo {
     String? userName,
     String? pwd,
   ) {
-    try {
-      return LanNetworkServiceImpl.instance.writeToSelectedFolder(
-        address: address,
-        fullPath: fullPath,
-        username: userName ?? AppGlobals.instance.defaultUserName,
-        password: pwd ?? AppGlobals.instance.defaultPwd,
-      );
-    } on Exception catch (error) {
-      return Future.error(error);
-    }
+    // SMB - Legacy, unused (now using API-based flow)
+    throw UnsupportedError('SMB-based connectAndWriteToFolder is no longer supported');
   }
 
   @override
@@ -78,18 +61,8 @@ class HomeScreenModels implements HomeRepo {
     String? userName,
     String? pwd,
   ) async {
-    try {
-      logger.d("Model SF Path: $fullPath");
-
-      return LanNetworkServiceImpl.instance.getShopfronts(
-        address: address,
-        fullPath: fullPath,
-        username: userName ?? AppGlobals.instance.defaultUserName,
-        password: pwd ?? AppGlobals.instance.defaultPwd,
-      );
-    } on Exception catch (error) {
-      return Future.error(error);
-    }
+    // SMB - Legacy, unused (now using API-based flow)
+    throw UnsupportedError('SMB-based fetchShopfronts is no longer supported');
   }
 
   @override
@@ -102,49 +75,8 @@ class HomeScreenModels implements HomeRepo {
     String mobileID,
     String mobileName,
   ) async {
-    try {
-      final String shopKey = selectedShopfront;
-
-      String? lastSyncTime = await LocalDbDAO.instance.getAppConfig(shopKey);
-
-      final String jsonContent = _StockRequestJsonBuilder.buildJson(
-        mobileID,
-        mobileName,
-        selectedShopfront,
-        lastSyncTime,
-      );
-
-      final now = DateTime.now();
-
-      String pad(int value) => value.toString().padLeft(2, '0');
-
-      final String timestamp =
-          "${now.year}"
-          "${pad(now.month)}"
-          "${pad(now.day)}"
-          "${pad(now.hour)}"
-          "${pad(now.minute)}"
-          "${pad(now.second)}";
-
-      final String fileName = "${mobileID}_request_$timestamp.json";
-
-      await LanNetworkServiceImpl.instance.sendStockRequest(
-        address: ipAddress,
-        fullPath: fullPath,
-        username: username ?? AppGlobals.instance.defaultUserName,
-        password: password ?? AppGlobals.instance.defaultPwd,
-        fileName: fileName,
-        fileContent: jsonContent,
-        mobileID: mobileID,
-      );
-
-      await LocalDbDAO.instance.updateShopfrontByIp(
-        ip: ipAddress,
-        selectedShopfront: selectedShopfront,
-      );
-    } on Exception catch (error) {
-      return Future.error(error);
-    }
+    // SMB - Legacy, unused (now using API-based flow)
+    throw UnsupportedError('SMB-based connectToShopfronts is no longer supported');
   }
 
   @override
@@ -154,16 +86,8 @@ class HomeScreenModels implements HomeRepo {
     String? userName,
     String? pwd,
   ) async {
-    try {
-      return LanNetworkServiceImpl.instance.isShopfrontsFileExists(
-        address: address,
-        fullPath: path,
-        username: userName ?? AppGlobals.instance.defaultUserName,
-        password: pwd ?? AppGlobals.instance.defaultPwd,
-      );
-    } on Exception catch (_) {
-      return false;
-    }
+    // SMB - Legacy, unused (now using API-based flow)
+    throw UnsupportedError('SMB-based isShopfrontFileExists is no longer supported');
   }
 
   @override

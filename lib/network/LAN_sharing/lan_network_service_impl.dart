@@ -1,11 +1,8 @@
-import 'dart:convert';
-import 'dart:typed_data';
-import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
 import 'package:rmstock_scanner/network/LAN_sharing/lan_network_service.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'dart:io';
-import 'package:smb_connect/smb_connect.dart';
+// import 'package:smb_connect/smb_connect.dart'; // SMB - Legacy, unused
 
 import '../../utils/log_utils.dart';
 
@@ -85,6 +82,11 @@ class LanNetworkServiceImpl implements LanNetworkService {
     }
   }
 
+  // ============================================================================
+  // LEGACY SMB METHODS - Commented out (no longer used with API-based flow)
+  // ============================================================================
+
+  /*
   @override
   Future<List<String>> getDirectoryListing({
     required String address,
@@ -755,4 +757,5 @@ class LanNetworkServiceImpl implements LanNetworkService {
       await connect.close();
     }
   }
+  */
 }

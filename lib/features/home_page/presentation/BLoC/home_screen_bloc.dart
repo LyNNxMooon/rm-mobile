@@ -8,7 +8,8 @@ import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_hos
 import 'package:rmstock_scanner/local_db/local_db_dao.dart';
 import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/authenticate_staff.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
+// SMB LEGACY - Commented out
+// import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_session.dart';
 import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_connection_info.dart';
@@ -26,15 +27,16 @@ import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen
 import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/delete_all_stocktake.dart';
-import '../../../../entities/vos/network_server_vo.dart';
+// SMB LEGACY imports - Commented out
+// import '../../../../entities/vos/network_server_vo.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
-import '../../domain/use_cases/auto_connect_to_default_folder.dart';
-import '../../domain/use_cases/connect_and_write_to_folder.dart';
-import '../../domain/use_cases/connect_to_shopfront.dart';
+// import '../../domain/use_cases/auto_connect_to_default_folder.dart';
+// import '../../domain/use_cases/connect_and_write_to_folder.dart';
+// import '../../domain/use_cases/connect_to_shopfront.dart';
 import '../../domain/use_cases/fetch_network_pcs.dart';
 import '../../domain/use_cases/fetch_stock_data.dart';
-import '../../domain/use_cases/get_to_shared_folder.dart';
+// import '../../domain/use_cases/get_to_shared_folder.dart';
 
 class FetchingNetworkServerBloc
     extends Bloc<HomeScreenEvents, FetchingNetworkServerStates> {
@@ -64,6 +66,11 @@ class FetchingNetworkServerBloc
   }
 }
 
+// ============================================================================
+// SMB LEGACY BLOCS - Commented out (no longer used with API-based flow)
+// ============================================================================
+
+/*
 class GettingDirectoryBloc
     extends Bloc<HomeScreenEvents, GettingDirectoryStates> {
   final GetToSharedFolder getToSharedFolder;
@@ -133,19 +140,21 @@ class ConnectingFolderBloc
     }
   }
 }
+*/
 
 class ShopfrontBloc extends Bloc<HomeScreenEvents, ShopFrontStates> {
-  final FetchShopfrontList fetchShopfrontList;
   final FetchShopfrontsFromApi fetchShopfrontsFromApi;
 
   ShopfrontBloc({
-    required this.fetchShopfrontList,
     required this.fetchShopfrontsFromApi,
   }) : super(ShopInitial()) {
-    on<FetchShops>(_onFetchShops);
+    // SMB LEGACY - _onFetchShops commented out
+    // on<FetchShops>(_onFetchShops);
     on<FetchShopsFromApi>(_onFetchShopsFromApi);
   }
 
+  /*
+  // SMB LEGACY - Commented out
   Future<void> _onFetchShops(
     FetchShops event,
     Emitter<ShopFrontStates> emit,
@@ -166,6 +175,7 @@ class ShopfrontBloc extends Bloc<HomeScreenEvents, ShopFrontStates> {
       emit(ShopsError("Error fetching shops: $error"));
     }
   }
+  */
 
   Future<void> _onFetchShopsFromApi(
     FetchShopsFromApi event,
@@ -188,17 +198,21 @@ class ShopfrontBloc extends Bloc<HomeScreenEvents, ShopFrontStates> {
 
 class ShopFrontConnectionBloc
     extends Bloc<HomeScreenEvents, ShopfrontConnectionStates> {
-  final ConnectToShopfront connectToShopfront;
+  // SMB LEGACY - ConnectToShopfront commented out
+  // final ConnectToShopfront connectToShopfront;
   final ConnectToShopfrontApi connectToShopfrontApi;
 
   ShopFrontConnectionBloc({
-    required this.connectToShopfront,
+    // required this.connectToShopfront,
     required this.connectToShopfrontApi,
   }) : super(ConnectionInitial()) {
-    on<ConnectToShopfrontEvent>(_onConnectToShopfront);
+    // SMB LEGACY - handler commented out
+    // on<ConnectToShopfrontEvent>(_onConnectToShopfront);
     on<ConnectToShopfrontApiEvent>(_onConnectToShopfrontApi);
   }
 
+  /*
+  // SMB LEGACY - Commented out
   Future<void> _onConnectToShopfront(
     ConnectToShopfrontEvent event,
     Emitter<ShopfrontConnectionStates> emit,
@@ -221,6 +235,7 @@ class ShopFrontConnectionBloc
       }
     }
   }
+  */
 
   Future<void> _onConnectToShopfrontApi(
     ConnectToShopfrontApiEvent event,
@@ -252,6 +267,11 @@ class ShopFrontConnectionBloc
   }
 }
 
+// ============================================================================
+// SMB LEGACY BLOC - Commented out (no longer used with API-based flow)
+// ============================================================================
+
+/*
 class AutoConnectionBloc extends Bloc<HomeScreenEvents, AutoConnectionStates> {
   final AutoConnectToDefaultFolder autoConnectToDefaultFolder;
 
@@ -285,6 +305,7 @@ class AutoConnectionBloc extends Bloc<HomeScreenEvents, AutoConnectionStates> {
     }
   }
 }
+*/
 
 class FetchStockBloc extends Bloc<FetchStockEvents, FetchStockStates> {
   final FetchStockData fetchStockData;

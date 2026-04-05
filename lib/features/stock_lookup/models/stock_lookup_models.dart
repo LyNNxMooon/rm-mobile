@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
@@ -9,14 +8,11 @@ import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
 import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
-import 'package:rmstock_scanner/network/LAN_sharing/lan_network_service_impl.dart';
 import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
 import '../../../entities/vos/filter_criteria.dart';
 import '../../../local_db/local_db_dao.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 class StockLookupModels implements StockLookupRepo {
   //Data manipulation can be done here (E.g. substituting data for null values returned from API)
@@ -226,46 +222,8 @@ class StockLookupModels implements StockLookupRepo {
     required String pictureFileName,
     bool forceRefresh = false,
   }) async {
-    try {
-      if (pictureFileName.isEmpty) return null;
-
-      final String thumbFileName = _toThumbName(pictureFileName);
-
-      final dir = await getTemporaryDirectory();
-      final String cacheDirPath = p.join(
-        dir.path,
-        "thumb_cache",
-        shopfrontName,
-      );
-      final String localPath = p.join(cacheDirPath, thumbFileName);
-
-      await Directory(cacheDirPath).create(recursive: true);
-
-      final localFile = File(localPath);
-
-      if (forceRefresh && await localFile.exists()) {
-        await localFile.delete();
-      }
-
-      if (await localFile.exists()) {
-        return localPath;
-      }
-
-      final Uint8List bytes = await LanNetworkServiceImpl.instance
-          .downloadFileBytes(
-            address: address,
-            fullPath: fullPath,
-            username: username ?? AppGlobals.instance.defaultUserName,
-            password: password ?? AppGlobals.instance.defaultPwd,
-            shopfrontName: shopfrontName,
-            thumbFileName: thumbFileName,
-          );
-
-      await localFile.writeAsBytes(bytes, flush: true);
-      return localPath;
-    } catch (error) {
-      return Future.error(error);
-    }
+    // SMB - Legacy, unused (now using API-based flow)
+    throw UnsupportedError('SMB-based fetchAndCacheThumbnailPath is no longer supported');
   }
 
   String _toThumbName(String pictureFileName) {
@@ -285,45 +243,8 @@ class StockLookupModels implements StockLookupRepo {
     required String pictureFileName,
     bool forceRefresh = false,
   }) async {
-    try {
-      if (pictureFileName.isEmpty) return null;
-
-      final dir = await getTemporaryDirectory();
-      final String cacheDirPath = p.join(
-        dir.path,
-        "fullimg_cache",
-        shopfrontName,
-      );
-      final String localPath = p.join(cacheDirPath, pictureFileName);
-
-      await Directory(cacheDirPath).create(recursive: true);
-
-      final localFile = File(localPath);
-
-      if (forceRefresh && await localFile.exists()) {
-        await localFile.delete();
-      }
-
-      if (await localFile.exists()) {
-        return localPath;
-      }
-
-      final Uint8List bytes = await LanNetworkServiceImpl.instance
-          .downloadFullImageBytes(
-            address: address,
-            fullPath: fullPath,
-            username: username ?? AppGlobals.instance.defaultUserName,
-            password: password ?? AppGlobals.instance.defaultPwd,
-            shopfrontName: shopfrontName,
-            pictureFileName: pictureFileName,
-          );
-
-      await localFile.writeAsBytes(bytes, flush: true);
-
-      return localPath;
-    } catch (error) {
-      return Future.error(error);
-    }
+    // SMB - Legacy, unused (now using API-based flow)
+    throw UnsupportedError('SMB-based fetchAndCacheFullImagePath is no longer supported');
   }
 
   @override

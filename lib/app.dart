@@ -98,12 +98,13 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<FetchingNetworkServerBloc>(
           create: (_) => sl<FetchingNetworkServerBloc>(),
         ),
-        BlocProvider<GettingDirectoryBloc>(
-          create: (_) => sl<GettingDirectoryBloc>(),
-        ),
-        BlocProvider<ConnectingFolderBloc>(
-          create: (_) => sl<ConnectingFolderBloc>(),
-        ),
+        // SMB LEGACY - Commented out
+        // BlocProvider<GettingDirectoryBloc>(
+        //   create: (_) => sl<GettingDirectoryBloc>(),
+        // ),
+        // BlocProvider<ConnectingFolderBloc>(
+        //   create: (_) => sl<ConnectingFolderBloc>(),
+        // ),
         BlocProvider<ShopfrontBloc>(create: (_) => sl<ShopfrontBloc>()),
         BlocProvider<ShopFrontConnectionBloc>(
           create: (_) => sl<ShopFrontConnectionBloc>(),
@@ -124,9 +125,10 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<StocktakeLimitBloc>(
           create: (_) => sl<StocktakeLimitBloc>(),
         ),
-        BlocProvider<AutoConnectionBloc>(
-          create: (_) => sl<AutoConnectionBloc>(),
-        ),
+        // SMB LEGACY - Commented out
+        // BlocProvider<AutoConnectionBloc>(
+        //   create: (_) => sl<AutoConnectionBloc>(),
+        // ),
         BlocProvider<FetchStockBloc>(create: (_) => sl<FetchStockBloc>()),
         BlocProvider<StockListBloc>(create: (_) => sl<StockListBloc>()),
         BlocProvider<FilterOptionsBloc>(create: (_) => sl<FilterOptionsBloc>()),

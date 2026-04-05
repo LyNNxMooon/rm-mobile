@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+// SMB LEGACY imports - No longer using BLoC for SMB retry
+// import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
-import '../../../../utils/global_var_utils.dart';
+// import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/responsive_utils.dart';
-import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
-import '../../../home_page/presentation/BLoC/home_screen_events.dart';
+// import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
+// import '../../../home_page/presentation/BLoC/home_screen_events.dart';
 
 class StockRequestErrorDialog extends StatefulWidget {
   const StockRequestErrorDialog({super.key, required this.message});
@@ -121,13 +122,13 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
-                        context.read<ShopFrontConnectionBloc>().add(
-                          ConnectToShopfrontEvent(
-                            ip: AppGlobals.instance.currentHostIp ?? "",
-                            shopName: AppGlobals.instance.shopfront ?? "",
-                          ),
-                        );
-
+                        // SMB LEGACY - ConnectToShopfrontEvent commented out
+                        // context.read<ShopFrontConnectionBloc>().add(
+                        //   ConnectToShopfrontEvent(
+                        //     ip: AppGlobals.instance.currentHostIp ?? "",
+                        //     shopName: AppGlobals.instance.shopfront ?? "",
+                        //   ),
+                        // );
                         context.navigateBack();
                       },
                       style: OutlinedButton.styleFrom(
@@ -138,7 +139,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
                         padding: EdgeInsets.symmetric(vertical: verticalPad),
                       ),
                       child: Text(
-                        "Retry as Guest",
+                        "Close",
                         style: TextStyle(
                           color: kPrimaryColor,
                           fontSize: 13,
@@ -152,14 +153,15 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        context.read<ShopFrontConnectionBloc>().add(
-                          ConnectToShopfrontEvent(
-                            ip: AppGlobals.instance.currentHostIp ?? "",
-                            shopName: AppGlobals.instance.shopfront ?? "",
-                            userName: _userNameController.text,
-                            pwd: _pwdController.text,
-                          ),
-                        );
+                        // SMB LEGACY - ConnectToShopfrontEvent commented out
+                        // context.read<ShopFrontConnectionBloc>().add(
+                        //   ConnectToShopfrontEvent(
+                        //     ip: AppGlobals.instance.currentHostIp ?? "",
+                        //     shopName: AppGlobals.instance.shopfront ?? "",
+                        //     userName: _userNameController.text,
+                        //     pwd: _pwdController.text,
+                        //   ),
+                        // );
                         context.navigateBack();
                       },
                       style: ElevatedButton.styleFrom(
@@ -172,7 +174,7 @@ class _StockRequestErrorDialogState extends State<StockRequestErrorDialog> {
                         padding: EdgeInsets.symmetric(vertical: verticalPad),
                       ),
                       child: Text(
-                        "Try Logging in",
+                        "Close",
                         style: TextStyle(
                           color: colors.onHero,
                           fontSize: 13,

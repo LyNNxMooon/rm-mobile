@@ -1,3 +1,8 @@
+// ============================================================================
+// SMB LEGACY - Commented out (no longer used with API-based flow)
+// ============================================================================
+
+/*
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/global_var_utils.dart';
@@ -57,3 +62,4 @@ class AutoConnectToDefaultFolder {
     }
   }
 }
+*/

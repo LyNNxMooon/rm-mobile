@@ -1,3 +1,8 @@
+// ============================================================================
+// SMB LEGACY - Commented out (no longer used with API-based flow)
+// ============================================================================
+
+/*
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 
 import '../../../../entities/vos/device_metedata_vo.dart';
@@ -66,3 +71,4 @@ class ConnectToShopfront {
     }
   }
 }
+*/

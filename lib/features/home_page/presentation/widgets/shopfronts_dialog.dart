@@ -349,16 +349,18 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                     height: 46,
                     child: OutlinedButton(
                       onPressed: () {
-                        context.read<ShopfrontBloc>().add(
-                          FetchShops(
-                            ipAddress: widget.pc.ipAddress,
-                            path: widget.previousPath,
-                          ),
-                        );
+                        // SMB LEGACY - FetchShops commented out
+                        // context.read<ShopfrontBloc>().add(
+                        //   FetchShops(
+                        //     ipAddress: widget.pc.ipAddress,
+                        //     path: widget.previousPath,
+                        //   ),
+                        // );
+                        Navigator.of(context).pop();
                       },
                       style: ModernDialogStyles.outlinedButtonStyle(context),
                       child: const Text(
-                        "Retry as Guest",
+                        "Close",
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -373,18 +375,20 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                     height: 46,
                     child: ElevatedButton(
                       onPressed: () {
-                        context.read<ShopfrontBloc>().add(
-                          FetchShops(
-                            ipAddress: widget.pc.ipAddress,
-                            path: widget.previousPath,
-                            userName: _userNameController.text,
-                            pwd: _pwdController.text,
-                          ),
-                        );
+                        // SMB LEGACY - FetchShops commented out
+                        // context.read<ShopfrontBloc>().add(
+                        //   FetchShops(
+                        //     ipAddress: widget.pc.ipAddress,
+                        //     path: widget.previousPath,
+                        //     userName: _userNameController.text,
+                        //     pwd: _pwdController.text,
+                        //   ),
+                        // );
+                        Navigator.of(context).pop();
                       },
                       style: ModernDialogStyles.primaryButtonStyle(context),
                       child: const Text(
-                        "Log In",
+                        "Close",
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,

@@ -1,12 +1,18 @@
+// ignore_for_file: unused_import
 import 'dart:typed_data';
 
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
-import 'package:smb_connect/smb_connect.dart';
+// import 'package:smb_connect/smb_connect.dart'; // SMB - Legacy, unused
 
 abstract class LanNetworkService {
   Future<List<NetworkServerVO>> scanNetwork();
 
+  // ============================================================================
+  // LEGACY SMB METHODS - Commented out (no longer used with API-based flow)
+  // ============================================================================
+
+  /*
   Future<List<String>> getDirectoryListing({
     required String address,
     required String path,
@@ -124,4 +130,5 @@ abstract class LanNetworkService {
     required String password,
     required String fileName,
   });
+  */
 }

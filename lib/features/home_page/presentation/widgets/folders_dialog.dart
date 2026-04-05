@@ -1,3 +1,8 @@
+// ============================================================================
+// SMB LEGACY UI - Commented out (no longer used with API-based flow)
+// ============================================================================
+
+/*
 import 'package:alert_info/alert_info.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -448,3 +453,4 @@ class _FoldersDialogState extends State<FoldersDialog> {
     );
   }
 }
+*/

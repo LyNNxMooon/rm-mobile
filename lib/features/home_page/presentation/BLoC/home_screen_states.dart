@@ -24,6 +24,11 @@ class ErrorFetchingNetworkServers extends FetchingNetworkServerStates {
   ErrorFetchingNetworkServers({required this.message});
 }
 
+// ============================================================================
+// SMB LEGACY STATES - Commented out (no longer used with API-based flow)
+// ============================================================================
+
+/*
 //directory fetching states
 abstract class GettingDirectoryStates {}
 
@@ -66,6 +71,7 @@ class ErrorConnectingFolder extends ConnectingFolderStates {
 
   ErrorConnectingFolder({required this.message});
 }
+*/
 
 //Fetching shopfronts
 abstract class ShopFrontStates {}

@@ -1,3 +1,8 @@
+// ============================================================================
+// SMB LEGACY - Commented out (no longer used with API-based flow)
+// ============================================================================
+
+/*
 import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 
@@ -49,3 +54,4 @@ class FetchShopfrontList {
     }
   }
 }
+*/

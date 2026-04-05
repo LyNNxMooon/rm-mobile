@@ -1,9 +1,7 @@
 import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
 
 import '../../../entities/response/validate_response.dart';
 import '../../../local_db/local_db_dao.dart';
-import '../../../network/LAN_sharing/lan_network_service_impl.dart';
 import '../../../network/data_agent/data_agent_impl.dart';
 
 class LoadingSplashModels implements LoadingSplashRepo {
@@ -14,16 +12,8 @@ class LoadingSplashModels implements LoadingSplashRepo {
     String? userName,
     String? pwd,
   ) async {
-    try {
-      return await LanNetworkServiceImpl.instance.writeToSelectedFolder(
-        address: ip,
-        fullPath: path,
-        username: userName ?? AppGlobals.instance.defaultUserName,
-        password: pwd ?? AppGlobals.instance.defaultPwd,
-      );
-    } on Exception catch (error) {
-      return Future.error(error);
-    }
+    // SMB - Legacy, unused (now using API-based flow)
+    throw UnsupportedError('SMB-based checksConnection is no longer supported');
   }
 
   @override

@@ -34,16 +34,19 @@ import 'package:rmstock_scanner/features/stocktake/domain/use_cases/load_backup_
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/restore_backup_session.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/send_final_stocktake_to_rm.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/use_cases/update_stock_count.dart';
-import '../features/home_page/domain/use_cases/auto_connect_to_default_folder.dart';
-import '../features/home_page/domain/use_cases/check_if_shopfront_file_exists.dart';
-import '../features/home_page/domain/use_cases/connect_and_write_to_folder.dart';
-import '../features/home_page/domain/use_cases/connect_to_shopfront.dart';
+// SMB LEGACY imports - Commented out
+// import '../features/home_page/domain/use_cases/auto_connect_to_default_folder.dart';
+// import '../features/home_page/domain/use_cases/check_if_shopfront_file_exists.dart';
+// import '../features/home_page/domain/use_cases/connect_and_write_to_folder.dart';
+// import '../features/home_page/domain/use_cases/connect_to_shopfront.dart';
 import '../features/home_page/domain/use_cases/connect_to_shopfront_api.dart';
 import '../features/home_page/domain/use_cases/fetch_network_pcs.dart';
-import '../features/home_page/domain/use_cases/fetch_shopfront_list.dart';
+// SMB LEGACY import - Commented out
+// import '../features/home_page/domain/use_cases/fetch_shopfront_list.dart';
 import '../features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
 import '../features/home_page/domain/use_cases/fetch_stock_data.dart';
-import '../features/home_page/domain/use_cases/get_to_shared_folder.dart';
+// SMB LEGACY import - Commented out
+// import '../features/home_page/domain/use_cases/get_to_shared_folder.dart';
 import '../features/home_page/domain/use_cases/get_pair_codes.dart';
 import '../features/home_page/models/home_screen_models.dart';
 import '../features/home_page/presentation/BLoC/home_screen_bloc.dart';
@@ -142,14 +145,16 @@ Future<void> init() async {
   ));
   sl.registerFactory(() => StocktakeBloc(countAndSaveToLocaldb: sl()));
   sl.registerFactory(() => FetchingNetworkServerBloc(fetchNetworkPcs: sl()));
-  sl.registerFactory(() => GettingDirectoryBloc(getToSharedFolder: sl()));
-  sl.registerFactory(() => ConnectingFolderBloc(connectAndWriteToFolder: sl()));
+  // SMB LEGACY - Commented out
+  // sl.registerFactory(() => GettingDirectoryBloc(getToSharedFolder: sl()));
+  // sl.registerFactory(() => ConnectingFolderBloc(connectAndWriteToFolder: sl()));
   sl.registerFactory(
-    () => ShopfrontBloc(fetchShopfrontList: sl(), fetchShopfrontsFromApi: sl()),
+    () => ShopfrontBloc(fetchShopfrontsFromApi: sl()),
   );
   sl.registerFactory(
     () => ShopFrontConnectionBloc(
-      connectToShopfront: sl(),
+      // SMB LEGACY - connectToShopfront commented out
+      // connectToShopfront: sl(),
       connectToShopfrontApi: sl(),
     ),
   );
@@ -168,9 +173,10 @@ Future<void> init() async {
     ),
   );
   sl.registerFactory(() => StocktakeLimitBloc(fetchStocktakeLimit: sl()));
-  sl.registerFactory(
-    () => AutoConnectionBloc(autoConnectToDefaultFolder: sl()),
-  );
+  // SMB LEGACY - Commented out
+  // sl.registerFactory(
+  //   () => AutoConnectionBloc(autoConnectToDefaultFolder: sl()),
+  // );
   sl.registerFactory(() => FetchStockBloc(fetchStockData: sl()));
   sl.registerFactory(() => StockListBloc(getPaginatedStock: sl()));
   sl.registerFactory(() => FilterOptionsBloc(getFilterOptions: sl()));
@@ -296,11 +302,13 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SaveSalesSetting());
   sl.registerLazySingleton(() => CountAndSaveToLocaldb(sl()));
   sl.registerLazySingleton(() => FetchNetworkPcs(sl()));
-  sl.registerLazySingleton(() => GetToSharedFolder(sl()));
-  sl.registerLazySingleton(() => ConnectAndWriteToFolder(sl()));
-  sl.registerLazySingleton(() => FetchShopfrontList(sl()));
+  // SMB LEGACY - Commented out
+  // sl.registerLazySingleton(() => GetToSharedFolder(sl()));
+  // sl.registerLazySingleton(() => ConnectAndWriteToFolder(sl()));
+  // sl.registerLazySingleton(() => FetchShopfrontList(sl()));
   sl.registerLazySingleton(() => FetchShopfrontsFromApi(sl()));
-  sl.registerLazySingleton(() => ConnectToShopfront(sl()));
+  // SMB LEGACY - Commented out
+  // sl.registerLazySingleton(() => ConnectToShopfront(sl()));
   sl.registerLazySingleton(() => ConnectToShopfrontApi(sl()));
   sl.registerLazySingleton(() => FetchSavedPaths(sl()));
   sl.registerLazySingleton(() => CheckPathConnection(sl()));
@@ -310,8 +318,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => HasUnsyncedStocktakes(sl()));
   sl.registerLazySingleton(() => DeleteStocktakeItem(sl()));
   sl.registerLazySingleton(() => DeleteAllStocktake(sl()));
-  sl.registerLazySingleton(() => AutoConnectToDefaultFolder(sl()));
-  sl.registerLazySingleton(() => CheckIfShopfrontFileExists(sl()));
+  // SMB LEGACY - Commented out
+  // sl.registerLazySingleton(() => AutoConnectToDefaultFolder(sl()));
+  // sl.registerLazySingleton(() => CheckIfShopfrontFileExists(sl()));
   sl.registerLazySingleton(() => FetchStockData(sl()));
   sl.registerLazySingleton(() => GetPaginatedStock(sl()));
   sl.registerLazySingleton(() => FetchCustomerData(sl()));

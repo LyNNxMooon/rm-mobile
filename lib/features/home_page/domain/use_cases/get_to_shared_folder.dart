@@ -1,3 +1,8 @@
+// ============================================================================
+// SMB LEGACY - Commented out (no longer used with API-based flow)
+// ============================================================================
+
+/*
 import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
 
@@ -50,3 +55,4 @@ class GetToSharedFolder {
     }
   }
 }
+*/
