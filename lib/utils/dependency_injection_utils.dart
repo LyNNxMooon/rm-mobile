@@ -97,11 +97,13 @@ import '../features/customer_lookup/presentation/BLoC/customer_create_bloc.dart'
 import '../features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
 import '../features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import '../features/stocktake/domain/use_cases/commit_stocktake.dart';
+import '../features/stocktake/domain/use_cases/batch_commit_stocktake.dart';
 import '../features/stocktake/domain/use_cases/count_and_save_to_localdb.dart';
 //import '../features/stocktake/domain/use_cases/fetch_all_stocktake_list.dart';
 import '../features/stocktake/domain/use_cases/fetch_counting_stock.dart';
 import '../features/stocktake/models/stocktake_model.dart';
 import '../features/stocktake/presentation/BLoC/stocktake_bloc.dart';
+import '../features/stocktake/presentation/BLoC/batch_commit_bloc.dart';
 import '../features/transactions/domain/repositories/sales_repo.dart';
 import '../features/transactions/domain/use_cases/search_stock_for_sale.dart';
 import '../features/transactions/domain/use_cases/search_customer_for_sale.dart';
@@ -204,6 +206,12 @@ Future<void> init() async {
   );
   sl.registerFactory(
     () => SendingFinalStocktakeBloc(sendFinalStocktakeToRm: sl()),
+  );
+  sl.registerFactory(
+    () => BatchCommitBloc(
+      batchCommitStocktake: sl(),
+      hasUnsyncedStocktakes: sl(),
+    ),
   );
   sl.registerFactory(() => ThumbnailBloc(fetchThumbnail: sl()));
   sl.registerFactory(() => FullImageBloc(fetchFullImage: sl()));
@@ -315,6 +323,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeleteSavedPath(sl()));
   //sl.registerLazySingleton(() => FetchAllStocktakeList(sl()));
   sl.registerLazySingleton(() => CommitStocktake(sl()));
+  sl.registerLazySingleton(() => BatchCommitStocktake(sl()));
   sl.registerLazySingleton(() => HasUnsyncedStocktakes(sl()));
   sl.registerLazySingleton(() => DeleteStocktakeItem(sl()));
   sl.registerLazySingleton(() => DeleteAllStocktake(sl()));

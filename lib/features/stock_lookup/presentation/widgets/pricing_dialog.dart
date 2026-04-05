@@ -813,16 +813,18 @@ class _PricingDialogState extends State<PricingDialog> {
         : Colors.grey.shade600;
     
     return Row(
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          _getLevelLabel(),
-          style: TextStyle(
-            fontSize: fontSize,
-            color: textColor,
-            fontWeight: FontWeight.w700,
-            height: 1.0,
+        Flexible(
+          child: Text(
+            _getLevelLabel(),
+            style: TextStyle(
+              fontSize: fontSize,
+              color: textColor,
+              fontWeight: FontWeight.w700,
+              height: 1.0,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         SizedBox(width: isTablet ? 8 : 6),

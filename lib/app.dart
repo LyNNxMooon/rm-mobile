@@ -13,6 +13,7 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/batch_commit_bloc.dart';
 //import 'package:rmstock_scanner/features/stocktake/presentation/screens/scanner_screen.dart';
 import 'package:rmstock_scanner/utils/dependency_injection_utils.dart';
 import 'package:rmstock_scanner/utils/log_utils.dart';
@@ -118,6 +119,9 @@ class _MyAppState extends State<MyApp> {
         ),
         BlocProvider<CommittingStocktakeBloc>(
           create: (_) => sl<CommittingStocktakeBloc>(),
+        ),
+        BlocProvider<BatchCommitBloc>(
+          create: (_) => sl<BatchCommitBloc>(),
         ),
         BlocProvider<StocktakeDeleteBloc>(
           create: (_) => sl<StocktakeDeleteBloc>(),

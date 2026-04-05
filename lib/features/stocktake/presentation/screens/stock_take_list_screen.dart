@@ -8,9 +8,10 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/batch_commit_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/edit_qty_dialog.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/empty_stock_state_widget.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmstock_scanner/features/stocktake/presentation/widgets/batch_commit_progress_widget.dart';
 import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/utils/transaction_type_helper.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -23,7 +24,7 @@ import '../../../../utils/dialog_size_utils.dart';
 import '../BLoC/stocktake_events.dart';
 import '../BLoC/stocktake_states.dart';
 import '../widgets/filter_dialog.dart';
-import '../widgets/loading_stocktake_dialog.dart';
+//import '../widgets/loading_stocktake_dialog.dart';
 import '../widgets/stocktake_commit_error_dialog.dart';
 import '../widgets/stocktake_list_app_bar.dart';
 import '../widgets/stocktake_search_and_filter_bar.dart';
@@ -57,7 +58,8 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
 
   Future<void> _handleSendToRM() async {
     if (mounted) {
-      context.read<CommittingStocktakeBloc>().add(CommittingStocktakeEvent());
+      // Use batch commit for processing stocktake in chunks of 5000
+      context.read<BatchCommitBloc>().add(StartBatchCommitEvent());
     }
   }
 
@@ -112,7 +114,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
               const StocktakeListAppBar(),
               const StocktakeValidationInfo(),
               const StocktakeTrialLimitInfo(),
-              finalStocktakeLoading(),
+              const BatchCommitProgressWidget(),
               const SizedBox(height: 6),
               StocktakeSearchAndFilterBar(
                 onChanged: (value) {
@@ -285,54 +287,42 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
 
   Widget _buildSubmitFAB() {
     final colors = context.appColors;
-    return MultiBlocListener(
-      listeners: [
-        BlocListener<CommittingStocktakeBloc, CommitingStocktakeStates>(
-          listener: (context, state) {
-            if (state is LoadingToCommitStocktake) {
-              showDialog(
-                context: context,
-                //barrierDismissible: false,
-                builder: (_) => const LoadingStocktakeDialog(),
-              );
-            } else if (state is ErrorCommitingStocktake) {
-              context.navigateBack();
-              context.read<StocktakeLimitBloc>().add(
-                FetchStocktakeLimitEvent(),
-              );
-              _showError(state.message);
-            } else if (state is CommittedStocktake) {
-              context.navigateBack();
-              showTopSnackBar(
-                Overlay.of(context),
-                CustomSnackBar.info(message: state.message),
-              );
-              // Trigger Validation after successful initial commit
-              context.read<StocktakeValidationBloc>().add(
-                StartStocktakeValidationEvent(),
-              );
-            }
-          },
-        ),
-        BlocListener<StocktakeValidationBloc, StocktakeValidationState>(
-          listener: (context, state) {
-            if (state is StocktakeValidationError) {
-              _showError(state.message);
-            } else if (state is StocktakeValidationHasAudits) {
-              showDialog(
-                context: context,
-               //barrierDismissible: false,
-
-                builder: (_) => _buildValidationDialog(state),
-              );
-            } else if (state is StocktakeValidationClear) {
-              context.read<SendingFinalStocktakeBloc>().add(
-                SendingFinalStocktakeEvent([]),
-              );
-            }
-          },
-        ),
-      ],
+    
+    return BlocListener<BatchCommitBloc, BatchCommitState>(
+      listener: (context, state) {
+        if (state is BatchCommitAwaitingAuditDecision) {
+          // Show audit decision dialog for current batch
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => _buildBatchValidationDialog(state),
+          );
+        } else if (state is BatchCommitEmpty) {
+          _showError("No unsynced stocks found.");
+        } else if (state is BatchCommitFailed) {
+          context.read<StocktakeLimitBloc>().add(FetchStocktakeLimitEvent());
+          _showError(state.message);
+        } else if (state is BatchCommitCompleted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => StocktakeSuccessDialog(
+              message: "Stocktake data sent to RetailManager! Please navigate to Stock Management -> Stocktake -> Run Discrepancy Report and Commit the Stocktake.",
+              onOkayPressed: () {
+                Navigator.of(context).pop();
+                context.read<FetchingStocktakeListBloc>().add(
+                  FetchStocktakeListEvent(reset: true),
+                );
+                context.read<StocktakeLimitBloc>().add(
+                  FetchStocktakeLimitEvent(),
+                );
+                // Reset batch commit bloc state
+                context.read<BatchCommitBloc>().add(CancelBatchCommitEvent());
+              },
+            ),
+          );
+        }
+      },
       child: FloatingActionButton.extended(
         onPressed: _handleSendToRM,
         elevation: 4,
@@ -685,6 +675,181 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  /// Validation dialog specifically for batch commit mode
+  Widget _buildBatchValidationDialog(BatchCommitAwaitingAuditDecision state) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final double safeMaxHeight = MediaQuery.of(context).size.height * 0.7;
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: isDark
+            ? const BorderSide(color: Colors.white30, width: 1)
+            : BorderSide.none,
+      ),
+      backgroundColor: isDark ? colors.surfaceAlt : colors.surface,
+      titlePadding: EdgeInsets.zero,
+      insetPadding: dialogInsetPadding(context),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+      title: _buildBatchDialogHeader(state),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                "The following items in batch ${state.currentBatchNumber} were modified recently. How would you like to proceed?",
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                ),
+              ),
+            ),
+
+            Flexible(
+              child: Container(
+                constraints: BoxConstraints(maxHeight: safeMaxHeight),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isDark ? Colors.white24 : colors.divider,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: state.audits.length,
+                  separatorBuilder: (_, _) =>
+                      const Divider(height: 1, indent: 60),
+                  itemBuilder: (context, i) => _buildAuditTile(state.audits[i]),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 20),
+      actions: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  // Apply adjustments for this batch
+                  context.read<BatchCommitBloc>().add(
+                    ResolveBatchAuditsEvent(applyAdjustments: true),
+                  );
+                  Navigator.pop(context);
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(color: kPrimaryColor),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  "Adjust & Commit",
+                  style: TextStyle(
+                    color: kPrimaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  // Ignore adjustments for this batch
+                  context.read<BatchCommitBloc>().add(
+                    ResolveBatchAuditsEvent(applyAdjustments: false),
+                  );
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kPrimaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  "Ignore & Commit",
+                  style: TextStyle(
+                    color: colors.onHero,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Dialog header for batch commit mode with batch info
+  Widget _buildBatchDialogHeader(BatchCommitAwaitingAuditDecision state) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+      decoration: BoxDecoration(
+        color: isDark ? colors.surfaceAlt : const Color(0xFFFFF4E5),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? Colors.white24 : Colors.orange.withOpacity(0.2),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: Colors.orange,
+            child: Icon(
+              Icons.warning_amber_rounded,
+              color: colors.onHero,
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Transactions Detected",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF663C00),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "Batch ${state.currentBatchNumber} of ${state.totalBatches}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white70 : const Color(0xFF996600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
