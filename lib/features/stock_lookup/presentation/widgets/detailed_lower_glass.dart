@@ -37,6 +37,7 @@ class DetailedLowerGlass extends StatefulWidget {
     this.pricingGradesStock,
     this.pricingGradesCategories,
     this.pricingGradesGlobal,
+    this.onFocusNodesReady,
   });
 
   final double sell;
@@ -56,6 +57,8 @@ class DetailedLowerGlass extends StatefulWidget {
   final PricingGrades? pricingGradesStock;
   final PricingGrades? pricingGradesCategories;
   final PricingGrades? pricingGradesGlobal;
+  /// Callback to expose the focus nodes for iOS Done Bar integration
+  final void Function(List<FocusNode> focusNodes)? onFocusNodesReady;
 
   @override
   State<DetailedLowerGlass> createState() => _DetailedLowerGlassState();
@@ -80,6 +83,11 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     _rrpController.addListener(_onIncChanged);
     _exRrpController.addListener(_onExChanged);
     super.initState();
+    
+    // Notify parent about focus nodes for iOS Done Bar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onFocusNodesReady?.call([_rrpFocus, _exRrpFocus]);
+    });
   }
 
   @override
@@ -306,6 +314,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                                 enabled: widget.canUpdateSellPrice,
                                 controller: _exRrpController,
                                 focusNode: _exRrpFocus,
+                                scrollPhysics: const ClampingScrollPhysics(),
                                 keyboardType: const TextInputType.numberWithOptions(
                                   decimal: true,
                                 ),
@@ -338,6 +347,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                                   enabled: widget.canUpdateSellPrice,
                                   controller: _exRrpController,
                                   focusNode: _exRrpFocus,
+                                  scrollPhysics: const ClampingScrollPhysics(),
                                   keyboardType: const TextInputType.numberWithOptions(
                                     decimal: true,
                                   ),
@@ -405,6 +415,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                                 ),
                                 controller: _rrpController,
                                 focusNode: _rrpFocus,
+                                scrollPhysics: const ClampingScrollPhysics(),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: onGlass,
@@ -437,6 +448,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                                   ),
                                   controller: _rrpController,
                                   focusNode: _rrpFocus,
+                                  scrollPhysics: const ClampingScrollPhysics(),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: onGlass,

@@ -8,6 +8,7 @@ import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_b
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
 import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
+import 'package:rmstock_scanner/utils/ios_done_bar.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 
 class StockDetailsDialog extends StatelessWidget {
@@ -209,24 +210,28 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // --- HEADER ---
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: SingleChildScrollView(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  "Stock Details",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: kPrimaryColor,
-                  ),
-                ),
-                const SizedBox(height: 5),
+                // --- HEADER ---
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                  child: Column(
+                    children: [
+                      Text(
+                        "Stock Details",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: kPrimaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
                 Text(
                   widget.stock.description,
                   textAlign: TextAlign.center,
@@ -426,8 +431,17 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
               ],
             ),
           ),
-        ],
-      ),
+              ],
+            ),
+          ),
+        ),
+        IosDoneBar(
+          focusNode: _focusNode,
+          onDone: () {
+            _focusNode.unfocus();
+          },
+        ),
+      ],
     );
   }
 

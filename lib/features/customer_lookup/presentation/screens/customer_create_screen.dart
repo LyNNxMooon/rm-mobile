@@ -13,6 +13,7 @@ import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/custo
 import 'package:rmstock_scanner/utils/global_var_utils.dart';
 import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
+import 'package:rmstock_scanner/utils/ios_done_bar.dart';
 
 class CustomerCreateScreen extends StatefulWidget {
   final PendingCustomerCreationVO? pendingCreation;
@@ -158,6 +159,12 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   late TextEditingController _ownerIdController;
   late TextEditingController _defaultDeliveryAddressController;
   late TextEditingController _documentDeliveryTypeController;
+
+  // Focus nodes for numeric fields (iOS Done Bar)
+  final FocusNode _postcodeFocusNode = FocusNode();
+  final FocusNode _daysFocusNode = FocusNode();
+  final FocusNode _limitFocusNode = FocusNode();
+  final FocusNode _abnFocusNode = FocusNode();
 
   late Map<int, _AddressControllers> _secondaryAddressControllers;
 
@@ -418,6 +425,12 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
 
     _openedStaffLookupDebounce?.cancel();
     _ownerStaffLookupDebounce?.cancel();
+
+    // Dispose focus nodes for numeric fields
+    _postcodeFocusNode.dispose();
+    _daysFocusNode.dispose();
+    _limitFocusNode.dispose();
+    _abnFocusNode.dispose();
 
     for (final address in _secondaryAddressControllers.values) {
       address.dispose();
@@ -762,6 +775,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     String? Function(String?)? validator,
     String? hintText,
     List<TextInputFormatter>? inputFormatters,
+    FocusNode? focusNode,
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
@@ -789,8 +803,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
             flex: 4,
             child: TextFormField(
               controller: controller,
+              focusNode: focusNode,
               keyboardType: keyboardType,
               maxLines: maxLines,
+              scrollPhysics: const ClampingScrollPhysics(),
               style: TextStyle(
                 fontSize: baseSize,
                 color: isDark ? colors.onSurface : Colors.black87,
@@ -1368,6 +1384,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                   "Postcode",
                                   _postcodeController,
                                   keyboardType: TextInputType.number,
+                                  focusNode: _postcodeFocusNode,
                                 ),
                                 _buildEditRow("Country", _countryController),
                                 const SizedBox(height: 8),
@@ -1411,6 +1428,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                   "Days",
                                   _daysController,
                                   keyboardType: TextInputType.number,
+                                  focusNode: _daysFocusNode,
                                 ),
                                 _buildEditRow(
                                   "Limit",
@@ -1419,6 +1437,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                       const TextInputType.numberWithOptions(
                                         decimal: true,
                                       ),
+                                  focusNode: _limitFocusNode,
                                 ),
                                 _buildStaffLookupRow(
                                   label: "Opened By (Staff No)",
@@ -1441,6 +1460,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                   _abnController,
                                   keyboardType: TextInputType.number,
                                   inputFormatters: [_AbnInputFormatter()],
+                                  focusNode: _abnFocusNode,
                                 ),
                                 _buildSwitchRow("Overseas", _overseasValue, (
                                   val,
@@ -1553,6 +1573,20 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                         ),
                       ),
                     ),
+                  ),
+                  IosDoneBarMulti(
+                    focusNodes: [
+                      _postcodeFocusNode,
+                      _daysFocusNode,
+                      _limitFocusNode,
+                      _abnFocusNode,
+                    ],
+                    onDone: () {
+                      _postcodeFocusNode.unfocus();
+                      _daysFocusNode.unfocus();
+                      _limitFocusNode.unfocus();
+                      _abnFocusNode.unfocus();
+                    },
                   ),
                 ],
               ),

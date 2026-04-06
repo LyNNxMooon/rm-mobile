@@ -453,6 +453,7 @@ class _PricingDialogState extends State<PricingDialog> {
             height: double.infinity,
             child: TextField(
               controller: row.controller,
+              scrollPhysics: const ClampingScrollPhysics(),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               style: TextStyle(
                 fontSize: textSize,
@@ -584,6 +585,7 @@ class _PricingDialogState extends State<PricingDialog> {
                 height: inputHeight,
                 child: TextField(
                   controller: row.controller,
+                  scrollPhysics: const ClampingScrollPhysics(),
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   style: TextStyle(

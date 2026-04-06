@@ -11,6 +11,7 @@ import '../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
+import '../../../../utils/ios_done_bar.dart';
 import '../../../../utils/responsive_utils.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
@@ -26,6 +27,7 @@ class StaffLoginScreen extends StatefulWidget {
 class _StaffLoginScreenState extends State<StaffLoginScreen> {
   final TextEditingController _staffNoController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final FocusNode _staffNoFocusNode = FocusNode();
 
   int? _port;
   String _apiKey = "";
@@ -42,6 +44,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
   void dispose() {
     _staffNoController.dispose();
     _passwordController.dispose();
+    _staffNoFocusNode.dispose();
     super.dispose();
   }
 
@@ -138,8 +141,11 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
         body: Container(
           decoration: BoxDecoration(gradient: colors.heroGradient),
           child: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 22,
                   vertical: 16,
@@ -244,6 +250,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                   height: inputHeight,
                                   child: CustomTextField(
                                     controller: _staffNoController,
+                                    focusNode: _staffNoFocusNode,
                                     keyboardType: TextInputType.number,
                                     hintText: "Staff ID",
                                     leadingIcon: Icons.badge_outlined,
@@ -337,7 +344,16 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                     const SizedBox(height: 10),
                   ],
                 ),
-              ),
+                    ),
+                  ),
+                ),
+                IosDoneBar(
+                  focusNode: _staffNoFocusNode,
+                  onDone: () {
+                    _staffNoFocusNode.unfocus();
+                  },
+                ),
+              ],
             ),
           ),
         ),

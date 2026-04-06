@@ -85,6 +85,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       obscureText: widget.obscureText,
       textInputAction: widget.textInputAction,
       focusNode: _effectiveFocusNode,
+      scrollPhysics: const ClampingScrollPhysics(),
       onChanged: widget.function,
       onSubmitted: (value) {
         _trimText();

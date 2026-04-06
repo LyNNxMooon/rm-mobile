@@ -308,6 +308,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                             height: isTablet ? 48 : 38,
                             child: TextField(
                               controller: priceController,
+                              scrollPhysics: const ClampingScrollPhysics(),
                               keyboardType: const TextInputType.numberWithOptions(
                                 signed: true,
                                 decimal: true,
@@ -693,6 +694,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     final textField = TextField(
       controller: controller,
       enabled: enabled,
+      scrollPhysics: const ClampingScrollPhysics(),
       keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
       textAlign: textAlign,
       textAlignVertical: TextAlignVertical.center,
@@ -770,6 +772,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     final fieldHeight = isTablet ? 52.0 : 32.0;
     final textField = TextField(
       controller: _descriptionController,
+      scrollPhysics: const ClampingScrollPhysics(),
       textAlignVertical: TextAlignVertical.center,
       maxLines: 1,
       minLines: 1,

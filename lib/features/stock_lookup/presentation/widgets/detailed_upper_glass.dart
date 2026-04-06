@@ -290,6 +290,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                               height: customFieldHeight,
                               child: TextField(
                                 controller: widget.custom1Controller,
+                                scrollPhysics: const ClampingScrollPhysics(),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: onGlass,
@@ -342,6 +343,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                                 height: customFieldHeight,
                                 child: TextField(
                                   controller: widget.custom1Controller,
+                                  scrollPhysics: const ClampingScrollPhysics(),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: onGlass,
@@ -430,6 +432,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                               height: customFieldHeight,
                               child: TextField(
                                 controller: widget.custom2Controller,
+                                scrollPhysics: const ClampingScrollPhysics(),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: onGlass,
@@ -482,6 +485,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                                 height: customFieldHeight,
                                 child: TextField(
                                   controller: widget.custom2Controller,
+                                  scrollPhysics: const ClampingScrollPhysics(),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: onGlass,

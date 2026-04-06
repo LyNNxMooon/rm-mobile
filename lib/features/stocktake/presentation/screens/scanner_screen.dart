@@ -638,6 +638,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   child: TextField(
                     controller: _bcController,
                     focusNode: txtFieldFocusNode,
+                    scrollPhysics: const ClampingScrollPhysics(),
                     style: TextStyle(
                       color: isDark ? Colors.white : Colors.black87,
                       fontSize: 14,
@@ -719,6 +720,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             child: TextField(
               controller: qtyController,
               focusNode: qtyFocusNode,
+              scrollPhysics: const ClampingScrollPhysics(),
               style: TextStyle(
                 color: isDark ? Colors.white : Colors.black87,
                 fontSize: 14,

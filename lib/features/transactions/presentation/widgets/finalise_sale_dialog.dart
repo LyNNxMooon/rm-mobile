@@ -234,6 +234,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
                       child: TextField(
                         controller: controller,
                         autofocus: true,
+                        scrollPhysics: const ClampingScrollPhysics(),
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
@@ -792,6 +793,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
         TextField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
+          scrollPhysics: const ClampingScrollPhysics(),
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black87,
             fontSize: 15,

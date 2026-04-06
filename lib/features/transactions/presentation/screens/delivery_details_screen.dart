@@ -692,6 +692,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
       child: TextField(
         controller: _customerSearchController,
         autofocus: true,
+        scrollPhysics: const ClampingScrollPhysics(),
         style: TextStyle(
           color: isDark ? Colors.white : Colors.black87,
           fontSize: 14,
@@ -911,6 +912,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
       child: TextField(
         controller: controller,
         readOnly: readOnly,
+        scrollPhysics: const ClampingScrollPhysics(),
         style: TextStyle(
           color: isDark ? Colors.white : Colors.black87,
           fontSize: 14,

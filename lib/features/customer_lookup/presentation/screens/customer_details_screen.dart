@@ -823,6 +823,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   controller: controller,
                   keyboardType: keyboardType,
                   maxLines: maxLines,
+                  scrollPhysics: const ClampingScrollPhysics(),
                   style: TextStyle(
                     fontSize: baseSize,
                     color: isDark ? colors.onSurface : Colors.black87,

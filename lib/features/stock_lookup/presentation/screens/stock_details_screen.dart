@@ -33,6 +33,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/images.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../utils/ios_done_bar.dart';
 import '../../../../utils/responsive_utils.dart';
 import '../../../../utils/tax_calculation_utils.dart';
 import '../widgets/detailed_lower_glass.dart';
@@ -64,6 +65,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   late final LanguageToolController _descriptionController;
   late final TextEditingController _custom1Controller;
   late final TextEditingController _custom2Controller;
+  List<FocusNode> _priceFocusNodes = [];
 
   @override
   void initState() {
@@ -637,25 +639,28 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
           body: SafeArea(
             bottom: false,
             top: false,
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                gradient: isDark ? colors.heroGradient : kGColor,
-              ),
-              child: Stack(
-                children: [
-                  ListView(
-                    padding: EdgeInsets.zero,
-                    children: [
-                      Hero(
-                        tag: 'stock_image_${widget.stock.stockID}',
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: imageBackground,
-                            borderRadius: const BorderRadius.only(
-                              bottomRight: Radius.circular(20),
-                              bottomLeft: Radius.circular(20),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: isDark ? colors.heroGradient : kGColor,
+                    ),
+                    child: Stack(
+                      children: [
+                        ListView(
+                          padding: EdgeInsets.zero,
+                          children: [
+                            Hero(
+                              tag: 'stock_image_${widget.stock.stockID}',
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: imageBackground,
+                                  borderRadius: const BorderRadius.only(
+                                    bottomRight: Radius.circular(20),
+                                    bottomLeft: Radius.circular(20),
                             ),
                           ),
                           width: double.infinity,
@@ -820,15 +825,34 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           pricingGradesStock: widget.stock.pricingGradesStock,
                           pricingGradesCategories: widget.stock.pricingGradesCategories,
                           pricingGradesGlobal: widget.stock.pricingGradesGlobal,
+                          onFocusNodesReady: (nodes) {
+                            setState(() {
+                              _priceFocusNodes = nodes;
+                            });
+                          },
                         ),
                       ),
 
                       SizedBox(height: bottomGap),
+                        ],
+                      ),
+                      topIconsRow(),
                     ],
                   ),
-                  topIconsRow(),
-                ],
+                ),
               ),
+              IosDoneBarMulti(
+                focusNodes: _priceFocusNodes,
+                onDone: () {
+                  for (final node in _priceFocusNodes) {
+                    if (node.hasFocus) {
+                      node.unfocus();
+                      break;
+                    }
+                  }
+                },
+              ),
+              ],
             ),
           ),
         ),
