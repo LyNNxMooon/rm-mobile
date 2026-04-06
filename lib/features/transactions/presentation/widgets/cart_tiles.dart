@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -234,15 +235,15 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(6),
-                  child: widget.item.stock?.imageUrl != null
-                      ? Image.network(
-                          widget.item.stock!.imageUrl!,
+                  child: widget.item.stock?.imageUrl != null &&
+                          widget.item.stock!.imageUrl!.trim().isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: widget.item.stock!.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Image.asset(
-                                overviewPlaceholder,
-                                fit: BoxFit.fill,
-                              ),
+                          placeholder: (_, _) =>
+                              Image.asset(overviewPlaceholder, fit: BoxFit.fill),
+                          errorWidget: (_, _, _) =>
+                              Image.asset(overviewPlaceholder, fit: BoxFit.fill),
                         )
                       : Image.asset(overviewPlaceholder, fit: BoxFit.fill),
                 ),
@@ -899,11 +900,14 @@ class MobileCartTile extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: item.stock?.imageUrl != null
-                  ? Image.network(
-                      item.stock!.imageUrl!,
+              child: item.stock?.imageUrl != null &&
+                      item.stock!.imageUrl!.trim().isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: item.stock!.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
+                      placeholder: (_, _) =>
+                          Image.asset(overviewPlaceholder, fit: BoxFit.fill),
+                      errorWidget: (_, _, _) =>
                           Image.asset(overviewPlaceholder, fit: BoxFit.fill),
                     )
                   : Image.asset(overviewPlaceholder, fit: BoxFit.fill),
@@ -1043,11 +1047,14 @@ class TabletCartTile extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: item.stock?.imageUrl != null
-                  ? Image.network(
-                      item.stock!.imageUrl!,
+              child: item.stock?.imageUrl != null &&
+                      item.stock!.imageUrl!.trim().isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: item.stock!.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
+                      placeholder: (_, _) =>
+                          Image.asset(overviewPlaceholder, fit: BoxFit.fill),
+                      errorWidget: (_, _, _) =>
                           Image.asset(overviewPlaceholder, fit: BoxFit.fill),
                     )
                   : Image.asset(overviewPlaceholder, fit: BoxFit.fill),
