@@ -310,15 +310,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       final effectiveResult = stock.getEffectiveSellPrice(customerGrade);
       final double effectiveSell = effectiveResult.price;
       
-      // For package items, use sell_ex/sell_inc directly
-      if (stock.isPackage && stock.sellEx != null && stock.sellInc != null) {
-        incPrice = stock.sellInc!;
-        exPrice = stock.sellEx!;
-        // Calculate percentage from prices
-        taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
-        taxType = 2; // Inc-tax base
-      } else if (effectiveResult.isPricingGradeApplied) {
-        // Pricing grade prices are already inc-tax
+      if (effectiveResult.isPricingGradeApplied) {
+        // Pricing grade prices are already inc-tax (applies to both package and normal items)
         // Get tax percentage from tax tables, then calculate ex-tax from inc
         final taxResult = await TaxCalculationUtils.calculateSellTax(
           sell: stock.sell,
@@ -331,6 +324,13 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         incPrice = effectiveSell;
         final multiplier = 1 + (taxPercentage / 100);
         exPrice = taxPercentage > 0 ? effectiveSell / multiplier : effectiveSell;
+      } else if (stock.isPackage && stock.sellEx != null && stock.sellInc != null) {
+        // Package items with no pricing grade: use sell_ex/sell_inc directly
+        incPrice = stock.sellInc!;
+        exPrice = stock.sellEx!;
+        // Calculate percentage from prices
+        taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
+        taxType = 2; // Inc-tax base
       } else {
         // Regular items - calculate using tax tables with base sell price
         final taxResult = await TaxCalculationUtils.calculateSellTax(
@@ -579,11 +579,6 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       
       if (stock == null) continue; // Skip items without stock reference
       
-      // Skip package items as they have fixed pricing
-      if (stock.isPackage && stock.sellEx != null && stock.sellInc != null) {
-        continue;
-      }
-      
       // Get effective sell price based on customer grade
       final effectiveResult = stock.getEffectiveSellPrice(customerGrade);
       final double effectiveSell = effectiveResult.price;
@@ -594,7 +589,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       int taxType;
       
       if (effectiveResult.isPricingGradeApplied) {
-        // Pricing grade prices are already inc-tax
+        // Pricing grade prices are already inc-tax (applies to both package and normal items)
         // Get tax percentage from tax tables, then calculate ex-tax from inc
         final taxResult = await TaxCalculationUtils.calculateSellTax(
           sell: stock.sell,
@@ -607,6 +602,12 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         incPrice = effectiveSell;
         final multiplier = 1 + (taxPercentage / 100);
         exPrice = taxPercentage > 0 ? effectiveSell / multiplier : effectiveSell;
+      } else if (stock.isPackage && stock.sellEx != null && stock.sellInc != null) {
+        // Package items with no pricing grade: keep original sellInc/sellEx
+        incPrice = stock.sellInc!;
+        exPrice = stock.sellEx!;
+        taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
+        taxType = 2;
       } else {
         // Regular RRP - calculate using tax tables
         final taxResult = await TaxCalculationUtils.calculateSellTax(

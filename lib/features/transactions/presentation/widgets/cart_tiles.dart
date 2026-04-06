@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart' show CupertinoPicker;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:rmstock_scanner/utils/tax_calculation_utils.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/images.dart';
@@ -203,6 +205,230 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     widget.onQtyChanged(newQty);
   }
 
+  Future<void> _showPricingGradeDialog() async {
+    final stock = widget.item.stock;
+    if (stock == null) {
+      return;
+    }
+
+    final List<String> grades = const ['Def', 'A', 'B', 'C', 'D'];
+    int selectedIndex = 0;
+    final TextEditingController priceController = TextEditingController();
+
+    Future<void> updatePriceForGrade(int gradeIndex) async {
+      final gradeInt = gradeIndex.clamp(0, grades.length - 1);
+      final result = stock.getEffectiveSellPrice(gradeInt);
+      final double effectiveSell = result.price;
+
+      double incPrice;
+      double exPrice;
+
+      if (result.isPricingGradeApplied) {
+        // Pricing grade prices are already inc-tax
+        final taxResult = await TaxCalculationUtils.calculateSellTax(
+          sell: stock.sell,
+          salesTax: stock.salesTax,
+        );
+        final double taxPercentage = taxResult.percentage;
+        incPrice = effectiveSell;
+        final multiplier = 1 + (taxPercentage / 100);
+        exPrice = taxPercentage > 0 ? effectiveSell / multiplier : effectiveSell;
+      } else if (stock.isPackage && stock.sellEx != null && stock.sellInc != null) {
+        // Package items with no pricing grade: use sell_ex/sell_inc directly
+        incPrice = stock.sellInc!;
+        exPrice = stock.sellEx!;
+      } else {
+        final taxResult = await TaxCalculationUtils.calculateSellTax(
+          sell: effectiveSell,
+          salesTax: stock.salesTax,
+        );
+        incPrice = taxResult.incPrice;
+        exPrice = taxResult.exPrice;
+      }
+
+      final displayPrice = widget.isIncTax ? incPrice : exPrice;
+      priceController.text = _formatSellPrice(displayPrice);
+    }
+
+    // Initialize with Def price from stock pricing hierarchy
+    await updatePriceForGrade(selectedIndex);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        final colors = widget.colors;
+        final bool isDark = widget.isDark;
+        final bool isTablet = widget.isTablet;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              backgroundColor: isDark ? colors.surface : Colors.white,
+              title: Text(
+                "Pricing Grade",
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w700,
+                  fontSize: isTablet ? 18 : 16,
+                ),
+              ),
+              content: SizedBox(
+                width: isTablet ? 420 : 320,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Price",
+                            style: TextStyle(
+                              fontSize: isTablet ? 14 : 12,
+                              color: isDark
+                                  ? colors.onSurfaceMuted
+                                  : Colors.black54,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          SizedBox(
+                            height: isTablet ? 48 : 38,
+                            child: TextField(
+                              controller: priceController,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                signed: true,
+                                decimal: true,
+                              ),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'^-?\d*\.?\d{0,4}'),
+                                ),
+                              ],
+                              style: TextStyle(
+                                fontSize: isTablet ? 18 : 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                              decoration: InputDecoration(
+                                prefixText: "\$",
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: isTablet ? 12 : 10,
+                                  vertical: isTablet ? 12 : 10,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? Colors.white24
+                                        : Colors.grey.shade300,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? Colors.white24
+                                        : Colors.grey.shade300,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: kPrimaryColor,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: isDark
+                                    ? colors.surfaceAlt
+                                    : Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 16 : 12),
+                    SizedBox(
+                      width: isTablet ? 90 : 70,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Grade",
+                            style: TextStyle(
+                              fontSize: isTablet ? 14 : 12,
+                              color: isDark
+                                  ? colors.onSurfaceMuted
+                                  : Colors.black54,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          SizedBox(
+                            height: isTablet ? 120 : 100,
+                            child: CupertinoPicker(
+                              itemExtent: isTablet ? 36 : 30,
+                              scrollController: FixedExtentScrollController(
+                                initialItem: selectedIndex,
+                              ),
+                              onSelectedItemChanged: (index) {
+                                setState(() {
+                                  selectedIndex = index;
+                                });
+                                updatePriceForGrade(index);
+                              },
+                              children: [
+                                for (final grade in grades)
+                                  Center(
+                                    child: Text(
+                                      grade,
+                                      style: TextStyle(
+                                        fontSize: isTablet ? 18 : 14,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final parsed = double.tryParse(priceController.text.trim());
+                    if (parsed != null) {
+                      _priceController.text = _formatSellPrice(parsed);
+                      widget.onPriceChanged(parsed);
+                      widget.onSave();
+                    }
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isTablet = widget.isTablet;
@@ -354,7 +580,11 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                         ),
                       ),
 
-                      SizedBox(width: isTablet ? 20 : 8),
+                      SizedBox(width: isTablet ? 10 : 6),
+
+                      _buildGradePickerArrows(isTablet: isTablet),
+
+                      SizedBox(width: isTablet ? 10 : 6),
 
                       // Qty with +/- buttons
                       _buildQtyButton(
@@ -589,6 +819,45 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
           color: enabled
               ? kPrimaryColor
               : (widget.isDark ? Colors.white30 : Colors.grey.shade400),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGradePickerArrows({required bool isTablet}) {
+    final double height = isTablet ? 52 : 30;
+    final double width = isTablet ? 32 : 24;
+
+    return InkWell(
+      onTap: _showPricingGradeDialog,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: widget.isDark
+              ? widget.colors.surface
+              : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: widget.isDark ? Colors.white24 : Colors.grey.shade300,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.keyboard_arrow_up,
+              size: isTablet ? 18 : 14,
+              color: kPrimaryColor,
+            ),
+            SizedBox(height: isTablet ? 2 : 1),
+            Icon(
+              Icons.keyboard_arrow_down,
+              size: isTablet ? 18 : 14,
+              color: kPrimaryColor,
+            ),
+          ],
         ),
       ),
     );
