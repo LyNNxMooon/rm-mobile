@@ -153,6 +153,8 @@ class _SalesScreenState extends State<SalesScreen>
   // Session tracking
   int? _currentSessionId;
   bool _sessionsChecked = false;
+  final Map<String, double> _promptedQtyByCode = {};
+  bool _isRestoringSession = false;
 
   late AnimationController _actionsAnimationController;
   late Animation<double> _actionsAnimation;
@@ -225,6 +227,190 @@ class _SalesScreenState extends State<SalesScreen>
     }
   }
 
+  Future<bool> _showBelowCostPrompt(AppThemeColors colors, bool isDark) async {
+    final bool isTablet = context.isTablet;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 80 : 24,
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: isTablet ? 450 : double.infinity,
+            ),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.help_outline,
+                        color: kPrimaryColor,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      "RetailManager Question",
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "Selling Price should be greater than Cost, continue?",
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.4,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: kPrimaryColor,
+                        side: const BorderSide(color: kPrimaryColor),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        "No",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kPrimaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        "Yes",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
+  Future<void> _promptBelowCostOnAddIfNeeded(
+    List<CartItemVO> items,
+    AppThemeColors colors,
+    bool isDark,
+  ) async {
+    final currentCodes = items.map((item) => item.code).toSet();
+    _promptedQtyByCode.removeWhere((code, _) => !currentCodes.contains(code));
+
+    for (final item in items) {
+      if (item.isEditing) continue;
+
+      final prevQty = _promptedQtyByCode[item.code] ?? 0;
+      if (item.qty <= prevQty) {
+        _promptedQtyByCode[item.code] = item.qty;
+        continue;
+      }
+
+      final costEx = item.stock?.costEx ?? item.stock?.cost ?? item.costPrice;
+      if (costEx == null) {
+        _promptedQtyByCode[item.code] = item.qty;
+        continue;
+      }
+
+      if (item.exPrice < costEx) {
+        final proceed = await _showBelowCostPrompt(colors, isDark);
+        if (!proceed) {
+          final index = items.indexWhere(
+            (element) => element.code == item.code,
+          );
+          if (index != -1) {
+            _salesBloc.add(RemoveCartItem(index: index));
+          }
+          _promptedQtyByCode.remove(item.code);
+          return;
+        }
+      }
+
+      _promptedQtyByCode[item.code] = item.qty;
+    }
+  }
+
+  Future<bool> _promptBelowCostOnSave(
+    CartItemVO item,
+    int index,
+    AppThemeColors colors,
+    bool isDark,
+  ) async {
+    final costEx = item.stock?.costEx ?? item.stock?.cost ?? item.costPrice;
+    if (costEx == null) return true;
+
+    if (item.exPrice >= costEx) return true;
+
+    final proceed = await _showBelowCostPrompt(colors, isDark);
+    if (!proceed) {
+      _salesBloc.add(RemoveCartItem(index: index));
+    }
+
+    return proceed;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -290,6 +476,7 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Future<void> _restoreSession(SaleSessionVO session) async {
+    _isRestoringSession = true;
     _currentSessionId = session.id;
 
     final shopfront = AppGlobals.instance.shopfront ?? '';
@@ -300,8 +487,13 @@ class _SalesScreenState extends State<SalesScreen>
 
     // Restore cart items
     _salesBloc.add(ClearCart());
+    _promptedQtyByCode.clear();
     for (final cartItem in restoreResult.cartItems) {
       _salesBloc.add(AddCartItemDirect(cartItem: cartItem));
+    }
+
+    for (final cartItem in restoreResult.cartItems) {
+      _promptedQtyByCode[cartItem.code] = cartItem.qty;
     }
 
     // Restore customer
@@ -316,6 +508,12 @@ class _SalesScreenState extends State<SalesScreen>
       _surveyValue = restoreResult.surveyValue;
       _surveyController.text = _surveyValue;
       _commentValue = restoreResult.commentValue;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _isRestoringSession = false;
+      }
     });
   }
 
@@ -587,6 +785,24 @@ class _SalesScreenState extends State<SalesScreen>
               textColor: kPrimaryColor,
               position: MessagePosition.top,
               padding: 70,
+            );
+          }
+
+          if (state is CartItemSaved) {
+            final savedItem = state.cartItems[state.index];
+            final proceed = await _promptBelowCostOnSave(
+              savedItem,
+              state.index,
+              colors,
+              isDark,
+            );
+            if (!proceed) return;
+          } else if (state is CartUpdated) {
+            if (_isRestoringSession) return;
+            await _promptBelowCostOnAddIfNeeded(
+              state.cartItems,
+              colors,
+              isDark,
             );
           }
           

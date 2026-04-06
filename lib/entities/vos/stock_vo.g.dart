@@ -53,6 +53,8 @@ StockVO _$StockVOFromJson(Map<String, dynamic> json) => StockVO(
   pricingGradesStock: StockVO._pricingGradesFromJson(json['pricing_grades_stock']),
   pricingGradesCategories: StockVO._pricingGradesFromJson(json['pricing_grades_categories']),
   pricingGradesGlobal: StockVO._pricingGradesFromJson(json['pricing_grades_global']),
+  isOnPromotion: json['is_on_promotion'] == 1,
+  promotion: StockVO._promotionFromJson(json['promotion']),
 );
 
 StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
@@ -102,6 +104,8 @@ StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
   pricingGradesStock: StockVO._pricingGradesFromJson(json['pricing_grades_stock']),
   pricingGradesCategories: StockVO._pricingGradesFromJson(json['pricing_grades_categories']),
   pricingGradesGlobal: StockVO._pricingGradesFromJson(json['pricing_grades_global']),
+  isOnPromotion: json['is_on_promotion'] ?? false,
+  promotion: StockVO._promotionFromJson(json['promotion']),
 );
 
 Map<String, dynamic> _$StockVOToJson(
@@ -155,4 +159,6 @@ Map<String, dynamic> _$StockVOToJson(
   'pricing_grades_stock': StockVO._pricingGradesToJson(instance.pricingGradesStock),
   'pricing_grades_categories': StockVO._pricingGradesToJson(instance.pricingGradesCategories),
   'pricing_grades_global': StockVO._pricingGradesToJson(instance.pricingGradesGlobal),
+  'is_on_promotion': instance.isOnPromotion ? 1 : 0,
+  'promotion': StockVO._promotionToJson(instance.promotion),
 };

@@ -205,7 +205,16 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     widget.onQtyChanged(newQty);
   }
 
+  bool get _hasPromotion {
+    final stock = widget.item.stock;
+    return stock?.isOnPromotion == true &&
+        stock?.promotion?.promotionRrp != null;
+  }
+
   Future<void> _showPricingGradeDialog() async {
+    if (_hasPromotion) {
+      return;
+    }
     final stock = widget.item.stock;
     if (stock == null) {
       return;
@@ -432,6 +441,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   @override
   Widget build(BuildContext context) {
     final isTablet = widget.isTablet;
+    final bool hasPromotion = _hasPromotion;
 
     return Container(
       padding: EdgeInsets.all(isTablet ? 12 : 10),
@@ -566,23 +576,46 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                       SizedBox(
                         width: isTablet ? 180 : 70,
                         height: isTablet ? 52 : 30,
-                        child: _buildCompactField(
-                          label: "Price",
-                          controller: _priceController,
-                          prefix: "\$",
-                          isTablet: isTablet,
-                          maxDecimals: _priceDecimalPlaces,
-                          enabled: widget.allowPriceEdit,
-                          onChanged: (value) {
-                            final price = double.tryParse(value);
-                            if (price != null) widget.onPriceChanged(price);
-                          },
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Positioned.fill(
+                              child: _buildCompactField(
+                                label: "Price",
+                                controller: _priceController,
+                                prefix: "\$",
+                                isTablet: isTablet,
+                                maxDecimals: _priceDecimalPlaces,
+                                enabled: widget.allowPriceEdit,
+                                onChanged: (value) {
+                                  final price = double.tryParse(value);
+                                  if (price != null) widget.onPriceChanged(price);
+                                },
+                              ),
+                            ),
+                            if (hasPromotion)
+                              Positioned(
+                                left: 2,
+                                top: isTablet ? -14 : -10,
+                                child: Text(
+                                  "(*Promotion)",
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 11 : 9,
+                                    color: kErrorColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
 
                       SizedBox(width: isTablet ? 10 : 6),
 
-                      _buildGradePickerArrows(isTablet: isTablet),
+                      _buildGradePickerArrows(
+                        isTablet: isTablet,
+                        enabled: !hasPromotion,
+                      ),
 
                       SizedBox(width: isTablet ? 10 : 6),
 
@@ -824,38 +857,48 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     );
   }
 
-  Widget _buildGradePickerArrows({required bool isTablet}) {
-    final double height = isTablet ? 52 : 30;
+  Widget _buildGradePickerArrows({
+    required bool isTablet,
+    required bool enabled,
+  }) {
+    final double height = isTablet ? 52 : 28;
     final double width = isTablet ? 32 : 24;
+    final double iconSize = isTablet ? 18 : 12;
+    final double iconGap = isTablet ? 2 : 0;
 
     return InkWell(
-      onTap: _showPricingGradeDialog,
+      onTap: enabled ? _showPricingGradeDialog : null,
       borderRadius: BorderRadius.circular(6),
       child: Container(
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: widget.isDark
-              ? widget.colors.surface
-              : Colors.grey.shade100,
+          color: enabled
+              ? (widget.isDark
+                  ? widget.colors.surface
+                  : Colors.grey.shade100)
+              : (widget.isDark
+                  ? widget.colors.surface.withOpacity(0.5)
+                  : Colors.grey.shade200),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: widget.isDark ? Colors.white24 : Colors.grey.shade300,
           ),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.keyboard_arrow_up,
-              size: isTablet ? 18 : 14,
-              color: kPrimaryColor,
+              size: iconSize,
+              color: enabled ? kPrimaryColor : (widget.isDark ? Colors.white30 : Colors.grey.shade400),
             ),
-            SizedBox(height: isTablet ? 2 : 1),
+            SizedBox(height: iconGap),
             Icon(
               Icons.keyboard_arrow_down,
-              size: isTablet ? 18 : 14,
-              color: kPrimaryColor,
+              size: iconSize,
+              color: enabled ? kPrimaryColor : (widget.isDark ? Colors.white30 : Colors.grey.shade400),
             ),
           ],
         ),
@@ -1132,6 +1175,9 @@ class MobileCartTile extends StatelessWidget {
       isIncTax ? item.incPrice : item.exPrice;
   double get _displayExtension =>
       isIncTax ? item.extension : item.extensionEx;
+    bool get _hasPromotion =>
+      item.stock?.isOnPromotion == true &&
+      item.stock?.promotion?.promotionRrp != null;
 
   @override
   Widget build(BuildContext context) {
@@ -1233,13 +1279,27 @@ class MobileCartTile extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               // Extension Total
-              Text(
-                "\$${_displayExtension.toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (_hasPromotion)
+                    Text(
+                      "(*Promotion)",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: kErrorColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  Text(
+                    "\$${_displayExtension.toStringAsFixed(2)}",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1276,6 +1336,9 @@ class TabletCartTile extends StatelessWidget {
       isIncTax ? item.incPrice : item.exPrice;
   double get _displayExtension =>
       isIncTax ? item.extension : item.extensionEx;
+    bool get _hasPromotion =>
+      item.stock?.isOnPromotion == true &&
+      item.stock?.promotion?.promotionRrp != null;
 
   String get _formattedPrice => roundSellPriceTo2Decimals
       ? _displayPrice.toStringAsFixed(2)
@@ -1356,10 +1419,24 @@ class TabletCartTile extends StatelessWidget {
           ),
           SizedBox(
             width: 120,
-            child: Text(
-              "\$$_formattedPrice",
-              textAlign: TextAlign.right,
-              style: TextStyle(color: colors.onSurfaceMuted, fontSize: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (_hasPromotion)
+                  Text(
+                    "(*Promotion)",
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: kErrorColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                Text(
+                  "\$$_formattedPrice",
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: colors.onSurfaceMuted, fontSize: 14),
+                ),
+              ],
             ),
           ),
           SizedBox(

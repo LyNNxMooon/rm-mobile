@@ -15,6 +15,8 @@ class Scanner extends StatefulWidget {
     required this.isScan,
     required this.isManualCount,
     required this.horizontalPadding,
+    required this.onStartScan,
+    required this.onStopScan,
   });
 
   final BoxConstraints constraints;
@@ -23,6 +25,8 @@ class Scanner extends StatefulWidget {
   final bool isScan;
   final bool isManualCount;
   final double horizontalPadding;
+  final VoidCallback onStartScan;
+  final VoidCallback onStopScan;
 
   @override
   State<Scanner> createState() => _ScannerState();
@@ -94,6 +98,24 @@ class _ScannerState extends State<Scanner> {
                       }
                     },
                   ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black54,
+                      ),
+                      child: IconButton(
+                        onPressed: widget.onStopScan,
+                        icon: const Icon(Icons.close),
+                        color: Colors.white,
+                        iconSize: 20,
+                        padding: const EdgeInsets.all(6),
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
+                  ),
                   Center(
                     child: Container(
                       width: MediaQuery.of(context).size.width * 0.6,
@@ -120,51 +142,54 @@ class _ScannerState extends State<Scanner> {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double sidePadding = isTablet ? widget.horizontalPadding : 15.0;
 
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: sidePadding),
-      decoration: BoxDecoration(
-        color: isDark ? colors.surface : Colors.grey.shade50,
-        borderRadius: const BorderRadius.all(Radius.circular(10)),
-        border: Border.all(
-          color: isDark ? Colors.white38 : Colors.grey.shade400,
+    return GestureDetector(
+      onTap: widget.onStartScan,
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: sidePadding),
+        decoration: BoxDecoration(
+          color: isDark ? colors.surface : Colors.grey.shade50,
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
+          border: Border.all(
+            color: isDark ? Colors.white38 : Colors.grey.shade400,
+          ),
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: kThirdColor.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: kThirdColor.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.qr_code_scanner,
+                  size: 55,
+                  color: kPrimaryColor.withOpacity(0.5),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Scanner Area",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colors.onSurfaceMuted,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Camera preview will appear here",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.onSurfaceMuted.withOpacity(0.7),
+                  ),
                 ),
               ],
-      ),
-      child: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.qr_code_scanner,
-                size: 55,
-                color: kPrimaryColor.withOpacity(0.5),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Scanner Area",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: colors.onSurfaceMuted,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "Camera preview will appear here",
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colors.onSurfaceMuted.withOpacity(0.7),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

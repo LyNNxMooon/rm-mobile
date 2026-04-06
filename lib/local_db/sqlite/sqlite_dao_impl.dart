@@ -235,6 +235,20 @@ class SQLiteDAOImpl extends LocalDbDAO {
           }
         },
       );
+
+      // Ensure new columns exist without bumping DB version
+      await _addColumnIfMissing(
+        db: _database!,
+        table: 'Stocks',
+        column: 'is_on_promotion',
+        definition: 'INTEGER',
+      );
+      await _addColumnIfMissing(
+        db: _database!,
+        table: 'Stocks',
+        column: 'promotion',
+        definition: 'TEXT',
+      );
       logger.d('Successfully initialized SQLite local database!');
     } catch (error) {
       logger.e('Error initializing for SQLite local database: $error');

@@ -49,6 +49,8 @@ const stocksTableCreationQuery = '''
     pricing_grades_stock TEXT,
     pricing_grades_categories TEXT,
     pricing_grades_global TEXT,
+    is_on_promotion INTEGER,
+    promotion TEXT,
     PRIMARY KEY (stock_id, shopfront)
   )
 ''';

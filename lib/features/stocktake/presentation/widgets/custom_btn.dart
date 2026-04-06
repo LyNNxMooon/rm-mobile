@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rmstock_scanner/constants/colors.dart';
-import '../../../../constants/theme_colors.dart';
+
 
 class CustomStocktakeBtn extends StatefulWidget {
   const CustomStocktakeBtn({
@@ -23,29 +22,32 @@ class CustomStocktakeBtn extends StatefulWidget {
 class _CustomStocktakeBtnState extends State<CustomStocktakeBtn> {
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    
+
+    final Color baseColor = widget.bgColor;
+    final Color strongColor = Color.lerp(baseColor, Colors.black, 0.15) ?? baseColor;
+
     return ElevatedButton.icon(
       onPressed: widget.function,
       style: ElevatedButton.styleFrom(
-        backgroundColor: widget.bgColor,
-        foregroundColor: isDark ? colors.onHero : kSecondaryColor,
+        backgroundColor: baseColor.withOpacity(0.22),
+        foregroundColor: strongColor,
+        shadowColor: strongColor.withOpacity(0.15),
         minimumSize: const Size(100, 35),
         padding: EdgeInsets.symmetric(
           horizontal: isTablet ? 16 : 12,
           vertical: isTablet ? 8 : 4,
         ),
+        side: BorderSide(color: strongColor, width: 2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 2,
       ),
-      icon: Icon(widget.icon, size: isTablet ? 18 : 16),
+      icon: Icon(widget.icon, size: isTablet ? 20 : 18),
       label: Text(
         widget.name,
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: isTablet ? 14 : 12,
+          fontSize: isTablet ? 15 : 13,
         ),
       ),
     );

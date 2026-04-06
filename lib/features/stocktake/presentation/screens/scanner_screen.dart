@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
 import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
@@ -15,7 +16,7 @@ import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/stock
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/utils/responsive_utils.dart';
 import '../../../../constants/colors.dart';
-import '../../../../constants/global_widgets.dart';
+//import '../../../../constants/global_widgets.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/enums.dart';
@@ -117,6 +118,25 @@ class _ScannerScreenState extends State<ScannerScreen> {
     }
   }
 
+  void _toggleScan() {
+    qtyController.clear();
+    context.read<ScannerBloc>().add(
+      ResetStocktakeEvent(ScannerInitial()),
+    );
+
+    setState(() {
+      isScan = !isScan;
+      _bcController.text = "";
+      countingStock = null;
+
+      _lastAutoBarcode = null;
+      _autoQty = 0;
+
+      txtFieldFocusNode.unfocus();
+      // Don't unfocus qty field - allow scanner and qty keyboard together
+    });
+  }
+
   void _submitAutoCount() {
     if (countingStock == null) return;
 
@@ -152,6 +172,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
     // Qty field should work alongside scanner.
     if (txtFieldFocusNode.hasFocus && isScan) {
       setState(() => isScan = false);
+    }
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -240,6 +263,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
                               isScan: isScan,
                               isManualCount: isManualCount,
                               horizontalPadding: cardHorizontalPadding,
+                              onStartScan: () {
+                                if (!isScan) {
+                                  _toggleScan();
+                                }
+                              },
+                              onStopScan: () {
+                                if (isScan) {
+                                  _toggleScan();
+                                }
+                              },
                               onScan: (String barcode) {
                                 context.read<ScannerBloc>().add(
                                   FetchStockDetails(barcode: barcode),
@@ -378,8 +411,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     // Dynamic Spacing based on device - reduce gaps for medium tablets
     final double sectionGap = isMediumTabletPortrait
-        ? 10.0
-        : (isTablet ? 16.0 : 8.0) * portraitBoost;
+      ? 10.0
+      : (isTablet ? 16.0 : 8.0) * portraitBoost;
+    // final double manualFieldHeight = isMediumTabletPortrait
+    //   ? 42 * uiScale
+    //   : (isTablet ? 50 : 36) * uiScale * portraitBoost;
+  //  final bool isManualFieldFocused = txtFieldFocusNode.hasFocus;
     final double panelVerticalPadding = isMediumTabletPortrait
         ? 18.0
         : (isTablet ? 30.0 : 14.0) * portraitBoost;
@@ -590,36 +627,72 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
           ),
 
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  margin: EdgeInsets.only(
-                    top: isTablet ? 12 : 8,
-                    bottom: 0,
-                  ),
-                  height: isMediumTabletPortrait
-                      ? 42 * uiScale
-                      : (isTablet ? 50 : 36) * uiScale * portraitBoost,
-                  decoration: BoxDecoration(
-                    color: isDark ? colors.surfaceAlt : Colors.transparent,
-                    borderRadius: const BorderRadius.all(Radius.circular(10)),
-                    border: isDark
-                        ? Border.all(color: Colors.white38, width: 1)
-                        : null,
-                  ),
-                  child: CustomTextField(
+          Padding(
+            padding: EdgeInsets.only(
+              top: isTablet ? 12 : 8,
+              bottom: 0,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _bcController,
                     focusNode: txtFieldFocusNode,
-                    submitFunction: (_) {
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontSize: 14,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Manual Barcode/Desc Entry',
+                      hintStyle: TextStyle(
+                        color: colors.onSurfaceMuted,
+                        fontSize: 13,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: isDark ? Colors.white38 : Colors.grey.shade400,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: kPrimaryColor),
+                      ),
+                      disabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: isDark ? Colors.white24 : Colors.grey.shade300,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: colors.surface,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const StockLookupScreen(
+                                showBackArrow: true,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.double_arrow_rounded),
+                        color: kPrimaryColor,
+                        iconSize: 22,
+                      ),
+                    ),
+                    onSubmitted: (_) {
                       qtyFocusNode.requestFocus();
                       qtyController.selection = TextSelection(
                         baseOffset: 0,
                         extentOffset: qtyController.text.length,
                       );
                     },
-                    hintText: 'Manual Barcode/Desc Entry',
-                    controller: _bcController,
-                    function: (value) {
+                    onChanged: (value) {
                       if (value.trim().isEmpty) {
                         return; // Do nothing
                       }
@@ -631,102 +704,70 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     },
                   ),
                 ),
-              ),
-              // Go to Stock Lookup button
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const StockLookupScreen(showBackArrow: true),
-                    ),
-                  );
-                },
-                child: Container(
-                  margin: EdgeInsets.only(
-                    top: isTablet ? 12 : 8,
-                    left: isTablet ? 12 : 8,
-                  ),
-                  padding: EdgeInsets.all(isTablet ? 12 : 8),
-                  decoration: BoxDecoration(
-                    color: isDark ? colors.surfaceAlt : kSecondaryColor,
-                    borderRadius: BorderRadius.circular(10),
-                    border: isDark
-                        ? Border.all(color: Colors.white38, width: 1)
-                        : null,
-                  ),
-                  child: Icon(
-                    Icons.double_arrow_rounded,
-                    color: kPrimaryColor,
-                    size: isTablet ? 24 : 20,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           // Gap between Manual Barcode Entry and Counted Qty
           SizedBox(height: isTablet ? 12 : 6),
 
-          Container(
-            padding: EdgeInsets.symmetric(
-              vertical: context.isMediumTablet ? 6 : (isTablet ? 14 : 8),
-              horizontal: isTablet ? 20 : 12,
+          Padding(
+            padding: EdgeInsets.only(
+              top: isTablet ? 0 : 0,
+              bottom: 0,
             ),
-            decoration: BoxDecoration(
-              color: isDark ? colors.surfaceAlt : kSecondaryColor,
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              border: isDark
-                  ? Border.all(color: Colors.white38, width: 1)
-                  : null,
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? colors.cardShadow
-                      : kThirdColor.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                  spreadRadius: 0,
+            child: TextField(
+              controller: qtyController,
+              focusNode: qtyFocusNode,
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+                fontSize: 14,
+              ),
+              decoration: InputDecoration(
+                hintText: "Counted Qty",
+                hintStyle: TextStyle(
+                  color: colors.onSurfaceMuted,
+                  fontSize: 13,
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Text(
-                  "Counted Qty : ",
-                  style: TextStyle(
-                    color: isDark ? colors.onSurfaceMuted : kGreyColor,
-                    fontSize: isTablet ? 16 : 14,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: isDark ? Colors.white38 : Colors.grey.shade400,
                   ),
                 ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: SizedBox(
-                    height: (isTablet ? 45 : 33) * uiScale * portraitBoost,
-                    width: 100,
-                    child: CustomTextField(
-                      submitFunction: (value) {
-                        _submitCount();
-
-                        if (!isScan) {
-                          txtFieldFocusNode.requestFocus();
-                          _bcController.selection = TextSelection(
-                            baseOffset: 0,
-                            extentOffset: _bcController.text.length,
-                          );
-                        }
-                      },
-                      controller: qtyController,
-                      focusNode: qtyFocusNode,
-                      hintText: "Qty",
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      isEnabled: isManualCount,
-                      textInputAction: TextInputAction.done,
-                    ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: kPrimaryColor),
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
                   ),
                 ),
-              ],
+                filled: true,
+                fillColor: colors.surface,
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              enabled: isManualCount,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (value) {
+                _submitCount();
+            
+                if (!isScan) {
+                  txtFieldFocusNode.requestFocus();
+                  _bcController.selection = TextSelection(
+                    baseOffset: 0,
+                    extentOffset: _bcController.text.length,
+                  );
+                }
+              },
             ),
           ),
           SizedBox(
@@ -757,22 +798,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 Expanded(
                   child: CustomStocktakeBtn(
                     function: () {
-                      qtyController.clear();
-                      context.read<ScannerBloc>().add(
-                        ResetStocktakeEvent(ScannerInitial()),
-                      );
-
-                      setState(() {
-                        isScan = !isScan;
-                        _bcController.text = "";
-                        countingStock = null;
-
-                        _lastAutoBarcode = null;
-                        _autoQty = 0;
-
-                        txtFieldFocusNode.unfocus();
-                        // Don't unfocus qty field - allow scanner and qty keyboard together
-                      });
+                      _toggleScan();
                     },
                     icon: Icons.qr_code_scanner,
                     bgColor: isScan ? Colors.redAccent : Colors.lightGreen,

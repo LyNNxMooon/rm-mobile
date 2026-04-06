@@ -4,6 +4,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_grades.dart';
 import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
 import 'package:rmstock_scanner/entities/vos/package_component.dart';
+import 'package:rmstock_scanner/entities/vos/promotion_vo.dart';
 part 'stock_vo.g.dart';
 
 @JsonSerializable()
@@ -109,6 +110,15 @@ class StockVO {
   )
   final PricingGrades? pricingGradesGlobal;
 
+  @JsonKey(name: 'is_on_promotion')
+  final bool isOnPromotion;
+  @JsonKey(
+    name: 'promotion',
+    fromJson: _promotionFromJson,
+    toJson: _promotionToJson,
+  )
+  final PromotionVO? promotion;
+
   factory StockVO.fromJson(Map<String, dynamic> json) =>
       _$StockVOFromJson(json);
 
@@ -170,6 +180,8 @@ class StockVO {
       "pricing_grades_stock": item["pricing_grades_stock"],
       "pricing_grades_categories": item["pricing_grades_categories"],
       "pricing_grades_global": item["pricing_grades_global"],
+      "is_on_promotion": _asBool(item["is_on_promotion"]),
+      "promotion": item["promotion"],
     };
 
     return StockVO.fromJsonNetwork(mapped);
@@ -222,6 +234,8 @@ class StockVO {
     this.pricingGradesStock,
     this.pricingGradesCategories,
     this.pricingGradesGlobal,
+    this.isOnPromotion = false,
+    this.promotion,
   });
 
   static String _asString(dynamic value) {
@@ -371,6 +385,36 @@ class StockVO {
     return jsonEncode(grades.toJson());
   }
 
+  static PromotionVO? _promotionFromJson(Object? value) {
+    if (value == null) return null;
+    if (value is PromotionVO) return value;
+    if (value is Map<String, dynamic>) {
+      return PromotionVO.fromJson(value);
+    }
+    if (value is Map) {
+      return PromotionVO.fromJson(Map<String, dynamic>.from(value));
+    }
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return null;
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is Map<String, dynamic>) {
+          return PromotionVO.fromJson(decoded);
+        }
+        if (decoded is Map) {
+          return PromotionVO.fromJson(Map<String, dynamic>.from(decoded));
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  static Object? _promotionToJson(PromotionVO? promo) {
+    if (promo == null) return null;
+    return jsonEncode(promo.toJson());
+  }
+
   /// Returns the effective sell price for a given customer grade,
   /// and whether a pricing grade override was applied.
   /// 
@@ -387,6 +431,10 @@ class StockVO {
   /// - isPricingGradeApplied: true if a pricing grade override was applied
   ///   (price is already inc-tax), false if using base RRP
   ({double price, bool isPricingGradeApplied}) getEffectiveSellPrice(int customerGrade) {
+    if (isOnPromotion && promotion?.promotionRrp != null) {
+      return (price: promotion!.promotionRrp!, isPricingGradeApplied: true);
+    }
+
     final String gradeKey = _gradeIntToString(customerGrade);
     double effectivePrice = sell;
     bool pricingGradeApplied = false;
