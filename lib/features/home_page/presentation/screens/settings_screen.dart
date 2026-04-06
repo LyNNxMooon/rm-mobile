@@ -250,130 +250,151 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       // Host IP input
                       TextField(
-                      controller: _manualIpController,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : colors.onSurface,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      onEditingComplete: () {
-                        final trimmedValue = _manualIpController.text.trim();
-                        if (_manualIpController.text != trimmedValue) {
-                          _manualIpController.value = _manualIpController.value.copyWith(
-                            text: trimmedValue,
-                            selection: TextSelection.collapsed(offset: trimmedValue.length),
-                          );
-                        }
-                      },
-                      decoration: ModernDialogStyles.inputDecoration(
-                        context,
-                        hintText: "Host IP Address",
-                        prefixIcon: Icons.computer_outlined,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Pairing code input
-                    TextField(
-                      controller: _manualCodeController,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : colors.onSurface,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      onEditingComplete: () {
-                        final trimmedValue = _manualCodeController.text.trim();
-                        if (_manualCodeController.text != trimmedValue) {
-                          _manualCodeController.value = _manualCodeController.value.copyWith(
-                            text: trimmedValue,
-                            selection: TextSelection.collapsed(offset: trimmedValue.length),
-                          );
-                        }
-                      },
-                      decoration: ModernDialogStyles.inputDecoration(
-                        context,
-                        hintText: "Pairing Code",
-                        prefixIcon: Icons.key_outlined,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Port input (optional)
-                    TextField(
-                      controller: _manualPortController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      style: TextStyle(
-                        color: isDark ? Colors.white : colors.onSurface,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      onEditingComplete: () {
-                        final trimmedValue = _manualPortController.text.trim();
-                        if (_manualPortController.text != trimmedValue) {
-                          _manualPortController.value = _manualPortController.value.copyWith(
-                            text: trimmedValue,
-                            selection: TextSelection.collapsed(offset: trimmedValue.length),
-                          );
-                        }
-                      },
-                      decoration: ModernDialogStyles.inputDecoration(
-                        context,
-                        hintText: "Port (default: 5000)",
-                        prefixIcon: Icons.numbers_rounded,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Connect button with gradient
-                    SizedBox(
-                      width: double.infinity,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: ModernDialogStyles.headerGradient,
-                          borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
-                          boxShadow: [
-                            BoxShadow(
-                              color: kPrimaryColor.withOpacity(0.35),
-                              blurRadius: 14,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
+                        controller: _manualIpController,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : colors.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
                         ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => _startManualConnection(context),
-                            borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.wifi_tethering_rounded,
-                                    color: Colors.white,
-                                    size: 20,
+                        onEditingComplete: () {
+                          final trimmedValue = _manualIpController.text.trim();
+                          if (_manualIpController.text != trimmedValue) {
+                            _manualIpController.value = _manualIpController
+                                .value
+                                .copyWith(
+                                  text: trimmedValue,
+                                  selection: TextSelection.collapsed(
+                                    offset: trimmedValue.length,
                                   ),
-                                  const SizedBox(width: 10),
-                                  const Text(
-                                    "Connect",
-                                    style: TextStyle(
+                                );
+                          }
+                        },
+                        decoration: ModernDialogStyles.inputDecoration(
+                          context,
+                          hintText: "Host IP Address",
+                          prefixIcon: Icons.computer_outlined,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Pairing code input
+                      TextField(
+                        controller: _manualCodeController,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : colors.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        onEditingComplete: () {
+                          final trimmedValue = _manualCodeController.text
+                              .trim();
+                          if (_manualCodeController.text != trimmedValue) {
+                            _manualCodeController.value = _manualCodeController
+                                .value
+                                .copyWith(
+                                  text: trimmedValue,
+                                  selection: TextSelection.collapsed(
+                                    offset: trimmedValue.length,
+                                  ),
+                                );
+                          }
+                        },
+                        decoration: ModernDialogStyles.inputDecoration(
+                          context,
+                          hintText: "Pairing Code",
+                          prefixIcon: Icons.key_outlined,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Port input (optional)
+                      TextField(
+                        controller: _manualPortController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        style: TextStyle(
+                          color: isDark ? Colors.white : colors.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        onEditingComplete: () {
+                          final trimmedValue = _manualPortController.text
+                              .trim();
+                          if (_manualPortController.text != trimmedValue) {
+                            _manualPortController.value = _manualPortController
+                                .value
+                                .copyWith(
+                                  text: trimmedValue,
+                                  selection: TextSelection.collapsed(
+                                    offset: trimmedValue.length,
+                                  ),
+                                );
+                          }
+                        },
+                        decoration: ModernDialogStyles.inputDecoration(
+                          context,
+                          hintText: "Port (default: 5000)",
+                          prefixIcon: Icons.numbers_rounded,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Connect button with gradient
+                      SizedBox(
+                        width: double.infinity,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: ModernDialogStyles.headerGradient,
+                            borderRadius: BorderRadius.circular(
+                              ModernDialogStyles.buttonRadius,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: kPrimaryColor.withOpacity(0.35),
+                                blurRadius: 14,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _startManualConnection(context),
+                              borderRadius: BorderRadius.circular(
+                                ModernDialogStyles.buttonRadius,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.wifi_tethering_rounded,
                                       color: Colors.white,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.2,
+                                      size: 20,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 10),
+                                    const Text(
+                                      "Connect",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),)
+              ),
             ],
           ),
         ),
@@ -581,89 +602,128 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Column(
                             children: [
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                                child: InkWell(
-                                  onTap: () => _openShopfrontPicker(context),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue.withOpacity(0.5),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(
-                                          Icons.storefront_outlined,
-                                          size: 20,
-                                          color: context.appColors.isDark ? Colors.white : context.appColors.onHero,
-                                        ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                  vertical: 10,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.withOpacity(0.5),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      const SizedBox(width: 15),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              "Current Shopfront",
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: context.appColors.isDark ? Colors.white70 : context.appColors.onHero,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              _getShopfrontLabel(),
-                                              style: getSmartTitle(
-                                                fontSize: 16,
-                                                color: context.appColors.isDark ? Colors.white : context.appColors.onHero,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
+                                      child: Icon(
+                                        Icons.storefront_outlined,
+                                        size: 20,
+                                        color: context.appColors.isDark
+                                            ? Colors.white
+                                            : context.appColors.onHero,
                                       ),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
+                                    ),
+                                    const SizedBox(width: 15),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          GestureDetector(
-                                            onTap: _isRefreshingShopfront ? null : () => _refreshShopfront(context),
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: context.isTablet ? 12 : 6,
-                                                vertical: context.isTablet ? 8 : 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.green.withOpacity(0.15),
-                                                borderRadius: BorderRadius.circular(context.isTablet ? 8 : 6),
-                                              ),
-                                              child: _isRefreshingShopfront
-                                                  ? SizedBox(
-                                                      width: context.isTablet ? 28 : 24,
-                                                      height: context.isTablet ? 28 : 24,
-                                                      child: const CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                        color: Colors.white,
-                                                      ),
-                                                    )
-                                                  : Icon(
-                                                      Icons.refresh,
-                                                      size: context.isTablet ? 28 : 24,
-                                                      color: Colors.white,
-                                                    ),
+                                          Text(
+                                            "Current Shopfront",
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: context.appColors.isDark
+                                                  ? Colors.white70
+                                                  : context.appColors.onHero,
                                             ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          const SizedBox(width: 6),
-                                          Container(
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _getShopfrontLabel(),
+                                            style: getSmartTitle(
+                                              fontSize: 16,
+                                              color: context.appColors.isDark
+                                                  ? Colors.white
+                                                  : context.appColors.onHero,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        InkWell(
+                                          onTap: _isRefreshingShopfront
+                                              ? null
+                                              : () =>
+                                                    _refreshShopfront(context),
+                                          child: Container(
                                             padding: EdgeInsets.symmetric(
-                                              horizontal: context.isTablet ? 12 : 6,
-                                              vertical: context.isTablet ? 8 : 4,
+                                              horizontal: context.isTablet
+                                                  ? 12
+                                                  : 6,
+                                              vertical: context.isTablet
+                                                  ? 8
+                                                  : 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: kPrimaryColor.withOpacity(0.15),
-                                              borderRadius: BorderRadius.circular(context.isTablet ? 8 : 6),
+                                              color: Colors.green.withOpacity(
+                                                0.15,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    context.isTablet ? 8 : 6,
+                                                  ),
+                                            ),
+                                            child: _isRefreshingShopfront
+                                                ? SizedBox(
+                                                    width: context.isTablet
+                                                        ? 28
+                                                        : 24,
+                                                    height: context.isTablet
+                                                        ? 28
+                                                        : 24,
+                                                    child:
+                                                        const CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          color: Colors.white,
+                                                        ),
+                                                  )
+                                                : Icon(
+                                                    Icons.refresh,
+                                                    size: context.isTablet
+                                                        ? 28
+                                                        : 24,
+                                                    color: Colors.white,
+                                                  ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        InkWell(
+                                          onTap: () =>
+                                              _openShopfrontPicker(context),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: context.isTablet
+                                                  ? 12
+                                                  : 6,
+                                              vertical: context.isTablet
+                                                  ? 8
+                                                  : 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: kPrimaryColor.withOpacity(
+                                                0.15,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    context.isTablet ? 8 : 6,
+                                                  ),
                                             ),
                                             child: Icon(
                                               Icons.settings,
@@ -671,10 +731,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               color: Colors.white,
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
                               const Padding(
@@ -791,7 +851,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   if (_blockIfSyncing(context)) return;
                                   _showManualConnectionDialog(context);
                                 },
-                                titleColor:Color.fromARGB(255, 33, 211, 10),
+                                titleColor: Color.fromARGB(255, 33, 211, 10),
                               ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
@@ -914,9 +974,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: isDark
-                ? Colors.white70
-                : colors.onHero.withOpacity(0.7),
+            color: isDark ? Colors.white70 : colors.onHero.withOpacity(0.7),
             letterSpacing: 1.2,
           ),
         ),
@@ -936,9 +994,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             color: colors.glassFill,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: colors.glassBorder),
-            boxShadow: [
-              BoxShadow(blurRadius: 20, color: colors.cardShadow),
-            ],
+            boxShadow: [BoxShadow(blurRadius: 20, color: colors.cardShadow)],
           ),
           child: child,
         ),
@@ -1010,23 +1066,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildCashDrawerDropdown() {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    
     final bool isTablet = context.isTablet;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(isTablet ? 8 : 6),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: Colors.blue.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               Icons.point_of_sale_outlined,
               size: 20,
-              color: isDark ? Colors.white : colors.onHero,
+              color: context.appColors.isDark
+                  ? Colors.white
+                  : context.appColors.onHero,
             ),
           ),
           const SizedBox(width: 15),
@@ -1057,7 +1114,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 16 : 10,
+              vertical: isTablet ? 8 : 4,
+            ),
             decoration: BoxDecoration(
               color: kPrimaryColor.withOpacity(0.15),
               borderRadius: BorderRadius.circular(8),
@@ -1068,10 +1128,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: Text(
               _cashDrawerIdentifier,
-              style: getSmartTitle(
-                fontSize: 18,
-                color: kPrimaryColor,
-              ),
+              style: getSmartTitle(fontSize: 18, color: kPrimaryColor),
             ),
           ),
         ],
@@ -1299,9 +1356,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String title,
     String subtitle,
     Color color,
-    VoidCallback onTap,
-    {Color? titleColor}
-  ) {
+    VoidCallback onTap, {
+    Color? titleColor,
+  }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     return InkWell(
@@ -1355,9 +1412,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Icon(
               Icons.arrow_forward_ios,
               size: 14,
-              color: isDark
-                  ? Colors.white70
-                  : colors.onHero.withOpacity(0.7),
+              color: isDark ? Colors.white70 : colors.onHero.withOpacity(0.7),
             ),
           ],
         ),

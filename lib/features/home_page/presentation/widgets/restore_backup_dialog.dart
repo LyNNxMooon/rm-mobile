@@ -33,7 +33,7 @@ class RestoreBackupDialog extends StatelessWidget {
       elevation: 10,
       insetPadding: dialogInsetPadding(context),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.only(bottom: 20),
         constraints: BoxConstraints(maxHeight: maxDialogHeight),
         width: double.maxFinite,
         child: Column(

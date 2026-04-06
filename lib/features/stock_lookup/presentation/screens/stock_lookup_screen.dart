@@ -1071,9 +1071,6 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final String lowerQuery = trimmedQuery.toLowerCase();
     final bool hasQuery = trimmedQuery.isNotEmpty;
     final bool isMediumTablet = context.isMediumTablet;
-    
-    // Thumbnail width: smaller for medium tablets
-    final double thumbnailWidth = isMediumTablet ? 60 : 100;
 
     bool matchesQuery(String? value) {
       if (!hasQuery || value == null) return false;
@@ -1084,6 +1081,14 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
     final bool showCustom1 = matchesQuery(stock.custom1);
     final bool showCustom2 = matchesQuery(stock.custom2);
+    
+    // Check if we have multiple search hits (custom fields shown in addition to desc/barcode)
+    final bool hasMultipleHits = hasQuery && (showCustom1 || showCustom2);
+    
+    // Thumbnail width: larger in search mode to balance the layout
+    final double thumbnailWidth = hasQuery
+        ? (isMediumTablet ? 75 : 120)  // Larger in search mode
+        : (isMediumTablet ? 60 : 100); // Normal mode
 
     final double descFontSize = 13 * uiScale;
     final double barcodeFontSize = 13 * uiScale;
@@ -1153,69 +1158,80 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           bottom: 8,
                         ),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: hasMultipleHits 
+                              ? MainAxisAlignment.spaceEvenly 
+                              : MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            HighlightedText(
-                              text: stock.description,
-                              query: trimmedQuery,
-                              highlightColor: Colors.amber.withOpacity(0.6),
-                              style: TextStyle(
-                                color: isDark ? Colors.white : kThirdColor,
-                                fontSize: descFontSize,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              applyTextScaler: true,
-                            ),
-                            const SizedBox(height: 3),
-                            HighlightedText(
-                              text: stock.barcode,
-                              query: trimmedQuery,
-                              highlightColor: Colors.amber.withOpacity(0.6),
-                              style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: barcodeFontSize,
-                                color: kPrimaryColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              applyTextScaler: true,
-                            ),
-                            // Custom1 for Grid view (only when matched)
-                            if (showCustom1) ...[
-                              const SizedBox(height: 2),
-                              HighlightedText(
-                                text: stock.custom1!,
+                            Flexible(
+                              child: HighlightedText(
+                                text: stock.description,
                                 query: trimmedQuery,
                                 highlightColor: Colors.amber.withOpacity(0.6),
                                 style: TextStyle(
-                                  fontSize: customFontSize,
-                                  color: isDark ? Colors.white70 : kGreyColor,
-                                  fontStyle: FontStyle.italic,
+                                  color: isDark ? Colors.white : kThirdColor,
+                                  fontSize: descFontSize,
+                                  fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 applyTextScaler: true,
+                              ),
+                            ),
+                            SizedBox(height: hasMultipleHits ? 2 : 3),
+                            Flexible(
+                              child: HighlightedText(
+                                text: stock.barcode,
+                                query: trimmedQuery,
+                                highlightColor: Colors.amber.withOpacity(0.6),
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: barcodeFontSize,
+                                  color: kPrimaryColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                applyTextScaler: true,
+                              ),
+                            ),
+                            // Custom1 for Grid view (only when matched)
+                            if (showCustom1) ...[
+                              SizedBox(height: hasMultipleHits ? 1 : 2),
+                              Flexible(
+                                child: HighlightedText(
+                                  text: stock.custom1!,
+                                  query: trimmedQuery,
+                                  highlightColor: Colors.amber.withOpacity(0.6),
+                                  style: TextStyle(
+                                    fontSize: customFontSize,
+                                    color: isDark ? Colors.white70 : kGreyColor,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  applyTextScaler: true,
+                                ),
                               ),
                             ],
                             // Custom2 for Grid view (only when matched)
                             if (showCustom2) ...[
-                              const SizedBox(height: 2),
-                              HighlightedText(
-                                text: stock.custom2!,
-                                query: trimmedQuery,
-                                highlightColor: Colors.amber.withOpacity(0.6),
-                                style: TextStyle(
-                                  fontSize: customFontSize,
-                                  color: isDark ? Colors.white70 : kGreyColor,
-                                  fontStyle: FontStyle.italic,
+                              SizedBox(height: hasMultipleHits ? 1 : 2),
+                              Flexible(
+                                child: HighlightedText(
+                                  text: stock.custom2!,
+                                  query: trimmedQuery,
+                                  highlightColor: Colors.amber.withOpacity(0.6),
+                                  style: TextStyle(
+                                    fontSize: customFontSize,
+                                    color: isDark ? Colors.white70 : kGreyColor,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  applyTextScaler: true,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                applyTextScaler: true,
                               ),
                             ],
                           ],

@@ -11,6 +11,7 @@ import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_s
 import 'package:rmstock_scanner/features/stocktake/presentation/screens/stock_take_list_screen.dart';
 import 'package:rmstock_scanner/features/transactions/presentation/screens/stock_selection_screen.dart';
 import 'package:rmstock_scanner/features/stocktake/presentation/widgets/stocktake_question_dialog.dart';
+import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import 'package:rmstock_scanner/utils/navigation_extension.dart';
 import 'package:rmstock_scanner/utils/responsive_utils.dart';
 import '../../../../constants/colors.dart';
@@ -589,43 +590,78 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
           ),
 
-          Container(
-            margin: EdgeInsets.only(
-              top: isTablet ? 12 : 8,
-              bottom: 0,
-            ),
-            height: isMediumTabletPortrait
-                ? 42 * uiScale
-                : (isTablet ? 50 : 36) * uiScale * portraitBoost,
-            decoration: BoxDecoration(
-              color: isDark ? colors.surfaceAlt : Colors.transparent,
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              border: isDark
-                  ? Border.all(color: Colors.white38, width: 1)
-                  : null,
-            ),
-            child: CustomTextField(
-              focusNode: txtFieldFocusNode,
-              submitFunction: (_) {
-                qtyFocusNode.requestFocus();
-                qtyController.selection = TextSelection(
-                  baseOffset: 0,
-                  extentOffset: qtyController.text.length,
-                );
-              },
-              hintText: 'Manual Barcode/Desc Entry',
-              controller: _bcController,
-              function: (value) {
-                if (value.trim().isEmpty) {
-                  return; // Do nothing
-                }
-                _debouncer.run(() {
-                  context.read<ScannerBloc>().add(
-                    FetchStockDetails(barcode: value),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(
+                    top: isTablet ? 12 : 8,
+                    bottom: 0,
+                  ),
+                  height: isMediumTabletPortrait
+                      ? 42 * uiScale
+                      : (isTablet ? 50 : 36) * uiScale * portraitBoost,
+                  decoration: BoxDecoration(
+                    color: isDark ? colors.surfaceAlt : Colors.transparent,
+                    borderRadius: const BorderRadius.all(Radius.circular(10)),
+                    border: isDark
+                        ? Border.all(color: Colors.white38, width: 1)
+                        : null,
+                  ),
+                  child: CustomTextField(
+                    focusNode: txtFieldFocusNode,
+                    submitFunction: (_) {
+                      qtyFocusNode.requestFocus();
+                      qtyController.selection = TextSelection(
+                        baseOffset: 0,
+                        extentOffset: qtyController.text.length,
+                      );
+                    },
+                    hintText: 'Manual Barcode/Desc Entry',
+                    controller: _bcController,
+                    function: (value) {
+                      if (value.trim().isEmpty) {
+                        return; // Do nothing
+                      }
+                      _debouncer.run(() {
+                        context.read<ScannerBloc>().add(
+                          FetchStockDetails(barcode: value),
+                        );
+                      });
+                    },
+                  ),
+                ),
+              ),
+              // Go to Stock Lookup button
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const StockLookupScreen(showBackArrow: true),
+                    ),
                   );
-                });
-              },
-            ),
+                },
+                child: Container(
+                  margin: EdgeInsets.only(
+                    top: isTablet ? 12 : 8,
+                    left: isTablet ? 12 : 8,
+                  ),
+                  padding: EdgeInsets.all(isTablet ? 12 : 8),
+                  decoration: BoxDecoration(
+                    color: isDark ? colors.surfaceAlt : kSecondaryColor,
+                    borderRadius: BorderRadius.circular(10),
+                    border: isDark
+                        ? Border.all(color: Colors.white38, width: 1)
+                        : null,
+                  ),
+                  child: Icon(
+                    Icons.double_arrow_rounded,
+                    color: kPrimaryColor,
+                    size: isTablet ? 24 : 20,
+                  ),
+                ),
+              ),
+            ],
           ),
 
           // Gap between Manual Barcode Entry and Counted Qty
