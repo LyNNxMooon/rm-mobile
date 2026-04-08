@@ -18,6 +18,10 @@ class CartItemVO {
   final int taxType; // 0 or 1 = Ex-tax base, >= 2 = Inc-tax base
   final double incPrice; // Inclusive price (calculated or direct)
   final double exPrice; // Exclusive price (calculated or direct)
+  
+  // Cost fields (computed with proper tax handling)
+  final double computedCostEx;  // Ex-tax cost (from costEx or derived from cost using goods_tax)
+  final double computedCostInc; // Inc-tax cost (from costInc or derived from costEx)
 
   CartItemVO({
     required this.code,
@@ -33,6 +37,8 @@ class CartItemVO {
     this.taxType = 0,
     double? incPrice,
     double? exPrice,
+    this.computedCostEx = 0.0,
+    this.computedCostInc = 0.0,
   }) : incPrice = incPrice ?? sellPrice,
        exPrice = exPrice ?? sellPrice;
 
@@ -74,6 +80,8 @@ class CartItemVO {
     int? taxType,
     double? incPrice,
     double? exPrice,
+    double? computedCostEx,
+    double? computedCostInc,
   }) {
     return CartItemVO(
       code: code ?? this.code,
@@ -89,6 +97,8 @@ class CartItemVO {
       taxType: taxType ?? this.taxType,
       incPrice: incPrice ?? this.incPrice,
       exPrice: exPrice ?? this.exPrice,
+      computedCostEx: computedCostEx ?? this.computedCostEx,
+      computedCostInc: computedCostInc ?? this.computedCostInc,
     );
   }
 }

@@ -99,6 +99,8 @@ class RestoreSaleSession {
         taxType: taxType,
         incPrice: incPrice,
         exPrice: exPrice,
+        computedCostEx: itemData.costEx,
+        computedCostInc: itemData.costInc,
       );
       cartItems.add(cartItem);
     }

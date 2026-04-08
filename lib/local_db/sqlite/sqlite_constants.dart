@@ -445,6 +445,7 @@ const saleSessionsTableCreationQuery = '''
     discount REAL DEFAULT 0,
     total_inc REAL DEFAULT 0,
     total_ex REAL DEFAULT 0,
+    total_gp REAL DEFAULT 0,
     payment_amounts_json TEXT,
     survey_value TEXT,
     comment_value TEXT,

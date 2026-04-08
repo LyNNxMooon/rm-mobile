@@ -33,6 +33,7 @@ class SaleSessionVO {
   final double discount;
   final double totalInc;
   final double totalEx;
+  final double totalGp; // Total Gross Profit
   final Map<String, double> paymentAmounts;
   
   // Additional data
@@ -61,6 +62,7 @@ class SaleSessionVO {
     this.discount = 0.0,
     this.totalInc = 0.0,
     this.totalEx = 0.0,
+    this.totalGp = 0.0,
     this.paymentAmounts = const {},
     this.surveyValue,
     this.commentValue,
@@ -119,6 +121,7 @@ class SaleSessionVO {
       discount: (map['discount'] as num?)?.toDouble() ?? 0.0,
       totalInc: (map['total_inc'] as num?)?.toDouble() ?? 0.0,
       totalEx: (map['total_ex'] as num?)?.toDouble() ?? 0.0,
+      totalGp: (map['total_gp'] as num?)?.toDouble() ?? 0.0,
       paymentAmounts: payments,
       surveyValue: map['survey_value'] as String?,
       commentValue: map['comment_value'] as String?,
@@ -145,6 +148,7 @@ class SaleSessionVO {
       'discount': discount,
       'total_inc': totalInc,
       'total_ex': totalEx,
+      'total_gp': totalGp,
       'payment_amounts_json': jsonEncode(paymentAmounts),
       'survey_value': surveyValue,
       'comment_value': commentValue,
@@ -174,6 +178,7 @@ class SaleSessionVO {
     double? discount,
     double? totalInc,
     double? totalEx,
+    double? totalGp,
     Map<String, double>? paymentAmounts,
     String? surveyValue,
     String? commentValue,
@@ -196,6 +201,7 @@ class SaleSessionVO {
       discount: discount ?? this.discount,
       totalInc: totalInc ?? this.totalInc,
       totalEx: totalEx ?? this.totalEx,
+      totalGp: totalGp ?? this.totalGp,
       paymentAmounts: paymentAmounts ?? this.paymentAmounts,
       surveyValue: surveyValue ?? this.surveyValue,
       commentValue: commentValue ?? this.commentValue,
@@ -221,6 +227,7 @@ class CartItemData {
   final double costInc;  // Inclusive cost price
   final double? taxPercentage;
   final int? taxType;
+  final double gp;       // Gross Profit: (sellEx - cost) * qty, cost based on taxType
   
   // Additional fields for API payload
   final String? salesTax; // e.g., "GST"
@@ -244,6 +251,7 @@ class CartItemData {
     required this.costInc,
     this.taxPercentage,
     this.taxType,
+    this.gp = 0.0,
     this.salesTax,
     this.rrp,
     this.unitOfMeasure,
@@ -273,6 +281,7 @@ class CartItemData {
       costInc: (json['cost_inc'] as num?)?.toDouble() ?? 0.0,
       taxPercentage: (json['tax_percentage'] as num?)?.toDouble(),
       taxType: json['tax_type'] as int?,
+      gp: (json['gp'] as num?)?.toDouble() ?? 0.0,
       salesTax: json['sales_tax'] as String?,
       rrp: (json['rrp'] as num?)?.toDouble(),
       unitOfMeasure: (json['unit_of_measure'] as num?)?.toInt(),
@@ -297,6 +306,7 @@ class CartItemData {
       'cost_inc': costInc,
       'tax_percentage': taxPercentage,
       'tax_type': taxType,
+      'gp': gp,
       'sales_tax': salesTax,
       'rrp': rrp,
       'unit_of_measure': unitOfMeasure,
@@ -323,6 +333,7 @@ class CartItemData {
       'cost_inc': costInc,
       'tax_percentage': taxPercentage,
       'tax_type': taxType,
+      'gp': gp,
       'sales_tax': salesTax,
       'rrp': rrp,
       'unit_of_measure': unitOfMeasure,
@@ -334,48 +345,150 @@ class CartItemData {
 
   /// Create from CartItemVO (async to lookup goods_tax for costInc calculation)
   static Future<CartItemData> fromCartItemAsync(CartItemVO item, {String? shopfront}) async {
-    // Get cost values - ensure they are not null
     final stock = item.stock;
-    final double costEx = stock?.costEx ?? stock?.cost ?? 0.0;
+    final shop = shopfront ?? '';
     
-    // Calculate costInc from costEx using goods_tax percentage from TaxCodes table
+    // Get cost_ex value with proper tax handling
+    double costEx;
+    double? costTaxPercentage;
+    if (stock?.costEx != null) {
+      costEx = stock!.costEx!;
+    } else if (stock?.cost != null && stock!.cost > 0) {
+      // Look up goods_tax to determine tax_type
+      final costTaxResult = await TaxCalculationUtils.calculateCostTax(
+        cost: stock.cost,
+        goodsTax: stock.goodsTax,
+        shopfront: shop,
+      );
+      costTaxPercentage = costTaxResult.percentage;
+      if (costTaxResult.taxType == 0) {
+        // tax_type = 0: cost is ex-taxed, use directly
+        costEx = stock.cost;
+      } else {
+        // tax_type != 0: cost is inc-taxed, calculate ex by removing tax
+        costEx = costTaxResult.exPrice;
+      }
+    } else {
+      costEx = 0.0;
+    }
+    
+    // Calculate costInc from costEx by directly applying tax percentage
     double costInc = stock?.costInc ?? 0.0;
     if (costInc == 0.0 && costEx > 0) {
-      final costTaxResult = await TaxCalculationUtils.calculateCostTax(
-        cost: costEx,
-        goodsTax: stock?.goodsTax,
-        shopfront: shopfront,
-      );
-      costInc = costTaxResult.incPrice;
+      // Get tax percentage if not already fetched
+      if (costTaxPercentage == null && stock?.goodsTax != null) {
+        final costTaxResult = await TaxCalculationUtils.calculateCostTax(
+          cost: costEx,
+          goodsTax: stock?.goodsTax,
+          shopfront: shop,
+        );
+        costTaxPercentage = costTaxResult.percentage;
+      }
+      // Apply tax directly: costInc = costEx * (1 + percentage/100)
+      costInc = costTaxPercentage != null && costTaxPercentage > 0
+          ? costEx * (1 + costTaxPercentage / 100)
+          : costEx;
     }
     
     // RRP is the original inclusive sell price (before promotions/pricing grades)
-    final double rrp = stock?.sellInc ?? stock?.sell ?? 0.0;
+    double rrp;
+    if (stock?.sellInc != null) {
+      rrp = stock!.sellInc!;
+    } else if (stock?.sell != null && stock!.sell > 0) {
+      // Look up sales_tax to determine tax_type
+      final sellTaxResult = await TaxCalculationUtils.calculateSellTax(
+        sell: stock.sell,
+        salesTax: stock.salesTax,
+        shopfront: shop,
+      );
+      if (sellTaxResult.taxType == 0) {
+        // tax_type = 0: sell is ex-taxed, apply tax to get inc
+        rrp = sellTaxResult.incPrice;
+      } else {
+        // tax_type != 0: sell is inc-taxed, use directly
+        rrp = stock.sell;
+      }
+    } else {
+      rrp = 0.0;
+    }
     
     // Build package components if this is a package item
     List<CartItemData>? components;
     if (stock?.isPackage == true && stock?.packageComponents != null) {
       final shop = shopfront ?? '';
-      components = [];
+      
+      // First pass: collect all component data with original values
+      final List<_ComponentBuildData> componentData = [];
       
       for (final comp in stock!.packageComponents!) {
         // Look up component stock data from database
         final compStock = await LocalDbDAO.instance.getStockById(comp.stockId, shop);
         
-        // Get cost values for component
-        final compCostEx = compStock?.costEx ?? compStock?.cost ?? 0.0;
-        double compCostInc = compStock?.costInc ?? 0.0;
-        if (compCostInc == 0.0 && compCostEx > 0) {
+        // Get cost_ex value for component with proper tax handling
+        double compCostEx;
+        double? compCostTaxPercentage;
+        if (compStock?.costEx != null) {
+          compCostEx = compStock!.costEx!;
+        } else if (compStock?.cost != null && compStock!.cost > 0) {
+          // Look up goods_tax to determine tax_type
           final compCostTaxResult = await TaxCalculationUtils.calculateCostTax(
-            cost: compCostEx,
-            goodsTax: compStock?.goodsTax,
+            cost: compStock.cost,
+            goodsTax: compStock.goodsTax,
             shopfront: shop,
           );
-          compCostInc = compCostTaxResult.incPrice;
+          compCostTaxPercentage = compCostTaxResult.percentage;
+          if (compCostTaxResult.taxType == 0) {
+            // tax_type = 0: cost is ex-taxed, use directly
+            compCostEx = compStock.cost;
+          } else {
+            // tax_type != 0: cost is inc-taxed, calculate ex by removing tax
+            compCostEx = compCostTaxResult.exPrice;
+          }
+        } else {
+          compCostEx = 0.0;
         }
         
-        // Get sell_inc for component
-        final compSellInc = comp.sellInc ?? compStock?.sellInc ?? compStock?.sell ?? 0.0;
+        // Calculate costInc from costEx by directly applying tax percentage
+        double compCostInc = compStock?.costInc ?? 0.0;
+        if (compCostInc == 0.0 && compCostEx > 0) {
+          // Get tax percentage if not already fetched
+          if (compCostTaxPercentage == null && compStock?.goodsTax != null) {
+            final compCostTaxResult = await TaxCalculationUtils.calculateCostTax(
+              cost: compCostEx,
+              goodsTax: compStock?.goodsTax,
+              shopfront: shop,
+            );
+            compCostTaxPercentage = compCostTaxResult.percentage;
+          }
+          // Apply tax directly: costInc = costEx * (1 + percentage/100)
+          compCostInc = compCostTaxPercentage != null && compCostTaxPercentage > 0
+              ? compCostEx * (1 + compCostTaxPercentage / 100)
+              : compCostEx;
+        }
+        
+        // Get original sell_inc for component with proper tax handling
+        double orgSellInc;
+        if (comp.sellInc != null) {
+          orgSellInc = comp.sellInc!;
+        } else if (compStock?.sellInc != null) {
+          orgSellInc = compStock!.sellInc!;
+        } else if (compStock?.sell != null && compStock!.sell > 0) {
+          // Look up sales_tax to determine tax_type
+          final compSellTaxResult = await TaxCalculationUtils.calculateSellTax(
+            sell: compStock.sell,
+            salesTax: compStock.salesTax,
+            shopfront: shop,
+          );
+          if (compSellTaxResult.taxType == 0) {
+            // tax_type = 0: sell is ex-taxed, apply tax to get inc
+            orgSellInc = compSellTaxResult.incPrice;
+          } else {
+            // tax_type != 0: sell is inc-taxed, use directly
+            orgSellInc = compStock.sell;
+          }
+        } else {
+          orgSellInc = 0.0;
+        }
         
         // Look up sales_tax in TaxCodes table to get tax_percentage
         double? compTaxPercentage;
@@ -383,7 +496,7 @@ class CartItemData {
         
         if (compStock?.salesTax != null) {
           final sellTaxResult = await TaxCalculationUtils.calculateSellTax(
-            sell: compSellInc,
+            sell: orgSellInc,
             salesTax: compStock?.salesTax,
             shopfront: shop,
           );
@@ -391,35 +504,105 @@ class CartItemData {
           compTaxType = sellTaxResult.taxType;
         }
         
-        // Calculate sell_ex backwards from sell_inc using tax_percentage
-        final double compSellEx = compTaxPercentage != null && compTaxPercentage > 0
-            ? compSellInc / (1 + compTaxPercentage / 100)
-            : compSellInc;
+        // Calculate original sell_ex from sell_inc using tax_percentage
+        final double orgSellEx = compTaxPercentage != null && compTaxPercentage > 0
+            ? orgSellInc / (1 + compTaxPercentage / 100)
+            : orgSellInc;
         
-        // RRP for component (original inclusive sell price)
-        final compRrp = compStock?.sellInc ?? compStock?.sell ?? 0.0;
+        // Component GP for distribution ratio = (sell_ex - cost_ex) * qty
+        final double compGp = (orgSellEx - compCostEx) * comp.quantity;
         
-        // Only store description if it differs from stock description
-        final compDescOverridden = comp.description != null && 
-            compStock != null && 
-            comp.description != compStock.description;
-        
-        components.add(CartItemData(
-          code: comp.barcode ?? '',
-          description: compDescOverridden ? comp.description : null,
-          qty: comp.quantity,
-          stockId: comp.stockId,
-          sellInc: compSellInc,
-          sellEx: compSellEx,
+        componentData.add(_ComponentBuildData(
+          comp: comp,
+          compStock: compStock,
+          orgSellInc: orgSellInc,
+          orgSellEx: orgSellEx,
           costEx: compCostEx,
           costInc: compCostInc,
           taxPercentage: compTaxPercentage,
           taxType: compTaxType,
-          salesTax: compStock?.salesTax,
-          rrp: compRrp,
-          unitOfMeasure: compStock?.unitOfMeasure.toInt(),
-          isFreight: compStock?.freight ?? false,
-          isStatic: compStock?.staticQuantity ?? false,
+          gp: compGp,
+          rrp: orgSellInc, // RRP is the original inc sell price before distribution
+        ));
+      }
+      
+      // Calculate totals for distribution
+      final double totalPackageInc = componentData.fold(0.0, 
+          (sum, c) => sum + c.orgSellInc * c.comp.quantity);
+      final double totalPackageGp = componentData.fold(0.0, (sum, c) => sum + c.gp);
+      
+      // Detect markup/markdown: compare header's actual sell price with sum of components
+      final double headerSellInc = item.incPrice;
+      final double priceDiff = headerSellInc - totalPackageInc; // positive = markup, negative = markdown
+      
+      // Second pass: apply distribution if there's a pricing adjustment
+      components = [];
+      for (final data in componentData) {
+        double newSellInc = data.orgSellInc;
+        double newSellEx = data.orgSellEx;
+        
+        if (priceDiff.abs() > 0.001) { // There's a pricing adjustment
+          double ratio;
+          
+          if (priceDiff < 0) {
+            // Mark-down (discount)
+            final discount = priceDiff.abs();
+            if (totalPackageGp > 0 && totalPackageGp > discount) {
+              // Use GP ratio
+              ratio = totalPackageGp > 0 ? data.gp / totalPackageGp : 0;
+            } else {
+              // Use sell_inc ratio
+              ratio = totalPackageInc > 0 ? (data.orgSellInc * data.comp.quantity) / totalPackageInc : 0;
+            }
+            final comLineDiscount = discount * ratio;
+            newSellInc = data.orgSellInc - (comLineDiscount / data.comp.quantity);
+          } else {
+            // Mark-up
+            final markup = priceDiff;
+            if (totalPackageGp > 0) {
+              // Use GP ratio
+              ratio = data.gp / totalPackageGp;
+            } else {
+              // Use sell_inc ratio
+              ratio = totalPackageInc > 0 ? (data.orgSellInc * data.comp.quantity) / totalPackageInc : 0;
+            }
+            final comLineShare = markup * ratio;
+            newSellInc = data.orgSellInc + (comLineShare / data.comp.quantity);
+          }
+          
+          // Calculate new_sell_ex maintaining the same ratio
+          newSellEx = data.orgSellInc > 0 
+              ? newSellInc * (data.orgSellEx / data.orgSellInc) 
+              : newSellInc;
+        }
+        
+        // Only store description if it differs from stock description
+        final compDescOverridden = data.comp.description != null && 
+            data.compStock != null && 
+            data.comp.description != data.compStock!.description;
+        
+        // Calculate GP based on taxType from sales_tax:
+        // taxType == 0 -> use costEx, taxType != 0 -> use costInc
+        final compCostForGp = (data.taxType ?? 0) == 0 ? data.costEx : data.costInc;
+        final compGpValue = (newSellEx - compCostForGp) * data.comp.quantity;
+        
+        components.add(CartItemData(
+          code: data.comp.barcode ?? '',
+          description: compDescOverridden ? data.comp.description : null,
+          qty: data.comp.quantity,
+          stockId: data.comp.stockId,
+          sellInc: newSellInc,
+          sellEx: newSellEx,
+          costEx: data.costEx,
+          costInc: data.costInc,
+          taxPercentage: data.taxPercentage,
+          taxType: data.taxType,
+          gp: compGpValue,
+          salesTax: data.compStock?.salesTax,
+          rrp: data.rrp,
+          unitOfMeasure: data.compStock?.unitOfMeasure.toInt(),
+          isFreight: data.compStock?.freight ?? false,
+          isStatic: data.compStock?.staticQuantity ?? false,
           isDescriptionOverridden: compDescOverridden,
         ));
       }
@@ -427,6 +610,11 @@ class CartItemData {
     
     // Only store description if it was overridden at POS
     final isOverridden = item.description != stock?.description;
+    
+    // Calculate GP based on taxType from sales_tax:
+    // taxType == 0 -> use costEx, taxType != 0 -> use costInc
+    final costForGp = item.taxType == 0 ? costEx : costInc;
+    final gpValue = (item.exPrice - costForGp) * item.qty;
     
     return CartItemData(
       code: item.code,
@@ -440,6 +628,7 @@ class CartItemData {
       costInc: costInc,
       taxPercentage: item.taxPercentage,
       taxType: item.taxType,
+      gp: gpValue,
       salesTax: stock?.salesTax,
       rrp: rrp,
       unitOfMeasure: stock?.unitOfMeasure.toInt(),
@@ -450,6 +639,33 @@ class CartItemData {
       packageComponents: components,
     );
   }
+}
+
+/// Helper class for building package components with distribution
+class _ComponentBuildData {
+  final dynamic comp; // PackageComponent
+  final dynamic compStock; // StockVO?
+  final double orgSellInc;
+  final double orgSellEx;
+  final double costEx;
+  final double costInc;
+  final double? taxPercentage;
+  final int? taxType;
+  final double gp; // Used only for distribution ratio calculation
+  final double rrp; // Original inclusive sell price
+  
+  _ComponentBuildData({
+    required this.comp,
+    required this.compStock,
+    required this.orgSellInc,
+    required this.orgSellEx,
+    required this.costEx,
+    required this.costInc,
+    this.taxPercentage,
+    this.taxType,
+    required this.gp,
+    required this.rrp,
+  });
 }
 
 /// Delivery address data for serialization

@@ -197,8 +197,9 @@ class _SalesScreenState extends State<SalesScreen>
       _cartItems.fold(0, (sum, item) => sum + item.extension);
   
   /// Subtotal using exclusive prices (for profit calculation)
+  /// Each line rounded to 2dp before summing to match POS behavior
   double get _subtotalEx =>
-      _cartItems.fold(0.0, (sum, item) => sum + item.extensionEx);
+      _cartItems.fold(0.0, (sum, item) => sum + double.parse((item.extensionEx).toStringAsFixed(2)));
   
   /// Display subtotal respects the tax toggle
   double get _displaySubtotal => _isIncTax
@@ -212,13 +213,18 @@ class _SalesScreenState extends State<SalesScreen>
   /// Total Ex matching Tax Breakdown calculation (discount applied proportionally)
   double get _totalEx {
     final discountRatio = _subtotal > 0 ? (_subtotal - _discount) / _subtotal : 1.0;
-    return _subtotalEx * discountRatio;
+    return double.parse((_subtotalEx * discountRatio).toStringAsFixed(2));
   }
   
-  /// Total cost from actual item cost prices (exclusive)
-  double get _totalCost =>
-      _cartItems.fold(0.0, (sum, item) => 
-          sum + (item.stock?.costEx ?? item.stock?.cost ?? item.costPrice ?? 0.0) * item.qty);
+  /// Total cost based on sales_tax taxType:
+  /// If taxType == 0 -> use ex-taxed cost (computedCostEx)
+  /// If taxType != 0 -> use inc-taxed cost (computedCostInc)
+  double get _totalCost => _cartItems.fold(0.0, (sum, item) {
+    final cost = item.taxType == 0
+        ? item.computedCostEx
+        : item.computedCostInc;
+    return sum + cost * item.qty;
+  });
   
   /// Display total respects the tax toggle
   double get _displayTotal => _displaySubtotal - _discount + _rounding;
@@ -569,6 +575,7 @@ class _SalesScreenState extends State<SalesScreen>
       discount: _discountValue,
       totalInc: _total,
       totalEx: _totalEx,
+      totalGp: _totalEx - _totalCost,
       paymentAmounts: _paymentAmounts,
       surveyValue: _surveyValue,
       commentValue: _commentValue,
@@ -3439,7 +3446,7 @@ class _SalesScreenState extends State<SalesScreen>
           builder: (context, setDialogState) {
             // Calculate profit with temp discount for live preview (using proportional discount)
             final discountRatio = _subtotal > 0 ? (_subtotal - tempDiscount) / _subtotal : 1.0;
-            final double totalEx = _subtotalEx * discountRatio;
+            final double totalEx = double.parse((_subtotalEx * discountRatio).toStringAsFixed(2));
             final double egp = totalEx - _totalCost;
             final double egpPercent = totalEx > 0 ? (egp / totalEx) * 100 : 0;
             final bottomInset = MediaQuery.of(context).viewInsets.bottom;
@@ -4452,17 +4459,20 @@ class _SalesScreenState extends State<SalesScreen>
 
   Widget _buildTaxBreakdown(AppThemeColors colors, bool isDark) {
     // Calculate totals from cart items using their pre-calculated tax values
-    final double incTotal = _cartItems.fold(0.0, (sum, item) => sum + item.extension);
-    final double exTotal = _cartItems.fold(0.0, (sum, item) => sum + item.extensionEx);
+    // Each line rounded to 2dp before summing to match POS behavior
+    final double incTotal = _cartItems.fold(0.0, (sum, item) => sum + double.parse((item.extension).toStringAsFixed(2)));
+    final double exTotal = _cartItems.fold(0.0, (sum, item) => sum + double.parse((item.extensionEx).toStringAsFixed(2)));
     final double taxAmount = incTotal - exTotal;
     
     // Apply discount proportionally (discount is typically on Inc total)
     final double discountRatio = incTotal > 0 ? (incTotal - _discount) / incTotal : 1.0;
+    final double finalExTotal = double.parse((exTotal * discountRatio).toStringAsFixed(2));
+    final double finalTaxAmount = double.parse((taxAmount * discountRatio).toStringAsFixed(2));
     
     return TaxBreakdownWidget(
       incTotal: incTotal - _discount,
-      exTotal: exTotal * discountRatio,
-      taxAmount: taxAmount * discountRatio,
+      exTotal: finalExTotal,
+      taxAmount: finalTaxAmount,
       colors: colors,
       isDark: isDark,
     );

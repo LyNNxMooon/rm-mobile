@@ -17,6 +17,7 @@ class SaveSessionParams {
   final double discount;
   final double totalInc;
   final double totalEx;
+  final double totalGp;
   final Map<String, double> paymentAmounts;
   final String? surveyValue;
   final String? commentValue;
@@ -36,6 +37,7 @@ class SaveSessionParams {
     required this.discount,
     this.totalInc = 0.0,
     this.totalEx = 0.0,
+    this.totalGp = 0.0,
     required this.paymentAmounts,
     this.surveyValue,
     this.commentValue,
@@ -64,6 +66,9 @@ class SaveSaleSession {
       params.cartItems.map((e) => CartItemData.fromCartItemAsync(e, shopfront: params.shopfront)),
     );
 
+    // Use params.totalGp (calculated as _totalEx - _totalCost on screen)
+    // This accounts for the discount since _totalEx has discount applied
+
     final sessionMap = <String, dynamic>{
       'session_type': params.sessionType,
       'shopfront': params.shopfront,
@@ -79,6 +84,7 @@ class SaveSaleSession {
       'discount': params.discount,
       'total_inc': params.totalInc,
       'total_ex': params.totalEx,
+      'total_gp': params.totalGp,
       'survey_value': params.surveyValue?.isNotEmpty == true 
           ? params.surveyValue 
           : null,

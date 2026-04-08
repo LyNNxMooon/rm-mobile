@@ -343,6 +343,51 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         taxType = taxResult.taxType;
       }
       
+      // Calculate cost values with proper tax handling from goods_tax
+      double computedCostEx;
+      double computedCostInc;
+      double? costTaxPercentage;
+      
+      if (stock.costEx != null) {
+        computedCostEx = stock.costEx!;
+      } else if (stock.cost > 0) {
+        // Look up goods_tax to determine tax_type
+        final costTaxResult = await TaxCalculationUtils.calculateCostTax(
+          cost: stock.cost,
+          goodsTax: stock.goodsTax,
+        );
+        costTaxPercentage = costTaxResult.percentage;
+        if (costTaxResult.taxType == 0) {
+          // tax_type = 0: cost is ex-taxed, use directly
+          computedCostEx = stock.cost;
+        } else {
+          // tax_type != 0: cost is inc-taxed, calculate ex by removing tax
+          computedCostEx = costTaxResult.exPrice;
+        }
+      } else {
+        computedCostEx = 0.0;
+      }
+      
+      // Calculate costInc from costEx
+      if (stock.costInc != null) {
+        computedCostInc = stock.costInc!;
+      } else if (computedCostEx > 0) {
+        // Get tax percentage if not already fetched
+        if (costTaxPercentage == null && stock.goodsTax != null) {
+          final costTaxResult = await TaxCalculationUtils.calculateCostTax(
+            cost: computedCostEx,
+            goodsTax: stock.goodsTax,
+          );
+          costTaxPercentage = costTaxResult.percentage;
+        }
+        // Apply tax directly: costInc = costEx * (1 + percentage/100)
+        computedCostInc = costTaxPercentage != null && costTaxPercentage > 0
+            ? computedCostEx * (1 + costTaxPercentage / 100)
+            : computedCostEx;
+      } else {
+        computedCostInc = 0.0;
+      }
+      
       final newItem = CartItemVO(
         code: stock.barcode,
         description: stock.description,
@@ -356,6 +401,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         taxType: taxType,
         incPrice: incPrice,
         exPrice: exPrice,
+        computedCostEx: computedCostEx,
+        computedCostInc: computedCostInc,
       );
       
       _cartItems.insert(0, newItem);
