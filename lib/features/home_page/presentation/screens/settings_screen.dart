@@ -1438,6 +1438,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _exportAndShareDatabase(BuildContext context) async {
     try {
+      // Force WAL checkpoint to consolidate all data into main db file
+      await LocalDbDAO.instance.checkpointDatabase();
+      
       final dbPath = await getDatabasesPath();
       final path = p.join(dbPath, 'rm-mobile.db');
       final dbFile = File(path);

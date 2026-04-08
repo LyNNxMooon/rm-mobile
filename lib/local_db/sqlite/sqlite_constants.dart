@@ -436,14 +436,21 @@ const saleSessionsTableCreationQuery = '''
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     cart_items_json TEXT,
+    package_items_json TEXT,
     customer_id INTEGER,
     customer_barcode TEXT,
     customer_name TEXT,
+    staff_id INTEGER,
     subtotal REAL DEFAULT 0,
     discount REAL DEFAULT 0,
+    total_inc REAL DEFAULT 0,
+    total_ex REAL DEFAULT 0,
     payment_amounts_json TEXT,
     survey_value TEXT,
-    comment_value TEXT
+    comment_value TEXT,
+    drawer TEXT,
+    delivery_address_json TEXT,
+    email_audit_json TEXT
   )
 ''';
 

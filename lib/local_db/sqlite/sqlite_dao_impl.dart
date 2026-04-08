@@ -255,6 +255,18 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<void> checkpointDatabase() async {
+    try {
+      final db = _database;
+      if (db == null) return;
+      await db.rawQuery('PRAGMA wal_checkpoint(FULL)');
+      logger.d('WAL checkpoint completed - data consolidated to main db file');
+    } catch (error) {
+      logger.e('Error during WAL checkpoint: $error');
+    }
+  }
+
   Future<void> _addColumnIfMissing({
     required Database db,
     required String table,

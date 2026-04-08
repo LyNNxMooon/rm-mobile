@@ -9,18 +9,28 @@ import '../../../../utils/tax_calculation_utils.dart';
 class RestoreSessionResult {
   final List<CartItemVO> cartItems;
   final CustomerVO? customer;
+  final int? staffId;
   final double discount;
+  final double totalInc;
   final Map<String, double> paymentAmounts;
   final String surveyValue;
   final String commentValue;
+  final String? drawer;
+  final DeliveryAddressData? deliveryAddress;
+  final EmailAuditData? emailAudit;
 
   RestoreSessionResult({
     required this.cartItems,
     this.customer,
+    this.staffId,
     required this.discount,
+    this.totalInc = 0.0,
     required this.paymentAmounts,
     required this.surveyValue,
     required this.commentValue,
+    this.drawer,
+    this.deliveryAddress,
+    this.emailAudit,
   });
 }
 
@@ -49,47 +59,39 @@ class RestoreSaleSession {
       }
 
       // Use saved tax values if available, otherwise calculate
-      double incPrice;
-      double exPrice;
-      double taxPercentage;
-      int taxType;
+      double incPrice = itemData.sellInc;
+      double exPrice = itemData.sellEx;
+      double taxPercentage = itemData.taxPercentage ?? 0.0;
+      int taxType = itemData.taxType ?? 0;
 
-      final hasSavedTax = itemData.incPrice != null &&
-          itemData.exPrice != null &&
-          itemData.taxPercentage != null &&
-          itemData.taxType != null;
-
-      if (hasSavedTax) {
-        // Use the persisted tax values (prevents double-taxation for pricing grade items)
-        incPrice = itemData.incPrice!;
-        exPrice = itemData.exPrice!;
-        taxPercentage = itemData.taxPercentage!;
-        taxType = itemData.taxType!;
-      } else if (stock != null && stock.isPackage == true && stock.sellEx != null && stock.sellInc != null) {
-        // For package items, use sell_ex/sell_inc directly from stock
-        incPrice = stock.sellInc!;
-        exPrice = stock.sellEx!;
-        // Calculate percentage from prices
-        taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
-        taxType = 2; // Inc-tax base
-      } else {
-        // Regular items - calculate using tax tables
-        final taxResult = await TaxCalculationUtils.calculateSellTax(
-          sell: itemData.sellPrice,
-          salesTax: stock?.salesTax,
-        );
-        incPrice = taxResult.incPrice;
-        exPrice = taxResult.exPrice;
-        taxPercentage = taxResult.percentage;
-        taxType = taxResult.taxType;
+      // If we don't have saved prices, try to calculate from stock
+      if (incPrice == 0 && exPrice == 0 && stock != null) {
+        if (stock.isPackage == true && stock.sellEx != null && stock.sellInc != null) {
+          // For package items, use sell_ex/sell_inc directly from stock
+          incPrice = stock.sellInc!;
+          exPrice = stock.sellEx!;
+          // Calculate percentage from prices
+          taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
+          taxType = 2; // Inc-tax base
+        } else {
+          // Regular items - calculate using tax tables
+          final taxResult = await TaxCalculationUtils.calculateSellTax(
+            sell: stock.sell,
+            salesTax: stock.salesTax,
+          );
+          incPrice = taxResult.incPrice;
+          exPrice = taxResult.exPrice;
+          taxPercentage = taxResult.percentage;
+          taxType = taxResult.taxType;
+        }
       }
 
       final cartItem = CartItemVO(
         code: itemData.code,
-        description: itemData.description,
+        description: itemData.description ?? stock?.description ?? itemData.code,
         qty: itemData.qty,
-        sellPrice: itemData.sellPrice,
-        costPrice: itemData.costPrice,
+        sellPrice: incPrice, // Use inclusive price as sell price
+        costPrice: itemData.costEx > 0 ? itemData.costEx : itemData.costInc,
         stock: stock,
         serialNumber: itemData.serialNumber,
         isEditing: false,
@@ -116,10 +118,15 @@ class RestoreSaleSession {
     return RestoreSessionResult(
       cartItems: cartItems,
       customer: customer,
+      staffId: session.staffId,
       discount: session.discount,
+      totalInc: session.totalInc,
       paymentAmounts: Map.from(session.paymentAmounts),
       surveyValue: session.surveyValue ?? '',
       commentValue: session.commentValue ?? '',
+      drawer: session.drawer,
+      deliveryAddress: session.deliveryAddress,
+      emailAudit: session.emailAudit,
     );
   }
 }

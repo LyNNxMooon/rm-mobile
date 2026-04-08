@@ -186,6 +186,22 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
   }
 
   DeliveryInfoVO _buildDeliveryInfo() {
+    // Combine date and time into a single DateTime
+    DateTime? combinedDateTime;
+    if (_deliveryDate != null) {
+      if (_deliveryTime != null) {
+        combinedDateTime = DateTime(
+          _deliveryDate!.year,
+          _deliveryDate!.month,
+          _deliveryDate!.day,
+          _deliveryTime!.hour,
+          _deliveryTime!.minute,
+        );
+      } else {
+        combinedDateTime = _deliveryDate;
+      }
+    }
+    
     return DeliveryInfoVO(
       customerId: _selectedCustomer?.customerId,
       recipientName: _attentionController.text.trim(),
@@ -200,7 +216,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
       postcode: _postcodeController.text.trim(),
       country: _countryController.text.trim(),
       deliveryMethod: 'Standard',
-      deliveryDate: _deliveryDate,
+      deliveryDate: combinedDateTime,
       notes: _notesController.text.trim(),
       addressSource: _getAddressSource(),
     );

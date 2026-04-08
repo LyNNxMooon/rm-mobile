@@ -21,6 +21,7 @@ import '../../../../entities/vos/stock_vo.dart';
 import '../../../../utils/navigation_extension.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../local_db/sqlite/sqlite_constants.dart';
+import '../../../../local_db/local_db_dao.dart';
 import '../../domain/use_cases/save_sale_session.dart';
 import '../BLoC/sales_bloc.dart';
 import '../BLoC/sales_events.dart';
@@ -116,6 +117,12 @@ class _SalesScreenState extends State<SalesScreen>
 
   // Delivery info (stored until user leaves screen)
   DeliveryInfoVO? _deliveryInfo;
+  
+  // Committed delivery address for API payload (set when "Commit" in delivery_details_screen)
+  DeliveryAddressData? _committedDeliveryAddress;
+  
+  // Email audit data for API payload (set when "Email & Commit" is selected)
+  EmailAuditData? _emailAuditData;
 
   final bool _isPaymentMode = false;
   bool _showScanner = false;
@@ -189,6 +196,10 @@ class _SalesScreenState extends State<SalesScreen>
   double get _subtotal =>
       _cartItems.fold(0, (sum, item) => sum + item.extension);
   
+  /// Subtotal using exclusive prices (for profit calculation)
+  double get _subtotalEx =>
+      _cartItems.fold(0.0, (sum, item) => sum + item.extensionEx);
+  
   /// Display subtotal respects the tax toggle
   double get _displaySubtotal => _isIncTax
       ? _cartItems.fold(0, (sum, item) => sum + item.extension)
@@ -197,6 +208,17 @@ class _SalesScreenState extends State<SalesScreen>
   double get _discount => _discountValue;
   double get _rounding => 0.00; // Placeholder
   double get _total => _subtotal - _discount + _rounding;
+  
+  /// Total Ex matching Tax Breakdown calculation (discount applied proportionally)
+  double get _totalEx {
+    final discountRatio = _subtotal > 0 ? (_subtotal - _discount) / _subtotal : 1.0;
+    return _subtotalEx * discountRatio;
+  }
+  
+  /// Total cost from actual item cost prices (exclusive)
+  double get _totalCost =>
+      _cartItems.fold(0.0, (sum, item) => 
+          sum + (item.stock?.costEx ?? item.stock?.cost ?? item.costPrice ?? 0.0) * item.qty);
   
   /// Display total respects the tax toggle
   double get _displayTotal => _displaySubtotal - _discount + _rounding;
@@ -508,6 +530,8 @@ class _SalesScreenState extends State<SalesScreen>
       _surveyValue = restoreResult.surveyValue;
       _surveyController.text = _surveyValue;
       _commentValue = restoreResult.commentValue;
+      _committedDeliveryAddress = restoreResult.deliveryAddress;
+      _emailAuditData = restoreResult.emailAudit;
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -531,17 +555,31 @@ class _SalesScreenState extends State<SalesScreen>
     final shopfront = AppGlobals.instance.shopfront ?? '';
     if (shopfront.isEmpty) return;
 
+    // Get cash drawer from local db
+    final drawer = await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+
     final params = SaveSessionParams(
       existingSessionId: _currentSessionId,
       sessionType: widget.title,
       shopfront: shopfront,
       cartItems: _cartItems,
       customer: _selectedCustomer,
+      staffId: AppGlobals.instance.staffId,
       subtotal: _subtotal,
       discount: _discountValue,
+      totalInc: _total,
+      totalEx: _totalEx,
       paymentAmounts: _paymentAmounts,
       surveyValue: _surveyValue,
       commentValue: _commentValue,
+      drawer: drawer,
+      deliveryAddress: _committedDeliveryAddress,
+      emailAudit: EmailAuditData(
+        auditDate: DateTime.now(),
+        status: 0,
+        subject: '',
+        message: '',
+      ),
       buildCustomerDisplayName: _buildCustomerDisplayName,
     );
 
@@ -799,6 +837,8 @@ class _SalesScreenState extends State<SalesScreen>
             if (!proceed) return;
           } else if (state is CartUpdated) {
             if (_isRestoringSession) return;
+            // Save session immediately when cart is updated
+            _saveCurrentSession();
             await _promptBelowCostOnAddIfNeeded(
               state.cartItems,
               colors,
@@ -2079,12 +2119,6 @@ class _SalesScreenState extends State<SalesScreen>
       return;
     }
 
-    // Handle the result
-    if (result.result == FinaliseSaleResult.email) {
-      final emailData = result.emailData;
-      debugPrint('Sending receipt to: ${emailData?.email}');
-    }
-
     // Clear everything
     _clearSale();
   }
@@ -2097,6 +2131,8 @@ class _SalesScreenState extends State<SalesScreen>
       _salesBloc.add(ClearCart());
       _selectedCustomer = null;
       _deliveryInfo = null;
+      _committedDeliveryAddress = null;
+      _emailAuditData = null;
       _paymentAmounts.clear();
       _discountValue = 0.00;
       _discountController.text = "0.00";
@@ -3401,10 +3437,11 @@ class _SalesScreenState extends State<SalesScreen>
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            // Calculate profit with temp discount for live preview
-            final double totalCost = _subtotal * 0.6; // Using default cost ratio
-            final double egp = _subtotal - totalCost - tempDiscount;
-            final double egpPercent = _subtotal > 0 ? (egp / _subtotal) * 100 : 0;
+            // Calculate profit with temp discount for live preview (using proportional discount)
+            final discountRatio = _subtotal > 0 ? (_subtotal - tempDiscount) / _subtotal : 1.0;
+            final double totalEx = _subtotalEx * discountRatio;
+            final double egp = totalEx - _totalCost;
+            final double egpPercent = totalEx > 0 ? (egp / totalEx) * 100 : 0;
             final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
             return AnimatedPadding(
@@ -3623,7 +3660,7 @@ class _SalesScreenState extends State<SalesScreen>
                                       ),
                                     ),
                                     SizedBox(height: isTablet ? 18 : 14),
-                                    _buildProfitRow("Cost:", totalCost, isDark, isTablet),
+                                    _buildProfitRow("Cost:", _totalCost, isDark, isTablet),
                                     SizedBox(height: isTablet ? 14 : 12),
                                     _buildProfitRow("eGP:", egp, isDark, isTablet, highlight: true),
                                     SizedBox(height: isTablet ? 14 : 12),
@@ -4300,7 +4337,16 @@ class _SalesScreenState extends State<SalesScreen>
             ),
           );
           if (result != null && mounted) {
-            setState(() => _deliveryInfo = result);
+            setState(() {
+              _deliveryInfo = result;
+              // Convert to DeliveryAddressData for persistence
+              _committedDeliveryAddress = DeliveryAddressData.fromDeliveryInfo(
+                result,
+                companyName: _selectedCustomer?.company,
+              );
+            });
+            // Save to session immediately
+            _saveCurrentSession();
           }
         }
       });
@@ -4373,6 +4419,8 @@ class _SalesScreenState extends State<SalesScreen>
               setState(() {
                 _selectedCustomer = null;
                 _deliveryInfo = null;
+                _committedDeliveryAddress = null;
+                _emailAuditData = null;
                 _commentValue = "";
                 _surveyValue = "";
                 _discountValue = 0;
@@ -4422,8 +4470,8 @@ class _SalesScreenState extends State<SalesScreen>
 
   Widget _buildProfitBreakdown(AppThemeColors colors, bool isDark) {
     return ProfitBreakdownWidget(
-      subtotal: _subtotal,
-      discount: _discount,
+      totalEx: _totalEx,
+      totalCost: _totalCost,
       colors: colors,
       isDark: isDark,
     );

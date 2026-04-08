@@ -1,6 +1,11 @@
 import 'dart:convert';
 
+import 'package:intl/intl.dart';
+
+import '../../local_db/local_db_dao.dart';
+import '../../utils/tax_calculation_utils.dart';
 import 'cart_item_vo.dart';
+import 'delivery_info_vo.dart';
 
 /// Value Object for persisted sale sessions.
 /// Captures the full state of a sale transaction for later continuation.
@@ -11,7 +16,8 @@ class SaleSessionVO {
   final DateTime createdAt;
   final DateTime updatedAt;
   
-  // Cart items serialized as JSON
+  // Cart items serialized as JSON (includes both regular and package items)
+  // Package items have isPackage=true and packageComponents populated
   final List<CartItemData> cartItems;
   
   // Customer data
@@ -19,14 +25,26 @@ class SaleSessionVO {
   final String? customerBarcode;
   final String? customerName;
   
+  // Staff data
+  final int? staffId;
+  
   // Transaction values
   final double subtotal;
   final double discount;
+  final double totalInc;
+  final double totalEx;
   final Map<String, double> paymentAmounts;
   
   // Additional data
   final String? surveyValue;
   final String? commentValue;
+  final String? drawer; // e.g., "M"
+  
+  // Delivery Address (only stored when committed in delivery_details_screen)
+  final DeliveryAddressData? deliveryAddress;
+  
+  // Email Audit (only stored when "Email & Commit" is used)
+  final EmailAuditData? emailAudit;
 
   SaleSessionVO({
     required this.id,
@@ -38,11 +56,17 @@ class SaleSessionVO {
     this.customerId,
     this.customerBarcode,
     this.customerName,
+    this.staffId,
     this.subtotal = 0.0,
     this.discount = 0.0,
+    this.totalInc = 0.0,
+    this.totalEx = 0.0,
     this.paymentAmounts = const {},
     this.surveyValue,
     this.commentValue,
+    this.drawer,
+    this.deliveryAddress,
+    this.emailAudit,
   });
 
   /// Number of items in cart
@@ -68,6 +92,18 @@ class SaleSessionVO {
       payments = decoded.map((k, v) => MapEntry(k, (v as num).toDouble()));
     }
 
+    DeliveryAddressData? deliveryAddress;
+    if (map['delivery_address_json'] != null) {
+      final decoded = jsonDecode(map['delivery_address_json'] as String) as Map<String, dynamic>;
+      deliveryAddress = DeliveryAddressData.fromJson(decoded);
+    }
+
+    EmailAuditData? emailAudit;
+    if (map['email_audit_json'] != null) {
+      final decoded = jsonDecode(map['email_audit_json'] as String) as Map<String, dynamic>;
+      emailAudit = EmailAuditData.fromJson(decoded);
+    }
+
     return SaleSessionVO(
       id: map['id'] as int,
       sessionType: map['session_type'] as String,
@@ -78,11 +114,17 @@ class SaleSessionVO {
       customerId: map['customer_id'] as int?,
       customerBarcode: map['customer_barcode'] as String?,
       customerName: map['customer_name'] as String?,
+      staffId: map['staff_id'] as int?,
       subtotal: (map['subtotal'] as num?)?.toDouble() ?? 0.0,
       discount: (map['discount'] as num?)?.toDouble() ?? 0.0,
+      totalInc: (map['total_inc'] as num?)?.toDouble() ?? 0.0,
+      totalEx: (map['total_ex'] as num?)?.toDouble() ?? 0.0,
       paymentAmounts: payments,
       surveyValue: map['survey_value'] as String?,
       commentValue: map['comment_value'] as String?,
+      drawer: map['drawer'] as String?,
+      deliveryAddress: deliveryAddress,
+      emailAudit: emailAudit,
     );
   }
 
@@ -98,11 +140,21 @@ class SaleSessionVO {
       'customer_id': customerId,
       'customer_barcode': customerBarcode,
       'customer_name': customerName,
+      'staff_id': staffId,
       'subtotal': subtotal,
       'discount': discount,
+      'total_inc': totalInc,
+      'total_ex': totalEx,
       'payment_amounts_json': jsonEncode(paymentAmounts),
       'survey_value': surveyValue,
       'comment_value': commentValue,
+      'drawer': drawer,
+      'delivery_address_json': deliveryAddress != null 
+          ? jsonEncode(deliveryAddress!.toJson()) 
+          : null,
+      'email_audit_json': emailAudit != null 
+          ? jsonEncode(emailAudit!.toJson()) 
+          : null,
     };
   }
 
@@ -117,11 +169,17 @@ class SaleSessionVO {
     int? customerId,
     String? customerBarcode,
     String? customerName,
+    int? staffId,
     double? subtotal,
     double? discount,
+    double? totalInc,
+    double? totalEx,
     Map<String, double>? paymentAmounts,
     String? surveyValue,
     String? commentValue,
+    String? drawer,
+    DeliveryAddressData? deliveryAddress,
+    EmailAuditData? emailAudit,
   }) {
     return SaleSessionVO(
       id: id ?? this.id,
@@ -133,11 +191,17 @@ class SaleSessionVO {
       customerId: customerId ?? this.customerId,
       customerBarcode: customerBarcode ?? this.customerBarcode,
       customerName: customerName ?? this.customerName,
+      staffId: staffId ?? this.staffId,
       subtotal: subtotal ?? this.subtotal,
       discount: discount ?? this.discount,
+      totalInc: totalInc ?? this.totalInc,
+      totalEx: totalEx ?? this.totalEx,
       paymentAmounts: paymentAmounts ?? this.paymentAmounts,
       surveyValue: surveyValue ?? this.surveyValue,
       commentValue: commentValue ?? this.commentValue,
+      drawer: drawer ?? this.drawer,
+      deliveryAddress: deliveryAddress ?? this.deliveryAddress,
+      emailAudit: emailAudit ?? this.emailAudit,
     );
   }
 }
@@ -145,77 +209,397 @@ class SaleSessionVO {
 /// Simplified cart item data for serialization
 class CartItemData {
   final String code;
-  final String description;
+  final String? description; // Only stored when overridden at POS
   final double qty;
-  final double sellPrice;
-  final double? costPrice;
   final String? serialNumber;
   final int? stockId;
-  final double? incPrice;
-  final double? exPrice;
+  
+  // Price fields
+  final double sellInc;  // Inclusive sell price
+  final double sellEx;   // Exclusive sell price  
+  final double costEx;   // Exclusive cost price
+  final double costInc;  // Inclusive cost price
   final double? taxPercentage;
   final int? taxType;
+  
+  // Additional fields for API payload
+  final String? salesTax; // e.g., "GST"
+  final double? rrp;
+  final int? unitOfMeasure;
+  final bool isFreight;
+  final bool isStatic;
+  final bool isDescriptionOverridden; // Only store description when overridden at POS
+  final bool isPackage; // Whether this is a package item
+  final List<CartItemData>? packageComponents; // Component lines for packages
 
   CartItemData({
     required this.code,
-    required this.description,
+    this.description,
     required this.qty,
-    required this.sellPrice,
-    this.costPrice,
     this.serialNumber,
     this.stockId,
-    this.incPrice,
-    this.exPrice,
+    required this.sellInc,
+    required this.sellEx,
+    required this.costEx,
+    required this.costInc,
     this.taxPercentage,
     this.taxType,
+    this.salesTax,
+    this.rrp,
+    this.unitOfMeasure,
+    this.isFreight = false,
+    this.isStatic = false,
+    this.isDescriptionOverridden = false,
+    this.isPackage = false,
+    this.packageComponents,
   });
 
   factory CartItemData.fromJson(Map<String, dynamic> json) {
+    List<CartItemData>? components;
+    if (json['package_components'] != null) {
+      final decoded = json['package_components'] as List;
+      components = decoded.map((e) => CartItemData.fromJson(e as Map<String, dynamic>)).toList();
+    }
+    
     return CartItemData(
       code: json['code'] as String,
-      description: json['description'] as String,
+      description: json['description'] as String?,
       qty: (json['qty'] as num).toDouble(),
-      sellPrice: (json['sell_price'] as num).toDouble(),
-      costPrice: (json['cost_price'] as num?)?.toDouble(),
       serialNumber: json['serial_number'] as String?,
       stockId: json['stock_id'] as int?,
-      incPrice: (json['inc_price'] as num?)?.toDouble(),
-      exPrice: (json['ex_price'] as num?)?.toDouble(),
+      sellInc: (json['sell_inc'] as num?)?.toDouble() ?? 0.0,
+      sellEx: (json['sell_ex'] as num?)?.toDouble() ?? 0.0,
+      costEx: (json['cost_ex'] as num?)?.toDouble() ?? 0.0,
+      costInc: (json['cost_inc'] as num?)?.toDouble() ?? 0.0,
       taxPercentage: (json['tax_percentage'] as num?)?.toDouble(),
       taxType: json['tax_type'] as int?,
+      salesTax: json['sales_tax'] as String?,
+      rrp: (json['rrp'] as num?)?.toDouble(),
+      unitOfMeasure: (json['unit_of_measure'] as num?)?.toInt(),
+      isFreight: json['is_freight'] == true,
+      isStatic: json['is_static'] == true,
+      isDescriptionOverridden: json['is_description_overridden'] == true,
+      isPackage: json['is_package'] == true,
+      packageComponents: components,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'code': code,
-      'description': description,
+      if (description != null) 'description': description,
       'qty': qty,
-      'sell_price': sellPrice,
-      'cost_price': costPrice,
       'serial_number': serialNumber,
       'stock_id': stockId,
-      'inc_price': incPrice,
-      'ex_price': exPrice,
+      'sell_inc': sellInc,
+      'sell_ex': sellEx,
+      'cost_ex': costEx,
+      'cost_inc': costInc,
       'tax_percentage': taxPercentage,
       'tax_type': taxType,
+      'sales_tax': salesTax,
+      'rrp': rrp,
+      'unit_of_measure': unitOfMeasure,
+      'is_freight': isFreight,
+      'is_static': isStatic,
+      'is_description_overridden': isDescriptionOverridden,
+      'is_package': isPackage,
+      if (packageComponents != null && packageComponents!.isNotEmpty)
+        'package_components': packageComponents!.map((e) => e._toJsonAsComponent()).toList(),
     };
   }
 
-  /// Create from CartItemVO
-  factory CartItemData.fromCartItem(CartItemVO item) {
+  /// Serialize as a package component (excludes is_package field)
+  Map<String, dynamic> _toJsonAsComponent() {
+    return {
+      'code': code,
+      if (description != null) 'description': description,
+      'qty': qty,
+      'serial_number': serialNumber,
+      'stock_id': stockId,
+      'sell_inc': sellInc,
+      'sell_ex': sellEx,
+      'cost_ex': costEx,
+      'cost_inc': costInc,
+      'tax_percentage': taxPercentage,
+      'tax_type': taxType,
+      'sales_tax': salesTax,
+      'rrp': rrp,
+      'unit_of_measure': unitOfMeasure,
+      'is_freight': isFreight,
+      'is_static': isStatic,
+      'is_description_overridden': isDescriptionOverridden,
+    };
+  }
+
+  /// Create from CartItemVO (async to lookup goods_tax for costInc calculation)
+  static Future<CartItemData> fromCartItemAsync(CartItemVO item, {String? shopfront}) async {
+    // Get cost values - ensure they are not null
+    final stock = item.stock;
+    final double costEx = stock?.costEx ?? stock?.cost ?? 0.0;
+    
+    // Calculate costInc from costEx using goods_tax percentage from TaxCodes table
+    double costInc = stock?.costInc ?? 0.0;
+    if (costInc == 0.0 && costEx > 0) {
+      final costTaxResult = await TaxCalculationUtils.calculateCostTax(
+        cost: costEx,
+        goodsTax: stock?.goodsTax,
+        shopfront: shopfront,
+      );
+      costInc = costTaxResult.incPrice;
+    }
+    
+    // RRP is the original inclusive sell price (before promotions/pricing grades)
+    final double rrp = stock?.sellInc ?? stock?.sell ?? 0.0;
+    
+    // Build package components if this is a package item
+    List<CartItemData>? components;
+    if (stock?.isPackage == true && stock?.packageComponents != null) {
+      final shop = shopfront ?? '';
+      components = [];
+      
+      for (final comp in stock!.packageComponents!) {
+        // Look up component stock data from database
+        final compStock = await LocalDbDAO.instance.getStockById(comp.stockId, shop);
+        
+        // Get cost values for component
+        final compCostEx = compStock?.costEx ?? compStock?.cost ?? 0.0;
+        double compCostInc = compStock?.costInc ?? 0.0;
+        if (compCostInc == 0.0 && compCostEx > 0) {
+          final compCostTaxResult = await TaxCalculationUtils.calculateCostTax(
+            cost: compCostEx,
+            goodsTax: compStock?.goodsTax,
+            shopfront: shop,
+          );
+          compCostInc = compCostTaxResult.incPrice;
+        }
+        
+        // Get sell_inc for component
+        final compSellInc = comp.sellInc ?? compStock?.sellInc ?? compStock?.sell ?? 0.0;
+        
+        // Look up sales_tax in TaxCodes table to get tax_percentage
+        double? compTaxPercentage;
+        int? compTaxType;
+        
+        if (compStock?.salesTax != null) {
+          final sellTaxResult = await TaxCalculationUtils.calculateSellTax(
+            sell: compSellInc,
+            salesTax: compStock?.salesTax,
+            shopfront: shop,
+          );
+          compTaxPercentage = sellTaxResult.percentage;
+          compTaxType = sellTaxResult.taxType;
+        }
+        
+        // Calculate sell_ex backwards from sell_inc using tax_percentage
+        final double compSellEx = compTaxPercentage != null && compTaxPercentage > 0
+            ? compSellInc / (1 + compTaxPercentage / 100)
+            : compSellInc;
+        
+        // RRP for component (original inclusive sell price)
+        final compRrp = compStock?.sellInc ?? compStock?.sell ?? 0.0;
+        
+        // Only store description if it differs from stock description
+        final compDescOverridden = comp.description != null && 
+            compStock != null && 
+            comp.description != compStock.description;
+        
+        components.add(CartItemData(
+          code: comp.barcode ?? '',
+          description: compDescOverridden ? comp.description : null,
+          qty: comp.quantity,
+          stockId: comp.stockId,
+          sellInc: compSellInc,
+          sellEx: compSellEx,
+          costEx: compCostEx,
+          costInc: compCostInc,
+          taxPercentage: compTaxPercentage,
+          taxType: compTaxType,
+          salesTax: compStock?.salesTax,
+          rrp: compRrp,
+          unitOfMeasure: compStock?.unitOfMeasure.toInt(),
+          isFreight: compStock?.freight ?? false,
+          isStatic: compStock?.staticQuantity ?? false,
+          isDescriptionOverridden: compDescOverridden,
+        ));
+      }
+    }
+    
+    // Only store description if it was overridden at POS
+    final isOverridden = item.description != stock?.description;
+    
     return CartItemData(
       code: item.code,
-      description: item.description,
+      description: isOverridden ? item.description : null,
       qty: item.qty,
-      sellPrice: item.sellPrice,
-      costPrice: item.costPrice,
       serialNumber: item.serialNumber,
-      stockId: item.stock?.stockID.toInt(),
-      incPrice: item.incPrice,
-      exPrice: item.exPrice,
+      stockId: stock?.stockID.toInt(),
+      sellInc: item.incPrice,
+      sellEx: item.exPrice,
+      costEx: costEx,
+      costInc: costInc,
       taxPercentage: item.taxPercentage,
       taxType: item.taxType,
+      salesTax: stock?.salesTax,
+      rrp: rrp,
+      unitOfMeasure: stock?.unitOfMeasure.toInt(),
+      isFreight: stock?.freight ?? false,
+      isStatic: stock?.staticQuantity ?? false,
+      isDescriptionOverridden: isOverridden,
+      isPackage: stock?.isPackage ?? false,
+      packageComponents: components,
     );
+  }
+}
+
+/// Delivery address data for serialization
+/// Only stored when committed in delivery_details_screen
+class DeliveryAddressData {
+  final String? companyName;
+  final String? attention;
+  final String? addr1;
+  final String? addr2;
+  final String? addr3;
+  final String? suburb;
+  final String? state;
+  final String? postcode;
+  final String? country;
+  final String? phone;
+  final String? deliveryDate; // Formatted as "dd/MM/yy @HH:mm"
+  final String? comment;
+
+  DeliveryAddressData({
+    this.companyName,
+    this.attention,
+    this.addr1,
+    this.addr2,
+    this.addr3,
+    this.suburb,
+    this.state,
+    this.postcode,
+    this.country,
+    this.phone,
+    this.deliveryDate,
+    this.comment,
+  });
+
+  factory DeliveryAddressData.fromJson(Map<String, dynamic> json) {
+    return DeliveryAddressData(
+      companyName: json['company_name'] as String?,
+      attention: json['attention'] as String?,
+      addr1: json['addr1'] as String?,
+      addr2: json['addr2'] as String?,
+      addr3: json['addr3'] as String?,
+      suburb: json['suburb'] as String?,
+      state: json['state'] as String?,
+      postcode: json['postcode'] as String?,
+      country: json['country'] as String?,
+      phone: json['phone'] as String?,
+      deliveryDate: json['delivery_date'] as String?,
+      comment: json['comment'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'company_name': companyName,
+      'attention': attention,
+      'addr1': addr1,
+      'addr2': addr2,
+      'addr3': addr3,
+      'suburb': suburb,
+      'state': state,
+      'postcode': postcode,
+      'country': country,
+      'phone': phone,
+      'delivery_date': deliveryDate,
+      'comment': comment,
+    };
+  }
+
+  /// Convert to API payload format
+  Map<String, dynamic> toApiPayload() {
+    return {
+      'companyName': companyName ?? '',
+      'attention': attention ?? '',
+      'addr1': addr1 ?? '',
+      'addr2': addr2 ?? '',
+      'addr3': addr3 ?? '',
+      'suburb': suburb ?? '',
+      'state': state ?? '',
+      'postcode': postcode ?? '',
+      'country': country ?? '',
+      'phone': phone ?? '',
+      'deliveryDate': deliveryDate ?? '',
+      'comment': comment ?? '',
+    };
+  }
+
+  /// Create from DeliveryInfoVO (used when committing delivery details)
+  factory DeliveryAddressData.fromDeliveryInfo(DeliveryInfoVO info, {String? companyName}) {
+    // Format delivery date as "dd/MM/yy @HH:mm"
+    String? formattedDeliveryDate;
+    if (info.deliveryDate != null) {
+      formattedDeliveryDate = DateFormat("dd/MM/yy '@'HH:mm").format(info.deliveryDate!);
+    }
+    
+    return DeliveryAddressData(
+      companyName: companyName,
+      attention: info.recipientName,
+      addr1: info.addr1,
+      addr2: info.addr2,
+      addr3: info.addr3,
+      suburb: info.suburb,
+      state: info.state,
+      postcode: info.postcode,
+      country: info.country,
+      phone: info.phone.isNotEmpty ? info.phone : info.mobile,
+      deliveryDate: formattedDeliveryDate,
+      comment: info.notes,
+    );
+  }
+}
+
+/// Email audit data for serialization
+/// Only stored when "Email & Commit" is used
+class EmailAuditData {
+  final DateTime auditDate;
+  final int status; // Always 0
+  final String subject; // Always empty
+  final String message; // Always empty
+
+  EmailAuditData({
+    required this.auditDate,
+    this.status = 0,
+    this.subject = '',
+    this.message = '',
+  });
+
+  factory EmailAuditData.fromJson(Map<String, dynamic> json) {
+    return EmailAuditData(
+      auditDate: DateTime.parse(json['audit_date'] as String),
+      status: json['status'] as int? ?? 0,
+      subject: json['subject'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'audit_date': auditDate.toIso8601String(),
+      'status': status,
+      'subject': subject,
+      'message': message,
+    };
+  }
+
+  /// Convert to API payload format
+  Map<String, dynamic> toApiPayload() {
+    return {
+      'auditDate': auditDate.toIso8601String(),
+      'status': status,
+      'subject': subject,
+      'message': message,
+    };
   }
 }

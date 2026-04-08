@@ -107,26 +107,23 @@ class TaxBreakdownWidget extends StatelessWidget {
 
 /// Profit breakdown widget showing Cost, eGP, eGP%
 class ProfitBreakdownWidget extends StatelessWidget {
-  final double subtotal;
-  final double discount;
+  final double totalEx;
+  final double totalCost;
   final AppThemeColors colors;
   final bool isDark;
-  final double costRatio;
 
   const ProfitBreakdownWidget({
     super.key,
-    required this.subtotal,
-    required this.discount,
+    required this.totalEx,
+    required this.totalCost,
     required this.colors,
     required this.isDark,
-    this.costRatio = 0.6, // Default: cost is 60% of sell price
   });
 
   @override
   Widget build(BuildContext context) {
-    final double totalCost = subtotal * costRatio;
-    final double egp = subtotal - totalCost - discount;
-    final double egpPercent = subtotal > 0 ? (egp / subtotal) * 100 : 0;
+    final double egp = totalEx - totalCost;
+    final double egpPercent = totalEx > 0 ? (egp / totalEx) * 100 : 0;
     final bool isTablet = context.isTablet;
 
     return Container(

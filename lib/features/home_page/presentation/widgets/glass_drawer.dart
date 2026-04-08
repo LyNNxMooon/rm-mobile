@@ -325,7 +325,7 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
         title: "Sales",
         themeColor: Colors.green,
         icon: Icons.point_of_sale_outlined,
-      ));
+      )).then((_) => _loadSessionCounts());
     } else if (action == "account_sales") {
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
