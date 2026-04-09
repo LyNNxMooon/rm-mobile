@@ -718,18 +718,23 @@ class _SalesScreenState extends State<SalesScreen>
     // Get calculated totals with discount distribution (4dp precision)
     final totals = _calculatedTotals;
 
+    // For Account Sale, use customer's owner_id as staff_id
+    final int? staffId = widget.title == 'Account Sale' && _selectedCustomer != null
+        ? _selectedCustomer!.ownerId
+        : AppGlobals.instance.staffId;
+
     final params = SaveSessionParams(
       existingSessionId: _currentSessionId,
       sessionType: widget.title,
       shopfront: shopfront,
       cartItems: _cartItems,
       customer: _selectedCustomer,
-      staffId: AppGlobals.instance.staffId,
+      staffId: staffId,
       subtotal: _subtotal,
       discount: _discountValue,
       totalInc: _total,
-      totalEx: double.parse(totals.totalEx.toStringAsFixed(2)),
-      totalGp: double.parse(totals.totalGp.toStringAsFixed(2)),
+      totalEx: totals.totalEx,  // Store raw precision
+      totalGp: totals.totalGp,  // Store raw precision
       paymentAmounts: _paymentAmounts,
       surveyValue: _surveyValue,
       commentValue: _commentValue,
