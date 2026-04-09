@@ -109,6 +109,7 @@ class TaxBreakdownWidget extends StatelessWidget {
 class ProfitBreakdownWidget extends StatelessWidget {
   final double totalEx;
   final double totalCost;
+  final double? totalGp; // Optional: if provided, use directly instead of calculating
   final AppThemeColors colors;
   final bool isDark;
 
@@ -116,13 +117,15 @@ class ProfitBreakdownWidget extends StatelessWidget {
     super.key,
     required this.totalEx,
     required this.totalCost,
+    this.totalGp,
     required this.colors,
     required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    final double egp = totalEx - totalCost;
+    // Use provided totalGp or calculate from totalEx - totalCost
+    final double egp = totalGp ?? (totalEx - totalCost);
     final double egpPercent = totalEx > 0 ? (egp / totalEx) * 100 : 0;
     final bool isTablet = context.isTablet;
 

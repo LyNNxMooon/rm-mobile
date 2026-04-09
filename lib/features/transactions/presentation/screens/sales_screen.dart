@@ -197,24 +197,175 @@ class _SalesScreenState extends State<SalesScreen>
       _cartItems.fold(0, (sum, item) => sum + item.extension);
   
   /// Subtotal using exclusive prices (for profit calculation)
-  /// Each line rounded to 2dp before summing to match POS behavior
-  double get _subtotalEx =>
-      _cartItems.fold(0.0, (sum, item) => sum + double.parse((item.extensionEx).toStringAsFixed(2)));
+  /// Calculate line GP: (sellEx - cost) * qty, cost based on taxType
+  double _calcLineGp(CartItemVO item) {
+    final sellEx = item.exPrice;
+    final cost = item.taxType == 0
+        ? item.computedCostEx
+        : item.computedCostInc;
+    return (sellEx - cost) * item.qty;
+  }
+  
+  /// Total GP before discount (sum of line GPs)
+  double get _totalGpBeforeDiscount => _cartItems.fold(0.0, (sum, item) => sum + _calcLineGp(item));
+  
+  /// Calculate totals with discount distribution using GP ratio
+  /// Returns (totalEx, totalTax, totalGp) with 4dp precision, display with 2dp
+  ({double totalEx, double totalTax, double totalGp}) get _calculatedTotals {
+    if (_discount <= 0 || _cartItems.isEmpty) {
+      // No discount - simple calculation with 4dp precision
+      double totalTax = 0.0;
+      double totalGp = 0.0;
+      
+      for (final item in _cartItems) {
+        final extensionInc = item.extension;
+        final rate = item.taxPercentage;
+        // Tax with 4dp precision
+        final lineTax = rate > 0 ? extensionInc * rate / (100 + rate) : 0.0;
+        totalTax += lineTax;
+        
+        // GP with 4dp precision
+        totalGp += _calcLineGp(item);
+      }
+      
+      final totalEx = _subtotal - totalTax;
+      return (totalEx: totalEx, totalTax: totalTax, totalGp: totalGp);
+    }
+    
+    // Has discount - distribute using GP ratio
+    final totalGpBeforeDisc = _totalGpBeforeDiscount;
+    final useGpRatio = totalGpBeforeDisc > 0 && totalGpBeforeDisc > _discount;
+    
+    double newTotalTax = 0.0;
+    double newTotalGp = 0.0;
+    
+    for (final item in _cartItems) {
+      final orgSellInc = item.incPrice;
+      final orgSellEx = item.exPrice;
+      final qty = item.qty;
+      final rate = item.taxPercentage;
+      final lineGp = _calcLineGp(item);
+      
+      // Calculate ratio
+      double ratio;
+      if (useGpRatio) {
+        ratio = totalGpBeforeDisc > 0 ? lineGp / totalGpBeforeDisc : 0;
+      } else {
+        ratio = _subtotal > 0 ? (orgSellInc * qty) / _subtotal : 0;
+      }
+      
+      // Line discount and new prices (4dp precision)
+      final lineDiscount = _discount * ratio;
+      final newSellInc = orgSellInc - (lineDiscount / qty);
+      final newSellEx = orgSellInc > 0 
+          ? newSellInc * (orgSellEx / orgSellInc) 
+          : newSellInc;
+      
+      // Line tax after discount (4dp precision)
+      final newExtensionInc = newSellInc * qty;
+      final newLineTax = rate > 0 ? newExtensionInc * rate / (100 + rate) : 0.0;
+      newTotalTax += newLineTax;
+      
+      // Line GP after discount: (newSellEx - cost) * qty
+      final cost = item.taxType == 0
+          ? item.computedCostEx
+          : item.computedCostInc;
+      final newLineGp = (newSellEx - cost) * qty;
+      newTotalGp += newLineGp;
+    }
+    
+    final totalInc = _subtotal - _discount;
+    final totalEx = totalInc - newTotalTax;
+    
+    return (totalEx: totalEx, totalTax: newTotalTax, totalGp: newTotalGp);
+  }
+  
+  /// Subtotal Ex (before discount) - for backward compatibility
+  double get _subtotalEx {
+    double totalTax = 0.0;
+    for (final item in _cartItems) {
+      final extensionInc = item.extension;
+      final rate = item.taxPercentage;
+      final lineTax = rate > 0 ? extensionInc * rate / (100 + rate) : 0.0;
+      totalTax += lineTax;
+    }
+    return _subtotal - totalTax;
+  }
+  
+  /// Calculate totals with a specific discount (for live preview in dialogs)
+  ({double totalEx, double totalTax, double totalGp}) _calcTotalsWithDiscount(double discount) {
+    if (discount <= 0 || _cartItems.isEmpty) {
+      // No discount - simple calculation with 4dp precision
+      double totalTax = 0.0;
+      double totalGp = 0.0;
+      
+      for (final item in _cartItems) {
+        final extensionInc = item.extension;
+        final rate = item.taxPercentage;
+        final lineTax = rate > 0 ? extensionInc * rate / (100 + rate) : 0.0;
+        totalTax += lineTax;
+        totalGp += _calcLineGp(item);
+      }
+      
+      final totalEx = _subtotal - totalTax;
+      return (totalEx: totalEx, totalTax: totalTax, totalGp: totalGp);
+    }
+    
+    // Has discount - distribute using GP ratio
+    final totalGpBeforeDisc = _totalGpBeforeDiscount;
+    final useGpRatio = totalGpBeforeDisc > 0 && totalGpBeforeDisc > discount;
+    
+    double newTotalTax = 0.0;
+    double newTotalGp = 0.0;
+    
+    for (final item in _cartItems) {
+      final orgSellInc = item.incPrice;
+      final orgSellEx = item.exPrice;
+      final qty = item.qty;
+      final rate = item.taxPercentage;
+      final lineGp = _calcLineGp(item);
+      
+      double ratio;
+      if (useGpRatio) {
+        ratio = totalGpBeforeDisc > 0 ? lineGp / totalGpBeforeDisc : 0;
+      } else {
+        ratio = _subtotal > 0 ? (orgSellInc * qty) / _subtotal : 0;
+      }
+      
+      final lineDiscount = discount * ratio;
+      final newSellInc = orgSellInc - (lineDiscount / qty);
+      final newSellEx = orgSellInc > 0 
+          ? newSellInc * (orgSellEx / orgSellInc) 
+          : newSellInc;
+      
+      final newExtensionInc = newSellInc * qty;
+      final newLineTax = rate > 0 ? newExtensionInc * rate / (100 + rate) : 0.0;
+      newTotalTax += newLineTax;
+      
+      final cost = item.taxType == 0
+          ? item.computedCostEx
+          : item.computedCostInc;
+      final newLineGp = (newSellEx - cost) * qty;
+      newTotalGp += newLineGp;
+    }
+    
+    final totalInc = _subtotal - discount;
+    final totalEx = totalInc - newTotalTax;
+    
+    return (totalEx: totalEx, totalTax: newTotalTax, totalGp: newTotalGp);
+  }
   
   /// Display subtotal respects the tax toggle
   double get _displaySubtotal => _isIncTax
       ? _cartItems.fold(0, (sum, item) => sum + item.extension)
-      : _cartItems.fold(0, (sum, item) => sum + item.extensionEx);
+      : _subtotalEx;
   
   double get _discount => _discountValue;
   double get _rounding => 0.00; // Placeholder
   double get _total => _subtotal - _discount + _rounding;
   
-  /// Total Ex matching Tax Breakdown calculation (discount applied proportionally)
-  double get _totalEx {
-    final discountRatio = _subtotal > 0 ? (_subtotal - _discount) / _subtotal : 1.0;
-    return double.parse((_subtotalEx * discountRatio).toStringAsFixed(2));
-  }
+  /// Total Ex with discount distribution (display 2dp)
+  double get _totalEx => double.parse(_calculatedTotals.totalEx.toStringAsFixed(2));
   
   /// Total cost based on sales_tax taxType:
   /// If taxType == 0 -> use ex-taxed cost (computedCostEx)
@@ -564,6 +715,9 @@ class _SalesScreenState extends State<SalesScreen>
     // Get cash drawer from local db
     final drawer = await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
 
+    // Get calculated totals with discount distribution (4dp precision)
+    final totals = _calculatedTotals;
+
     final params = SaveSessionParams(
       existingSessionId: _currentSessionId,
       sessionType: widget.title,
@@ -574,8 +728,8 @@ class _SalesScreenState extends State<SalesScreen>
       subtotal: _subtotal,
       discount: _discountValue,
       totalInc: _total,
-      totalEx: _totalEx,
-      totalGp: _totalEx - _totalCost,
+      totalEx: double.parse(totals.totalEx.toStringAsFixed(2)),
+      totalGp: double.parse(totals.totalGp.toStringAsFixed(2)),
       paymentAmounts: _paymentAmounts,
       surveyValue: _surveyValue,
       commentValue: _commentValue,
@@ -3444,10 +3598,10 @@ class _SalesScreenState extends State<SalesScreen>
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            // Calculate profit with temp discount for live preview (using proportional discount)
-            final discountRatio = _subtotal > 0 ? (_subtotal - tempDiscount) / _subtotal : 1.0;
-            final double totalEx = double.parse((_subtotalEx * discountRatio).toStringAsFixed(2));
-            final double egp = totalEx - _totalCost;
+            // Calculate profit with temp discount for live preview (using GP ratio distribution)
+            final tempTotals = _calcTotalsWithDiscount(tempDiscount);
+            final double totalEx = double.parse(tempTotals.totalEx.toStringAsFixed(2));
+            final double egp = double.parse(tempTotals.totalGp.toStringAsFixed(2));
             final double egpPercent = totalEx > 0 ? (egp / totalEx) * 100 : 0;
             final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -4458,30 +4612,28 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Widget _buildTaxBreakdown(AppThemeColors colors, bool isDark) {
-    // Calculate totals from cart items using their pre-calculated tax values
-    // Each line rounded to 2dp before summing to match POS behavior
-    final double incTotal = _cartItems.fold(0.0, (sum, item) => sum + double.parse((item.extension).toStringAsFixed(2)));
-    final double exTotal = _cartItems.fold(0.0, (sum, item) => sum + double.parse((item.extensionEx).toStringAsFixed(2)));
-    final double taxAmount = incTotal - exTotal;
+    // Use calculated totals with discount distribution and 4dp precision
+    final totals = _calculatedTotals;
+    final double finalIncTotal = _subtotal - _discount;
     
-    // Apply discount proportionally (discount is typically on Inc total)
-    final double discountRatio = incTotal > 0 ? (incTotal - _discount) / incTotal : 1.0;
-    final double finalExTotal = double.parse((exTotal * discountRatio).toStringAsFixed(2));
-    final double finalTaxAmount = double.parse((taxAmount * discountRatio).toStringAsFixed(2));
-    
+    // Display with 2dp precision
     return TaxBreakdownWidget(
-      incTotal: incTotal - _discount,
-      exTotal: finalExTotal,
-      taxAmount: finalTaxAmount,
+      incTotal: finalIncTotal,
+      exTotal: double.parse(totals.totalEx.toStringAsFixed(2)),
+      taxAmount: double.parse(totals.totalTax.toStringAsFixed(2)),
       colors: colors,
       isDark: isDark,
     );
   }
 
   Widget _buildProfitBreakdown(AppThemeColors colors, bool isDark) {
+    // Use calculated totals with discount distribution
+    final totals = _calculatedTotals;
+    
     return ProfitBreakdownWidget(
-      totalEx: _totalEx,
+      totalEx: double.parse(totals.totalEx.toStringAsFixed(2)),
       totalCost: _totalCost,
+      totalGp: double.parse(totals.totalGp.toStringAsFixed(2)),
       colors: colors,
       isDark: isDark,
     );
