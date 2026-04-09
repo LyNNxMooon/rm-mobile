@@ -718,8 +718,8 @@ class _SalesScreenState extends State<SalesScreen>
     // Get calculated totals with discount distribution (4dp precision)
     final totals = _calculatedTotals;
 
-    // For Account Sale, use customer's owner_id as staff_id
-    final int? staffId = widget.title == 'Account Sale' && _selectedCustomer != null
+    // For Account Sales, use customer's owner_id as staff_id
+    final int? staffId = widget.title == 'Account Sales' && _selectedCustomer != null
         ? _selectedCustomer!.ownerId
         : AppGlobals.instance.staffId;
 

@@ -330,7 +330,12 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         exPrice = stock.sellEx!;
         // Calculate percentage from prices
         taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
-        taxType = 2; // Inc-tax base
+        // Look up actual taxType from sales_tax (for GP calculation)
+        final taxResult = await TaxCalculationUtils.calculateSellTax(
+          sell: stock.sell,
+          salesTax: stock.salesTax,
+        );
+        taxType = taxResult.taxType;
       } else {
         // Regular items - calculate using tax tables with base sell price
         final taxResult = await TaxCalculationUtils.calculateSellTax(
@@ -654,7 +659,12 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         incPrice = stock.sellInc!;
         exPrice = stock.sellEx!;
         taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
-        taxType = 2;
+        // Look up actual taxType from sales_tax (for GP calculation)
+        final taxResult = await TaxCalculationUtils.calculateSellTax(
+          sell: stock.sell,
+          salesTax: stock.salesTax,
+        );
+        taxType = taxResult.taxType;
       } else {
         // Regular RRP - calculate using tax tables
         final taxResult = await TaxCalculationUtils.calculateSellTax(

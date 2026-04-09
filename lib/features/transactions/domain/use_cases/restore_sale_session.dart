@@ -72,7 +72,12 @@ class RestoreSaleSession {
           exPrice = stock.sellEx!;
           // Calculate percentage from prices
           taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
-          taxType = 2; // Inc-tax base
+          // Look up actual taxType from sales_tax (for GP calculation)
+          final taxResult = await TaxCalculationUtils.calculateSellTax(
+            sell: stock.sell,
+            salesTax: stock.salesTax,
+          );
+          taxType = taxResult.taxType;
         } else {
           // Regular items - calculate using tax tables
           final taxResult = await TaxCalculationUtils.calculateSellTax(
