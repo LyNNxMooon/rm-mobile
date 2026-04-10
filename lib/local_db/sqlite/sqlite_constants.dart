@@ -436,7 +436,6 @@ const saleSessionsTableCreationQuery = '''
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     cart_items_json TEXT,
-    package_items_json TEXT,
     customer_id INTEGER,
     customer_barcode TEXT,
     customer_name TEXT,

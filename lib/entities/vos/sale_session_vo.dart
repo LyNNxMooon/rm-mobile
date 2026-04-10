@@ -237,6 +237,7 @@ class CartItemData {
   final bool isStatic;
   final bool isDescriptionOverridden; // Only store description when overridden at POS
   final bool isPackage; // Whether this is a package item
+  final bool isPromotion; // Whether item is on promotion (only for normal items, not packages/components)
   final List<CartItemData>? packageComponents; // Component lines for packages
 
   CartItemData({
@@ -259,6 +260,7 @@ class CartItemData {
     this.isStatic = false,
     this.isDescriptionOverridden = false,
     this.isPackage = false,
+    this.isPromotion = false,
     this.packageComponents,
   });
 
@@ -289,6 +291,7 @@ class CartItemData {
       isStatic: json['is_static'] == true,
       isDescriptionOverridden: json['is_description_overridden'] == true,
       isPackage: json['is_package'] == true,
+      isPromotion: json['is_promotion'] == true,
       packageComponents: components,
     );
   }
@@ -314,6 +317,7 @@ class CartItemData {
       'is_static': isStatic,
       'is_description_overridden': isDescriptionOverridden,
       'is_package': isPackage,
+      if (isPromotion) 'is_promotion': isPromotion,
       if (packageComponents != null && packageComponents!.isNotEmpty)
         'package_components': packageComponents!.map((e) => e._toJsonAsComponent()).toList(),
     };
@@ -636,6 +640,7 @@ class CartItemData {
       isStatic: stock?.staticQuantity ?? false,
       isDescriptionOverridden: isOverridden,
       isPackage: stock?.isPackage ?? false,
+      isPromotion: stock?.isOnPromotion ?? false,
       packageComponents: components,
     );
   }
