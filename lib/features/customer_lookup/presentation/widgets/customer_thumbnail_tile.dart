@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
-//import 'package:rmstock_scanner/constants/colors.dart';
-import 'package:rmstock_scanner/constants/theme_colors.dart';
+import 'package:rmmobile/entities/vos/customer_vo.dart';
+//import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/theme_colors.dart';
 
 //import '../../../../constants/colors.dart';
 

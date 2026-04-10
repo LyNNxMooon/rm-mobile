@@ -1,9 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/entities/batch_commit_entities.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/use_cases/batch_commit_stocktake.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/use_cases/has_unsynced_stocktakes.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmmobile/features/stocktake/domain/entities/batch_commit_entities.dart';
+import 'package:rmmobile/features/stocktake/domain/entities/stocktake_audit_entities.dart';
+import 'package:rmmobile/features/stocktake/domain/use_cases/batch_commit_stocktake.dart';
+import 'package:rmmobile/features/stocktake/domain/use_cases/has_unsynced_stocktakes.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
 
 // ============================================================================
 // EVENTS

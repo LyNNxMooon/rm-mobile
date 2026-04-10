@@ -1,5 +1,5 @@
-import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/use_cases/backup_stocktake.dart';
+import 'package:rmmobile/features/home_page/domain/repositories/home_repo.dart';
+import 'package:rmmobile/features/stocktake/domain/use_cases/backup_stocktake.dart';
 
 class RunAutoBackupIfDue {
   final HomeRepo repository;

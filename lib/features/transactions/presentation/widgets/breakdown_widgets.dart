@@ -127,6 +127,7 @@ class ProfitBreakdownWidget extends StatelessWidget {
     // Use provided totalGp or calculate from totalEx - totalCost
     final double egp = totalGp ?? (totalEx - totalCost);
     final double egpPercent = totalEx > 0 ? (egp / totalEx) * 100 : 0;
+    final bool isLoss = egp < 0;
     final bool isTablet = context.isTablet;
 
     return Container(
@@ -152,13 +153,14 @@ class ProfitBreakdownWidget extends StatelessWidget {
             isTablet: isTablet,
           ),
           SizedBox(height: isTablet ? 14 : 12),
-          _buildProfitRow("Est. Gross Profit:", egp, highlight: true, isTablet: isTablet),
+          _buildProfitRow("Est. Gross Profit:", egp, highlight: true, isTablet: isTablet, isLoss: isLoss),
           SizedBox(height: isTablet ? 14 : 12),
           _buildPercentRow(
             "Est. GP %:",
             egpPercent,
             highlight: true,
             isTablet: isTablet,
+            isLoss: isLoss,
           ),
         ],
       ),
@@ -170,7 +172,9 @@ class ProfitBreakdownWidget extends StatelessWidget {
     double amount, {
     bool highlight = false,
     bool isTablet = false,
+    bool isLoss = false,
   }) {
+    final Color highlightColor = isLoss ? Colors.red : const Color(0xFF30B24C);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -178,7 +182,7 @@ class ProfitBreakdownWidget extends StatelessWidget {
           label,
           style: TextStyle(
             color: highlight
-                ? const Color(0xFF30B24C)
+                ? highlightColor
                 : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
             fontSize: isTablet ? 18 : 16,
             fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
@@ -193,7 +197,7 @@ class ProfitBreakdownWidget extends StatelessWidget {
               "\$${amount.toStringAsFixed(2)}",
               style: TextStyle(
                 color: highlight
-                    ? const Color(0xFF30B24C)
+                    ? highlightColor
                     : (isDark ? Colors.white : Colors.black87),
                 fontSize: isTablet ? 18 : 16,
                 fontWeight: FontWeight.bold,
@@ -210,7 +214,9 @@ class ProfitBreakdownWidget extends StatelessWidget {
     double percent, {
     bool highlight = false,
     bool isTablet = false,
+    bool isLoss = false,
   }) {
+    final Color highlightColor = isLoss ? Colors.red : const Color(0xFF30B24C);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -218,7 +224,7 @@ class ProfitBreakdownWidget extends StatelessWidget {
           label,
           style: TextStyle(
             color: highlight
-                ? const Color(0xFF30B24C)
+                ? highlightColor
                 : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
             fontSize: isTablet ? 18 : 16,
             fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
@@ -233,7 +239,7 @@ class ProfitBreakdownWidget extends StatelessWidget {
               "${percent.toStringAsFixed(1)}%",
               style: TextStyle(
                 color: highlight
-                    ? const Color(0xFF30B24C)
+                    ? highlightColor
                     : (isDark ? Colors.white : Colors.black87),
                 fontSize: isTablet ? 18 : 16,
                 fontWeight: FontWeight.bold,

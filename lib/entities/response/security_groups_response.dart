@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
+import 'package:rmmobile/entities/response/authenticate_staff_response.dart';
 
 part 'security_groups_response.g.dart';
 

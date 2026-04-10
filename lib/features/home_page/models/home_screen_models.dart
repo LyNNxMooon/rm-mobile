@@ -1,15 +1,15 @@
 import 'dart:convert';
 
-import 'package:rmstock_scanner/entities/response/discover_response.dart';
-import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
-import 'package:rmstock_scanner/entities/response/connect_shopfront_response.dart';
-import 'package:rmstock_scanner/entities/response/paircode_response.dart';
-import 'package:rmstock_scanner/entities/response/pair_response.dart';
-import 'package:rmstock_scanner/entities/response/security_groups_response.dart';
-import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
-import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
-import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
-import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
+import 'package:rmmobile/entities/response/discover_response.dart';
+import 'package:rmmobile/entities/response/authenticate_staff_response.dart';
+import 'package:rmmobile/entities/response/connect_shopfront_response.dart';
+import 'package:rmmobile/entities/response/paircode_response.dart';
+import 'package:rmmobile/entities/response/pair_response.dart';
+import 'package:rmmobile/entities/response/security_groups_response.dart';
+import 'package:rmmobile/entities/response/shopfront_response.dart';
+import 'package:rmmobile/entities/vos/network_server_vo.dart';
+import 'package:rmmobile/features/home_page/domain/repositories/home_repo.dart';
+import 'package:rmmobile/network/data_agent/data_agent_impl.dart';
 
 import '../../../local_db/local_db_dao.dart';
 import '../../../local_db/sqlite/sqlite_constants.dart';

@@ -1,8 +1,8 @@
-import 'package:rmstock_scanner/entities/response/stock_search_resposne.dart';
-import 'package:rmstock_scanner/entities/response/customer_search_response.dart';
-import 'package:rmstock_scanner/entities/response/invoice_response.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
-import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
+import 'package:rmmobile/entities/response/stock_search_resposne.dart';
+import 'package:rmmobile/entities/response/customer_search_response.dart';
+import 'package:rmmobile/entities/response/invoice_response.dart';
+import 'package:rmmobile/local_db/local_db_dao.dart';
+import 'package:rmmobile/network/data_agent/data_agent_impl.dart';
 
 import '../domain/repositories/sales_repo.dart';
 

@@ -1,5 +1,5 @@
-import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
-import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
+import 'package:rmmobile/entities/vos/network_server_vo.dart';
+import 'package:rmmobile/features/home_page/domain/repositories/home_repo.dart';
 
 import '../../../../utils/internet_connection_utils.dart';
 

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
-import 'package:rmstock_scanner/utils/responsive_utils.dart';
+import 'package:rmmobile/entities/vos/filter_criteria.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';

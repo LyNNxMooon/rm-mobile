@@ -2,7 +2,7 @@ import 'package:alert_info/alert_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
+import 'package:rmmobile/entities/vos/network_server_vo.dart';
 import '../../../../local_db/local_db_dao.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';

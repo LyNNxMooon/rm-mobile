@@ -1,7 +1,7 @@
-import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/repositories/stocktake_repo.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
+import 'package:rmmobile/entities/vos/backup_session_vo.dart';
+import 'package:rmmobile/features/stocktake/domain/repositories/stocktake_repo.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
+import 'package:rmmobile/local_db/local_db_dao.dart';
 
 class RestoreBackupSession {
   final StocktakeRepo repository;

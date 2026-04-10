@@ -1,4 +1,4 @@
-import 'package:rmstock_scanner/entities/response/validate_response.dart';
+import 'package:rmmobile/entities/response/validate_response.dart';
 
 abstract class LoadingSplashRepo {
   Future<List<Map<String, dynamic>>> getSavedPaths();

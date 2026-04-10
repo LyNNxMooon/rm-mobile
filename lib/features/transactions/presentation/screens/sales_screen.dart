@@ -2261,7 +2261,7 @@ class _SalesScreenState extends State<SalesScreen>
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              "Subtotal: \$${_displaySubtotal.toStringAsFixed(2)}",
+                              "${isTablet ? 'Subtotal' : 'Sub'}: \$${_displaySubtotal.toStringAsFixed(2)}",
                               style: TextStyle(
                                 color: colors.onSurfaceMuted,
                                 fontSize: isTablet ? 14 : 12.5,

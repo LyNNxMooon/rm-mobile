@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 // SMB LEGACY imports - No longer using BLoC for SMB retry
 // import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/global_widgets.dart';

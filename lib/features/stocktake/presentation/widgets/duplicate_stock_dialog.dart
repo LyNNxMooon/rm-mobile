@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmmobile/entities/vos/stock_vo.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:rmstock_scanner/constants/colors.dart';
-import 'package:rmstock_scanner/constants/theme_colors.dart';
+import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/theme_colors.dart';
 
 class EmptyStockState extends StatelessWidget {
   final String message;

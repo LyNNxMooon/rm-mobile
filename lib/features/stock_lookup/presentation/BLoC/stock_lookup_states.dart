@@ -1,5 +1,5 @@
-import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
-import 'package:rmstock_scanner/entities/vos/search_mode.dart';
+import 'package:rmmobile/entities/vos/filter_criteria.dart';
+import 'package:rmmobile/entities/vos/search_mode.dart';
 
 import '../../../../entities/vos/stock_vo.dart';
 import '../../../../entities/vos/pending_stock_update_vo.dart';

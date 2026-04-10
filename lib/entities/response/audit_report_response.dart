@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rmstock_scanner/entities/vos/audit_item_vo.dart';
+import 'package:rmmobile/entities/vos/audit_item_vo.dart';
 part 'audit_report_response.g.dart';
 
 @JsonSerializable()

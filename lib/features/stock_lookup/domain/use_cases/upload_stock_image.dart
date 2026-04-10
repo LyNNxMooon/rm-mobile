@@ -2,9 +2,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
-import 'package:rmstock_scanner/entities/response/picture_upload_response.dart';
-import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
+import 'package:rmmobile/entities/response/picture_upload_response.dart';
+import 'package:rmmobile/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
+import 'package:rmmobile/local_db/local_db_dao.dart';
 
 class UploadStockImageUseCase {
   final StockLookupRepo repository;

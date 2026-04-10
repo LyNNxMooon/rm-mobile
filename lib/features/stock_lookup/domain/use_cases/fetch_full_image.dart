@@ -1,7 +1,7 @@
-import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
-import 'package:rmstock_scanner/utils/network_credentials_check_utils.dart';
+import 'package:rmmobile/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
+import 'package:rmmobile/local_db/local_db_dao.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
+import 'package:rmmobile/utils/network_credentials_check_utils.dart';
 
 class FetchFullImage {
   final StockLookupRepo repository;

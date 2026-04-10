@@ -1,6 +1,6 @@
-import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
-import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
-import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
+import 'package:rmmobile/entities/vos/customer_vo.dart';
+import 'package:rmmobile/entities/vos/pending_customer_creation_vo.dart';
+import 'package:rmmobile/entities/vos/pending_customer_update_vo.dart';
 
 Map<String, dynamic> firstCustomerPayloadItem(Map<String, dynamic> payload) {
   final items = payload['items'];

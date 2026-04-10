@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_dark_mode_enabled.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_dark_mode_enabled.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/load_dark_mode_enabled.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/update_dark_mode_enabled.dart';
 
 class ThemeCubit extends Cubit<ThemeMode> {
   ThemeCubit({

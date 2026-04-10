@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart' show CupertinoPicker;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:rmstock_scanner/utils/tax_calculation_utils.dart';
+import 'package:rmmobile/utils/tax_calculation_utils.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/images.dart';
@@ -11,6 +11,7 @@ import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 import 'serial_number_dialog.dart';
 import 'breakdown_widgets.dart';
+import '../../../stock_lookup/presentation/widgets/price_calculator_dialog.dart';
 
 /// Helper to format sell price - shows 4 decimals if the price has significant 
 /// digits beyond 2 decimal places, otherwise shows 2 decimals
@@ -115,6 +116,11 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   late TextEditingController _serialController;
   late TextEditingController _descriptionController;
 
+  // Focus nodes to track active editing (prevents cursor jumping)
+  final FocusNode _qtyFocusNode = FocusNode();
+  final FocusNode _priceFocusNode = FocusNode();
+  final FocusNode _descriptionFocusNode = FocusNode();
+
   bool get _allowRenaming => widget.item.stock?.allowRenaming ?? false;
   bool get _allowFractions => widget.item.stock?.allowFractions ?? false;
 
@@ -159,17 +165,18 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   @override
   void didUpdateWidget(ExpandedEditCartTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.qty != widget.item.qty) {
+    // Only update controller text if the field doesn't have focus (user not actively editing)
+    if (oldWidget.item.qty != widget.item.qty && !_qtyFocusNode.hasFocus) {
       _qtyController.text = _formatQty(widget.item.qty);
     }
     // Update price when incPrice/exPrice changes or tax toggle changes
     final oldDisplayPrice = oldWidget.isIncTax
         ? oldWidget.item.incPrice
         : oldWidget.item.exPrice;
-    if (oldDisplayPrice != _displayPrice || oldWidget.isIncTax != widget.isIncTax) {
+    if ((oldDisplayPrice != _displayPrice || oldWidget.isIncTax != widget.isIncTax) && !_priceFocusNode.hasFocus) {
       _priceController.text = _formatSellPrice(_displayPrice);
     }
-    if (oldWidget.item.description != widget.item.description) {
+    if (oldWidget.item.description != widget.item.description && !_descriptionFocusNode.hasFocus) {
       _descriptionController.text = widget.item.description;
     }
   }
@@ -178,6 +185,9 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   void dispose() {
     _qtyController.dispose();
     _priceController.dispose();
+    _qtyFocusNode.dispose();
+    _priceFocusNode.dispose();
+    _descriptionFocusNode.dispose();
     _serialController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -566,16 +576,16 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                         SizedBox(width: isTablet ? 6 : 4),
                       ],
 
-                      // Tax button
-                      _buildTaxButton(
-                        onTap: () => _showItemTaxDialog(context),
+                      // Tax & GP button (combined)
+                      _buildTaxGpButton(
+                        onTap: () => _showItemTaxAndGpDialog(context),
                         isTablet: isTablet,
                       ),
                       SizedBox(width: isTablet ? 6 : 4),
 
                       // Sell Price field
                       SizedBox(
-                        width: isTablet ? 180 : 70,
+                        width: isTablet ? 220 : 100,
                         height: isTablet ? 52 : 30,
                         child: Stack(
                           clipBehavior: Clip.none,
@@ -588,6 +598,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                                 isTablet: isTablet,
                                 maxDecimals: _priceDecimalPlaces,
                                 enabled: widget.allowPriceEdit,
+                                focusNode: _priceFocusNode,
                                 onChanged: (value) {
                                   final price = double.tryParse(value);
                                   if (price != null) widget.onPriceChanged(price);
@@ -613,12 +624,22 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
 
                       SizedBox(width: isTablet ? 10 : 6),
 
-                      _buildGradePickerArrows(
+                      // Calculator button (mobile: replaces arrows, tablet: before arrows)
+                      _buildCalculatorButton(
+                        onTap: widget.allowPriceEdit ? () => _openPriceCalculator(context) : null,
                         isTablet: isTablet,
-                        enabled: !hasPromotion,
+                        enabled: widget.allowPriceEdit,
                       ),
+                      SizedBox(width: isTablet ? 6 : 4),
 
-                      SizedBox(width: isTablet ? 10 : 6),
+                      // Grade arrows - tablet only in this row
+                      if (isTablet) ...[                        
+                        _buildGradePickerArrows(
+                          isTablet: isTablet,
+                          enabled: !hasPromotion,
+                        ),
+                        SizedBox(width: 10),
+                      ],
 
                       // Qty with +/- buttons
                       _buildQtyButton(
@@ -626,9 +647,9 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                         onTap: _decrementQty,
                         isTablet: isTablet,
                       ),
-                      SizedBox(width: isTablet ? 10 : 3),
+                      SizedBox(width: isTablet ? 10 : 2),
                       SizedBox(
-                        width: isTablet ? 90 : 40,
+                        width: isTablet ? 100 : 50,
                         height: isTablet ? 52 : 30,
                         child: _buildCompactField(
                           controller: _qtyController,
@@ -636,38 +657,66 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                           textAlign: TextAlign.center,
                           isNumber: !_allowFractions,
                           maxDecimals: _allowFractions ? 3 : null,
+                          focusNode: _qtyFocusNode,
                           onChanged: (value) {
                             final qty = double.tryParse(value);
                             if (qty != null && qty != 0) widget.onQtyChanged(qty);
                           },
                         ),
                       ),
-                      SizedBox(width: isTablet ? 10 : 3),
+                      SizedBox(width: isTablet ? 10 : 2),
                       _buildQtyButton(
                         icon: Icons.add,
                         onTap: _incrementQty,
                         isTablet: isTablet,
                       ),
 
-                      SizedBox(width: isTablet ? 6 : 4),
+                      // Delete and Save buttons - only in this row for tablet
+                      if (isTablet) ...[
+                        SizedBox(width: 6),
 
-                      _buildIconButton(
-                        icon: Icons.delete_outline,
-                        onTap: widget.onDelete,
-                        isTablet: isTablet,
-                        isDestructive: true,
-                      ),
+                        _buildIconButton(
+                          icon: Icons.delete_outline,
+                          onTap: widget.onDelete,
+                          isTablet: isTablet,
+                          isDestructive: true,
+                        ),
 
-                      SizedBox(width: isTablet ? 6 : 4),
+                        SizedBox(width: 6),
 
-                      // Save button
-                      _buildCompactSaveButton(isTablet: isTablet),
+                        // Save button
+                        _buildCompactSaveButton(isTablet: isTablet),
+                      ],
                     ],
                   ),
                 ),
               ),
             ],
           ),
+
+          // Grade arrows, Delete and Save buttons - separate row for mobile only
+          if (!isTablet) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Grade arrows for mobile
+                _buildGradePickerArrows(
+                  isTablet: isTablet,
+                  enabled: !hasPromotion,
+                ),
+                const SizedBox(width: 8),
+                _buildIconButton(
+                  icon: Icons.delete_outline,
+                  onTap: widget.onDelete,
+                  isTablet: isTablet,
+                  isDestructive: true,
+                ),
+                const SizedBox(width: 8),
+                _buildCompactSaveButton(isTablet: isTablet),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -683,6 +732,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     int? maxDecimals,
     required Function(String) onChanged,
     bool enabled = true,
+    FocusNode? focusNode,
   }) {
     final fieldHeight = isTablet ? 52.0 : 30.0;
     
@@ -693,6 +743,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     
     final textField = TextField(
       controller: controller,
+      focusNode: focusNode,
       enabled: enabled,
       scrollPhysics: const ClampingScrollPhysics(),
       keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
@@ -772,6 +823,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     final fieldHeight = isTablet ? 52.0 : 32.0;
     final textField = TextField(
       controller: _descriptionController,
+      focusNode: _descriptionFocusNode,
       scrollPhysics: const ClampingScrollPhysics(),
       textAlignVertical: TextAlignVertical.center,
       maxLines: 1,
@@ -831,13 +883,14 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     required bool isTablet,
     bool enabled = true,
   }) {
-    final size = isTablet ? 52.0 : 30.0;
+    final width = isTablet ? 52.0 : 24.0;
+    final height = isTablet ? 52.0 : 30.0;
     return InkWell(
       onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        width: size,
-        height: size,
+        width: width,
+        height: height,
         decoration: BoxDecoration(
           color: enabled
               ? kPrimaryColor.withOpacity(0.1)
@@ -907,6 +960,59 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
         ),
       ),
     );
+  }
+
+  Widget _buildCalculatorButton({
+    required VoidCallback? onTap,
+    required bool isTablet,
+    bool enabled = true,
+  }) {
+    final size = isTablet ? 52.0 : 30.0;
+    final Color bgColor = widget.isDark ? widget.colors.surface : Colors.grey.shade100;
+    final Color fgColor = enabled 
+        ? (widget.isDark ? Colors.white70 : Colors.blueGrey.shade700)
+        : (widget.isDark ? Colors.white30 : Colors.grey.shade400);
+    final Color borderColor = widget.isDark ? Colors.white24 : Colors.grey.shade300;
+
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: borderColor),
+        ),
+        child: Icon(
+          Icons.calculate_outlined,
+          size: isTablet ? 22 : 14,
+          color: fgColor,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openPriceCalculator(BuildContext context) async {
+    FocusScope.of(context).unfocus();
+    await Future.delayed(const Duration(milliseconds: 120));
+
+    final item = widget.item;
+    final double? result = await showDialog<double>(
+      context: context,
+      builder: (context) => PriceCalculatorDialog(
+        incCost: item.computedCostInc,
+        exCost: item.computedCostEx,
+        currentSell: widget.isIncTax ? item.incPrice : item.exPrice,
+      ),
+    );
+
+    if (result != null && mounted) {
+      // The calculator returns the new sell price
+      // We need to call onPriceChanged with the appropriate price
+      widget.onPriceChanged(result);
+    }
   }
 
   Widget _buildIconButton({
@@ -1036,7 +1142,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     }
   }
 
-  Widget _buildTaxButton({
+  Widget _buildTaxGpButton({
     required VoidCallback onTap,
     required bool isTablet,
   }) {
@@ -1057,7 +1163,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
           border: Border.all(color: borderColor),
         ),
         child: Icon(
-          Icons.receipt_long_outlined,
+          Icons.trending_up,
           size: isTablet ? 22 : 14,
           color: fgColor,
         ),
@@ -1065,7 +1171,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     );
   }
 
-  void _showItemTaxDialog(BuildContext context) {
+  void _showItemTaxAndGpDialog(BuildContext context) {
     final isTablet = widget.isTablet;
     final isDark = widget.isDark;
     final colors = widget.colors;
@@ -1075,6 +1181,14 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     final double incTotal = item.extension;
     final double exTotal = item.extensionEx;
     final double taxAmount = incTotal - exTotal;
+    
+    // Calculate profit values for this item
+    // Use same logic as action menu: taxType == 0 -> costEx, else -> costInc
+    final double sellEx = item.extensionEx;
+    final double itemCost = item.taxType == 0
+        ? item.computedCostEx
+        : item.computedCostInc;
+    final double totalCost = itemCost * item.qty;
 
     showDialog(
       context: context,
@@ -1101,17 +1215,10 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Close button row
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(
-                        "Item Tax",
-                        style: TextStyle(
-                          fontSize: isTablet ? 20 : 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                      ),
                       GestureDetector(
                         onTap: () => Navigator.of(dialogContext).pop(),
                         child: Icon(
@@ -1122,23 +1229,42 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                       ),
                     ],
                   ),
-                  SizedBox(height: isTablet ? 16 : 12),
-                  // Item description
+                  
+                  // Tax Section
                   Text(
-                    item.description,
+                    "Tax",
                     style: TextStyle(
-                      fontSize: isTablet ? 14 : 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white70 : Colors.black54,
+                      fontSize: isTablet ? 16 : 14,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: isTablet ? 20 : 16),
+                  SizedBox(height: isTablet ? 12 : 10),
                   TaxBreakdownWidget(
                     incTotal: incTotal,
                     exTotal: exTotal,
                     taxAmount: taxAmount,
+                    colors: colors,
+                    isDark: isDark,
+                  ),
+                  
+                  SizedBox(height: isTablet ? 20 : 16),
+                  Divider(color: isDark ? Colors.white24 : Colors.grey.shade300),
+                  SizedBox(height: isTablet ? 16 : 12),
+                  
+                  // GP Section
+                  Text(
+                    "GP",
+                    style: TextStyle(
+                      fontSize: isTablet ? 16 : 14,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: isTablet ? 12 : 10),
+                  ProfitBreakdownWidget(
+                    totalEx: sellEx,
+                    totalCost: totalCost,
                     colors: colors,
                     isDark: isDark,
                   ),

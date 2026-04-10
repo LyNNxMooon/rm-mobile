@@ -1,4 +1,4 @@
-import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
+import 'package:rmmobile/entities/vos/counted_stock_vo.dart';
 
 class StocktakePagedResult {
   final List<CountedStockVO> items;

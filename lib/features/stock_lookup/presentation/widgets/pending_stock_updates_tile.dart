@@ -1,16 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
-import 'package:rmstock_scanner/entities/vos/pending_stock_update_vo.dart';
-import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/pending_stock_updates_screen.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/stock_details_screen.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/stock_thumbnail_tile.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmmobile/entities/vos/stock_vo.dart';
+import 'package:rmmobile/entities/vos/pending_stock_update_vo.dart';
+import 'package:rmmobile/entities/vos/pricing_rules.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/screens/pending_stock_updates_screen.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/screens/stock_details_screen.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/widgets/stock_thumbnail_tile.dart';
+import 'package:rmmobile/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';

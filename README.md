@@ -1,6 +1,6 @@
-# rmstock_scanner
+# RM Mobile
 
-A new Flutter project.
+RM Mobile app by AAAPOS Pty Ltd.
 
 ## Getting Started
 

@@ -1,13 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/check_barcode_exists.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/create_customer.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_next_customer_address_id.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_next_customer_id.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_next_numeric_barcode.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_events.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_states.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
-import 'package:rmstock_scanner/utils/log_utils.dart';
+import 'package:rmmobile/features/customer_lookup/domain/use_cases/check_barcode_exists.dart';
+import 'package:rmmobile/features/customer_lookup/domain/use_cases/create_customer.dart';
+import 'package:rmmobile/features/customer_lookup/domain/use_cases/get_next_customer_address_id.dart';
+import 'package:rmmobile/features/customer_lookup/domain/use_cases/get_next_customer_id.dart';
+import 'package:rmmobile/features/customer_lookup/domain/use_cases/get_next_numeric_barcode.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_create_events.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_create_states.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
+import 'package:rmmobile/utils/log_utils.dart';
 
 class CustomerCreateBloc extends Bloc<CustomerCreateEvent, CustomerCreateState> {
   final CreateCustomer createCustomer;

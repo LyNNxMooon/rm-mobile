@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/use_cases/get_staff_by_barcode.dart';
+import 'package:rmmobile/entities/response/staff_detail_response.dart';
+import 'package:rmmobile/features/customer_lookup/domain/use_cases/get_staff_by_barcode.dart';
 
 enum StaffBarcodeTarget { openedBy, owner }
 

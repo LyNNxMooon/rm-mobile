@@ -1,6 +1,6 @@
-import 'package:rmstock_scanner/entities/response/discover_response.dart';
-import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
-import 'package:rmstock_scanner/utils/internet_connection_utils.dart';
+import 'package:rmmobile/entities/response/discover_response.dart';
+import 'package:rmmobile/features/home_page/domain/repositories/home_repo.dart';
+import 'package:rmmobile/utils/internet_connection_utils.dart';
 
 class DiscoverHost {
   final HomeRepo repository;

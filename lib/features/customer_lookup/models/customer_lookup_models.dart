@@ -1,15 +1,15 @@
-import 'package:rmstock_scanner/entities/response/paginated_customer_response.dart';
-import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
-import 'package:rmstock_scanner/entities/response/customer_update_response.dart';
-import 'package:rmstock_scanner/entities/response/customer_create_response.dart';
-import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
-import 'package:rmstock_scanner/entities/vos/search_mode.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/entities/customer_sync_status.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/entities/customer_transactions_local_data.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
-import 'package:rmstock_scanner/network/data_agent/data_agent_impl.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
-import 'package:rmstock_scanner/utils/log_utils.dart';
+import 'package:rmmobile/entities/response/paginated_customer_response.dart';
+import 'package:rmmobile/entities/response/staff_detail_response.dart';
+import 'package:rmmobile/entities/response/customer_update_response.dart';
+import 'package:rmmobile/entities/response/customer_create_response.dart';
+import 'package:rmmobile/entities/vos/customer_vo.dart';
+import 'package:rmmobile/entities/vos/search_mode.dart';
+import 'package:rmmobile/features/customer_lookup/domain/entities/customer_sync_status.dart';
+import 'package:rmmobile/features/customer_lookup/domain/entities/customer_transactions_local_data.dart';
+import 'package:rmmobile/features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
+import 'package:rmmobile/network/data_agent/data_agent_impl.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
+import 'package:rmmobile/utils/log_utils.dart';
 
 import '../../../entities/vos/filter_criteria.dart';
 import '../../../local_db/local_db_dao.dart';

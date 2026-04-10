@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/loading_splash/presentation/screens/loading_screen.dart';
+import 'package:rmmobile/features/loading_splash/presentation/screens/loading_screen.dart';
 
 import '../../../home_page/presentation/screens/home_screen.dart';
 import '../BLoC/loading_splash_bloc.dart';

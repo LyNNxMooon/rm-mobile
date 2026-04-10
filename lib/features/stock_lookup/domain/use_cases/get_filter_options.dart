@@ -1,5 +1,5 @@
-import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmmobile/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
 
 class GetFilterOptions {
   final StockLookupRepo repository;

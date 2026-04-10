@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:rmstock_scanner/constants/colors.dart';
+import 'package:rmmobile/constants/colors.dart';
 
 TextStyle getSmartTitle({Color? color, double? fontSize}) {
   TitleStyleComponent title = DefaultTitleStyle();

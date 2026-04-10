@@ -1,5 +1,5 @@
-import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
+import 'package:rmmobile/entities/vos/counted_stock_vo.dart';
+import 'package:rmmobile/features/stocktake/domain/entities/stocktake_audit_entities.dart';
 
 /// Represents a single batch of stocktake items to process
 class StocktakeBatch {

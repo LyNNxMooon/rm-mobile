@@ -1,7 +1,7 @@
-import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
-import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
-import 'package:rmstock_scanner/entities/vos/stocktake_history_session_row.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
+import 'package:rmmobile/entities/vos/backup_session_vo.dart';
+import 'package:rmmobile/entities/vos/counted_stock_vo.dart';
+import 'package:rmmobile/entities/vos/stocktake_history_session_row.dart';
+import 'package:rmmobile/features/stocktake/domain/entities/stocktake_audit_entities.dart';
 
 import '../../../../entities/vos/stock_vo.dart';
 

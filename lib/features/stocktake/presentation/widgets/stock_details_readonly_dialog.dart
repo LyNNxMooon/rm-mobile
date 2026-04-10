@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/constants/colors.dart';
-import 'package:rmstock_scanner/constants/theme_colors.dart';
-import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart'; // Adjust if needed
-import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart'; // Adjust if needed
-import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
+import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/theme_colors.dart';
+import 'package:rmmobile/entities/vos/stock_vo.dart';
+import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_bloc.dart'; // Adjust if needed
+import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.dart'; // Adjust if needed
+import 'package:rmmobile/utils/dialog_size_utils.dart';
 
 class StockDetailsReadOnlyDialog extends StatelessWidget {
   const StockDetailsReadOnlyDialog({super.key});

@@ -2,14 +2,14 @@ import 'package:alert_info/alert_info.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/constants/colors.dart';
-import 'package:rmstock_scanner/constants/theme_colors.dart';
-import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_events.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
-import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
+import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/theme_colors.dart';
+import 'package:rmmobile/entities/vos/backup_session_vo.dart';
+import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
+import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_events.dart';
+import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
+import 'package:rmmobile/utils/dialog_size_utils.dart';
 
 class RestoreBackupDialog extends StatelessWidget {
   const RestoreBackupDialog({super.key});

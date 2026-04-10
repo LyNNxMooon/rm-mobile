@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/painting.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
-import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/fetch_thumbnail.dart';
-import 'package:rmstock_scanner/features/stock_lookup/domain/use_cases/upload_stock_image.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmmobile/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
+import 'package:rmmobile/features/stock_lookup/domain/use_cases/fetch_thumbnail.dart';
+import 'package:rmmobile/features/stock_lookup/domain/use_cases/upload_stock_image.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 
 import '../../../../utils/global_var_utils.dart';
 import '../../domain/use_cases/get_filter_options.dart';
