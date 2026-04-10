@@ -15,6 +15,7 @@ import 'package:rmstock_scanner/entities/response/customer_lookup_api_response.d
 import 'package:rmstock_scanner/entities/response/customer_update_response.dart';
 import 'package:rmstock_scanner/entities/response/customer_create_response.dart';
 import 'package:rmstock_scanner/entities/response/customer_transactions_response.dart';
+import 'package:rmstock_scanner/entities/response/invoice_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_backup_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_commit_response.dart';
 import 'package:rmstock_scanner/entities/response/stocktake_initcheck_response.dart';
@@ -368,6 +369,30 @@ class DataAgentImpl implements DataAgent {
       );
     } on Exception catch (error) {
       logger.e('Error fetching customer transactions from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<InvoiceResponse> createInvoice(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .createInvoice(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
+    } on Exception catch (error) {
+      logger.e('Error creating invoice from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }

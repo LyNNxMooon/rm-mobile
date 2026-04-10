@@ -1,5 +1,7 @@
 // ignore_for_file: unnecessary_underscores
 
+import 'dart:convert';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -162,6 +164,7 @@ class _SalesScreenState extends State<SalesScreen>
   bool _sessionsChecked = false;
   final Map<String, double> _promptedQtyByCode = {};
   bool _isRestoringSession = false;
+  bool _isFinaliseProcessing = false;
 
   late AnimationController _actionsAnimationController;
   late Animation<double> _actionsAnimation;
@@ -740,12 +743,7 @@ class _SalesScreenState extends State<SalesScreen>
       commentValue: _commentValue,
       drawer: drawer,
       deliveryAddress: _committedDeliveryAddress,
-      emailAudit: EmailAuditData(
-        auditDate: DateTime.now(),
-        status: 0,
-        subject: '',
-        message: '',
-      ),
+      emailAudit: _emailAuditData,
       buildCustomerDisplayName: _buildCustomerDisplayName,
     );
 
@@ -1100,106 +1098,176 @@ class _SalesScreenState extends State<SalesScreen>
         },
         child: BlocBuilder<SalesBloc, SalesState>(
           builder: (context, state) {
-            return PopScope(
-              canPop: true,
-              onPopInvokedWithResult: (didPop, result) async {
-                if (didPop) {
-                  // Save session when leaving the screen
-                  await _saveCurrentSession();
-                }
-              },
-              child: Scaffold(
-                backgroundColor: isDark ? colors.bg : kBgColor,
-                appBar: _buildAppBar(colors, isDark),
-                body: SafeArea(
-                  child: Column(
-                    children: [
-                      // Top Section: Customer, Staff, Date
-                      SalesTopHeader(
-                        isIncTax: _isIncTax,
-                        onTaxModeChanged: (value) =>
-                            setState(() => _isIncTax = value),
-                        staffName:
-                            AppGlobals.instance.staffName ?? "Unknown Staff",
-                        hasCustomer: _selectedCustomer != null,
-                        customerBarcode: _selectedCustomer?.barcode,
-                        customerName: _selectedCustomer != null
-                            ? _buildCustomerDisplayName(_selectedCustomer!)
-                            : null,
-                        customerGrade: _selectedCustomer?.grade,
-                        autoFocusCustomer: widget.title != "Sales",
-                        onCustomerSearch: (query) {
-                          _salesBloc.add(SearchCustomer(query: query));
-                        },
-                        onCustomerClear: () {
-                          _salesBloc.add(ClearCustomer());
-                          setState(() => _selectedCustomer = null);
-                        },
-                        onViewCustomerTransactions: _selectedCustomer != null
-                            ? () => _openCustomerTransactions()
-                            : null,
-                        viewMode: isTablet ? _cartViewMode : null,
-                        onViewModeChanged: isTablet
-                            ? (mode) => setState(() => _cartViewMode = mode)
-                            : null,
-                        onCustomerFieldFocus: _closeScanner,
-                        onGoToCustomerLookup: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const CustomerLookupScreen(showBackArrow: true),
+            return Stack(
+              children: [
+                PopScope(
+                  canPop: true,
+                  onPopInvokedWithResult: (didPop, result) async {
+                    if (didPop) {
+                      // Save session when leaving the screen
+                      await _saveCurrentSession();
+                    }
+                  },
+                  child: Scaffold(
+                    backgroundColor: isDark ? colors.bg : kBgColor,
+                    appBar: _buildAppBar(colors, isDark),
+                    body: SafeArea(
+                      child: Column(
+                        children: [
+                          // Top Section: Customer, Staff, Date
+                          SalesTopHeader(
+                            isIncTax: _isIncTax,
+                            onTaxModeChanged: (value) =>
+                                setState(() => _isIncTax = value),
+                            staffName:
+                                AppGlobals.instance.staffName ?? "Unknown Staff",
+                            hasCustomer: _selectedCustomer != null,
+                            customerBarcode: _selectedCustomer?.barcode,
+                            customerName: _selectedCustomer != null
+                                ? _buildCustomerDisplayName(_selectedCustomer!)
+                                : null,
+                            customerGrade: _selectedCustomer?.grade,
+                            autoFocusCustomer: widget.title != "Sales",
+                            onCustomerSearch: (query) {
+                              _salesBloc.add(SearchCustomer(query: query));
+                            },
+                            onCustomerClear: () {
+                              _salesBloc.add(ClearCustomer());
+                              setState(() => _selectedCustomer = null);
+                            },
+                            onViewCustomerTransactions: _selectedCustomer != null
+                                ? () => _openCustomerTransactions()
+                                : null,
+                            viewMode: isTablet ? _cartViewMode : null,
+                            onViewModeChanged: isTablet
+                                ? (mode) => setState(() => _cartViewMode = mode)
+                                : null,
+                            onCustomerFieldFocus: _closeScanner,
+                            onGoToCustomerLookup: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const CustomerLookupScreen(showBackArrow: true),
+                                ),
+                              );
+                            },
+                          ),
+                          // Scanner Area
+                          if (_showScanner)
+                            SalesScannerArea(
+                              scannerController: _scannerController,
+                              onBarcodeScanned: _onBarcodeScanned,
                             ),
-                          );
-                        },
+
+                          // Middle Section: Cart Items
+                          Expanded(child: _buildCartArea(colors, isDark, isTablet)),
+
+                          // Search Bar (moved to bottom)
+                          SalesSearchBar(
+                            searchController: _searchController,
+                            searchFocusNode: _searchFocusNode,
+                            showScanner: _showScanner,
+                            isTorchOn: _isTorchOn,
+                            onScannerToggle: () => _toggleScanner(),
+                            onTorchToggle: () {
+                              setState(() {
+                                _scannerController.toggleTorch();
+                                _isTorchOn = !_isTorchOn;
+                              });
+                            },
+                            onSearch: (query) {
+                              _salesBloc.add(
+                                SearchStock(
+                                  query: query,
+                                  skipEditMode:
+                                      _scanIndividualUnits && _skipSellPrice,
+                                  autoRemindLowStock: _autoRemindLowStock,
+                                  preventAddIfNoStock: _preventAddIfNoStock,
+                                ),
+                              );
+                            },
+                            onGoToStockLookup: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const StockLookupScreen(showBackArrow: true),
+                                ),
+                              );
+                            },
+                          ),
+
+                          // Bottom Section: Summary, Payment & Commit
+                          _buildBottomSummary(colors, isDark, isTablet),
+                        ],
                       ),
-                      // Scanner Area
-                      if (_showScanner)
-                        SalesScannerArea(
-                          scannerController: _scannerController,
-                          onBarcodeScanned: _onBarcodeScanned,
-                        ),
-
-                      // Middle Section: Cart Items
-                      Expanded(child: _buildCartArea(colors, isDark, isTablet)),
-
-                      // Search Bar (moved to bottom)
-                      SalesSearchBar(
-                        searchController: _searchController,
-                        searchFocusNode: _searchFocusNode,
-                        showScanner: _showScanner,
-                        isTorchOn: _isTorchOn,
-                        onScannerToggle: () => _toggleScanner(),
-                        onTorchToggle: () {
-                          setState(() {
-                            _scannerController.toggleTorch();
-                            _isTorchOn = !_isTorchOn;
-                          });
-                        },
-                        onSearch: (query) {
-                          _salesBloc.add(
-                            SearchStock(
-                              query: query,
-                              skipEditMode:
-                                  _scanIndividualUnits && _skipSellPrice,
-                              autoRemindLowStock: _autoRemindLowStock,
-                              preventAddIfNoStock: _preventAddIfNoStock,
-                            ),
-                          );
-                        },
-                        onGoToStockLookup: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const StockLookupScreen(showBackArrow: true),
-                            ),
-                          );
-                        },
-                      ),
-
-                      // Bottom Section: Summary, Payment & Commit
-                      _buildBottomSummary(colors, isDark, isTablet),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                if (_isFinaliseProcessing)
+                  Positioned.fill(
+                    child: AbsorbPointer(
+                      child: Container(
+                        color: Colors.black45,
+                        child: SafeArea(
+                          child: Center(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 16,
+                              ),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 320),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 20,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? colors.surface : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const SizedBox(
+                                        width: 32,
+                                        height: 32,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 3,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                            kPrimaryColor,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        "Processing...",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black87,
+                                          decoration: TextDecoration.none,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             );
           },
         ),
@@ -2285,8 +2353,358 @@ class _SalesScreenState extends State<SalesScreen>
       return;
     }
 
+    if (isAccountSales) {
+      _setFinaliseProcessing(true);
+      try {
+        final includeEmailAudit = result.result == FinaliseSaleResult.email;
+        _emailAuditData = includeEmailAudit
+            ? EmailAuditData(
+                auditDate: DateTime.now(),
+                status: 0,
+                subject: '',
+                message: '',
+              )
+            : null;
+
+        if (includeEmailAudit) {
+          final enteredEmail = result.emailData?.email.trim() ?? '';
+          final updated = await _maybeUpdateCustomerEmail(enteredEmail);
+          if (!updated) {
+            return;
+          }
+        }
+
+        final sent = await _sendAccountInvoice(
+          includeEmailAudit: includeEmailAudit,
+        );
+        if (!sent) {
+          return;
+        }
+      } finally {
+        _setFinaliseProcessing(false);
+      }
+    }
+
     // Clear everything
     _clearSale();
+  }
+
+  Future<bool> _sendAccountInvoice({required bool includeEmailAudit}) async {
+    if (widget.title != "Account Sales") return true;
+
+    if (_selectedCustomer == null) {
+      _showAccountSalesError("Please select a customer for Account Sales.");
+      return false;
+    }
+
+    try {
+      final payload = await _buildAccountInvoicePayload(
+        includeEmailAudit: includeEmailAudit,
+      );
+      _printInChunks('Account invoice payload: ${jsonEncode(payload)}');
+
+      final response = await _salesBloc.createAccountInvoice(payload);
+      if (!response.success) {
+        _showAccountSalesError(
+          response.message.isNotEmpty
+              ? response.message
+              : "Failed to create account invoice.",
+        );
+        return false;
+      }
+
+      _showAccountSalesSuccess(
+        response.message.isNotEmpty
+            ? response.message
+            : "Account invoice sent.",
+      );
+      return true;
+    } catch (error) {
+      _showAccountSalesError("Failed to send account invoice: $error");
+      return false;
+    }
+  }
+
+  Future<bool> _maybeUpdateCustomerEmail(String email) async {
+    if (_selectedCustomer == null) {
+      _showAccountSalesError("Please select a customer for Account Sales.");
+      return false;
+    }
+
+    final customer = _selectedCustomer!;
+    final currentEmail = customer.email.trim();
+    final updatedEmail = email.trim();
+    final shouldUpdate = updatedEmail != currentEmail || currentEmail.isEmpty;
+
+    if (!shouldUpdate) {
+      return true;
+    }
+
+    final body = _buildCustomerEmailUpdateBody(customer, updatedEmail);
+    try {
+      final response = await _salesBloc.updateCustomerDetails(body);
+      if (!response.success) {
+        _showAccountSalesError(
+          response.message.isNotEmpty
+              ? response.message
+              : "Failed to update customer email.",
+        );
+        return false;
+      }
+      return true;
+    } catch (error) {
+      _showAccountSalesError("Failed to update customer email: $error");
+      return false;
+    }
+  }
+
+  Map<String, dynamic> _buildCustomerEmailUpdateBody(
+    CustomerVO customer,
+    String email,
+  ) {
+    final Map<String, dynamic> item = <String, dynamic>{
+      'customerId': customer.customerId,
+      'barcode': customer.barcode,
+      'date_modified': customer.dateModified,
+      'surname': customer.surname,
+      'givenNames': customer.givenNames,
+      'grade': customer.grade,
+      'company': customer.company,
+      'position': customer.position,
+      'salutation': customer.salutation,
+      'status': customer.status,
+      'inactive': customer.inactive,
+      'account': customer.account,
+      'overseas': customer.overseas,
+      'abn': customer.abn,
+      'addr1': customer.addr1,
+      'addr2': customer.addr2,
+      'addr3': customer.addr3,
+      'suburb': customer.suburb,
+      'state': customer.state,
+      'postcode': customer.postcode,
+      'country': customer.country,
+      'phone': customer.phone,
+      'fax': customer.fax,
+      'mobile': customer.mobile,
+      'email': email,
+      'openedId': customer.openedId,
+      'opened_id': customer.openedId,
+      'ownerId': customer.ownerId,
+      'owner_id': customer.ownerId,
+      'fromEOM': customer.fromEOM,
+      'days': customer.days,
+      'limit': customer.limit,
+      'defaultDeliveryAddress': customer.defaultDeliveryAddress,
+      'documentDeliveryType': customer.documentDeliveryType,
+      'custom1': customer.custom1,
+      'custom2': customer.custom2,
+      'notes': customer.notes,
+      'comments': customer.comments,
+    };
+
+    return <String, dynamic>{
+      'items': [item],
+    };
+  }
+
+  Future<Map<String, dynamic>> _buildAccountInvoicePayload({
+    required bool includeEmailAudit,
+  }) async {
+    final shopfront = AppGlobals.instance.shopfront ?? '';
+    if (shopfront.isEmpty) {
+      return Future.error(
+        "Missing shopfront setup. Please reconnect to a host and shopfront.",
+      );
+    }
+
+    final cartItemsData = await Future.wait(
+      _cartItems.map(
+        (item) => CartItemData.fromCartItemAsync(item, shopfront: shopfront),
+      ),
+    );
+
+    final lines = cartItemsData
+        .where((item) => item.isPackage != true)
+        .map(_buildInvoiceLine)
+        .toList();
+
+    final packages = cartItemsData
+        .where((item) => item.isPackage == true)
+        .map(_buildInvoicePackage)
+        .toList();
+
+    final drawer =
+        await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+
+    final totals = _calculatedTotals;
+
+    final int? customerId = _selectedCustomer?.customerId;
+    if (customerId == null || customerId <= 0) {
+      return Future.error("Missing customer for Account Sales.");
+    }
+
+    final int? staffId = widget.title == 'Account Sales' &&
+            _selectedCustomer != null
+        ? _selectedCustomer!.ownerId
+        : AppGlobals.instance.staffId;
+
+    if (staffId == null || staffId <= 0) {
+      return Future.error("Missing staff id for Account Sales.");
+    }
+
+    final payload = <String, dynamic>{
+      'customerId': customerId,
+      'staffId': staffId,
+      'transactionDate': DateTime.now().toIso8601String(),
+      'custom': _surveyValue,
+      'comments': _commentValue,
+      'drawer': drawer,
+      'origin': 0,
+      'subtotal': _subtotal,
+      'discount': _discountValue,
+      'rounding': _rounding,
+      'totalEx': totals.totalEx,
+      'totalInc': _total,
+      'gp': totals.totalGp,
+      'lines': lines,
+      'packages': packages,
+    };
+
+    if (_committedDeliveryAddress != null) {
+      payload['deliveryAddress'] = _committedDeliveryAddress!.toApiPayload();
+    }
+
+    if (includeEmailAudit && _emailAuditData != null) {
+      payload['emailAudit'] = _emailAuditData!.toApiPayload();
+    }
+
+    return payload;
+  }
+
+  Map<String, dynamic> _buildInvoiceLine(CartItemData item) {
+    final payload = <String, dynamic>{
+      'stockId': item.stockId ?? 0,
+      'quantity': item.qty,
+      'costEx': item.costEx,
+      'costInc': item.costInc,
+      'salesTax': item.salesTax ?? '',
+      'sellEx': item.sellEx,
+      'sellInc': item.sellInc,
+      'rrp': item.rrp ?? item.sellInc,
+      'gp': item.gp,
+      'unitOfMeasure': item.unitOfMeasure ?? 0,
+      'isFreight': item.isFreight,
+      'isStatic': item.isStatic,
+    };
+
+    if (item.description?.isNotEmpty == true) {
+      payload['description'] = item.description;
+    }
+
+    if (item.isPromotion) {
+      payload['isPromotion'] = true;
+    }
+
+    return payload;
+  }
+
+  Map<String, dynamic> _buildInvoiceComponentLine(CartItemData item) {
+    final payload = <String, dynamic>{
+      'stockId': item.stockId ?? 0,
+      'quantity': item.qty,
+      'costEx': item.costEx,
+      'costInc': item.costInc,
+      'salesTax': item.salesTax ?? '',
+      'sellEx': item.sellEx,
+      'sellInc': item.sellInc,
+      'rrp': item.rrp ?? item.sellInc,
+      'gp': item.gp,
+      'unitOfMeasure': item.unitOfMeasure ?? 0,
+      'isFreight': item.isFreight,
+      'isStatic': item.isStatic,
+    };
+
+    if (item.description?.isNotEmpty == true) {
+      payload['description'] = item.description;
+    }
+
+    return payload;
+  }
+
+  Map<String, dynamic> _buildInvoicePackage(CartItemData item) {
+    final components = item.packageComponents ?? const <CartItemData>[];
+
+    final payload = <String, dynamic>{
+      'packageId': item.stockId ?? 0,
+      'quantity': item.qty,
+      'salesTax': item.salesTax ?? '',
+      'costEx': item.costEx,
+      'costInc': item.costInc,
+      'sellEx': item.sellEx,
+      'sellInc': item.sellInc,
+      'rrp': item.rrp ?? item.sellInc,
+      'gp': item.gp,
+      'componentLines':
+          components.map(_buildInvoiceComponentLine).toList(growable: false),
+    };
+
+    if (item.description?.isNotEmpty == true) {
+      payload['description'] = item.description;
+    }
+
+    return payload;
+  }
+
+  void _showAccountSalesError(String message) {
+    if (!mounted) return;
+    final colors = context.appColors;
+    final isDark = colors.isDark;
+    AlertInfo.show(
+      context: context,
+      text: message,
+      typeInfo: TypeInfo.error,
+      backgroundColor: isDark ? colors.surface : kSecondaryColor,
+      iconColor: kErrorColor,
+      textColor: kErrorColor,
+      position: MessagePosition.top,
+      padding: 70,
+    );
+  }
+
+  void _showAccountSalesSuccess(String message) {
+    if (!mounted) return;
+    final colors = context.appColors;
+    final isDark = colors.isDark;
+    AlertInfo.show(
+      context: context,
+      text: message,
+      typeInfo: TypeInfo.success,
+      backgroundColor: isDark ? colors.surface : kSecondaryColor,
+      iconColor: kPrimaryColor,
+      textColor: kPrimaryColor,
+      position: MessagePosition.top,
+      padding: 70,
+    );
+  }
+
+  void _setFinaliseProcessing(bool value) {
+    if (!mounted) return;
+    setState(() => _isFinaliseProcessing = value);
+  }
+
+  void _printInChunks(String message, {int chunkSize = 800}) {
+    if (message.length <= chunkSize) {
+      // ignore: avoid_print
+      print(message);
+      return;
+    }
+
+    for (var i = 0; i < message.length; i += chunkSize) {
+      final end = (i + chunkSize < message.length) ? i + chunkSize : message.length;
+      // ignore: avoid_print
+      print(message.substring(i, end));
+    }
   }
 
   void _clearSale() {

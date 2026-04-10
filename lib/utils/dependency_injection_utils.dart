@@ -116,6 +116,7 @@ import '../features/transactions/domain/use_cases/delete_sale_session.dart';
 import '../features/transactions/domain/use_cases/restore_sale_session.dart';
 import '../features/transactions/domain/use_cases/load_sales_settings.dart';
 import '../features/transactions/domain/use_cases/save_sales_setting.dart';
+import '../features/transactions/domain/use_cases/create_account_invoice.dart';
 import '../features/transactions/models/sales_model.dart';
 import '../features/transactions/presentation/BLoC/sales_bloc.dart';
 import '../features/onboarding/domain/repositories/onboarding_repo.dart';
@@ -144,6 +145,8 @@ Future<void> init() async {
     restoreSaleSession: sl(),
     loadSalesSettings: sl(),
     saveSalesSetting: sl(),
+    createAccountInvoice: sl(),
+    updateCustomerDetails: sl(),
   ));
   sl.registerFactory(() => StocktakeBloc(countAndSaveToLocaldb: sl()));
   sl.registerFactory(() => FetchingNetworkServerBloc(fetchNetworkPcs: sl()));
@@ -308,6 +311,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => RestoreSaleSession());
   sl.registerLazySingleton(() => LoadSalesSettings());
   sl.registerLazySingleton(() => SaveSalesSetting());
+  sl.registerLazySingleton(() => CreateAccountInvoice(sl()));
   sl.registerLazySingleton(() => CountAndSaveToLocaldb(sl()));
   sl.registerLazySingleton(() => FetchNetworkPcs(sl()));
   // SMB LEGACY - Commented out

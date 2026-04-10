@@ -15,6 +15,8 @@ import '../../domain/use_cases/delete_sale_session.dart';
 import '../../domain/use_cases/restore_sale_session.dart';
 import '../../domain/use_cases/load_sales_settings.dart';
 import '../../domain/use_cases/save_sales_setting.dart';
+import '../../domain/use_cases/create_account_invoice.dart';
+import '../../../customer_lookup/domain/use_cases/update_customer_details.dart';
 import 'sales_events.dart';
 import 'sales_states.dart';
 
@@ -30,6 +32,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   final RestoreSaleSession restoreSaleSession;
   final LoadSalesSettings loadSalesSettings;
   final SaveSalesSetting saveSalesSetting;
+  final CreateAccountInvoice createAccountInvoice;
+  final UpdateCustomerDetails updateCustomerDetails;
   final List<CartItemVO> _cartItems = [];
   CustomerVO? _selectedCustomer;
 
@@ -45,6 +49,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     required this.restoreSaleSession,
     required this.loadSalesSettings,
     required this.saveSalesSetting,
+    required this.createAccountInvoice,
+    required this.updateCustomerDetails,
   }) : super(const SalesInitial()) {
     on<SearchStock>(_onSearchStock);
     on<SelectStock>(_onSelectStock);
