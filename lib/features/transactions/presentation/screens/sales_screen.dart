@@ -583,12 +583,19 @@ class _SalesScreenState extends State<SalesScreen>
     final costEx = item.stock?.costEx ?? item.stock?.cost ?? item.costPrice;
     if (costEx == null) return true;
 
-    if (item.exPrice >= costEx) return true;
+    if (item.exPrice >= costEx) {
+      _promptedQtyByCode[item.code] = item.qty;
+      return true;
+    }
 
     final proceed = await _showBelowCostPrompt(colors, isDark);
     if (!proceed) {
       _salesBloc.add(RemoveCartItem(index: index));
+      _promptedQtyByCode.remove(item.code);
+      return false;
     }
+
+    _promptedQtyByCode[item.code] = item.qty;
 
     return proceed;
   }
