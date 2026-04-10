@@ -679,7 +679,11 @@ class _SalesScreenState extends State<SalesScreen>
     }
 
     // Restore customer
-    _selectedCustomer = restoreResult.customer;
+    if (restoreResult.customer != null) {
+      _salesBloc.add(SelectCustomer(customer: restoreResult.customer!));
+    } else {
+      _salesBloc.add(ClearCustomer());
+    }
 
     // Restore other values
     setState(() {

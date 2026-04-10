@@ -65,10 +65,22 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     on<RemoveCartItem>(_onRemoveCartItem);
     on<ClearCart>(_onClearCart);
     on<ResetSearchState>(_onResetSearchState);
+    on<RecalculatePricesForGrade>(_onRecalculatePricesForGrade);
     // Customer events
     on<SearchCustomer>(_onSearchCustomer);
     on<SelectCustomer>(_onSelectCustomer);
     on<ClearCustomer>(_onClearCustomer);
+  }
+
+  Future<void> _onRecalculatePricesForGrade(
+    RecalculatePricesForGrade event,
+    Emitter<SalesState> emit,
+  ) async {
+    await _recalculateCartPricesForGrade(event.grade);
+    emit(CartUpdated(
+      cartItems: List.from(_cartItems),
+      selectedCustomer: _selectedCustomer,
+    ));
   }
 
   Future<void> _onSearchStock(

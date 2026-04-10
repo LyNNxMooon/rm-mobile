@@ -126,3 +126,9 @@ class SelectCustomer extends SalesEvent {
 
 /// Clear selected customer (reset to walk-in)
 class ClearCustomer extends SalesEvent {}
+
+/// Recalculate cart prices for a given customer grade
+class RecalculatePricesForGrade extends SalesEvent {
+  final int grade;
+  RecalculatePricesForGrade({required this.grade});
+}
