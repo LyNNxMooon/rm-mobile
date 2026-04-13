@@ -10,7 +10,6 @@ class SalesSettingsResult {
   final bool preventAddIfNoStock;
   final bool preventFinaliseIfOutOfStock;
   final bool displayCustomerMessagesAsPrompt;
-  final bool roundSellPriceTo2Decimals;
   final bool scanIndividualUnitsForFractional;
   final bool promptScanIndividualFractional;
 
@@ -22,7 +21,6 @@ class SalesSettingsResult {
     required this.preventAddIfNoStock,
     required this.preventFinaliseIfOutOfStock,
     required this.displayCustomerMessagesAsPrompt,
-    required this.roundSellPriceTo2Decimals,
     required this.scanIndividualUnitsForFractional,
     required this.promptScanIndividualFractional,
   });
@@ -53,9 +51,6 @@ class LoadSalesSettings {
     final displayCustomerMessages = await LocalDbDAO.instance.getAppConfig(
       kSalesDisplayCustomerMessagesKey,
     );
-    final roundSellPriceTo2Decimals = await LocalDbDAO.instance.getAppConfig(
-      kSalesRoundSellPriceTo2DecimalsKey,
-    );
     final scanIndividualUnitsForFractional = await LocalDbDAO.instance.getAppConfig(
       kSalesScanIndividualUnitsForFractionalKey,
     );
@@ -71,7 +66,6 @@ class LoadSalesSettings {
       preventAddIfNoStock: preventAddIfNoStock == 'true',
       preventFinaliseIfOutOfStock: preventFinaliseIfOutOfStock == 'true',
       displayCustomerMessagesAsPrompt: displayCustomerMessages == 'true',
-      roundSellPriceTo2Decimals: roundSellPriceTo2Decimals == 'true',
       scanIndividualUnitsForFractional: scanIndividualUnitsForFractional == 'true',
       promptScanIndividualFractional: promptScanIndividualFractional == 'true',
     );

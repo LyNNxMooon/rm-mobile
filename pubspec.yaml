@@ -78,6 +78,8 @@ dependencies:
   url_launcher: ^6.3.0
   video_player: ^2.10.1
   flutter_device_type: ^0.4.0
+  decimal: ^3.0.2
+  rational: ^2.2.3
 
 
 dev_dependencies:

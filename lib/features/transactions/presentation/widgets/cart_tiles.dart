@@ -1,7 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:decimal/decimal.dart';
 import 'package:flutter/cupertino.dart' show CupertinoPicker;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:rational/rational.dart';
+import 'package:rmmobile/utils/formatting_utils.dart';
 import 'package:rmmobile/utils/tax_calculation_utils.dart';
 
 import '../../../../constants/colors.dart';
@@ -14,10 +17,10 @@ import 'breakdown_widgets.dart';
 import '../../../stock_lookup/presentation/widgets/price_calculator_dialog.dart';
 
 /// Helper to format sell price - shows 4 decimals if the price has significant 
-/// digits beyond 2 decimal places, otherwise shows 2 decimals
+/// digits beyond 2 decimal places, otherwise shows 2 decimals (with cascade rounding)
 String formatSellPriceForDisplay(double price) {
-  final fixed4 = price.toStringAsFixed(4);
-  final fixed2 = price.toStringAsFixed(2);
+  final fixed4 = price.toCascadeFixed4();
+  final fixed2 = price.toCascadeFixed2();
   if (double.parse(fixed4) != double.parse(fixed2)) {
     return fixed4;
   }
@@ -84,7 +87,6 @@ class ExpandedEditCartTile extends StatefulWidget {
   final VoidCallback onDelete;
   final bool isIncTax;
   final double taxRate;
-  final bool roundSellPriceTo2Decimals;
   final bool allowPriceEdit;
 
   const ExpandedEditCartTile({
@@ -102,7 +104,6 @@ class ExpandedEditCartTile extends StatefulWidget {
     required this.onDelete,
     this.isIncTax = true,
     this.taxRate = 0.1,
-    this.roundSellPriceTo2Decimals = false,
     this.allowPriceEdit = true,
   });
 
@@ -124,8 +125,6 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   bool get _allowRenaming => widget.item.stock?.allowRenaming ?? false;
   bool get _allowFractions => widget.item.stock?.allowFractions ?? false;
 
-  int get _priceDecimalPlaces => widget.roundSellPriceTo2Decimals ? 2 : 4;
-
   /// Format qty for display - always 3 decimals for fractional items, integer for others
   String _formatQty(double qty) {
     if (_allowFractions) {
@@ -135,12 +134,10 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   }
 
   String _formatSellPrice(double price) {
-    if (widget.roundSellPriceTo2Decimals) {
-      return price.toStringAsFixed(2);
-    }
+    // Use cascade rounding for 4 and 2 decimals
+    final fixed4 = price.toCascadeFixed4();
+    final fixed2 = price.toCascadeFixed2();
     // Show 4 decimals if it has significant digits beyond 2 decimals
-    final fixed4 = price.toStringAsFixed(4);
-    final fixed2 = price.toStringAsFixed(2);
     if (double.parse(fixed4) != double.parse(fixed2)) {
       return fixed4;
     }
@@ -540,7 +537,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                     ),
                   ),
                   Text(
-                    "\$${_displayExtension.toStringAsFixed(2)}",
+                    "\$${_displayExtension.toCascadeFixed2()}",
                     style: TextStyle(
                       fontSize: isTablet ? 15 : 13,
                       fontWeight: FontWeight.bold,
@@ -596,7 +593,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                                 controller: _priceController,
                                 prefix: "\$",
                                 isTablet: isTablet,
-                                maxDecimals: _priceDecimalPlaces,
+                                maxDecimals: 4,
                                 enabled: widget.allowPriceEdit,
                                 focusNode: _priceFocusNode,
                                 onChanged: (value) {
@@ -1177,18 +1174,40 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     final colors = widget.colors;
     final item = widget.item;
     
-    // Calculate tax values for this item
-    final double incTotal = item.extension;
-    final double exTotal = item.extensionEx;
-    final double taxAmount = incTotal - exTotal;
+    // Use Rational for precise calculations
+    final qtyRational = Rational.parse(item.qty.toString());
+    final incPriceRational = Rational.parse(item.incPrice.toString());
+    final exPriceRational = Rational.parse(item.exPrice.toString());
     
-    // Calculate profit values for this item
-    // Use same logic as action menu: taxType == 0 -> costEx, else -> costInc
-    final double sellEx = item.extensionEx;
+    // Tax calculations with precise Rational arithmetic
+    // Ex Tax: sellEx * qty
+    final exTotalRational = exPriceRational * qtyRational;
+    final double exTotal = exTotalRational.toDecimal(scaleOnInfinitePrecision: 10).toDouble();
+    
+    // Inc Tax: sellInc * qty
+    final incTotalRational = incPriceRational * qtyRational;
+    final double incTotal = incTotalRational.toDecimal(scaleOnInfinitePrecision: 10).toDouble();
+    
+    // Tax Amount: (sellInc - sellEx) * qty
+    final taxPerUnitRational = incPriceRational - exPriceRational;
+    final taxAmountRational = taxPerUnitRational * qtyRational;
+    final double taxAmount = taxAmountRational.toDecimal(scaleOnInfinitePrecision: 10).toDouble();
+    
+    // GP calculations with precise Rational arithmetic
+    // Cost depends on taxType: == 0 -> costEx, != 0 -> costInc
     final double itemCost = item.taxType == 0
         ? item.computedCostEx
         : item.computedCostInc;
-    final double totalCost = itemCost * item.qty;
+    final costRational = Rational.parse(itemCost.toString());
+    
+    // Total Cost: cost * qty
+    final totalCostRational = costRational * qtyRational;
+    final double totalCost = totalCostRational.toDecimal(scaleOnInfinitePrecision: 10).toDouble();
+    
+    // Est. Gross Profit: (sellEx - cost) * qty
+    final profitPerUnitRational = exPriceRational - costRational;
+    final totalGpRational = profitPerUnitRational * qtyRational;
+    final double totalGp = totalGpRational.toDecimal(scaleOnInfinitePrecision: 10).toDouble();
 
     showDialog(
       context: context,
@@ -1263,8 +1282,9 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                   ),
                   SizedBox(height: isTablet ? 12 : 10),
                   ProfitBreakdownWidget(
-                    totalEx: sellEx,
+                    totalEx: exTotal,
                     totalCost: totalCost,
+                    totalGp: totalGp,
                     colors: colors,
                     isDark: isDark,
                   ),
@@ -1421,7 +1441,7 @@ class MobileCartTile extends StatelessWidget {
                       ),
                     ),
                   Text(
-                    "\$${_displayExtension.toStringAsFixed(2)}",
+                    "\$${_displayExtension.toCascadeFixed2()}",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -1447,7 +1467,6 @@ class TabletCartTile extends StatelessWidget {
   final VoidCallback? onDelete;
   final bool isIncTax;
   final double taxRate;
-  final bool roundSellPriceTo2Decimals;
 
   const TabletCartTile({
     super.key,
@@ -1458,7 +1477,6 @@ class TabletCartTile extends StatelessWidget {
     this.onDelete,
     this.isIncTax = true,
     this.taxRate = 0.1,
-    this.roundSellPriceTo2Decimals = false,
   });
 
   double get _displayPrice =>
@@ -1469,9 +1487,7 @@ class TabletCartTile extends StatelessWidget {
       item.stock?.isOnPromotion == true &&
       item.stock?.promotion?.promotionRrp != null;
 
-  String get _formattedPrice => roundSellPriceTo2Decimals
-      ? _displayPrice.toStringAsFixed(2)
-      : formatSellPriceForDisplay(_displayPrice);
+  String get _formattedPrice => formatSellPriceForDisplay(_displayPrice);
 
   @override
   Widget build(BuildContext context) {
@@ -1595,7 +1611,7 @@ class TabletCartTile extends StatelessWidget {
           SizedBox(
             width: 130,
             child: Text(
-              "\$${_displayExtension.toStringAsFixed(2)}",
+              "\$${_displayExtension.toCascadeFixed2()}",
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -1690,7 +1706,7 @@ class CompactCartTile extends StatelessWidget {
               SizedBox(
                 width: isTablet ? 130 : 65,
                 child: Text(
-                  "\$${_displayExtension.toStringAsFixed(2)}",
+                  "\$${_displayExtension.toCascadeFixed2()}",
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     fontSize: isTablet ? 15 : 12,

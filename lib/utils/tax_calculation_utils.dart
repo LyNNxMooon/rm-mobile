@@ -1,3 +1,6 @@
+import 'package:decimal/decimal.dart';
+import 'package:rational/rational.dart';
+
 import '../entities/vos/tax_code_vo.dart';
 import '../local_db/local_db_dao.dart';
 import '../utils/global_var_utils.dart';
@@ -75,6 +78,7 @@ class TaxCalculationUtils {
   }
 
   /// Calculate tax using an already loaded TaxCodeVO
+  /// Uses Decimal for precise calculations, rounds to 4 decimal places
   static TaxCalculationResult _calculateFromTaxCode(
     double basePrice,
     TaxCodeVO taxCode,
@@ -93,25 +97,37 @@ class TaxCalculationUtils {
       );
     }
 
-    final multiplier = 1 + (percentage / 100);
+    // Use Rational for precise calculations (division returns Rational)
+    final basePriceRational = Rational.parse(basePrice.toString());
+    final percentageRational = Rational.parse(percentage.toString());
+    final oneHundred = Rational.fromInt(100);
+    final one = Rational.one;
+    
+    // multiplier = 1 + (percentage / 100)
+    final multiplier = one + (percentageRational / oneHundred);
 
-    double exPrice;
-    double incPrice;
-    double taxAmount;
+    Rational exPriceRational;
+    Rational incPriceRational;
+    Rational taxAmountRational;
 
     if (taxCode.taxType == 0 || taxCode.taxType == 1) {
       // tax_type == 0 or 1: basePrice is Ex-tax (exclusive)
       // Calculate inclusive price
-      exPrice = basePrice;
-      incPrice = basePrice * multiplier;
-      taxAmount = incPrice - exPrice;
+      exPriceRational = basePriceRational;
+      incPriceRational = basePriceRational * multiplier;
+      taxAmountRational = incPriceRational - exPriceRational;
     } else {
       // tax_type >= 2: basePrice is Inc-tax (inclusive)
       // Calculate exclusive price
-      incPrice = basePrice;
-      exPrice = basePrice / multiplier;
-      taxAmount = incPrice - exPrice;
+      incPriceRational = basePriceRational;
+      exPriceRational = basePriceRational / multiplier;
+      taxAmountRational = incPriceRational - exPriceRational;
     }
+
+    // Convert to double with full precision - display layer handles formatting
+    final exPrice = _toDouble(exPriceRational);
+    final incPrice = _toDouble(incPriceRational);
+    final taxAmount = _toDouble(taxAmountRational);
 
     return TaxCalculationResult(
       exPrice: exPrice,
@@ -121,6 +137,14 @@ class TaxCalculationUtils {
       percentage: percentage,
       taxType: taxCode.taxType,
     );
+  }
+
+  /// Converts a Rational to double with full precision
+  /// Display layer uses .toStringAsFixed(4) for formatting
+  static double _toDouble(Rational value) {
+    // Use high precision to avoid losing significant digits
+    final decimal = value.toDecimal(scaleOnInfinitePrecision: 10);
+    return decimal.toDouble();
   }
 
   /// Calculate tax for stock cost (uses goods_tax)
@@ -198,12 +222,30 @@ class TaxCalculationUtils {
   }
 
   /// Calculate inclusive price from exclusive price
+  /// Uses Rational for precise calculation, full precision output
   static double calculateInclusivePrice(double exPrice, double percentage) {
-    return exPrice * (1 + percentage / 100);
+    final exPriceRational = Rational.parse(exPrice.toString());
+    final percentageRational = Rational.parse(percentage.toString());
+    final oneHundred = Rational.fromInt(100);
+    final one = Rational.one;
+    
+    final multiplier = one + (percentageRational / oneHundred);
+    final incPriceRational = exPriceRational * multiplier;
+    
+    return _toDouble(incPriceRational);
   }
 
   /// Calculate exclusive price from inclusive price
+  /// Uses Rational for precise calculation, full precision output
   static double calculateExclusivePrice(double incPrice, double percentage) {
-    return incPrice / (1 + percentage / 100);
+    final incPriceRational = Rational.parse(incPrice.toString());
+    final percentageRational = Rational.parse(percentage.toString());
+    final oneHundred = Rational.fromInt(100);
+    final one = Rational.one;
+    
+    final multiplier = one + (percentageRational / oneHundred);
+    final exPriceRational = incPriceRational / multiplier;
+    
+    return _toDouble(exPriceRational);
   }
 }

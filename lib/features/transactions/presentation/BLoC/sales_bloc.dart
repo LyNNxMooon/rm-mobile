@@ -317,7 +317,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         isEditing: skipEditMode ? false : true, // Skip edit mode if auto-adding
       );
     } else {
-      // Add new item - calculate tax first
+      // Add new item - determine prices
       double incPrice;
       double exPrice;
       double taxPercentage;
@@ -328,86 +328,69 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       final effectiveResult = stock.getEffectiveSellPrice(customerGrade);
       final double effectiveSell = effectiveResult.price;
       
+      // Get tax info for this stock (needed for taxType and percentage)
+      final taxResult = await TaxCalculationUtils.calculateSellTax(
+        sell: stock.sell,
+        salesTax: stock.salesTax,
+      );
+      taxPercentage = taxResult.percentage;
+      taxType = taxResult.taxType;
+      
       if (effectiveResult.isPricingGradeApplied) {
-        // Pricing grade prices are already inc-tax (applies to both package and normal items)
-        // Get tax percentage from tax tables, then calculate ex-tax from inc
-        final taxResult = await TaxCalculationUtils.calculateSellTax(
-          sell: stock.sell,
-          salesTax: stock.salesTax,
-        );
-        taxPercentage = taxResult.percentage;
-        taxType = taxResult.taxType;
-        
-        // effectiveSell is already inc-tax
+        // Pricing grade prices are already inc-tax
+        // Calculate ex-tax from inc using precise Rational arithmetic
         incPrice = effectiveSell;
-        final multiplier = 1 + (taxPercentage / 100);
-        exPrice = taxPercentage > 0 ? effectiveSell / multiplier : effectiveSell;
-      } else if (stock.isPackage && stock.sellEx != null && stock.sellInc != null) {
-        // Package items with no pricing grade: use sell_ex/sell_inc directly
+        exPrice = taxPercentage > 0 
+            ? TaxCalculationUtils.calculateExclusivePrice(effectiveSell, taxPercentage)
+            : effectiveSell;
+      } else if (stock.sellInc != null && stock.sellEx != null) {
+        // Use pre-calculated values from server (for both normal & package items)
         incPrice = stock.sellInc!;
         exPrice = stock.sellEx!;
-        // Calculate percentage from prices
-        taxPercentage = exPrice > 0 ? ((incPrice - exPrice) / exPrice) * 100 : 0.0;
-        // Look up actual taxType from sales_tax (for GP calculation)
-        final taxResult = await TaxCalculationUtils.calculateSellTax(
-          sell: stock.sell,
-          salesTax: stock.salesTax,
-        );
-        taxType = taxResult.taxType;
       } else {
-        // Regular items - calculate using tax tables with base sell price
-        final taxResult = await TaxCalculationUtils.calculateSellTax(
-          sell: effectiveSell,
-          salesTax: stock.salesTax,
-        );
+        // Fallback: calculate using tax tables (legacy items without pre-calculated values)
         incPrice = taxResult.incPrice;
         exPrice = taxResult.exPrice;
-        taxPercentage = taxResult.percentage;
-        taxType = taxResult.taxType;
       }
       
-      // Calculate cost values with proper tax handling from goods_tax
+      // Get cost values - use pre-calculated from server when available
       double computedCostEx;
       double computedCostInc;
-      double? costTaxPercentage;
       
-      if (stock.costEx != null) {
+      if (stock.costEx != null && stock.costInc != null) {
+        // Use pre-calculated values from server
         computedCostEx = stock.costEx!;
-      } else if (stock.cost > 0) {
-        // Look up goods_tax to determine tax_type
+        computedCostInc = stock.costInc!;
+      } else if (stock.costEx != null) {
+        // Only costEx available - calculate costInc with precise arithmetic
+        computedCostEx = stock.costEx!;
         final costTaxResult = await TaxCalculationUtils.calculateCostTax(
           cost: stock.cost,
           goodsTax: stock.goodsTax,
         );
-        costTaxPercentage = costTaxResult.percentage;
-        if (costTaxResult.taxType == 0) {
-          // tax_type = 0: cost is ex-taxed, use directly
-          computedCostEx = stock.cost;
-        } else {
-          // tax_type != 0: cost is inc-taxed, calculate ex by removing tax
-          computedCostEx = costTaxResult.exPrice;
-        }
+        computedCostInc = costTaxResult.percentage > 0
+            ? TaxCalculationUtils.calculateInclusivePrice(computedCostEx, costTaxResult.percentage)
+            : computedCostEx;
+      } else if (stock.costInc != null) {
+        // Only costInc available - calculate costEx with precise arithmetic
+        computedCostInc = stock.costInc!;
+        final costTaxResult = await TaxCalculationUtils.calculateCostTax(
+          cost: stock.cost,
+          goodsTax: stock.goodsTax,
+        );
+        computedCostEx = costTaxResult.percentage > 0
+            ? TaxCalculationUtils.calculateExclusivePrice(computedCostInc, costTaxResult.percentage)
+            : computedCostInc;
+      } else if (stock.cost > 0) {
+        // Fallback: calculate using tax tables (legacy items)
+        final costTaxResult = await TaxCalculationUtils.calculateCostTax(
+          cost: stock.cost,
+          goodsTax: stock.goodsTax,
+        );
+        computedCostEx = costTaxResult.exPrice;
+        computedCostInc = costTaxResult.incPrice;
       } else {
         computedCostEx = 0.0;
-      }
-      
-      // Calculate costInc from costEx
-      if (stock.costInc != null) {
-        computedCostInc = stock.costInc!;
-      } else if (computedCostEx > 0) {
-        // Get tax percentage if not already fetched
-        if (costTaxPercentage == null && stock.goodsTax != null) {
-          final costTaxResult = await TaxCalculationUtils.calculateCostTax(
-            cost: computedCostEx,
-            goodsTax: stock.goodsTax,
-          );
-          costTaxPercentage = costTaxResult.percentage;
-        }
-        // Apply tax directly: costInc = costEx * (1 + percentage/100)
-        computedCostInc = costTaxPercentage != null && costTaxPercentage > 0
-            ? computedCostEx * (1 + costTaxPercentage / 100)
-            : computedCostEx;
-      } else {
         computedCostInc = 0.0;
       }
       
@@ -452,19 +435,22 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 
     final item = _cartItems[event.index];
     final percentage = item.taxPercentage;
-    final multiplier = 1 + (percentage / 100);
     
     double incPrice;
     double exPrice;
     
     if (event.isIncPrice) {
-      // User edited the Inc price
+      // User edited the Inc price - calculate Ex with precise Rational arithmetic
       incPrice = event.price;
-      exPrice = percentage > 0 ? event.price / multiplier : event.price;
+      exPrice = percentage > 0 
+          ? TaxCalculationUtils.calculateExclusivePrice(event.price, percentage)
+          : event.price;
     } else {
-      // User edited the Ex price
+      // User edited the Ex price - calculate Inc with precise Rational arithmetic
       exPrice = event.price;
-      incPrice = percentage > 0 ? event.price * multiplier : event.price;
+      incPrice = percentage > 0 
+          ? TaxCalculationUtils.calculateInclusivePrice(event.price, percentage)
+          : event.price;
     }
 
     _cartItems[event.index] = item.copyWith(

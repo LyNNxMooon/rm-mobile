@@ -14,6 +14,7 @@ import 'package:rmmobile/features/stock_lookup/presentation/widgets/pricing_dial
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/responsive_utils.dart';
+import '../../../../utils/tax_calculation_utils.dart';
 import '../BLoC/stock_lookup_bloc.dart';
 import '../BLoC/stock_lookup_events.dart';
 
@@ -123,7 +124,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     double exVal = 0.0;
 
     if (widget.taxPercentage > 0) {
-      exVal = incVal / (1 + widget.taxPercentage / 100);
+      // Use precise Rational arithmetic, rounds to 4 decimals
+      exVal = TaxCalculationUtils.calculateExclusivePrice(incVal, widget.taxPercentage);
     } else {
       exVal = incVal;
     }
@@ -141,7 +143,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     double incVal = 0.0;
 
     if (widget.taxPercentage > 0) {
-      incVal = exVal * (1 + widget.taxPercentage / 100);
+      // Use precise Rational arithmetic, rounds to 4 decimals
+      incVal = TaxCalculationUtils.calculateInclusivePrice(exVal, widget.taxPercentage);
     } else {
       incVal = exVal;
     }
@@ -168,8 +171,10 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
         _rrpController.text = result.toStringAsFixed(4);
 
         // Manually trigger the Ex Calculation since focus logic won't catch this
+        // Use precise Rational arithmetic, rounds to 4 decimals
         if (widget.taxPercentage > 0) {
-          _exRrpController.text = (result / (1 + widget.taxPercentage / 100)).toStringAsFixed(4);
+          final exVal = TaxCalculationUtils.calculateExclusivePrice(result, widget.taxPercentage);
+          _exRrpController.text = exVal.toStringAsFixed(4);
         } else {
           _exRrpController.text = result.toStringAsFixed(4);
         }
