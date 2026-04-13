@@ -12,6 +12,8 @@ import 'package:get_it/get_it.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:alert_info/alert_info.dart';
 import 'package:rational/rational.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 
@@ -31,6 +33,8 @@ import '../../domain/use_cases/save_sale_session.dart';
 import '../BLoC/sales_bloc.dart';
 import '../BLoC/sales_events.dart';
 import '../BLoC/sales_states.dart';
+import '../../../home_page/presentation/BLoC/home_screen_events.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'stock_selection_screen.dart';
 import 'customer_selection_screen.dart';
 import '../widgets/finalise_sale_dialog.dart';
@@ -2905,6 +2909,16 @@ class _SalesScreenState extends State<SalesScreen>
       _surveyController.clear();
       _commentValue = '';
     });
+
+    _runPostSaleDeltaSync();
+  }
+
+  void _runPostSaleDeltaSync() {
+    if (!mounted) return;
+
+    // Trigger delta sync for stocks and customers after successful sale
+    context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
+    context.read<FetchCustomerBloc>().add(StartCustomerSyncEvent(ipAddress: ""));
   }
 
   void _showSurveyScannerDialog(

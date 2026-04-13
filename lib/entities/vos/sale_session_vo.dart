@@ -520,7 +520,9 @@ class CartItemData {
       for (final data in componentData) {
         Rational newSellIncR = toR(data.orgSellInc);
         Rational newSellExR = data.orgSellExR;
-        final qtyR = toR(data.comp.quantity);
+        final baseQtyR = toR(data.comp.quantity);
+        final packageQtyR = toR(item.qty);
+        final totalQtyR = baseQtyR * packageQtyR; // Component qty * package qty
         final orgSellIncR = toR(data.orgSellInc);
         final orgSellExR = data.orgSellExR;
         
@@ -535,10 +537,10 @@ class CartItemData {
               ratioR = totalPackageGpR > Rational.zero ? data.gpR / totalPackageGpR : Rational.zero;
             } else {
               // Use sell_inc ratio
-              ratioR = totalPackageIncR > Rational.zero ? (orgSellIncR * qtyR) / totalPackageIncR : Rational.zero;
+              ratioR = totalPackageIncR > Rational.zero ? (orgSellIncR * baseQtyR) / totalPackageIncR : Rational.zero;
             }
             final comLineDiscountR = discountR * ratioR;
-            newSellIncR = orgSellIncR - (comLineDiscountR / qtyR);
+            newSellIncR = orgSellIncR - (comLineDiscountR / baseQtyR);
           } else {
             // Mark-up
             final markupR = priceDiffR;
@@ -547,10 +549,10 @@ class CartItemData {
               ratioR = data.gpR / totalPackageGpR;
             } else {
               // Use sell_inc ratio
-              ratioR = totalPackageIncR > Rational.zero ? (orgSellIncR * qtyR) / totalPackageIncR : Rational.zero;
+              ratioR = totalPackageIncR > Rational.zero ? (orgSellIncR * baseQtyR) / totalPackageIncR : Rational.zero;
             }
             final comLineShareR = markupR * ratioR;
-            newSellIncR = orgSellIncR + (comLineShareR / qtyR);
+            newSellIncR = orgSellIncR + (comLineShareR / baseQtyR);
           }
           
           // Calculate new_sell_ex maintaining the same ratio
@@ -564,14 +566,14 @@ class CartItemData {
             data.compStock != null && 
             data.comp.description != data.compStock!.description;
         
-        // Calculate GP based on taxType using Rational: (newSellEx - cost) * qty
+        // Calculate GP based on taxType using Rational: (newSellEx - cost) * baseQty (per package, not total)
         final compCostForGpR = toR((data.taxType ?? 0) == 0 ? data.costEx : data.costInc);
-        final compGpValueR = (newSellExR - compCostForGpR) * qtyR;
+        final compGpValueR = (newSellExR - compCostForGpR) * baseQtyR;
         
         components.add(CartItemData(
           code: data.comp.barcode ?? '',
           description: compDescOverridden ? data.comp.description : null,
-          qty: data.comp.quantity,
+          qty: fromR(totalQtyR), // Component qty * package qty
           stockId: data.comp.stockId,
           sellInc: fromR(newSellIncR),  // Raw precise value
           sellEx: fromR(newSellExR),    // Raw precise value
@@ -579,7 +581,7 @@ class CartItemData {
           costInc: data.costInc,
           taxPercentage: data.taxPercentage,
           taxType: data.taxType,
-          gp: fromR(compGpValueR),      // Raw precise value
+          gp: fromR(compGpValueR),      // GP per package (not multiplied by package qty)
           salesTax: data.compStock?.salesTax,
           rrp: data.rrp,
           unitOfMeasure: data.compStock?.unitOfMeasure.toInt(),
