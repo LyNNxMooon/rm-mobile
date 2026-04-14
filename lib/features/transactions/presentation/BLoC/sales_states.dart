@@ -68,6 +68,11 @@ class CartUpdated extends SalesState {
   });
 }
 
+/// Item added with invalid sell price - prompt user to fix
+class NegativeSellPriceFound extends SalesState {
+  const NegativeSellPriceFound({required super.cartItems, super.selectedCustomer});
+}
+
 /// Cart item saved (exited edit mode)
 class CartItemSaved extends SalesState {
   final int index;

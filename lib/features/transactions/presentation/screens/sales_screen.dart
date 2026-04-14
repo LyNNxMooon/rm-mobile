@@ -170,6 +170,7 @@ class _SalesScreenState extends State<SalesScreen>
   final Map<String, double> _promptedQtyByCode = {};
   bool _isRestoringSession = false;
   bool _isFinaliseProcessing = false;
+  bool _isNegativeSellPriceDialogOpen = false;
 
   late AnimationController _actionsAnimationController;
   late Animation<double> _actionsAnimation;
@@ -1095,6 +1096,8 @@ class _SalesScreenState extends State<SalesScreen>
               colors: colors,
               isDark: isDark,
             );
+          } else if (state is NegativeSellPriceFound) {
+            _showNegativeSellPriceError();
           } else if (state is FractionalItemFound) {
             // Handle fractional item based on settings
             await _handleFractionalItem(state.stock, colors, isDark);
@@ -2163,6 +2166,10 @@ class _SalesScreenState extends State<SalesScreen>
           _salesBloc.add(UpdateCartItemQty(index: index, qty: qty));
         },
         onPriceChanged: (price) {
+          if (price < 0) {
+            _showNegativeSellPriceError();
+            return;
+          }
           _salesBloc.add(UpdateCartItemPrice(index: index, price: price, isIncPrice: _isIncTax));
         },
         onSerialChanged: (serial) {
@@ -3229,6 +3236,46 @@ class _SalesScreenState extends State<SalesScreen>
       position: MessagePosition.top,
       padding: 70,
     );
+  }
+
+  void _showNegativeSellPriceError() {
+    if (!mounted || _isNegativeSellPriceDialogOpen) return;
+    _isNegativeSellPriceDialogOpen = true;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final colors = context.appColors;
+        final isDark = colors.isDark;
+        return AlertDialog(
+          backgroundColor: isDark ? colors.surface : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Text(
+            "RetailManager Error",
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            "Sell price cannot be negative.",
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    ).whenComplete(() {
+      _isNegativeSellPriceDialogOpen = false;
+    });
   }
 
   void _setFinaliseProcessing(bool value) {

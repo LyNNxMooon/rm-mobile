@@ -159,7 +159,14 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         }
         
         // Auto-add to cart when single match found
-        final addedQty = await _addStockToCart(result.stock!, skipEditMode: event.skipEditMode);
+        final added = await _addStockToCart(result.stock!, skipEditMode: event.skipEditMode);
+        if (added.negativeSellPrice) {
+          emit(NegativeSellPriceFound(
+            cartItems: List.from(_cartItems),
+            selectedCustomer: _selectedCustomer,
+          ));
+          return;
+        }
         
         // Check for low stock warning - only show on add if skipEditMode is true
         // (if in edit mode, warning will show when user hits save)
@@ -167,7 +174,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         if (event.skipEditMode) {
           warning = checkLowStockWarning(
             stock: result.stock!,
-            saleQty: addedQty,
+            saleQty: added.totalQty,
             autoRemindEnabled: event.autoRemindLowStock,
           );
           if (!warning.hasWarning) warning = null;
@@ -233,7 +240,14 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       return;
     }
     
-    final addedQty = await _addStockToCart(event.stock, skipEditMode: event.skipEditMode);
+    final added = await _addStockToCart(event.stock, skipEditMode: event.skipEditMode);
+    if (added.negativeSellPrice) {
+      emit(NegativeSellPriceFound(
+        cartItems: List.from(_cartItems),
+        selectedCustomer: _selectedCustomer,
+      ));
+      return;
+    }
     
     // Check for low stock warning - only show on add if skipEditMode is true
     // (if in edit mode, warning will show when user hits save)
@@ -241,7 +255,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     if (event.skipEditMode) {
       warning = checkLowStockWarning(
         stock: event.stock,
-        saleQty: addedQty,
+        saleQty: added.totalQty,
         autoRemindEnabled: event.autoRemindLowStock,
       );
       if (!warning.hasWarning) warning = null;
@@ -279,7 +293,14 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       return;
     }
     
-    final addedQty = await _addStockToCart(event.stock, qty: event.qty, skipEditMode: event.skipEditMode);
+    final result = await _addStockToCart(event.stock, qty: event.qty, skipEditMode: event.skipEditMode);
+    if (result.negativeSellPrice) {
+      emit(NegativeSellPriceFound(
+        cartItems: List.from(_cartItems),
+        selectedCustomer: _selectedCustomer,
+      ));
+      return;
+    }
     
     // Check for low stock warning - only show on add if skipEditMode is true
     // (if in edit mode, warning will show when user hits save)
@@ -287,7 +308,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     if (event.skipEditMode) {
       warning = checkLowStockWarning(
         stock: event.stock,
-        saleQty: addedQty,
+        saleQty: result.totalQty,
         autoRemindEnabled: event.autoRemindLowStock,
       );
       if (!warning.hasWarning) warning = null;
@@ -310,13 +331,14 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   }
 
   /// Adds stock to cart and returns the total quantity in cart for this item
-  Future<double> _addStockToCart(StockVO stock, {double qty = 1.0, bool skipEditMode = false}) async {
+  Future<_AddToCartResult> _addStockToCart(StockVO stock, {double qty = 1.0, bool skipEditMode = false}) async {
     // Check if item already exists in cart (by barcode)
     final existingIndex = _cartItems.indexWhere(
       (item) => item.code == stock.barcode,
     );
 
     double totalQty = qty;
+    bool negativeSellPrice = false;
     
     if (existingIndex >= 0) {
       // Update quantity of existing item
@@ -403,6 +425,10 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         computedCostInc = 0.0;
       }
       
+      if (effectiveSell < 0 || incPrice < 0 || exPrice < 0) {
+        negativeSellPrice = true;
+      }
+
       final newItem = CartItemVO(
         code: stock.barcode,
         description: stock.description,
@@ -410,8 +436,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         sellPrice: effectiveSell,
         costPrice: stock.cost,
         stock: stock,
-        isEditing: !skipEditMode, // New items start in edit mode unless skipEditMode
-        isNewlyAdded: !skipEditMode, // Mark as newly added for auto-save check
+        isEditing: negativeSellPrice ? true : !skipEditMode,
+        isNewlyAdded: negativeSellPrice ? true : !skipEditMode,
         taxPercentage: taxPercentage,
         taxType: taxType,
         incPrice: incPrice,
@@ -423,7 +449,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       _cartItems.insert(0, newItem);
     }
     
-    return totalQty;
+    return _AddToCartResult(totalQty: totalQty, negativeSellPrice: negativeSellPrice);
   }
 
   void _onUpdateCartItemQty(
@@ -441,6 +467,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     Emitter<SalesState> emit,
   ) {
     if (event.index < 0 || event.index >= _cartItems.length) return;
+    if (event.price < 0) return;
 
     final item = _cartItems[event.index];
     final percentage = item.taxPercentage;
@@ -498,6 +525,14 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     if (event.index < 0 || event.index >= _cartItems.length) return;
 
     final cartItem = _cartItems[event.index];
+    if (cartItem.sellPrice < 0 || cartItem.incPrice < 0 || cartItem.exPrice < 0) {
+      emit(NegativeSellPriceFound(
+        cartItems: List.from(_cartItems),
+        selectedCustomer: _selectedCustomer,
+      ));
+      return;
+    }
+
     _cartItems[event.index] = cartItem.copyWith(
       isEditing: false,
       isNewlyAdded: false,
@@ -699,4 +734,11 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       );
     }
   }
+}
+
+class _AddToCartResult {
+  final double totalQty;
+  final bool negativeSellPrice;
+
+  _AddToCartResult({required this.totalQty, required this.negativeSellPrice});
 }
