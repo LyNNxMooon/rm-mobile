@@ -1724,10 +1724,10 @@ class _SalesScreenState extends State<SalesScreen>
     // More columns for medium tablets, and in landscape mode use 6 columns with smaller cards
     final int crossAxisCount = isLandscape ? 6 : (isMediumTablet ? 5 : 4);
     // Landscape: higher aspect ratio for smaller cards, Portrait: lower for taller cards
-    // Large tablet portrait: shorter cards (higher aspect ratio)
+    // Large tablet: higher aspect ratio to reduce extra space below price
     final double childAspectRatio = isLandscape
-        ? (isMediumTablet ? 0.88 : 0.85)
-        : (isMediumTablet ? 0.65 : (isLargeTabletPortrait ? 0.82 : 0.60));
+        ? (isMediumTablet ? 0.88 : 0.95)
+        : (isMediumTablet ? 0.65 : (isLargeTabletPortrait ? 0.92 : 0.60));
     // More spacing in landscape, less in portrait
     final double spacing = isLandscape ? 14 : 8;
 
@@ -1759,6 +1759,7 @@ class _SalesScreenState extends State<SalesScreen>
                   uiScale,
                   isLandscape,
                   isLargeTabletPortrait,
+                  !isMediumTablet,
                 ),
               ),
             ),
@@ -1869,7 +1870,7 @@ class _SalesScreenState extends State<SalesScreen>
                         Text(
                           item.description,
                           style: TextStyle(
-                            fontSize: 13 * uiScale,
+                            fontSize: isLargeTablet ? 14 : 13 * uiScale,
                             fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white : kThirdColor,
                           ),
@@ -1882,7 +1883,7 @@ class _SalesScreenState extends State<SalesScreen>
                           item.code,
                           style: TextStyle(
                             fontFamily: 'monospace',
-                            fontSize: 11 * uiScale,
+                            fontSize: isLargeTablet ? 13 : 11 * uiScale,
                             fontWeight: FontWeight.bold,
                             color: kPrimaryColor,
                           ),
@@ -1969,15 +1970,16 @@ class _SalesScreenState extends State<SalesScreen>
     double uiScale,
     bool isLandscape,
     bool isLargeTabletPortrait,
+    bool isLargeTablet,
   ) {
     // final double displayPrice = _isIncTax
     //     ? item.incPrice
     //     : item.exPrice;
     final double displayExt = _isIncTax ? item.extension : item.extensionEx;
     
-    // Reduce thumbnail size for large tablet portrait
-    final int thumbnailFlex = isLargeTabletPortrait ? 11 : 13;
-    final int detailsFlex = isLargeTabletPortrait ? 5 : 7;
+    // Flex ratios: large tablets get higher thumbnail ratio to preserve image size with shorter cards
+    final int thumbnailFlex = isLargeTablet ? (isLargeTabletPortrait ? 11 : 13) : 13;
+    final int detailsFlex = isLargeTablet ? (isLargeTabletPortrait ? 4 : 5) : 7;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -2099,7 +2101,7 @@ class _SalesScreenState extends State<SalesScreen>
                         Text(
                           item.description,
                           style: TextStyle(
-                            fontSize: 12 * uiScale,
+                            fontSize: isLargeTablet ? 14 : 12 * uiScale,
                             fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white : kThirdColor,
                           ),
@@ -2113,7 +2115,7 @@ class _SalesScreenState extends State<SalesScreen>
                           item.code,
                           style: TextStyle(
                             fontFamily: 'monospace',
-                            fontSize: 10 * uiScale,
+                            fontSize: isLargeTablet ? 13 : 10 * uiScale,
                             fontWeight: FontWeight.bold,
                             color: kPrimaryColor,
                           ),

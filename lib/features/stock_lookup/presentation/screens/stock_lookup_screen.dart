@@ -767,6 +767,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final bool isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
     final bool isMediumTablet = context.isMediumTablet;
+    final bool isLargeTablet = context.isLargeTablet;
 
     // Calculate available width for the grid (accounting for sidebar in landscape)
     final double availableWidth = isLandscape
@@ -796,11 +797,13 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         childAspectRatio = (itemWidth / minItemHeight).clamp(2.0, 7.0);
         break;
       case StockViewMode.largeIcons:
-        // Medium tablets get 5 columns with smaller cards, others get 3
-        crossAxisCount = isMediumTablet ? 5 : 3;
-        childAspectRatio = isMediumTablet 
-            ? (hasSearchQuery ? 0.70 : 0.85) 
-            : (hasSearchQuery ? 0.58 : 0.75);
+        // Medium tablets get 5 columns, large tablets get 5 columns with shorter cards
+        crossAxisCount = 5;
+        childAspectRatio = isLargeTablet
+            ? (hasSearchQuery ? 0.85 : 0.95)
+            : isMediumTablet 
+                ? (hasSearchQuery ? 0.70 : 0.85) 
+                : (hasSearchQuery ? 0.58 : 0.75);
         break;
       default:
         crossAxisCount = 2;
@@ -870,6 +873,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   ) {
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
+    final bool isLargeTablet = context.isLargeTablet;
     final String trimmedQuery = query.trim();
     final String lowerQuery = trimmedQuery.toLowerCase();
     final bool hasQuery = trimmedQuery.isNotEmpty;
@@ -884,18 +888,20 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     //final bool showCustom1 = matchesQuery(stock.custom1);
     final bool showCustom2 = matchesQuery(stock.custom2);
 
-    // Base font sizes
-    final double descFontSize =
-        (_viewMode == StockViewMode.largeIcons ? 12.5 : 12) * uiScale;
-    final double barcodeFontSize =
-        (_viewMode == StockViewMode.largeIcons ? 12 : 13) * uiScale;
+    // Base font sizes - large tablets use fixed sizes to match list view
+    final double descFontSize = isLargeTablet
+        ? 14
+        : (_viewMode == StockViewMode.largeIcons ? 12.5 : 12) * uiScale;
+    final double barcodeFontSize = isLargeTablet
+        ? 13
+        : (_viewMode == StockViewMode.largeIcons ? 12 : 13) * uiScale;
     final double customFontSize =
         (_viewMode == StockViewMode.largeIcons ? 11 : 10) * uiScale;
 
     return AnimationConfiguration.staggeredGrid(
       position: index,
       duration: const Duration(milliseconds: 400),
-      columnCount: _viewMode == StockViewMode.largeIcons ? 3 : 4,
+      columnCount: _viewMode == StockViewMode.largeIcons ? 5 : 4,
       child: ScaleAnimation(
         child: FadeInAnimation(
           child: GestureDetector(
@@ -1067,6 +1073,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   ) {
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
+    final bool isLargeTablet = context.isLargeTablet;
     final String trimmedQuery = query.trim();
     final String lowerQuery = trimmedQuery.toLowerCase();
     final bool hasQuery = trimmedQuery.isNotEmpty;
@@ -1090,8 +1097,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         ? (isMediumTablet ? 75 : 120)  // Larger in search mode
         : (isMediumTablet ? 60 : 100); // Normal mode
 
-    final double descFontSize = 13 * uiScale;
-    final double barcodeFontSize = 13 * uiScale;
+    // Large tablets use fixed sizes to match list view
+    final double descFontSize = isLargeTablet ? 14 : 13 * uiScale;
+    final double barcodeFontSize = isLargeTablet ? 13 : 13 * uiScale;
     final double customFontSize = 11 * uiScale;
 
     return AnimationConfiguration.staggeredGrid(
