@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart' show CupertinoPicker;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rational/rational.dart';
-import 'package:rmmobile/utils/formatting_utils.dart';
 import 'package:rmmobile/utils/tax_calculation_utils.dart';
 
 import '../../../../constants/colors.dart';
@@ -19,8 +18,8 @@ import '../../../stock_lookup/presentation/widgets/price_calculator_dialog.dart'
 /// Helper to format sell price - shows 4 decimals if the price has significant 
 /// digits beyond 2 decimal places, otherwise shows 2 decimals (with cascade rounding)
 String formatSellPriceForDisplay(double price) {
-  final fixed4 = price.toCascadeFixed4();
-  final fixed2 = price.toCascadeFixed2();
+  final fixed4 = price.toStringAsFixed(4);
+  final fixed2 = price.toStringAsFixed(2);
   if (double.parse(fixed4) != double.parse(fixed2)) {
     return fixed4;
   }
@@ -135,8 +134,8 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
 
   String _formatSellPrice(double price) {
     // Use cascade rounding for 4 and 2 decimals
-    final fixed4 = price.toCascadeFixed4();
-    final fixed2 = price.toCascadeFixed2();
+    final fixed4 = price.toStringAsFixed(4);
+    final fixed2 = price.toStringAsFixed(2);
     // Show 4 decimals if it has significant digits beyond 2 decimals
     if (double.parse(fixed4) != double.parse(fixed2)) {
       return fixed4;
@@ -537,7 +536,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                     ),
                   ),
                   Text(
-                    "\$${_displayExtension.toCascadeFixed2()}",
+                    "\$${_displayExtension.toStringAsFixed(2)}",
                     style: TextStyle(
                       fontSize: isTablet ? 15 : 13,
                       fontWeight: FontWeight.bold,
@@ -1441,7 +1440,7 @@ class MobileCartTile extends StatelessWidget {
                       ),
                     ),
                   Text(
-                    "\$${_displayExtension.toCascadeFixed2()}",
+                    "\$${_displayExtension.toStringAsFixed(2)}",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -1611,7 +1610,7 @@ class TabletCartTile extends StatelessWidget {
           SizedBox(
             width: 130,
             child: Text(
-              "\$${_displayExtension.toCascadeFixed2()}",
+              "\$${_displayExtension.toStringAsFixed(2)}",
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -1706,7 +1705,7 @@ class CompactCartTile extends StatelessWidget {
               SizedBox(
                 width: isTablet ? 130 : 65,
                 child: Text(
-                  "\$${_displayExtension.toCascadeFixed2()}",
+                  "\$${_displayExtension.toStringAsFixed(2)}",
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     fontSize: isTablet ? 15 : 12,

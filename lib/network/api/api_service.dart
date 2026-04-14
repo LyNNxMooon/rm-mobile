@@ -173,6 +173,28 @@ abstract class ApiService {
     @Body() Map<String, dynamic> body,
   );
 
+  @POST(kEndPointForSalesOrder)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<InvoiceResponse> createSalesOrder(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Header("x-api-key") String apiKey,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST(kEndPointForQuote)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<InvoiceResponse> createQuote(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Header("x-api-key") String apiKey,
+    @Body() Map<String, dynamic> body,
+  );
+
   @POST(kEndPointForPictureUpload)
   @Headers(<String, dynamic>{
     'Accept': 'application/json',

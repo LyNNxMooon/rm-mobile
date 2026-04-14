@@ -22,7 +22,6 @@ import '../../../../constants/images.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/customer_vo.dart';
 import '../../../../entities/vos/sale_session_vo.dart';
-import '../../../../utils/formatting_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../entities/vos/stock_vo.dart';
 import '../../../../utils/navigation_extension.dart';
@@ -468,7 +467,7 @@ class _SalesScreenState extends State<SalesScreen>
   }
   
   /// Total Ex with discount distribution (display 2dp with cascading rounding)
-  double get _totalEx => double.parse(_calculatedTotals.totalEx.toCascadeFixed2());
+  double get _totalEx => double.parse(_calculatedTotals.totalEx.toStringAsFixed(2));
   
   /// Total cost with Rational precision based on sales_tax taxType:
   /// If taxType == 0 -> use ex-taxed cost (computedCostEx)
@@ -844,8 +843,10 @@ class _SalesScreenState extends State<SalesScreen>
 
     // For Account Sales, use customer's owner_id as staff_id (fallback to logged-in staff if no owner)
     final int? staffId = widget.title == 'Account Sales' && _selectedCustomer != null
-        ? (_selectedCustomer!.ownerId > 0 ? _selectedCustomer!.ownerId : AppGlobals.instance.staffId)
-        : AppGlobals.instance.staffId;
+      ? (_selectedCustomer!.ownerId > 0
+        ? _selectedCustomer!.ownerId
+        : AppGlobals.instance.staffId)
+      : AppGlobals.instance.staffId;
 
     final params = SaveSessionParams(
       existingSessionId: _currentSessionId,
@@ -1152,8 +1153,9 @@ class _SalesScreenState extends State<SalesScreen>
             );
 
             if (selected != null && mounted) {
-              // For Account Sales, validate customer is an account customer
-              if (widget.title == "Account Sales" && !selected.account) {
+                // For Account Sales and Sales Order, validate customer is an account customer
+                if ((widget.title == "Account Sales" || widget.title == "Sales Order") &&
+                  !selected.account) {
                 AlertInfo.show(
                   context: context,
                   text: "This customer is not an account customer",
@@ -1175,8 +1177,8 @@ class _SalesScreenState extends State<SalesScreen>
               _salesBloc.add(ResetSearchState());
             }
           } else if (state is CustomerSelected) {
-            // For Account Sales, validate customer is an account customer
-            if (widget.title == "Account Sales" &&
+            // For Account Sales and Sales Order, validate customer is an account customer
+            if ((widget.title == "Account Sales" || widget.title == "Sales Order") &&
                 !(state.selectedCustomer?.account ?? false)) {
               AlertInfo.show(
                 context: context,
@@ -1892,7 +1894,7 @@ class _SalesScreenState extends State<SalesScreen>
                           child: Row(
                             children: [
                               Text(
-                                "\$${displayPrice.toCascadeFixed2()}",
+                                "\$${displayPrice.toStringAsFixed(2)}",
                                 style: TextStyle(
                                   fontSize: 12 * uiScale,
                                   color: colors.onSurfaceMuted,
@@ -1933,7 +1935,7 @@ class _SalesScreenState extends State<SalesScreen>
                               const SizedBox(width: 6),
                               // Extension price
                               Text(
-                                "\$${displayExt.toCascadeFixed2()}",
+                                "\$${displayExt.toStringAsFixed(2)}",
                                 style: TextStyle(
                                   fontSize: 13 * uiScale,
                                   fontWeight: FontWeight.bold,
@@ -2119,7 +2121,7 @@ class _SalesScreenState extends State<SalesScreen>
                         const SizedBox(height: 2),
                         // Extension
                         Text(
-                          "\$${displayExt.toCascadeFixed2()}",
+                          "\$${displayExt.toStringAsFixed(2)}",
                           style: TextStyle(
                             fontSize: 13 * uiScale,
                             fontWeight: FontWeight.bold,
@@ -2342,7 +2344,7 @@ class _SalesScreenState extends State<SalesScreen>
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  "\$${(_totalPaid >= _total ? 0.0 : _total - _totalPaid).toCascadeFixed2()}",
+                                  "\$${(_totalPaid >= _total ? 0.0 : _total - _totalPaid).toStringAsFixed(2)}",
                                   style: TextStyle(
                                     fontSize: isTablet ? 22 : 18,
                                     letterSpacing: -0.5,
@@ -2368,7 +2370,7 @@ class _SalesScreenState extends State<SalesScreen>
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              "${isTablet ? 'Subtotal' : 'Sub'}: \$${_displaySubtotal.toCascadeFixed2()}",
+                              "${isTablet ? 'Subtotal' : 'Sub'}: \$${_displaySubtotal.toStringAsFixed(2)}",
                               style: TextStyle(
                                 color: colors.onSurfaceMuted,
                                 fontSize: isTablet ? 14 : 12.5,
@@ -2377,7 +2379,7 @@ class _SalesScreenState extends State<SalesScreen>
                             ),
                             SizedBox(height: isTablet ? 6 : 8),
                             Text(
-                              "Discount: \$${_discount.toCascadeFixed2()}",
+                              "Discount: \$${_discount.toStringAsFixed(2)}",
                               style: TextStyle(
                                 color: _discount > 0
                                     ? kPrimaryColor
@@ -2391,7 +2393,7 @@ class _SalesScreenState extends State<SalesScreen>
                           ),
                           SizedBox(height: isTablet ? 6 : 8),
                           Text(
-                            "Rounding: \$${_rounding.toCascadeFixed2()}",
+                            "Rounding: \$${_rounding.toStringAsFixed(2)}",
                             style: TextStyle(
                               color: colors.onSurfaceMuted,
                               fontSize: isTablet ? 14 : 12.5,
@@ -2402,7 +2404,7 @@ class _SalesScreenState extends State<SalesScreen>
                           Transform.translate(
                             offset: Offset(0, isTablet ? 0 : -8),
                             child: Text(
-                              "\$${_displayTotal.toCascadeFixed2()}",
+                              "\$${_displayTotal.toStringAsFixed(2)}",
                               style: TextStyle(
                                 fontSize: isTablet ? 22 : 18,
                                 fontWeight: FontWeight.w900,
@@ -2428,6 +2430,8 @@ class _SalesScreenState extends State<SalesScreen>
 
   Future<void> _showFinaliseDialog() async {
     final isAccountSales = widget.title == "Account Sales";
+    final isSalesOrder = widget.title == "Sales Order";
+    final isQuotes = widget.title == "Quotes";
     final isSales = widget.title == "Sales";
 
     // Check if sale is at a loss and prompt for confirmation
@@ -2536,7 +2540,7 @@ class _SalesScreenState extends State<SalesScreen>
       return;
     }
 
-    if (isAccountSales) {
+    if (isAccountSales || isSalesOrder || isQuotes) {
       _setFinaliseProcessing(true);
       try {
         final includeEmailAudit = result.result == FinaliseSaleResult.email;
@@ -2557,9 +2561,11 @@ class _SalesScreenState extends State<SalesScreen>
           }
         }
 
-        final sent = await _sendAccountInvoice(
-          includeEmailAudit: includeEmailAudit,
-        );
+        final sent = isSalesOrder
+            ? await _sendSalesOrder(includeEmailAudit: includeEmailAudit)
+            : isQuotes
+                ? await _sendQuote(includeEmailAudit: includeEmailAudit)
+                : await _sendAccountInvoice(includeEmailAudit: includeEmailAudit);
         if (!sent) {
           return;
         }
@@ -2604,6 +2610,76 @@ class _SalesScreenState extends State<SalesScreen>
       return true;
     } catch (error) {
       _showAccountSalesError("Failed to send account invoice: $error");
+      return false;
+    }
+  }
+
+  Future<bool> _sendSalesOrder({required bool includeEmailAudit}) async {
+    if (widget.title != "Sales Order") return true;
+
+    if (_selectedCustomer == null) {
+      _showAccountSalesError("Please select a customer for Sales Order.");
+      return false;
+    }
+
+    try {
+      final payload = await _buildSalesOrderPayload(
+        includeEmailAudit: includeEmailAudit,
+      );
+      _printInChunks('Sales order payload: ${jsonEncode(payload)}');
+
+      final response = await _salesBloc.createSalesOrder(payload);
+      if (!response.success) {
+        _showAccountSalesError(
+          response.message.isNotEmpty
+              ? response.message
+              : "Failed to create sales order.",
+        );
+        return false;
+      }
+
+      _showAccountSalesSuccess(
+        response.message.isNotEmpty
+            ? response.message
+            : "Sales order sent.",
+      );
+      return true;
+    } catch (error) {
+      _showAccountSalesError("Failed to send sales order: $error");
+      return false;
+    }
+  }
+
+  Future<bool> _sendQuote({required bool includeEmailAudit}) async {
+    if (widget.title != "Quotes") return true;
+
+    if (_selectedCustomer == null) {
+      _showAccountSalesError("Please select a customer for Quote.");
+      return false;
+    }
+
+    try {
+      final payload = await _buildQuotePayload(
+        includeEmailAudit: includeEmailAudit,
+      );
+      _printInChunks('Quote payload: ${jsonEncode(payload)}');
+
+      final response = await _salesBloc.createQuote(payload);
+      if (!response.success) {
+        _showAccountSalesError(
+          response.message.isNotEmpty
+              ? response.message
+              : "Failed to create quote.",
+        );
+        return false;
+      }
+
+      _showAccountSalesSuccess(
+        response.message.isNotEmpty ? response.message : "Quote sent.",
+      );
+      return true;
+    } catch (error) {
+      _showAccountSalesError("Failed to send quote: $error");
       return false;
     }
   }
@@ -2766,6 +2842,126 @@ class _SalesScreenState extends State<SalesScreen>
     return payload;
   }
 
+  Future<Map<String, dynamic>> _buildSalesOrderPayload({
+    required bool includeEmailAudit,
+  }) async {
+    final shopfront = AppGlobals.instance.shopfront ?? '';
+    if (shopfront.isEmpty) {
+      return Future.error(
+        "Missing shopfront setup. Please reconnect to a host and shopfront.",
+      );
+    }
+
+    final cartItemsData = await Future.wait(
+      _cartItems.map(
+        (item) => CartItemData.fromCartItemAsync(item, shopfront: shopfront),
+      ),
+    );
+
+    final drawer =
+        await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+
+    final totals = _calculatedTotals;
+
+    final int? customerId = _selectedCustomer?.customerId;
+    if (customerId == null || customerId <= 0) {
+      return Future.error("Missing customer for Sales Order.");
+    }
+
+    // For Sales Order, always use logged-in staff
+    final int? staffId = AppGlobals.instance.staffId;
+
+    if (staffId == null || staffId <= 0) {
+      return Future.error("Missing staff id.");
+    }
+
+    final payload = <String, dynamic>{
+      'transactionType': 'SO',
+      'customerId': customerId,
+      'staffId': staffId,
+      'transactionDate': DateTime.now().toIso8601String(),
+      'custom': _surveyValue,
+      'comments': _commentValue,
+      'drawer': drawer,
+      'subtotal': _subtotal,
+      'discount': _discountValue,
+      'rounding': _rounding,
+      'totalEx': totals.totalEx,
+      'totalInc': _total,
+      'status': 0,
+      'lines': cartItemsData
+          .map(_buildSalesOrderLine)
+          .toList(growable: false),
+    };
+
+    if (_committedDeliveryAddress != null) {
+      payload['deliveryAddress'] = _committedDeliveryAddress!.toApiPayload();
+    }
+
+    if (includeEmailAudit && _emailAuditData != null) {
+      payload['emailAudit'] = _emailAuditData!.toApiPayload();
+    }
+
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> _buildQuotePayload({
+    required bool includeEmailAudit,
+  }) async {
+    final shopfront = AppGlobals.instance.shopfront ?? '';
+    if (shopfront.isEmpty) {
+      return Future.error(
+        "Missing shopfront setup. Please reconnect to a host and shopfront.",
+      );
+    }
+
+    final cartItemsData = await Future.wait(
+      _cartItems.map(
+        (item) => CartItemData.fromCartItemAsync(item, shopfront: shopfront),
+      ),
+    );
+
+    final totals = _calculatedTotals;
+
+    final int? customerId = _selectedCustomer?.customerId;
+    if (customerId == null || customerId <= 0) {
+      return Future.error("Missing customer for Quote.");
+    }
+
+    final int? staffId = AppGlobals.instance.staffId;
+    if (staffId == null || staffId <= 0) {
+      return Future.error("Missing staff id.");
+    }
+
+    final payload = <String, dynamic>{
+      'transactionType': 'QU',
+      'customerId': customerId,
+      'staffId': staffId,
+      'transactionDate': DateTime.now().toIso8601String(),
+      'custom': _surveyValue,
+      'comments': _commentValue,
+      'subtotal': _subtotal,
+      'discount': _discountValue,
+      'rounding': _rounding,
+      'totalEx': totals.totalEx,
+      'totalInc': _total,
+      'status': 3,
+      'lines': cartItemsData
+          .map(_buildSalesOrderLine)
+          .toList(growable: false),
+    };
+
+    if (_committedDeliveryAddress != null) {
+      payload['deliveryAddress'] = _committedDeliveryAddress!.toApiPayload();
+    }
+
+    if (includeEmailAudit && _emailAuditData != null) {
+      payload['emailAudit'] = _emailAuditData!.toApiPayload();
+    }
+
+    return payload;
+  }
+
   Map<String, dynamic> _buildInvoiceLine(CartItemData item) {
     final payload = <String, dynamic>{
       'stockId': item.stockId ?? 0,
@@ -2788,6 +2984,62 @@ class _SalesScreenState extends State<SalesScreen>
 
     if (item.isPromotion) {
       payload['isPromotion'] = true;
+    }
+
+    return payload;
+  }
+
+  Map<String, dynamic> _buildSalesOrderComponentLine(CartItemData item) {
+    final payload = <String, dynamic>{
+      'stockId': item.stockId ?? 0,
+      'quantity': item.qty,
+      'costEx': item.costEx,
+      'costInc': item.costInc,
+      'salesTax': item.salesTax ?? '',
+      'sellEx': item.sellEx,
+      'sellInc': item.sellInc,
+      'rrp': item.rrp ?? item.sellInc,
+      'gp': item.gp,
+      'unitOfMeasure': item.unitOfMeasure ?? 0,
+      'isFreight': item.isFreight,
+      'isStatic': item.isStatic,
+      'isPromotion': item.isPromotion,
+      'isPackage': false,
+    };
+
+    if (item.description?.isNotEmpty == true) {
+      payload['description'] = item.description;
+    }
+
+    return payload;
+  }
+
+  Map<String, dynamic> _buildSalesOrderLine(CartItemData item) {
+    final payload = <String, dynamic>{
+      'stockId': item.stockId ?? 0,
+      'quantity': item.qty,
+      'costEx': item.costEx,
+      'costInc': item.costInc,
+      'salesTax': item.salesTax ?? '',
+      'sellEx': item.sellEx,
+      'sellInc': item.sellInc,
+      'rrp': item.rrp ?? item.sellInc,
+      'gp': item.gp,
+      'unitOfMeasure': item.unitOfMeasure ?? 0,
+      'isFreight': item.isFreight,
+      'isStatic': item.isStatic,
+      'isPromotion': item.isPromotion,
+      'isPackage': item.isPackage,
+    };
+
+    if (item.description?.isNotEmpty == true) {
+      payload['description'] = item.description;
+    }
+
+    if (item.isPackage && item.packageComponents != null) {
+      payload['components'] = item.packageComponents!
+          .map(_buildSalesOrderComponentLine)
+          .toList(growable: false);
     }
 
     return payload;
@@ -4451,8 +4703,8 @@ class _SalesScreenState extends State<SalesScreen>
           builder: (context, setDialogState) {
             // Calculate profit with temp discount for live preview (using GP ratio distribution)
             final tempTotals = _calcTotalsWithDiscount(tempDiscount);
-            final double totalEx = double.parse(tempTotals.totalEx.toCascadeFixed4());
-            final double egp = double.parse(tempTotals.totalGp.toCascadeFixed4());
+            final double totalEx = double.parse(tempTotals.totalEx.toStringAsFixed(4));
+            final double egp = double.parse(tempTotals.totalGp.toStringAsFixed(4));
             final double egpPercent = totalEx > 0 ? (egp / totalEx) * 100 : 0;
             final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -4590,7 +4842,7 @@ class _SalesScreenState extends State<SalesScreen>
                                           scrollDirection: Axis.horizontal,
                                           reverse: true,
                                           child: Text(
-                                            "\$${tempDiscount.toCascadeFixed2()}",
+                                            "\$${tempDiscount.toStringAsFixed(2)}",
                                             style: TextStyle(
                                               fontSize: isTablet ? 18 : 16,
                                               fontWeight: FontWeight.bold,
@@ -4629,7 +4881,7 @@ class _SalesScreenState extends State<SalesScreen>
                                           scrollDirection: Axis.horizontal,
                                           reverse: true,
                                           child: Text(
-                                            "\$${(_subtotal - tempDiscount).toCascadeFixed2()}",
+                                            "\$${(_subtotal - tempDiscount).toStringAsFixed(2)}",
                                             style: TextStyle(
                                               fontSize: isTablet ? 18 : 16,
                                               fontWeight: FontWeight.bold,
@@ -4809,7 +5061,7 @@ class _SalesScreenState extends State<SalesScreen>
             scrollDirection: Axis.horizontal,
             reverse: true,
             child: Text(
-              "\$${amount.toCascadeFixed4()}",
+              "\$${amount.toStringAsFixed(4)}",
               style: TextStyle(
                 fontSize: isTablet ? 16 : 14,
                 fontWeight: FontWeight.bold,
@@ -5190,7 +5442,7 @@ class _SalesScreenState extends State<SalesScreen>
                   ),
                   if (item == "Add Discount" && _discountValue > 0)
                     Text(
-                      "\$${_discountValue.toCascadeFixed2()}",
+                      "\$${_discountValue.toStringAsFixed(2)}",
                       style: TextStyle(
                         color: kPrimaryColor,
                         fontWeight: FontWeight.bold,
@@ -5468,9 +5720,9 @@ class _SalesScreenState extends State<SalesScreen>
     
     // Display with 4dp precision (cascade rounding)
     return TaxBreakdownWidget(
-      incTotal: double.parse(totals.totalInc.toCascadeFixed4()),
-      exTotal: double.parse(totals.totalEx.toCascadeFixed4()),
-      taxAmount: double.parse(totals.totalTax.toCascadeFixed4()),
+      incTotal: double.parse(totals.totalInc.toStringAsFixed(4)),
+      exTotal: double.parse(totals.totalEx.toStringAsFixed(4)),
+      taxAmount: double.parse(totals.totalTax.toStringAsFixed(4)),
       colors: colors,
       isDark: isDark,
     );
@@ -5482,9 +5734,9 @@ class _SalesScreenState extends State<SalesScreen>
     
     // Display with 4dp precision (cascade rounding)
     return ProfitBreakdownWidget(
-      totalEx: double.parse(totals.totalEx.toCascadeFixed4()),
-      totalCost: double.parse(_totalCost.toCascadeFixed4()),
-      totalGp: double.parse(totals.totalGp.toCascadeFixed4()),
+      totalEx: double.parse(totals.totalEx.toStringAsFixed(4)),
+      totalCost: double.parse(_totalCost.toStringAsFixed(4)),
+      totalGp: double.parse(totals.totalGp.toStringAsFixed(4)),
       colors: colors,
       isDark: isDark,
     );

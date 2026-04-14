@@ -12,4 +12,10 @@ abstract class SalesRepo {
 
   /// Create account invoice
   Future<InvoiceResponse> createAccountInvoice(Map<String, dynamic> body);
+
+  /// Create sales order
+  Future<InvoiceResponse> createSalesOrder(Map<String, dynamic> body);
+
+  /// Create quote
+  Future<InvoiceResponse> createQuote(Map<String, dynamic> body);
 }

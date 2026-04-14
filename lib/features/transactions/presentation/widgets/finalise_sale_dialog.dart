@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/customer_vo.dart';
-import '../../../../utils/formatting_utils.dart';
 import '../../../../utils/responsive_utils.dart';
 
 /// Result from finalise sale dialog
@@ -177,7 +176,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
               ),
               const SizedBox(height: 4),
               Text(
-                '\$${change.toCascadeFixed2()}',
+                '\$${change.toStringAsFixed(2)}',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -742,7 +741,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           ),
         ),
         Text(
-          "\$${amount.toCascadeFixed2()}",
+          "\$${amount.toStringAsFixed(2)}",
           style: TextStyle(
             fontSize: isLarge ? 18 : 15,
             fontWeight: FontWeight.bold,
@@ -1133,7 +1132,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "\$${(change > 0 ? change : 0.0).toCascadeFixed2()}",
+                  "\$${(change > 0 ? change : 0.0).toStringAsFixed(2)}",
                   style: TextStyle(
                     fontSize: isTablet ? 36 : 32,
                     fontWeight: FontWeight.bold,
@@ -1191,7 +1190,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           ),
         ),
         Text(
-          "\$${amount.toCascadeFixed2()}",
+          "\$${amount.toStringAsFixed(2)}",
           style: TextStyle(
             fontSize: isLarge ? 18 : 15,
             fontWeight: FontWeight.bold,

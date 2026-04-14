@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
-import '../../../../utils/formatting_utils.dart';
 import '../../../../utils/responsive_utils.dart';
 
 /// Tax breakdown widget showing Ex Tax, Tax Amount, Inc Tax
@@ -90,7 +89,7 @@ class TaxBreakdownWidget extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             reverse: true,
             child: Text(
-              "\$${amount.toCascadeFixed4()}",
+              "\$${amount.toStringAsFixed(4)}",
               style: TextStyle(
                 color: highlight
                     ? kPrimaryColor
@@ -195,7 +194,7 @@ class ProfitBreakdownWidget extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             reverse: true,
             child: Text(
-              "\$${amount.toCascadeFixed4()}",
+              "\$${amount.toStringAsFixed(4)}",
               style: TextStyle(
                 color: highlight
                     ? highlightColor
@@ -268,7 +267,7 @@ class ChangeRemainWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (totalPaid > total) {
       return Text(
-        "Change: \$${(totalPaid - total).toCascadeFixed2()}",
+        "Change: \$${(totalPaid - total).toStringAsFixed(2)}",
         style: const TextStyle(
           color: Color(0xFF30B24C),
           fontWeight: FontWeight.bold,
@@ -277,7 +276,7 @@ class ChangeRemainWidget extends StatelessWidget {
       );
     } else if (totalPaid > 0 && totalPaid < total) {
       return Text(
-        "Remain: \$${(total - totalPaid).toCascadeFixed2()}",
+        "Remain: \$${(total - totalPaid).toStringAsFixed(2)}",
         style: const TextStyle(
           color: Colors.redAccent,
           fontWeight: FontWeight.bold,

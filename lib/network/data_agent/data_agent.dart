@@ -102,6 +102,22 @@ abstract class DataAgent {
     Map<String, dynamic> body,
   );
 
+  Future<InvoiceResponse> createSalesOrder(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  );
+
+  Future<InvoiceResponse> createQuote(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  );
+
   Future<PictureUploadResponse> uploadShopfrontPicture(
     String ip,
     int port,
