@@ -195,6 +195,17 @@ abstract class ApiService {
     @Body() Map<String, dynamic> body,
   );
 
+  @POST(kEndPointForLayby)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<InvoiceResponse> createLayby(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Header("x-api-key") String apiKey,
+    @Body() Map<String, dynamic> body,
+  );
+
   @POST(kEndPointForPictureUpload)
   @Headers(<String, dynamic>{
     'Accept': 'application/json',

@@ -118,6 +118,14 @@ abstract class DataAgent {
     Map<String, dynamic> body,
   );
 
+  Future<InvoiceResponse> createLayby(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  );
+
   Future<PictureUploadResponse> uploadShopfrontPicture(
     String ip,
     int port,

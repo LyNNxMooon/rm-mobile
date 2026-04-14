@@ -446,6 +446,30 @@ class DataAgentImpl implements DataAgent {
   }
 
   @override
+  Future<InvoiceResponse> createLayby(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .createLayby(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
+    } on Exception catch (error) {
+      logger.e('Error creating layby from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
   Future<PictureUploadResponse> uploadShopfrontPicture(
     String ip,
     int port,

@@ -2432,6 +2432,7 @@ class _SalesScreenState extends State<SalesScreen>
     final isAccountSales = widget.title == "Account Sales";
     final isSalesOrder = widget.title == "Sales Order";
     final isQuotes = widget.title == "Quotes";
+    final isLayby = widget.title == "Lay-bys";
     final isSales = widget.title == "Sales";
 
     // Check if sale is at a loss and prompt for confirmation
@@ -2540,7 +2541,7 @@ class _SalesScreenState extends State<SalesScreen>
       return;
     }
 
-    if (isAccountSales || isSalesOrder || isQuotes) {
+    if (isAccountSales || isSalesOrder || isQuotes || isLayby) {
       _setFinaliseProcessing(true);
       try {
         final includeEmailAudit = result.result == FinaliseSaleResult.email;
@@ -2562,10 +2563,12 @@ class _SalesScreenState extends State<SalesScreen>
         }
 
         final sent = isSalesOrder
-            ? await _sendSalesOrder(includeEmailAudit: includeEmailAudit)
-            : isQuotes
-                ? await _sendQuote(includeEmailAudit: includeEmailAudit)
-                : await _sendAccountInvoice(includeEmailAudit: includeEmailAudit);
+          ? await _sendSalesOrder(includeEmailAudit: includeEmailAudit)
+          : isQuotes
+            ? await _sendQuote(includeEmailAudit: includeEmailAudit)
+            : isLayby
+              ? await _sendLayby(includeEmailAudit: includeEmailAudit)
+              : await _sendAccountInvoice(includeEmailAudit: includeEmailAudit);
         if (!sent) {
           return;
         }
@@ -2680,6 +2683,40 @@ class _SalesScreenState extends State<SalesScreen>
       return true;
     } catch (error) {
       _showAccountSalesError("Failed to send quote: $error");
+      return false;
+    }
+  }
+
+  Future<bool> _sendLayby({required bool includeEmailAudit}) async {
+    if (widget.title != "Lay-bys") return true;
+
+    if (_selectedCustomer == null) {
+      _showAccountSalesError("Please select a customer for Lay-by.");
+      return false;
+    }
+
+    try {
+      final payload = await _buildLaybyPayload(
+        includeEmailAudit: includeEmailAudit,
+      );
+      _printInChunks('Lay-by payload: ${jsonEncode(payload)}');
+
+      final response = await _salesBloc.createLayby(payload);
+      if (!response.success) {
+        _showAccountSalesError(
+          response.message.isNotEmpty
+              ? response.message
+              : "Failed to create lay-by.",
+        );
+        return false;
+      }
+
+      _showAccountSalesSuccess(
+        response.message.isNotEmpty ? response.message : "Lay-by sent.",
+      );
+      return true;
+    } catch (error) {
+      _showAccountSalesError("Failed to send lay-by: $error");
       return false;
     }
   }
@@ -2949,6 +2986,76 @@ class _SalesScreenState extends State<SalesScreen>
       'lines': cartItemsData
           .map(_buildSalesOrderLine)
           .toList(growable: false),
+    };
+
+    if (_committedDeliveryAddress != null) {
+      payload['deliveryAddress'] = _committedDeliveryAddress!.toApiPayload();
+    }
+
+    if (includeEmailAudit && _emailAuditData != null) {
+      payload['emailAudit'] = _emailAuditData!.toApiPayload();
+    }
+
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> _buildLaybyPayload({
+    required bool includeEmailAudit,
+  }) async {
+    final shopfront = AppGlobals.instance.shopfront ?? '';
+    if (shopfront.isEmpty) {
+      return Future.error(
+        "Missing shopfront setup. Please reconnect to a host and shopfront.",
+      );
+    }
+
+    final cartItemsData = await Future.wait(
+      _cartItems.map(
+        (item) => CartItemData.fromCartItemAsync(item, shopfront: shopfront),
+      ),
+    );
+
+    final lines = cartItemsData
+        .where((item) => item.isPackage != true)
+        .map(_buildInvoiceLine)
+        .toList();
+
+    final packages = cartItemsData
+        .where((item) => item.isPackage == true)
+        .map(_buildInvoicePackage)
+        .toList();
+
+    final drawer =
+        await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+
+    final totals = _calculatedTotals;
+
+    final int? customerId = _selectedCustomer?.customerId;
+    if (customerId == null || customerId <= 0) {
+      return Future.error("Missing customer for Lay-by.");
+    }
+
+    // For Lay-by, always use logged-in staff
+    final int? staffId = AppGlobals.instance.staffId;
+    if (staffId == null || staffId <= 0) {
+      return Future.error("Missing staff id.");
+    }
+
+    final payload = <String, dynamic>{
+      'customerId': customerId,
+      'staffId': staffId,
+      'transactionDate': DateTime.now().toIso8601String(),
+      'custom': _surveyValue,
+      'comments': _commentValue,
+      'drawer': drawer,
+      'subtotal': _subtotal,
+      'discount': _discountValue,
+      'rounding': _rounding,
+      'totalEx': totals.totalEx,
+      'totalInc': _total,
+      'gp': totals.totalGp,
+      'lines': lines,
+      'packages': packages,
     };
 
     if (_committedDeliveryAddress != null) {

@@ -18,6 +18,7 @@ import '../../domain/use_cases/save_sales_setting.dart';
 import '../../domain/use_cases/create_account_invoice.dart';
 import '../../domain/use_cases/create_sales_order.dart';
 import '../../domain/use_cases/create_quote.dart';
+import '../../domain/use_cases/create_layby.dart';
 import '../../../customer_lookup/domain/use_cases/update_customer_details.dart';
 import 'sales_events.dart';
 import 'sales_states.dart';
@@ -37,6 +38,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   final CreateAccountInvoice createAccountInvoice;
   final CreateSalesOrder createSalesOrder;
   final CreateQuote createQuote;
+  final CreateLayby createLayby;
   final UpdateCustomerDetails updateCustomerDetails;
   final List<CartItemVO> _cartItems = [];
   CustomerVO? _selectedCustomer;
@@ -56,6 +58,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     required this.createAccountInvoice,
     required this.createSalesOrder,
     required this.createQuote,
+    required this.createLayby,
     required this.updateCustomerDetails,
   }) : super(const SalesInitial()) {
     on<SearchStock>(_onSearchStock);

@@ -18,4 +18,7 @@ abstract class SalesRepo {
 
   /// Create quote
   Future<InvoiceResponse> createQuote(Map<String, dynamic> body);
+
+  /// Create layby
+  Future<InvoiceResponse> createLayby(Map<String, dynamic> body);
 }

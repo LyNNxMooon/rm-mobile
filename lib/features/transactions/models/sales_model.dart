@@ -131,4 +131,37 @@ class SalesModel implements SalesRepo {
       return Future.error(error);
     }
   }
+
+  @override
+  Future<InvoiceResponse> createLayby(Map<String, dynamic> body) async {
+    try {
+      final String resolvedIp =
+          (await LocalDbDAO.instance.getHostIpAddress() ?? '').trim();
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? '').trim()) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? '').trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? '').trim();
+
+      if (resolvedIp.isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty) {
+        return Future.error(
+          "Missing host/shopfront setup. Please reconnect to a host and shopfront.",
+        );
+      }
+
+      return await DataAgentImpl.instance.createLayby(
+        resolvedIp,
+        resolvedPort,
+        resolvedShopfrontId,
+        resolvedApiKey,
+        body,
+      );
+    } catch (error) {
+      return Future.error(error);
+    }
+  }
 }

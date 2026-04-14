@@ -119,6 +119,7 @@ import '../features/transactions/domain/use_cases/save_sales_setting.dart';
 import '../features/transactions/domain/use_cases/create_account_invoice.dart';
 import '../features/transactions/domain/use_cases/create_sales_order.dart';
 import '../features/transactions/domain/use_cases/create_quote.dart';
+import '../features/transactions/domain/use_cases/create_layby.dart';
 import '../features/transactions/models/sales_model.dart';
 import '../features/transactions/presentation/BLoC/sales_bloc.dart';
 import '../features/onboarding/domain/repositories/onboarding_repo.dart';
@@ -150,6 +151,7 @@ Future<void> init() async {
     createAccountInvoice: sl(),
     createSalesOrder: sl(),
     createQuote: sl(),
+    createLayby: sl(),
     updateCustomerDetails: sl(),
   ));
   sl.registerFactory(() => StocktakeBloc(countAndSaveToLocaldb: sl()));
@@ -318,6 +320,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CreateAccountInvoice(sl()));
   sl.registerLazySingleton(() => CreateSalesOrder(sl()));
   sl.registerLazySingleton(() => CreateQuote(sl()));
+  sl.registerLazySingleton(() => CreateLayby(sl()));
   sl.registerLazySingleton(() => CountAndSaveToLocaldb(sl()));
   sl.registerLazySingleton(() => FetchNetworkPcs(sl()));
   // SMB LEGACY - Commented out
