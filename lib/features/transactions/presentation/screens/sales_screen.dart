@@ -1156,9 +1156,8 @@ class _SalesScreenState extends State<SalesScreen>
             );
 
             if (selected != null && mounted) {
-                // For Account Sales and Sales Order, validate customer is an account customer
-                if ((widget.title == "Account Sales" || widget.title == "Sales Order") &&
-                  !selected.account) {
+                // For Account Sales, validate customer is an account customer
+                if (widget.title == "Account Sales" && !selected.account) {
                 AlertInfo.show(
                   context: context,
                   text: "This customer is not an account customer",
@@ -1180,8 +1179,8 @@ class _SalesScreenState extends State<SalesScreen>
               _salesBloc.add(ResetSearchState());
             }
           } else if (state is CustomerSelected) {
-            // For Account Sales and Sales Order, validate customer is an account customer
-            if ((widget.title == "Account Sales" || widget.title == "Sales Order") &&
+            // For Account Sales, validate customer is an account customer
+            if (widget.title == "Account Sales" &&
                 !(state.selectedCustomer?.account ?? false)) {
               AlertInfo.show(
                 context: context,
