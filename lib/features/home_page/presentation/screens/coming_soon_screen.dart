@@ -1,6 +1,6 @@
 import 'package:alert_info/alert_info.dart';
 import 'package:flutter/material.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';

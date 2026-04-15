@@ -1,4 +1,4 @@
-import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
+import 'package:rmmobile/entities/response/staff_detail_response.dart';
 
 import '../repositories/customer_lookup_repo.dart';
 

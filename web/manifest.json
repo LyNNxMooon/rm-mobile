@@ -1,6 +1,6 @@
 {
-    "name": "rmstock_scanner",
-    "short_name": "rmstock_scanner",
+    "name": "RM Mobile",
+    "short_name": "RM Mobile",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -1,17 +1,17 @@
 import 'dart:ui'; // Required for ImageFilter (Blur)
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/screens/staff_login_screen.dart';
-import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
-import 'package:rmstock_scanner/utils/log_utils.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
-import 'package:rmstock_scanner/utils/responsive_utils.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
+import 'package:rmmobile/features/home_page/presentation/screens/staff_login_screen.dart';
+import 'package:rmmobile/features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
+import 'package:rmmobile/utils/log_utils.dart';
+import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 
 //import '../../../../constants/theme_colors.dart';
 //import '../../../../constants/global_widgets.dart';

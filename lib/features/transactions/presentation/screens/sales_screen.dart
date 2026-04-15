@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,6 +11,9 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:alert_info/alert_info.dart';
+import 'package:rational/rational.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 
@@ -28,6 +32,8 @@ import '../../domain/use_cases/save_sale_session.dart';
 import '../BLoC/sales_bloc.dart';
 import '../BLoC/sales_events.dart';
 import '../BLoC/sales_states.dart';
+import '../../../home_page/presentation/BLoC/home_screen_events.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'stock_selection_screen.dart';
 import 'customer_selection_screen.dart';
 import '../widgets/finalise_sale_dialog.dart';
@@ -141,7 +147,6 @@ class _SalesScreenState extends State<SalesScreen>
   bool _scanIndividualUnits = false;
   bool _skipSellPrice = false;
   bool _promptForEmailAtSale = false;
-  bool _roundSellPriceTo2Decimals = false;
   final bool _skipCustomField = false;
   final bool _skipCustomerField = false;
   bool _scanIndividualUnitsForFractional = false;
@@ -165,6 +170,7 @@ class _SalesScreenState extends State<SalesScreen>
   final Map<String, double> _promptedQtyByCode = {};
   bool _isRestoringSession = false;
   bool _isFinaliseProcessing = false;
+  bool _isNegativeSellPriceDialogOpen = false;
 
   late AnimationController _actionsAnimationController;
   late Animation<double> _actionsAnimation;
@@ -195,193 +201,297 @@ class _SalesScreenState extends State<SalesScreen>
   // Cart items from BLoC state
   List<CartItemVO> get _cartItems => _salesBloc.state.cartItems;
 
-  /// Subtotal always uses inclusive price (actual sale amount)
-  double get _subtotal =>
-      _cartItems.fold(0, (sum, item) => sum + item.extension);
+  /// Helper to convert double to Rational for precise calculations
+  Rational _toRational(double value) => Rational.parse(value.toString());
   
-  /// Subtotal using exclusive prices (for profit calculation)
-  /// Calculate line GP: (sellEx - cost) * qty, cost based on taxType
-  double _calcLineGp(CartItemVO item) {
-    final sellEx = item.exPrice;
-    final cost = item.taxType == 0
-        ? item.computedCostEx
-        : item.computedCostInc;
-    return (sellEx - cost) * item.qty;
+  /// Helper to convert Rational to double with high precision
+  double _fromRational(Rational value) => value.toDecimal(scaleOnInfinitePrecision: 10).toDouble();
+
+  /// Subtotal always uses inclusive price (actual sale amount) - calculated with precise Rational
+  double get _subtotal {
+    if (_cartItems.isEmpty) return 0.0;
+    Rational sum = Rational.zero;
+    for (final item in _cartItems) {
+      sum += _toRational(item.extension);
+    }
+    return _fromRational(sum);
   }
   
-  /// Total GP before discount (sum of line GPs)
-  double get _totalGpBeforeDiscount => _cartItems.fold(0.0, (sum, item) => sum + _calcLineGp(item));
+  /// Calculate line GP with Rational precision: (sellEx - cost) * qty, cost based on taxType
+  double _calcLineGp(CartItemVO item) {
+    final sellExR = _toRational(item.exPrice);
+    final costR = _toRational(item.taxType == 0
+        ? item.computedCostEx
+        : item.computedCostInc);
+    final qtyR = _toRational(item.qty);
+    return _fromRational((sellExR - costR) * qtyR);
+  }
+  
+  /// Total GP before discount (sum of line GPs) with Rational precision
+  double get _totalGpBeforeDiscount {
+    Rational totalGpR = Rational.zero;
+    for (final item in _cartItems) {
+      final sellExR = _toRational(item.exPrice);
+      final costR = _toRational(item.taxType == 0
+          ? item.computedCostEx
+          : item.computedCostInc);
+      final qtyR = _toRational(item.qty);
+      totalGpR += (sellExR - costR) * qtyR;
+    }
+    return _fromRational(totalGpR);
+  }
   
   /// Calculate totals with discount distribution using GP ratio
-  /// Returns (totalEx, totalTax, totalGp) with 4dp precision, display with 2dp
-  ({double totalEx, double totalTax, double totalGp}) get _calculatedTotals {
+  /// Returns (totalInc, totalEx, totalTax, totalGp) with precise Rational calculation
+  /// Ex Tax: Sum(SellEx * qty), Tax: Sum((SellInc - SellEx) * qty), Inc Tax: Sum(SellInc * qty)
+  ({double totalInc, double totalEx, double totalTax, double totalGp}) get _calculatedTotals {
     if (_discount <= 0 || _cartItems.isEmpty) {
-      // No discount - simple calculation with 4dp precision
-      double totalTax = 0.0;
-      double totalGp = 0.0;
+      // No discount - simple calculation with Rational precision
+      Rational totalExR = Rational.zero;
+      Rational totalTaxR = Rational.zero;
+      Rational totalIncR = Rational.zero;
+      Rational totalGpR = Rational.zero;
       
       for (final item in _cartItems) {
-        final extensionInc = item.extension;
-        final rate = item.taxPercentage;
-        // Tax with 4dp precision
-        final lineTax = rate > 0 ? extensionInc * rate / (100 + rate) : 0.0;
-        totalTax += lineTax;
+        final qtyR = _toRational(item.qty);
+        final sellIncR = _toRational(item.incPrice);
+        final sellExR = _toRational(item.exPrice);
+        final costR = _toRational(item.taxType == 0
+            ? item.computedCostEx
+            : item.computedCostInc);
         
-        // GP with 4dp precision
-        totalGp += _calcLineGp(item);
+        // Ex Tax: Sum += Sell Ex * qty
+        totalExR += sellExR * qtyR;
+        // Tax Amount: Sum += (Sell Inc - Sell Ex) * qty
+        totalTaxR += (sellIncR - sellExR) * qtyR;
+        // Inc Tax: Sum += Sell Inc * qty
+        totalIncR += sellIncR * qtyR;
+        // eGP: Sum += (Sell Ex - Cost) * qty
+        totalGpR += (sellExR - costR) * qtyR;
       }
       
-      final totalEx = _subtotal - totalTax;
-      return (totalEx: totalEx, totalTax: totalTax, totalGp: totalGp);
+      return (
+        totalInc: _fromRational(totalIncR),
+        totalEx: _fromRational(totalExR),
+        totalTax: _fromRational(totalTaxR),
+        totalGp: _fromRational(totalGpR),
+      );
     }
     
-    // Has discount - distribute using GP ratio
+    // Has discount - distribute using GP ratio with Rational precision
     final totalGpBeforeDisc = _totalGpBeforeDiscount;
     final useGpRatio = totalGpBeforeDisc > 0 && totalGpBeforeDisc > _discount;
     
-    double newTotalTax = 0.0;
-    double newTotalGp = 0.0;
+    Rational newTotalExR = Rational.zero;
+    Rational newTotalTaxR = Rational.zero;
+    Rational newTotalIncR = Rational.zero;
+    Rational newTotalGpR = Rational.zero;
     
     for (final item in _cartItems) {
-      final orgSellInc = item.incPrice;
-      final orgSellEx = item.exPrice;
-      final qty = item.qty;
-      final rate = item.taxPercentage;
+      final orgSellIncR = _toRational(item.incPrice);
+      final orgSellExR = _toRational(item.exPrice);
+      final qtyR = _toRational(item.qty);
       final lineGp = _calcLineGp(item);
       
-      // Calculate ratio
-      double ratio;
+      // Ratio = (Line GP OR Line Sell Inc * qty) / Total GP OR SubTotal
+      Rational ratioR;
       if (useGpRatio) {
-        ratio = totalGpBeforeDisc > 0 ? lineGp / totalGpBeforeDisc : 0;
+        ratioR = totalGpBeforeDisc > 0 
+            ? _toRational(lineGp) / _toRational(totalGpBeforeDisc) 
+            : Rational.zero;
       } else {
-        ratio = _subtotal > 0 ? (orgSellInc * qty) / _subtotal : 0;
+        ratioR = _subtotal > 0 
+            ? (orgSellIncR * qtyR) / _toRational(_subtotal) 
+            : Rational.zero;
       }
       
-      // Line discount and new prices (4dp precision)
-      final lineDiscount = _discount * ratio;
-      final newSellInc = orgSellInc - (lineDiscount / qty);
-      final newSellEx = orgSellInc > 0 
-          ? newSellInc * (orgSellEx / orgSellInc) 
-          : newSellInc;
+      // Line Discount = Sale's Discount * Ratio
+      final lineDiscountR = _toRational(_discount) * ratioR;
+      // New Sell Inc = Org Sell Inc - (Line Discount / qty)
+      final newSellIncR = orgSellIncR - (lineDiscountR / qtyR);
+      // New Sell Ex = New Sell Inc * (Org Sell Ex / Org Sell Inc)
+      final newSellExR = orgSellIncR > Rational.zero 
+          ? newSellIncR * (orgSellExR / orgSellIncR) 
+          : newSellIncR;
       
-      // Line tax after discount (4dp precision)
-      final newExtensionInc = newSellInc * qty;
-      final newLineTax = rate > 0 ? newExtensionInc * rate / (100 + rate) : 0.0;
-      newTotalTax += newLineTax;
+      // Ex Tax: Sum += New Sell Ex * qty
+      newTotalExR += newSellExR * qtyR;
+      // Tax Amount: Sum += (New Sell Inc - New Sell Ex) * qty
+      newTotalTaxR += (newSellIncR - newSellExR) * qtyR;
+      // Inc Tax: Sum += New Sell Inc * qty
+      newTotalIncR += newSellIncR * qtyR;
       
-      // Line GP after discount: (newSellEx - cost) * qty
-      final cost = item.taxType == 0
+      // eGP: Sum += (New Sell Ex - Cost) * qty
+      final costR = _toRational(item.taxType == 0
           ? item.computedCostEx
-          : item.computedCostInc;
-      final newLineGp = (newSellEx - cost) * qty;
-      newTotalGp += newLineGp;
+          : item.computedCostInc);
+      newTotalGpR += (newSellExR - costR) * qtyR;
     }
     
-    final totalInc = _subtotal - _discount;
-    final totalEx = totalInc - newTotalTax;
-    
-    return (totalEx: totalEx, totalTax: newTotalTax, totalGp: newTotalGp);
+    return (
+      totalInc: _fromRational(newTotalIncR),
+      totalEx: _fromRational(newTotalExR),
+      totalTax: _fromRational(newTotalTaxR),
+      totalGp: _fromRational(newTotalGpR),
+    );
   }
   
-  /// Subtotal Ex (before discount) - for backward compatibility
+  /// Subtotal Ex (before discount) - calculated with precise Rational
   double get _subtotalEx {
-    double totalTax = 0.0;
+    if (_cartItems.isEmpty) return 0.0;
+    Rational totalTaxR = Rational.zero;
+    final oneHundred = Rational.fromInt(100);
     for (final item in _cartItems) {
-      final extensionInc = item.extension;
-      final rate = item.taxPercentage;
-      final lineTax = rate > 0 ? extensionInc * rate / (100 + rate) : 0.0;
-      totalTax += lineTax;
+      final extensionIncR = _toRational(item.extension);
+      final rateR = _toRational(item.taxPercentage);
+      if (item.taxPercentage > 0) {
+        // lineTax = extensionInc * rate / (100 + rate)
+        final lineTaxR = extensionIncR * rateR / (oneHundred + rateR);
+        totalTaxR += lineTaxR;
+      }
     }
-    return _subtotal - totalTax;
+    final subtotalR = _toRational(_subtotal);
+    return _fromRational(subtotalR - totalTaxR);
   }
   
   /// Calculate totals with a specific discount (for live preview in dialogs)
-  ({double totalEx, double totalTax, double totalGp}) _calcTotalsWithDiscount(double discount) {
+  /// Ex Tax: Sum(SellEx * qty), Tax: Sum((SellInc - SellEx) * qty), Inc Tax: Sum(SellInc * qty)
+  ({double totalInc, double totalEx, double totalTax, double totalGp}) _calcTotalsWithDiscount(double discount) {
     if (discount <= 0 || _cartItems.isEmpty) {
-      // No discount - simple calculation with 4dp precision
-      double totalTax = 0.0;
-      double totalGp = 0.0;
+      // No discount - simple calculation with Rational precision
+      Rational totalExR = Rational.zero;
+      Rational totalTaxR = Rational.zero;
+      Rational totalIncR = Rational.zero;
+      Rational totalGpR = Rational.zero;
       
       for (final item in _cartItems) {
-        final extensionInc = item.extension;
-        final rate = item.taxPercentage;
-        final lineTax = rate > 0 ? extensionInc * rate / (100 + rate) : 0.0;
-        totalTax += lineTax;
-        totalGp += _calcLineGp(item);
+        final qtyR = _toRational(item.qty);
+        final sellIncR = _toRational(item.incPrice);
+        final sellExR = _toRational(item.exPrice);
+        final costR = _toRational(item.taxType == 0
+            ? item.computedCostEx
+            : item.computedCostInc);
+        
+        // Ex Tax: Sum += Sell Ex * qty
+        totalExR += sellExR * qtyR;
+        // Tax Amount: Sum += (Sell Inc - Sell Ex) * qty
+        totalTaxR += (sellIncR - sellExR) * qtyR;
+        // Inc Tax: Sum += Sell Inc * qty
+        totalIncR += sellIncR * qtyR;
+        // eGP: Sum += (Sell Ex - Cost) * qty
+        totalGpR += (sellExR - costR) * qtyR;
       }
       
-      final totalEx = _subtotal - totalTax;
-      return (totalEx: totalEx, totalTax: totalTax, totalGp: totalGp);
+      return (
+        totalInc: _fromRational(totalIncR),
+        totalEx: _fromRational(totalExR),
+        totalTax: _fromRational(totalTaxR),
+        totalGp: _fromRational(totalGpR),
+      );
     }
     
-    // Has discount - distribute using GP ratio
+    // Has discount - distribute using GP ratio with Rational precision
     final totalGpBeforeDisc = _totalGpBeforeDiscount;
     final useGpRatio = totalGpBeforeDisc > 0 && totalGpBeforeDisc > discount;
     
-    double newTotalTax = 0.0;
-    double newTotalGp = 0.0;
+    Rational newTotalExR = Rational.zero;
+    Rational newTotalTaxR = Rational.zero;
+    Rational newTotalIncR = Rational.zero;
+    Rational newTotalGpR = Rational.zero;
     
     for (final item in _cartItems) {
-      final orgSellInc = item.incPrice;
-      final orgSellEx = item.exPrice;
-      final qty = item.qty;
-      final rate = item.taxPercentage;
+      final orgSellIncR = _toRational(item.incPrice);
+      final orgSellExR = _toRational(item.exPrice);
+      final qtyR = _toRational(item.qty);
       final lineGp = _calcLineGp(item);
       
-      double ratio;
+      // Ratio = (Line GP OR Line Sell Inc * qty) / Total GP OR SubTotal
+      Rational ratioR;
       if (useGpRatio) {
-        ratio = totalGpBeforeDisc > 0 ? lineGp / totalGpBeforeDisc : 0;
+        ratioR = totalGpBeforeDisc > 0 
+            ? _toRational(lineGp) / _toRational(totalGpBeforeDisc) 
+            : Rational.zero;
       } else {
-        ratio = _subtotal > 0 ? (orgSellInc * qty) / _subtotal : 0;
+        ratioR = _subtotal > 0 
+            ? (orgSellIncR * qtyR) / _toRational(_subtotal) 
+            : Rational.zero;
       }
       
-      final lineDiscount = discount * ratio;
-      final newSellInc = orgSellInc - (lineDiscount / qty);
-      final newSellEx = orgSellInc > 0 
-          ? newSellInc * (orgSellEx / orgSellInc) 
-          : newSellInc;
+      // Line Discount = Sale's Discount * Ratio
+      final lineDiscountR = _toRational(discount) * ratioR;
+      // New Sell Inc = Org Sell Inc - (Line Discount / qty)
+      final newSellIncR = orgSellIncR - (lineDiscountR / qtyR);
+      // New Sell Ex = New Sell Inc * (Org Sell Ex / Org Sell Inc)
+      final newSellExR = orgSellIncR > Rational.zero 
+          ? newSellIncR * (orgSellExR / orgSellIncR) 
+          : newSellIncR;
       
-      final newExtensionInc = newSellInc * qty;
-      final newLineTax = rate > 0 ? newExtensionInc * rate / (100 + rate) : 0.0;
-      newTotalTax += newLineTax;
+      // Ex Tax: Sum += New Sell Ex * qty
+      newTotalExR += newSellExR * qtyR;
+      // Tax Amount: Sum += (New Sell Inc - New Sell Ex) * qty
+      newTotalTaxR += (newSellIncR - newSellExR) * qtyR;
+      // Inc Tax: Sum += New Sell Inc * qty
+      newTotalIncR += newSellIncR * qtyR;
       
-      final cost = item.taxType == 0
+      // eGP: Sum += (New Sell Ex - Cost) * qty
+      final costR = _toRational(item.taxType == 0
           ? item.computedCostEx
-          : item.computedCostInc;
-      final newLineGp = (newSellEx - cost) * qty;
-      newTotalGp += newLineGp;
+          : item.computedCostInc);
+      newTotalGpR += (newSellExR - costR) * qtyR;
     }
     
-    final totalInc = _subtotal - discount;
-    final totalEx = totalInc - newTotalTax;
-    
-    return (totalEx: totalEx, totalTax: newTotalTax, totalGp: newTotalGp);
+    return (
+      totalInc: _fromRational(newTotalIncR),
+      totalEx: _fromRational(newTotalExR),
+      totalTax: _fromRational(newTotalTaxR),
+      totalGp: _fromRational(newTotalGpR),
+    );
   }
   
-  /// Display subtotal respects the tax toggle
-  double get _displaySubtotal => _isIncTax
-      ? _cartItems.fold(0, (sum, item) => sum + item.extension)
-      : _subtotalEx;
+  /// Display subtotal respects the tax toggle - calculated with precise Rational
+  double get _displaySubtotal {
+    if (_isIncTax) {
+      return _subtotal; // Already uses Rational
+    }
+    return _subtotalEx;
+  }
   
   double get _discount => _discountValue;
   double get _rounding => 0.00; // Placeholder
-  double get _total => _subtotal - _discount + _rounding;
   
-  /// Total Ex with discount distribution (display 2dp)
+  /// Total calculated with precise Rational: subtotal - discount + rounding
+  double get _total {
+    final subtotalR = _toRational(_subtotal);
+    final discountR = _toRational(_discount);
+    final roundingR = _toRational(_rounding);
+    return _fromRational(subtotalR - discountR + roundingR);
+  }
+  
+  /// Total Ex with discount distribution (display 2dp with cascading rounding)
   double get _totalEx => double.parse(_calculatedTotals.totalEx.toStringAsFixed(2));
   
-  /// Total cost based on sales_tax taxType:
+  /// Total cost with Rational precision based on sales_tax taxType:
   /// If taxType == 0 -> use ex-taxed cost (computedCostEx)
   /// If taxType != 0 -> use inc-taxed cost (computedCostInc)
-  double get _totalCost => _cartItems.fold(0.0, (sum, item) {
-    final cost = item.taxType == 0
-        ? item.computedCostEx
-        : item.computedCostInc;
-    return sum + cost * item.qty;
-  });
+  double get _totalCost {
+    Rational totalCostR = Rational.zero;
+    for (final item in _cartItems) {
+      final costR = _toRational(item.taxType == 0
+          ? item.computedCostEx
+          : item.computedCostInc);
+      final qtyR = _toRational(item.qty);
+      totalCostR += costR * qtyR;
+    }
+    return _fromRational(totalCostR);
+  }
   
-  /// Display total respects the tax toggle
-  double get _displayTotal => _displaySubtotal - _discount + _rounding;
+  /// Display total respects the tax toggle - calculated with precise Rational
+  double get _displayTotal {
+    final displaySubtotalR = _toRational(_displaySubtotal);
+    final discountR = _toRational(_discount);
+    final roundingR = _toRational(_rounding);
+    return _fromRational(displaySubtotalR - discountR + roundingR);
+  }
   
   double get _totalPaid =>
       _paymentAmounts.values.fold(0.0, (sum, amount) => sum + amount);
@@ -732,10 +842,12 @@ class _SalesScreenState extends State<SalesScreen>
     // Get calculated totals with discount distribution (4dp precision)
     final totals = _calculatedTotals;
 
-    // For Account Sales, use customer's owner_id as staff_id
+    // For Account Sales, use customer's owner_id as staff_id (fallback to logged-in staff if no owner)
     final int? staffId = widget.title == 'Account Sales' && _selectedCustomer != null
+      ? (_selectedCustomer!.ownerId > 0
         ? _selectedCustomer!.ownerId
-        : AppGlobals.instance.staffId;
+        : AppGlobals.instance.staffId)
+      : AppGlobals.instance.staffId;
 
     final params = SaveSessionParams(
       existingSessionId: _currentSessionId,
@@ -779,7 +891,6 @@ class _SalesScreenState extends State<SalesScreen>
         _preventAddIfNoStock = settings.preventAddIfNoStock;
         _preventFinaliseIfOutOfStock = settings.preventFinaliseIfOutOfStock;
         _displayCustomerMessagesAsPrompt = settings.displayCustomerMessagesAsPrompt;
-        _roundSellPriceTo2Decimals = settings.roundSellPriceTo2Decimals;
         _scanIndividualUnitsForFractional = settings.scanIndividualUnitsForFractional;
         _promptScanIndividualFractional = settings.promptScanIndividualFractional;
       });
@@ -985,6 +1096,8 @@ class _SalesScreenState extends State<SalesScreen>
               colors: colors,
               isDark: isDark,
             );
+          } else if (state is NegativeSellPriceFound) {
+            _showNegativeSellPriceError();
           } else if (state is FractionalItemFound) {
             // Handle fractional item based on settings
             await _handleFractionalItem(state.stock, colors, isDark);
@@ -1043,8 +1156,8 @@ class _SalesScreenState extends State<SalesScreen>
             );
 
             if (selected != null && mounted) {
-              // For Account Sales, validate customer is an account customer
-              if (widget.title == "Account Sales" && !selected.account) {
+                // For Account Sales, validate customer is an account customer
+                if (widget.title == "Account Sales" && !selected.account) {
                 AlertInfo.show(
                   context: context,
                   text: "This customer is not an account customer",
@@ -1610,10 +1723,10 @@ class _SalesScreenState extends State<SalesScreen>
     // More columns for medium tablets, and in landscape mode use 6 columns with smaller cards
     final int crossAxisCount = isLandscape ? 6 : (isMediumTablet ? 5 : 4);
     // Landscape: higher aspect ratio for smaller cards, Portrait: lower for taller cards
-    // Large tablet portrait: shorter cards (higher aspect ratio)
+    // Large tablet: higher aspect ratio to reduce extra space below price
     final double childAspectRatio = isLandscape
-        ? (isMediumTablet ? 0.88 : 0.85)
-        : (isMediumTablet ? 0.65 : (isLargeTabletPortrait ? 0.82 : 0.60));
+        ? (isMediumTablet ? 0.88 : 0.95)
+        : (isMediumTablet ? 0.65 : (isLargeTabletPortrait ? 0.92 : 0.60));
     // More spacing in landscape, less in portrait
     final double spacing = isLandscape ? 14 : 8;
 
@@ -1645,6 +1758,7 @@ class _SalesScreenState extends State<SalesScreen>
                   uiScale,
                   isLandscape,
                   isLargeTabletPortrait,
+                  !isMediumTablet,
                 ),
               ),
             ),
@@ -1755,7 +1869,7 @@ class _SalesScreenState extends State<SalesScreen>
                         Text(
                           item.description,
                           style: TextStyle(
-                            fontSize: 13 * uiScale,
+                            fontSize: isLargeTablet ? 14 : 13 * uiScale,
                             fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white : kThirdColor,
                           ),
@@ -1768,7 +1882,7 @@ class _SalesScreenState extends State<SalesScreen>
                           item.code,
                           style: TextStyle(
                             fontFamily: 'monospace',
-                            fontSize: 11 * uiScale,
+                            fontSize: isLargeTablet ? 13 : 11 * uiScale,
                             fontWeight: FontWeight.bold,
                             color: kPrimaryColor,
                           ),
@@ -1855,15 +1969,16 @@ class _SalesScreenState extends State<SalesScreen>
     double uiScale,
     bool isLandscape,
     bool isLargeTabletPortrait,
+    bool isLargeTablet,
   ) {
     // final double displayPrice = _isIncTax
     //     ? item.incPrice
     //     : item.exPrice;
     final double displayExt = _isIncTax ? item.extension : item.extensionEx;
     
-    // Reduce thumbnail size for large tablet portrait
-    final int thumbnailFlex = isLargeTabletPortrait ? 11 : 13;
-    final int detailsFlex = isLargeTabletPortrait ? 5 : 7;
+    // Flex ratios: large tablets get higher thumbnail ratio to preserve image size with shorter cards
+    final int thumbnailFlex = isLargeTablet ? (isLargeTabletPortrait ? 11 : 13) : 13;
+    final int detailsFlex = isLargeTablet ? (isLargeTabletPortrait ? 4 : 5) : 7;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -1985,7 +2100,7 @@ class _SalesScreenState extends State<SalesScreen>
                         Text(
                           item.description,
                           style: TextStyle(
-                            fontSize: 12 * uiScale,
+                            fontSize: isLargeTablet ? 14 : 12 * uiScale,
                             fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white : kThirdColor,
                           ),
@@ -1999,7 +2114,7 @@ class _SalesScreenState extends State<SalesScreen>
                           item.code,
                           style: TextStyle(
                             fontFamily: 'monospace',
-                            fontSize: 10 * uiScale,
+                            fontSize: isLargeTablet ? 13 : 10 * uiScale,
                             fontWeight: FontWeight.bold,
                             color: kPrimaryColor,
                           ),
@@ -2047,12 +2162,15 @@ class _SalesScreenState extends State<SalesScreen>
         isDark: isDark,
         isTablet: isTablet,
         isIncTax: _isIncTax,
-        roundSellPriceTo2Decimals: _roundSellPriceTo2Decimals,
         allowPriceEdit: AppGlobals.instance.hasPermission("Miscellaneous_LockSellPrice"),
         onQtyChanged: (qty) {
           _salesBloc.add(UpdateCartItemQty(index: index, qty: qty));
         },
         onPriceChanged: (price) {
+          if (price < 0) {
+            _showNegativeSellPriceError();
+            return;
+          }
           _salesBloc.add(UpdateCartItemPrice(index: index, price: price, isIncPrice: _isIncTax));
         },
         onSerialChanged: (serial) {
@@ -2130,7 +2248,6 @@ class _SalesScreenState extends State<SalesScreen>
       colors: colors,
       isDark: isDark,
       isIncTax: _isIncTax,
-      roundSellPriceTo2Decimals: _roundSellPriceTo2Decimals,
     );
   }
 
@@ -2261,7 +2378,7 @@ class _SalesScreenState extends State<SalesScreen>
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              "Subtotal: \$${_displaySubtotal.toStringAsFixed(2)}",
+                              "${isTablet ? 'Subtotal' : 'Sub'}: \$${_displaySubtotal.toStringAsFixed(2)}",
                               style: TextStyle(
                                 color: colors.onSurfaceMuted,
                                 fontSize: isTablet ? 14 : 12.5,
@@ -2321,7 +2438,75 @@ class _SalesScreenState extends State<SalesScreen>
 
   Future<void> _showFinaliseDialog() async {
     final isAccountSales = widget.title == "Account Sales";
+    final isSalesOrder = widget.title == "Sales Order";
+    final isQuotes = widget.title == "Quotes";
+    final isLayby = widget.title == "Lay-bys";
     final isSales = widget.title == "Sales";
+
+    // Check if sale is at a loss and prompt for confirmation
+    final totals = _calculatedTotals;
+    if (totals.totalGp < 0) {
+      final shouldContinue = await showDialog<bool>(
+        context: context,
+        builder: (ctx) {
+          final colors = context.appColors;
+          final isDark = colors.isDark;
+          return AlertDialog(
+            backgroundColor: isDark ? colors.surface : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "Selling at Loss",
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              "The item(s) are being sold at a loss, continue?",
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black54,
+                fontSize: 15,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(
+                  "Cancel",
+                  style: TextStyle(
+                    color: isDark ? Colors.white54 : Colors.black45,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kPrimaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text("Continue"),
+              ),
+            ],
+          );
+        },
+      );
+      if (shouldContinue != true) {
+        return;
+      }
+    }
 
     // Check for out of stock items if in Account Sales and setting is enabled
     if (isAccountSales && _preventFinaliseIfOutOfStock) {
@@ -2364,7 +2549,7 @@ class _SalesScreenState extends State<SalesScreen>
       return;
     }
 
-    if (isAccountSales) {
+    if (isAccountSales || isSalesOrder || isQuotes || isLayby) {
       _setFinaliseProcessing(true);
       try {
         final includeEmailAudit = result.result == FinaliseSaleResult.email;
@@ -2385,9 +2570,13 @@ class _SalesScreenState extends State<SalesScreen>
           }
         }
 
-        final sent = await _sendAccountInvoice(
-          includeEmailAudit: includeEmailAudit,
-        );
+        final sent = isSalesOrder
+          ? await _sendSalesOrder(includeEmailAudit: includeEmailAudit)
+          : isQuotes
+            ? await _sendQuote(includeEmailAudit: includeEmailAudit)
+            : isLayby
+              ? await _sendLayby(includeEmailAudit: includeEmailAudit)
+              : await _sendAccountInvoice(includeEmailAudit: includeEmailAudit);
         if (!sent) {
           return;
         }
@@ -2432,6 +2621,110 @@ class _SalesScreenState extends State<SalesScreen>
       return true;
     } catch (error) {
       _showAccountSalesError("Failed to send account invoice: $error");
+      return false;
+    }
+  }
+
+  Future<bool> _sendSalesOrder({required bool includeEmailAudit}) async {
+    if (widget.title != "Sales Order") return true;
+
+    if (_selectedCustomer == null) {
+      _showAccountSalesError("Please select a customer for Sales Order.");
+      return false;
+    }
+
+    try {
+      final payload = await _buildSalesOrderPayload(
+        includeEmailAudit: includeEmailAudit,
+      );
+      _printInChunks('Sales order payload: ${jsonEncode(payload)}');
+
+      final response = await _salesBloc.createSalesOrder(payload);
+      if (!response.success) {
+        _showAccountSalesError(
+          response.message.isNotEmpty
+              ? response.message
+              : "Failed to create sales order.",
+        );
+        return false;
+      }
+
+      _showAccountSalesSuccess(
+        response.message.isNotEmpty
+            ? response.message
+            : "Sales order sent.",
+      );
+      return true;
+    } catch (error) {
+      _showAccountSalesError("Failed to send sales order: $error");
+      return false;
+    }
+  }
+
+  Future<bool> _sendQuote({required bool includeEmailAudit}) async {
+    if (widget.title != "Quotes") return true;
+
+    if (_selectedCustomer == null) {
+      _showAccountSalesError("Please select a customer for Quote.");
+      return false;
+    }
+
+    try {
+      final payload = await _buildQuotePayload(
+        includeEmailAudit: includeEmailAudit,
+      );
+      _printInChunks('Quote payload: ${jsonEncode(payload)}');
+
+      final response = await _salesBloc.createQuote(payload);
+      if (!response.success) {
+        _showAccountSalesError(
+          response.message.isNotEmpty
+              ? response.message
+              : "Failed to create quote.",
+        );
+        return false;
+      }
+
+      _showAccountSalesSuccess(
+        response.message.isNotEmpty ? response.message : "Quote sent.",
+      );
+      return true;
+    } catch (error) {
+      _showAccountSalesError("Failed to send quote: $error");
+      return false;
+    }
+  }
+
+  Future<bool> _sendLayby({required bool includeEmailAudit}) async {
+    if (widget.title != "Lay-bys") return true;
+
+    if (_selectedCustomer == null) {
+      _showAccountSalesError("Please select a customer for Lay-by.");
+      return false;
+    }
+
+    try {
+      final payload = await _buildLaybyPayload(
+        includeEmailAudit: includeEmailAudit,
+      );
+      _printInChunks('Lay-by payload: ${jsonEncode(payload)}');
+
+      final response = await _salesBloc.createLayby(payload);
+      if (!response.success) {
+        _showAccountSalesError(
+          response.message.isNotEmpty
+              ? response.message
+              : "Failed to create lay-by.",
+        );
+        return false;
+      }
+
+      _showAccountSalesSuccess(
+        response.message.isNotEmpty ? response.message : "Lay-by sent.",
+      );
+      return true;
+    } catch (error) {
+      _showAccountSalesError("Failed to send lay-by: $error");
       return false;
     }
   }
@@ -2555,13 +2848,14 @@ class _SalesScreenState extends State<SalesScreen>
       return Future.error("Missing customer for Account Sales.");
     }
 
+    // For Account Sales, use customer's owner_id (fallback to logged-in staff if no owner)
     final int? staffId = widget.title == 'Account Sales' &&
             _selectedCustomer != null
-        ? _selectedCustomer!.ownerId
+        ? (_selectedCustomer!.ownerId > 0 ? _selectedCustomer!.ownerId : AppGlobals.instance.staffId)
         : AppGlobals.instance.staffId;
 
     if (staffId == null || staffId <= 0) {
-      return Future.error("Missing staff id for Account Sales.");
+      return Future.error("Missing staff id.");
     }
 
     final payload = <String, dynamic>{
@@ -2572,6 +2866,196 @@ class _SalesScreenState extends State<SalesScreen>
       'comments': _commentValue,
       'drawer': drawer,
       'origin': 0,
+      'subtotal': _subtotal,
+      'discount': _discountValue,
+      'rounding': _rounding,
+      'totalEx': totals.totalEx,
+      'totalInc': _total,
+      'gp': totals.totalGp,
+      'lines': lines,
+      'packages': packages,
+    };
+
+    if (_committedDeliveryAddress != null) {
+      payload['deliveryAddress'] = _committedDeliveryAddress!.toApiPayload();
+    }
+
+    if (includeEmailAudit && _emailAuditData != null) {
+      payload['emailAudit'] = _emailAuditData!.toApiPayload();
+    }
+
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> _buildSalesOrderPayload({
+    required bool includeEmailAudit,
+  }) async {
+    final shopfront = AppGlobals.instance.shopfront ?? '';
+    if (shopfront.isEmpty) {
+      return Future.error(
+        "Missing shopfront setup. Please reconnect to a host and shopfront.",
+      );
+    }
+
+    final cartItemsData = await Future.wait(
+      _cartItems.map(
+        (item) => CartItemData.fromCartItemAsync(item, shopfront: shopfront),
+      ),
+    );
+
+    final drawer =
+        await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+
+    final totals = _calculatedTotals;
+
+    final int? customerId = _selectedCustomer?.customerId;
+    if (customerId == null || customerId <= 0) {
+      return Future.error("Missing customer for Sales Order.");
+    }
+
+    // For Sales Order, always use logged-in staff
+    final int? staffId = AppGlobals.instance.staffId;
+
+    if (staffId == null || staffId <= 0) {
+      return Future.error("Missing staff id.");
+    }
+
+    final payload = <String, dynamic>{
+      'transactionType': 'SO',
+      'customerId': customerId,
+      'staffId': staffId,
+      'transactionDate': DateTime.now().toIso8601String(),
+      'custom': _surveyValue,
+      'comments': _commentValue,
+      'drawer': drawer,
+      'subtotal': _subtotal,
+      'discount': _discountValue,
+      'rounding': _rounding,
+      'totalEx': totals.totalEx,
+      'totalInc': _total,
+      'status': 0,
+      'lines': cartItemsData
+          .map(_buildSalesOrderLine)
+          .toList(growable: false),
+    };
+
+    if (_committedDeliveryAddress != null) {
+      payload['deliveryAddress'] = _committedDeliveryAddress!.toApiPayload();
+    }
+
+    if (includeEmailAudit && _emailAuditData != null) {
+      payload['emailAudit'] = _emailAuditData!.toApiPayload();
+    }
+
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> _buildQuotePayload({
+    required bool includeEmailAudit,
+  }) async {
+    final shopfront = AppGlobals.instance.shopfront ?? '';
+    if (shopfront.isEmpty) {
+      return Future.error(
+        "Missing shopfront setup. Please reconnect to a host and shopfront.",
+      );
+    }
+
+    final cartItemsData = await Future.wait(
+      _cartItems.map(
+        (item) => CartItemData.fromCartItemAsync(item, shopfront: shopfront),
+      ),
+    );
+
+    final totals = _calculatedTotals;
+
+    final int? customerId = _selectedCustomer?.customerId;
+    if (customerId == null || customerId <= 0) {
+      return Future.error("Missing customer for Quote.");
+    }
+
+    final int? staffId = AppGlobals.instance.staffId;
+    if (staffId == null || staffId <= 0) {
+      return Future.error("Missing staff id.");
+    }
+
+    final payload = <String, dynamic>{
+      'transactionType': 'QU',
+      'customerId': customerId,
+      'staffId': staffId,
+      'transactionDate': DateTime.now().toIso8601String(),
+      'custom': _surveyValue,
+      'comments': _commentValue,
+      'subtotal': _subtotal,
+      'discount': _discountValue,
+      'rounding': _rounding,
+      'totalEx': totals.totalEx,
+      'totalInc': _total,
+      'status': 3,
+      'lines': cartItemsData
+          .map(_buildSalesOrderLine)
+          .toList(growable: false),
+    };
+
+    if (_committedDeliveryAddress != null) {
+      payload['deliveryAddress'] = _committedDeliveryAddress!.toApiPayload();
+    }
+
+    if (includeEmailAudit && _emailAuditData != null) {
+      payload['emailAudit'] = _emailAuditData!.toApiPayload();
+    }
+
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> _buildLaybyPayload({
+    required bool includeEmailAudit,
+  }) async {
+    final shopfront = AppGlobals.instance.shopfront ?? '';
+    if (shopfront.isEmpty) {
+      return Future.error(
+        "Missing shopfront setup. Please reconnect to a host and shopfront.",
+      );
+    }
+
+    final cartItemsData = await Future.wait(
+      _cartItems.map(
+        (item) => CartItemData.fromCartItemAsync(item, shopfront: shopfront),
+      ),
+    );
+
+    final lines = cartItemsData
+        .where((item) => item.isPackage != true)
+        .map(_buildInvoiceLine)
+        .toList();
+
+    final packages = cartItemsData
+        .where((item) => item.isPackage == true)
+        .map(_buildInvoicePackage)
+        .toList();
+
+    final drawer =
+        await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+
+    final totals = _calculatedTotals;
+
+    final int? customerId = _selectedCustomer?.customerId;
+    if (customerId == null || customerId <= 0) {
+      return Future.error("Missing customer for Lay-by.");
+    }
+
+    // For Lay-by, always use logged-in staff
+    final int? staffId = AppGlobals.instance.staffId;
+    if (staffId == null || staffId <= 0) {
+      return Future.error("Missing staff id.");
+    }
+
+    final payload = <String, dynamic>{
+      'customerId': customerId,
+      'staffId': staffId,
+      'transactionDate': DateTime.now().toIso8601String(),
+      'custom': _surveyValue,
+      'comments': _commentValue,
+      'drawer': drawer,
       'subtotal': _subtotal,
       'discount': _discountValue,
       'rounding': _rounding,
@@ -2615,6 +3099,62 @@ class _SalesScreenState extends State<SalesScreen>
 
     if (item.isPromotion) {
       payload['isPromotion'] = true;
+    }
+
+    return payload;
+  }
+
+  Map<String, dynamic> _buildSalesOrderComponentLine(CartItemData item) {
+    final payload = <String, dynamic>{
+      'stockId': item.stockId ?? 0,
+      'quantity': item.qty,
+      'costEx': item.costEx,
+      'costInc': item.costInc,
+      'salesTax': item.salesTax ?? '',
+      'sellEx': item.sellEx,
+      'sellInc': item.sellInc,
+      'rrp': item.rrp ?? item.sellInc,
+      'gp': item.gp,
+      'unitOfMeasure': item.unitOfMeasure ?? 0,
+      'isFreight': item.isFreight,
+      'isStatic': item.isStatic,
+      'isPromotion': item.isPromotion,
+      'isPackage': false,
+    };
+
+    if (item.description?.isNotEmpty == true) {
+      payload['description'] = item.description;
+    }
+
+    return payload;
+  }
+
+  Map<String, dynamic> _buildSalesOrderLine(CartItemData item) {
+    final payload = <String, dynamic>{
+      'stockId': item.stockId ?? 0,
+      'quantity': item.qty,
+      'costEx': item.costEx,
+      'costInc': item.costInc,
+      'salesTax': item.salesTax ?? '',
+      'sellEx': item.sellEx,
+      'sellInc': item.sellInc,
+      'rrp': item.rrp ?? item.sellInc,
+      'gp': item.gp,
+      'unitOfMeasure': item.unitOfMeasure ?? 0,
+      'isFreight': item.isFreight,
+      'isStatic': item.isStatic,
+      'isPromotion': item.isPromotion,
+      'isPackage': item.isPackage,
+    };
+
+    if (item.description?.isNotEmpty == true) {
+      payload['description'] = item.description;
+    }
+
+    if (item.isPackage && item.packageComponents != null) {
+      payload['components'] = item.packageComponents!
+          .map(_buildSalesOrderComponentLine)
+          .toList(growable: false);
     }
 
     return payload;
@@ -2699,6 +3239,46 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
+  void _showNegativeSellPriceError() {
+    if (!mounted || _isNegativeSellPriceDialogOpen) return;
+    _isNegativeSellPriceDialogOpen = true;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final colors = context.appColors;
+        final isDark = colors.isDark;
+        return AlertDialog(
+          backgroundColor: isDark ? colors.surface : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Text(
+            "RetailManager Error",
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            "Sell price cannot be negative.",
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    ).whenComplete(() {
+      _isNegativeSellPriceDialogOpen = false;
+    });
+  }
+
   void _setFinaliseProcessing(bool value) {
     if (!mounted) return;
     setState(() => _isFinaliseProcessing = value);
@@ -2736,6 +3316,215 @@ class _SalesScreenState extends State<SalesScreen>
       _surveyController.clear();
       _commentValue = '';
     });
+
+    _runPostSaleDeltaSync();
+  }
+
+  void _runPostSaleDeltaSync() {
+    if (!mounted) return;
+
+    // Trigger delta sync for stocks and customers after successful sale
+    context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
+    context.read<FetchCustomerBloc>().add(StartCustomerSyncEvent(ipAddress: ""));
+  }
+
+  void _showSurveyScannerDialog(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    final isTablet = context.isTablet;
+    final scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      detectionTimeoutMs: 1000,
+      returnImage: false,
+    );
+    String? scannedValue;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              backgroundColor: isDark ? colors.surface : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              contentPadding: EdgeInsets.zero,
+              content: SizedBox(
+                width: isTablet ? 400 : 300,
+                height: isTablet ? 320 : 260,
+                child: Column(
+                  children: [
+                    // Header
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isTablet ? 20 : 16,
+                        vertical: isTablet ? 16 : 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor.withOpacity(0.1),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.qr_code_scanner,
+                            color: kPrimaryColor,
+                            size: isTablet ? 24 : 20,
+                          ),
+                          SizedBox(width: isTablet ? 12 : 8),
+                          Expanded(
+                            child: Text(
+                              "Scan for $_surveyLabel",
+                              style: TextStyle(
+                                fontSize: isTablet ? 18 : 16,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              scannerController.dispose();
+                              Navigator.pop(ctx);
+                            },
+                            child: Icon(
+                              Icons.close,
+                              color: isDark ? Colors.white54 : Colors.black45,
+                              size: isTablet ? 24 : 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Scanner or scanned value
+                    Expanded(
+                      child: scannedValue == null
+                          ? Container(
+                              margin: EdgeInsets.all(isTablet ? 16 : 12),
+                              decoration: BoxDecoration(
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              clipBehavior: Clip.hardEdge,
+                              child: MobileScanner(
+                                controller: scannerController,
+                                onDetect: (capture) {
+                                  final barcodes = capture.barcodes;
+                                  if (barcodes.isNotEmpty) {
+                                    final code = barcodes.first.rawValue;
+                                    if (code != null && code.isNotEmpty && scannedValue == null) {
+                                      setDialogState(() {
+                                        scannedValue = code;
+                                      });
+                                    }
+                                  }
+                                },
+                              ),
+                            )
+                          : Padding(
+                              padding: EdgeInsets.all(isTablet ? 16 : 12),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline,
+                                    color: kPrimaryColor,
+                                    size: isTablet ? 48 : 40,
+                                  ),
+                                  SizedBox(height: isTablet ? 16 : 12),
+                                  Text(
+                                    "Scanned Value:",
+                                    style: TextStyle(
+                                      fontSize: isTablet ? 14 : 12,
+                                      color: isDark ? Colors.white54 : Colors.black45,
+                                    ),
+                                  ),
+                                  SizedBox(height: isTablet ? 8 : 6),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isTablet ? 16 : 12,
+                                      vertical: isTablet ? 12 : 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? colors.surface : Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      scannedValue!,
+                                      style: TextStyle(
+                                        fontSize: isTablet ? 18 : 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? Colors.white : Colors.black87,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  SizedBox(height: isTablet ? 20 : 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      OutlinedButton(
+                                        onPressed: () {
+                                          setDialogState(() {
+                                            scannedValue = null;
+                                          });
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: kPrimaryColor,
+                                          side: const BorderSide(color: kPrimaryColor),
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: isTablet ? 20 : 16,
+                                            vertical: isTablet ? 12 : 10,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          "Rescan",
+                                          style: TextStyle(fontSize: isTablet ? 14 : 12),
+                                        ),
+                                      ),
+                                      SizedBox(width: isTablet ? 16 : 12),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          scannerController.dispose();
+                                          Navigator.pop(ctx);
+                                          setState(() {
+                                            _surveyValue = scannedValue!;
+                                            _surveyController.text = scannedValue!;
+                                          });
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: kPrimaryColor,
+                                          foregroundColor: Colors.white,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: isTablet ? 24 : 20,
+                                            vertical: isTablet ? 12 : 10,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          "Save",
+                                          style: TextStyle(fontSize: isTablet ? 14 : 12),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Widget _buildSurveyMenuItem(
@@ -2768,30 +3557,51 @@ class _SalesScreenState extends State<SalesScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    onExpandChanged(false);
-                  },
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.poll_outlined,
-                        size: isTablet ? 22 : 18,
-                        color: kPrimaryColor,
-                      ),
-                      SizedBox(width: isTablet ? 16 : 12),
-                      Text(
-                        _surveyLabel,
-                        style: TextStyle(
-                          color: isDark
-                              ? Colors.white
-                              : Colors.blueGrey.shade800,
-                          fontWeight: FontWeight.w500,
-                          fontSize: isTablet ? 15 : 13,
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          onExpandChanged(false);
+                        },
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.poll_outlined,
+                              size: isTablet ? 22 : 18,
+                              color: kPrimaryColor,
+                            ),
+                            SizedBox(width: isTablet ? 16 : 12),
+                            Text(
+                              _surveyLabel,
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.white
+                                    : Colors.blueGrey.shade800,
+                                fontWeight: FontWeight.w500,
+                                fontSize: isTablet ? 15 : 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    GestureDetector(
+                      onTap: () => _showSurveyScannerDialog(context, colors, isDark),
+                      child: Container(
+                        padding: EdgeInsets.all(isTablet ? 8 : 6),
+                        decoration: BoxDecoration(
+                          color: kPrimaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(
+                          Icons.qr_code_scanner,
+                          size: isTablet ? 20 : 16,
+                          color: kPrimaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: isTablet ? 12 : 8),
                 Row(
@@ -3172,34 +3982,60 @@ class _SalesScreenState extends State<SalesScreen>
                         color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
-                    if (_surveyValue.isNotEmpty)
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _surveyValue = '';
-                            _surveyController.clear();
-                          });
-                          Navigator.of(dialogContext).pop();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            "Remove",
-                            style: TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Scanner button
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(dialogContext).pop();
+                            _showSurveyScannerDialog(context, colors, isDark);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: kPrimaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(
+                              Icons.qr_code_scanner,
+                              size: 18,
+                              color: kPrimaryColor,
                             ),
                           ),
                         ),
-                      ),
+                        if (_surveyValue.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _surveyValue = '';
+                                _surveyController.clear();
+                              });
+                              Navigator.of(dialogContext).pop();
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                "Remove",
+                                style: TextStyle(
+                                  color: Colors.redAccent,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -3543,26 +4379,6 @@ class _SalesScreenState extends State<SalesScreen>
                                     setState(() {});
                                     _salesBloc.saveSalesSetting(
                                       key: kSalesPromptForEmailKey,
-                                      value: v,
-                                    );
-                                  },
-                                  isDark,
-                                  colors,
-                                ),
-                                Divider(
-                                  height: 1,
-                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
-                                ),
-                                _buildSettingsSwitch(
-                                  'Round Sell Price to 2 Decimals',
-                                  _roundSellPriceTo2Decimals,
-                                  (v) {
-                                    setDialogState(
-                                      () => _roundSellPriceTo2Decimals = v,
-                                    );
-                                    setState(() {});
-                                    _salesBloc.saveSalesSetting(
-                                      key: kSalesRoundSellPriceTo2DecimalsKey,
                                       value: v,
                                     );
                                   },
@@ -3986,15 +4802,20 @@ class _SalesScreenState extends State<SalesScreen>
 
   /// Parse discount input and calculate the actual discount value
   /// Supports: "$20" or "20" for fixed amount, "20%" or "%20" for percentage, "T200" or "t200" for target total
+  /// Uses precise Rational arithmetic for calculations
   double _parseDiscountInput(String input, double subtotal) {
     final trimmed = input.trim();
     if (trimmed.isEmpty) return 0.0;
+    
+    final subtotalR = _toRational(subtotal);
 
     // Target total format: T200 or t200
     if (trimmed.toUpperCase().startsWith('T')) {
       final targetTotal = double.tryParse(trimmed.substring(1));
       if (targetTotal != null && targetTotal >= 0 && targetTotal < subtotal) {
-        return subtotal - targetTotal;
+        // discount = subtotal - targetTotal (precise Rational)
+        final targetR = _toRational(targetTotal);
+        return _fromRational(subtotalR - targetR);
       }
       return 0.0;
     }
@@ -4004,7 +4825,10 @@ class _SalesScreenState extends State<SalesScreen>
       final numStr = trimmed.replaceAll('%', '').trim();
       final percent = double.tryParse(numStr);
       if (percent != null && percent >= 0 && percent <= 100) {
-        return subtotal * (percent / 100);
+        // discount = subtotal * (percent / 100) (precise Rational)
+        final percentR = _toRational(percent);
+        final oneHundred = Rational.fromInt(100);
+        return _fromRational(subtotalR * percentR / oneHundred);
       }
       return 0.0;
     }
@@ -4034,8 +4858,8 @@ class _SalesScreenState extends State<SalesScreen>
           builder: (context, setDialogState) {
             // Calculate profit with temp discount for live preview (using GP ratio distribution)
             final tempTotals = _calcTotalsWithDiscount(tempDiscount);
-            final double totalEx = double.parse(tempTotals.totalEx.toStringAsFixed(2));
-            final double egp = double.parse(tempTotals.totalGp.toStringAsFixed(2));
+            final double totalEx = double.parse(tempTotals.totalEx.toStringAsFixed(4));
+            final double egp = double.parse(tempTotals.totalGp.toStringAsFixed(4));
             final double egpPercent = totalEx > 0 ? (egp / totalEx) * 100 : 0;
             final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -4276,7 +5100,7 @@ class _SalesScreenState extends State<SalesScreen>
                                             scrollDirection: Axis.horizontal,
                                             reverse: true,
                                             child: Text(
-                                              "${egpPercent.toStringAsFixed(1)}%",
+                                              "${egpPercent.toStringAsFixed(2)}%",
                                               style: TextStyle(
                                                 fontSize: isTablet ? 16 : 14,
                                                 fontWeight: FontWeight.bold,
@@ -4392,7 +5216,7 @@ class _SalesScreenState extends State<SalesScreen>
             scrollDirection: Axis.horizontal,
             reverse: true,
             child: Text(
-              "\$${amount.toStringAsFixed(2)}",
+              "\$${amount.toStringAsFixed(4)}",
               style: TextStyle(
                 fontSize: isTablet ? 16 : 14,
                 fontWeight: FontWeight.bold,
@@ -5046,28 +5870,28 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Widget _buildTaxBreakdown(AppThemeColors colors, bool isDark) {
-    // Use calculated totals with discount distribution and 4dp precision
+    // Use calculated totals with discount distribution and Rational precision
     final totals = _calculatedTotals;
-    final double finalIncTotal = _subtotal - _discount;
     
-    // Display with 2dp precision
+    // Display with 4dp precision (cascade rounding)
     return TaxBreakdownWidget(
-      incTotal: finalIncTotal,
-      exTotal: double.parse(totals.totalEx.toStringAsFixed(2)),
-      taxAmount: double.parse(totals.totalTax.toStringAsFixed(2)),
+      incTotal: double.parse(totals.totalInc.toStringAsFixed(4)),
+      exTotal: double.parse(totals.totalEx.toStringAsFixed(4)),
+      taxAmount: double.parse(totals.totalTax.toStringAsFixed(4)),
       colors: colors,
       isDark: isDark,
     );
   }
 
   Widget _buildProfitBreakdown(AppThemeColors colors, bool isDark) {
-    // Use calculated totals with discount distribution
+    // Use calculated totals with discount distribution and Rational precision
     final totals = _calculatedTotals;
     
+    // Display with 4dp precision (cascade rounding)
     return ProfitBreakdownWidget(
-      totalEx: double.parse(totals.totalEx.toStringAsFixed(2)),
-      totalCost: _totalCost,
-      totalGp: double.parse(totals.totalGp.toStringAsFixed(2)),
+      totalEx: double.parse(totals.totalEx.toStringAsFixed(4)),
+      totalCost: double.parse(_totalCost.toStringAsFixed(4)),
+      totalGp: double.parse(totals.totalGp.toStringAsFixed(4)),
       colors: colors,
       isDark: isDark,
     );

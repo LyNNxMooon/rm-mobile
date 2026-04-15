@@ -3,30 +3,30 @@ import 'package:bloc/bloc.dart';
 import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/cleanup_history.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/discover_host.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
-import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/authenticate_staff.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/cleanup_history.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/discover_host.dart';
+import 'package:rmmobile/local_db/local_db_dao.dart';
+import 'package:rmmobile/entities/response/authenticate_staff_response.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/authenticate_staff.dart';
 // SMB LEGACY - Commented out
-// import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_session.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_connection_info.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_saved_staff_credentials.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_auto_backup_enabled.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/connect_to_shopfront_api.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/get_pair_codes.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/pair_device.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/sign_out_staff.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/load_retention_days.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/run_auto_backup_if_due.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_auto_backup_enabled.dart';
-import 'package:rmstock_scanner/features/home_page/domain/use_cases/update_retention_days.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
-import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/use_cases/delete_all_stocktake.dart';
+// import 'package:rmmobile/features/home_page/domain/use_cases/fetch_shopfront_list.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/fetch_shopfronts_from_api.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/load_saved_staff_session.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/load_saved_connection_info.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/load_saved_staff_credentials.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/load_auto_backup_enabled.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/connect_to_shopfront_api.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/get_pair_codes.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/pair_device.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/sign_out_staff.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/load_retention_days.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/run_auto_backup_if_due.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/update_auto_backup_enabled.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/update_retention_days.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
+import 'package:rmmobile/features/stock_lookup/domain/entities/sync_status.dart';
+import 'package:rmmobile/features/stocktake/domain/use_cases/delete_all_stocktake.dart';
 // SMB LEGACY imports - Commented out
 // import '../../../../entities/vos/network_server_vo.dart';
 import '../../../../utils/global_var_utils.dart';
@@ -393,6 +393,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<LoadCashDrawerIdentifierEvent>(_onLoadCashDrawerIdentifier);
     on<SaveCashDrawerIdentifierEvent>(_onSaveCashDrawerIdentifier);
     on<ExportDatabaseEvent>(_onExportDatabase);
+    on<ForceFullSyncEvent>(_onForceFullSync);
   }
 
   String get cashDrawerIdentifier => _cashDrawerIdentifier;
@@ -574,6 +575,25 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         retentionDays: _currentRetentionDays,
         autoBackupEnabled: _autoBackupEnabled,
       ));
+    }
+  }
+
+  Future<void> _onForceFullSync(
+    ForceFullSyncEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      // Clear sync timestamps to force full sync
+      final stockSyncKey = 'stock_sync_timestamp_${event.shopfrontId}';
+      final customerSyncKey = 'customer_sync_timestamp_${event.shopfrontId}';
+      await LocalDbDAO.instance.saveAppConfig(stockSyncKey, '');
+      await LocalDbDAO.instance.saveAppConfig(customerSyncKey, '');
+      emit(ForceFullSyncTriggered(
+        retentionDays: _currentRetentionDays,
+        autoBackupEnabled: _autoBackupEnabled,
+      ));
+    } catch (e) {
+      emit(SettingsError(e.toString()));
     }
   }
 }

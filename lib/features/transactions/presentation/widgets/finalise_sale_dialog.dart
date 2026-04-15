@@ -1132,7 +1132,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "\$${(change > 0 ? change : 0).toStringAsFixed(2)}",
+                  "\$${(change > 0 ? change : 0.0).toStringAsFixed(2)}",
                   style: TextStyle(
                     fontSize: isTablet ? 36 : 32,
                     fontWeight: FontWeight.bold,

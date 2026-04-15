@@ -1,13 +1,13 @@
-import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
-import 'package:rmstock_scanner/entities/vos/device_metedata_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/entities/batch_commit_entities.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/repositories/stocktake_repo.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
-import 'package:rmstock_scanner/utils/device_meta_data_utils.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
-import 'package:rmstock_scanner/utils/internet_connection_utils.dart';
-import 'package:rmstock_scanner/utils/network_credentials_check_utils.dart';
+import 'package:rmmobile/entities/vos/counted_stock_vo.dart';
+import 'package:rmmobile/entities/vos/device_metedata_vo.dart';
+import 'package:rmmobile/features/stocktake/domain/entities/batch_commit_entities.dart';
+import 'package:rmmobile/features/stocktake/domain/entities/stocktake_audit_entities.dart';
+import 'package:rmmobile/features/stocktake/domain/repositories/stocktake_repo.dart';
+import 'package:rmmobile/local_db/local_db_dao.dart';
+import 'package:rmmobile/utils/device_meta_data_utils.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
+import 'package:rmmobile/utils/internet_connection_utils.dart';
+import 'package:rmmobile/utils/network_credentials_check_utils.dart';
 
 /// Maximum number of items to send per batch
 const int kBatchSize = 5000;

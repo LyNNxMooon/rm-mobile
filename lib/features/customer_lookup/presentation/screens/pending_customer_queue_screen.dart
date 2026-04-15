@@ -1,17 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
-import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
-import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
-import 'package:rmstock_scanner/entities/vos/pending_customer_payload_utils.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_create_screen.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/screens/customer_details_screen.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/widgets/customer_thumbnail_tile.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmmobile/entities/vos/customer_vo.dart';
+import 'package:rmmobile/entities/vos/pending_customer_creation_vo.dart';
+import 'package:rmmobile/entities/vos/pending_customer_update_vo.dart';
+import 'package:rmmobile/entities/vos/pending_customer_payload_utils.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/screens/customer_create_screen.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/screens/customer_details_screen.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/widgets/customer_thumbnail_tile.dart';
+import 'package:rmmobile/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
@@ -133,8 +133,11 @@ class _PendingCustomerQueueScreenState
     return Scaffold(
       backgroundColor: isDark ? colors.bg : kBgColor,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        titleSpacing: 18,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        titleSpacing: 0,
         title: Text(
           'Pending Customer Items',
           style: getSmartTitle(

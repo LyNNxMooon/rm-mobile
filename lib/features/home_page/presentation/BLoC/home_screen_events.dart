@@ -135,6 +135,11 @@ class SaveCashDrawerIdentifierEvent extends SettingsEvent {
 
 class ExportDatabaseEvent extends SettingsEvent {}
 
+class ForceFullSyncEvent extends SettingsEvent {
+  final String shopfrontId;
+  ForceFullSyncEvent({required this.shopfrontId});
+}
+
 abstract class DiscoverHostEvents {}
 
 class DiscoverHostEvent extends DiscoverHostEvents {

@@ -1,9 +1,9 @@
-import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
-import 'package:rmstock_scanner/entities/response/staff_detail_response.dart';
-import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
-import 'package:rmstock_scanner/entities/vos/pending_customer_update_vo.dart';
-import 'package:rmstock_scanner/entities/vos/search_mode.dart';
-import 'package:rmstock_scanner/utils/enums.dart';
+import 'package:rmmobile/entities/vos/filter_criteria.dart';
+import 'package:rmmobile/entities/response/staff_detail_response.dart';
+import 'package:rmmobile/entities/vos/pending_customer_creation_vo.dart';
+import 'package:rmmobile/entities/vos/pending_customer_update_vo.dart';
+import 'package:rmmobile/entities/vos/search_mode.dart';
+import 'package:rmmobile/utils/enums.dart';
 
 import '../../../../entities/vos/customer_vo.dart';
 

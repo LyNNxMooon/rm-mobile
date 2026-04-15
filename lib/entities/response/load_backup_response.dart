@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rmstock_scanner/entities/vos/backup_stocktake_item_vo.dart';
+import 'package:rmmobile/entities/vos/backup_stocktake_item_vo.dart';
 
 part 'load_backup_response.g.dart';
 

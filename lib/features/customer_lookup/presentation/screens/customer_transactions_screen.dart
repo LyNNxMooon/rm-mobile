@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:rmstock_scanner/constants/colors.dart';
-import 'package:rmstock_scanner/constants/theme_colors.dart';
-import 'package:rmstock_scanner/entities/vos/customer_vo.dart';
-import 'package:rmstock_scanner/features/customer_lookup/domain/entities/customer_transactions_local_data.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_transactions_events.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_transactions_states.dart';
+import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/theme_colors.dart';
+import 'package:rmmobile/entities/vos/customer_vo.dart';
+import 'package:rmmobile/features/customer_lookup/domain/entities/customer_transactions_local_data.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_events.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_states.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CustomerTransactionsScreen extends StatefulWidget {

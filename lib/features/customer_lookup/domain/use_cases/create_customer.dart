@@ -1,4 +1,4 @@
-import 'package:rmstock_scanner/entities/response/customer_create_response.dart';
+import 'package:rmmobile/entities/response/customer_create_response.dart';
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/internet_connection_utils.dart';
 

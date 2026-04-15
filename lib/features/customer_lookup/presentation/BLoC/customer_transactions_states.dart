@@ -1,4 +1,4 @@
-import 'package:rmstock_scanner/features/customer_lookup/domain/entities/customer_transactions_local_data.dart';
+import 'package:rmmobile/features/customer_lookup/domain/entities/customer_transactions_local_data.dart';
 
 abstract class CustomerTransactionsState {}
 

@@ -1,7 +1,7 @@
-import 'package:rmstock_scanner/entities/vos/backup_session_vo.dart';
-import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
+import 'package:rmmobile/entities/vos/backup_session_vo.dart';
+import 'package:rmmobile/entities/vos/stock_vo.dart';
+import 'package:rmmobile/features/stocktake/domain/entities/stocktake_audit_entities.dart';
+import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.dart';
 
 abstract class StocktakeEvent {}
 

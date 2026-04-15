@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/stocktake_states.dart';
+import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
+import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';

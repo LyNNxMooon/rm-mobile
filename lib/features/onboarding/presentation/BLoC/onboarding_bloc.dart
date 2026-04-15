@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/onboarding/domain/use_cases/get_terms_accepted.dart';
-import 'package:rmstock_scanner/features/onboarding/domain/use_cases/set_terms_accepted.dart';
+import 'package:rmmobile/features/onboarding/domain/use_cases/get_terms_accepted.dart';
+import 'package:rmmobile/features/onboarding/domain/use_cases/set_terms_accepted.dart';
 
 abstract class OnboardingEvent {}
 

@@ -1,6 +1,6 @@
-import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
-import 'package:rmstock_scanner/entities/response/stock_update_response.dart';
-import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
+import 'package:rmmobile/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
+import 'package:rmmobile/entities/response/stock_update_response.dart';
+import 'package:rmmobile/entities/vos/pricing_rules.dart';
 
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/internet_connection_utils.dart';

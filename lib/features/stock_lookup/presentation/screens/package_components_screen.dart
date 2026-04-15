@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:rmstock_scanner/constants/colors.dart';
-import 'package:rmstock_scanner/constants/theme_colors.dart';
-import 'package:rmstock_scanner/entities/vos/package_component.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
-import 'package:rmstock_scanner/utils/responsive_utils.dart';
+import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/theme_colors.dart';
+import 'package:rmmobile/entities/vos/package_component.dart';
+import 'package:rmmobile/local_db/local_db_dao.dart';
+import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 import 'package:logger/logger.dart';
 
 import 'stock_details_screen.dart';

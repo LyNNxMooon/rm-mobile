@@ -22,6 +22,12 @@ const kEndPointForCustomerTransactions =
     "/shopfronts/{$kPathParamForShopfrontId}/customers/{$kPathParamForCustomerId}/transactions";
 const kEndPointForInvoice =
     "/shopfronts/{$kPathParamForShopfrontId}/transactions/invoice";
+const kEndPointForSalesOrder =
+    "/shopfronts/{$kPathParamForShopfrontId}/transactions/salesorder";
+const kEndPointForQuote =
+    "/shopfronts/{$kPathParamForShopfrontId}/transactions/quote";
+const kEndPointForLayby =
+    "/shopfronts/{$kPathParamForShopfrontId}/transactions/layby";
 const kEndPointForPictureUpload =
     "/shopfronts/{$kPathParamForShopfrontId}/pictures/{$kPathParamForStockId}";
 const kEndPointForStocktakeInitCheck =

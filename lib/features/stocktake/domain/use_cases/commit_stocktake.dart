@@ -1,5 +1,5 @@
-import 'package:rmstock_scanner/entities/vos/device_metedata_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/repositories/stocktake_repo.dart';
+import 'package:rmmobile/entities/vos/device_metedata_vo.dart';
+import 'package:rmmobile/features/stocktake/domain/repositories/stocktake_repo.dart';
 
 import '../../../../entities/vos/counted_stock_vo.dart';
 import '../../../../local_db/local_db_dao.dart';

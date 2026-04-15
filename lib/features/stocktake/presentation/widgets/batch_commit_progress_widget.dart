@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/constants/colors.dart';
-import 'package:rmstock_scanner/constants/theme_colors.dart';
-import 'package:rmstock_scanner/constants/txt_styles.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/entities/batch_commit_entities.dart';
-import 'package:rmstock_scanner/features/stocktake/presentation/BLoC/batch_commit_bloc.dart';
+import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/theme_colors.dart';
+import 'package:rmmobile/constants/txt_styles.dart';
+import 'package:rmmobile/features/stocktake/domain/entities/batch_commit_entities.dart';
+import 'package:rmmobile/features/stocktake/presentation/BLoC/batch_commit_bloc.dart';
 
 /// Widget that displays batch commit progress with green ticks for completed batches
 class BatchCommitProgressWidget extends StatelessWidget {

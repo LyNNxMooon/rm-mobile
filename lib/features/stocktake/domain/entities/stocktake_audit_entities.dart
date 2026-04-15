@@ -1,5 +1,5 @@
-import 'package:rmstock_scanner/entities/vos/audit_item_vo.dart';
-import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmmobile/entities/vos/audit_item_vo.dart';
+import 'package:rmmobile/entities/vos/stock_vo.dart';
 
 class AuditWithStockVO {
   final AuditItem audit;

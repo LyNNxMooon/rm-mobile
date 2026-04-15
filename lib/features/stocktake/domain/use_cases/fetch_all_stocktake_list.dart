@@ -1,5 +1,5 @@
-import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/repositories/stocktake_repo.dart';
+import 'package:rmmobile/entities/vos/counted_stock_vo.dart';
+import 'package:rmmobile/features/stocktake/domain/repositories/stocktake_repo.dart';
 
 import '../../../../utils/global_var_utils.dart';
 

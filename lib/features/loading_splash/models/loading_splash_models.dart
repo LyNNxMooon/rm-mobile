@@ -1,4 +1,4 @@
-import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
+import 'package:rmmobile/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 
 import '../../../entities/response/validate_response.dart';
 import '../../../local_db/local_db_dao.dart';

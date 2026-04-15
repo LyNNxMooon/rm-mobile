@@ -3,7 +3,7 @@
 // ============================================================================
 
 /*
-import 'package:rmstock_scanner/features/home_page/domain/repositories/home_repo.dart';
+import 'package:rmmobile/features/home_page/domain/repositories/home_repo.dart';
 
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/global_var_utils.dart';

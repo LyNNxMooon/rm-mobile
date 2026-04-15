@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'package:rmstock_scanner/utils/responsive_utils.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 
 import 'colors.dart';
 import 'theme_colors.dart';

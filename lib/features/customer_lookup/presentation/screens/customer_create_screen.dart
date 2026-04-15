@@ -3,17 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/constants/colors.dart';
-import 'package:rmstock_scanner/constants/theme_colors.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_events.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_create_states.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/pending_customer_creation_vo.dart';
-import 'package:rmstock_scanner/utils/ios_done_bar.dart';
+import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/theme_colors.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_create_events.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_create_states.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
+import 'package:rmmobile/entities/vos/pending_customer_creation_vo.dart';
+import 'package:rmmobile/utils/ios_done_bar.dart';
 
 class CustomerCreateScreen extends StatefulWidget {
   final PendingCustomerCreationVO? pendingCreation;

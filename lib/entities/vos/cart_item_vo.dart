@@ -1,3 +1,6 @@
+import 'package:decimal/decimal.dart';
+import 'package:rational/rational.dart';
+
 import 'stock_vo.dart';
 
 /// Value Object for cart items in Sales transactions.
@@ -42,11 +45,21 @@ class CartItemVO {
   }) : incPrice = incPrice ?? sellPrice,
        exPrice = exPrice ?? sellPrice;
 
-  /// Extension using inclusive price
-  double get extension => qty * incPrice;
+  /// Extension using inclusive price - calculated with precise Rational arithmetic
+  double get extension {
+    final qtyRational = Rational.parse(qty.toString());
+    final incPriceRational = Rational.parse(incPrice.toString());
+    final result = qtyRational * incPriceRational;
+    return result.toDecimal(scaleOnInfinitePrecision: 10).toDouble();
+  }
   
-  /// Extension using exclusive price
-  double get extensionEx => qty * exPrice;
+  /// Extension using exclusive price - calculated with precise Rational arithmetic
+  double get extensionEx {
+    final qtyRational = Rational.parse(qty.toString());
+    final exPriceRational = Rational.parse(exPrice.toString());
+    final result = qtyRational * exPriceRational;
+    return result.toDecimal(scaleOnInfinitePrecision: 10).toDouble();
+  }
 
   /// Whether this stock item tracks serial numbers
   bool get trackSerial => stock?.trackSerial ?? false;

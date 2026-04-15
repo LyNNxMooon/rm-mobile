@@ -13,20 +13,20 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:languagetool_textfield/languagetool_textfield.dart';
 
-import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import 'package:rmstock_scanner/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
-import 'package:rmstock_scanner/local_db/local_db_dao.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
-import 'package:rmstock_scanner/utils/dialog_size_utils.dart';
-import 'package:rmstock_scanner/utils/internet_connection_utils.dart';
-import 'package:rmstock_scanner/utils/log_utils.dart';
+import 'package:rmmobile/entities/vos/stock_vo.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
+import 'package:rmmobile/local_db/local_db_dao.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
+import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/dialog_size_utils.dart';
+import 'package:rmmobile/utils/internet_connection_utils.dart';
+import 'package:rmmobile/utils/log_utils.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
@@ -150,20 +150,24 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
   Future<void> _calculateTaxAsync() async {
     try {
-      // For package items, use pre-calculated values from server
-      if (widget.stock.isPackage == true) {
-        logger.i('=== Package Item - Using Pre-calculated Prices ===');
+      // Check if server provides pre-calculated values for all prices
+      final hasSellPrices = widget.stock.sellEx != null && widget.stock.sellInc != null;
+      final hasCostPrices = widget.stock.costEx != null && widget.stock.costInc != null;
+
+      if (hasSellPrices && hasCostPrices) {
+        // Use pre-calculated values from server (available for all items now)
+        logger.i('=== Using Pre-calculated Prices from Server ===');
         logger.i('Stock ID: ${widget.stock.stockID}, Description: ${widget.stock.description}');
         logger.i('  Sell Ex: ${widget.stock.sellEx}, Sell Inc: ${widget.stock.sellInc}');
         logger.i('  Cost Ex: ${widget.stock.costEx}, Cost Inc: ${widget.stock.costInc}');
 
         if (mounted) {
           setState(() {
-            sell = widget.stock.sellInc ?? widget.stock.sell;
-            exSell = widget.stock.sellEx ?? widget.stock.sell;
-            cost = widget.stock.costInc ?? widget.stock.cost;
-            exCost = widget.stock.costEx ?? widget.stock.cost;
-            // No tax percentage for package items as it's already calculated
+            sell = widget.stock.sellInc!;
+            exSell = widget.stock.sellEx!;
+            cost = widget.stock.costInc!;
+            exCost = widget.stock.costEx!;
+            // No tax percentage needed as server provides final values
             sellTaxPercentage = 0;
             sellTaxType = 0;
             costTaxPercentage = 0;
@@ -173,6 +177,11 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         }
         return;
       }
+
+      // Fallback: Calculate tax when server values are not available
+      // Uses precise Rational arithmetic internally, rounds to 4 decimals at output
+      logger.i('=== Fallback: Calculating Tax Locally ===');
+      logger.i('Stock ID: ${widget.stock.stockID}, Description: ${widget.stock.description}');
 
       // Calculate sell price tax (uses sales_tax)
       final sellResult = await TaxCalculationUtils.calculateSellTax(
@@ -186,8 +195,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         goodsTax: widget.stock.goodsTax,
       );
 
-      logger.i('=== Tax Calculation Results ===');
-      logger.i('Stock ID: ${widget.stock.stockID}, Description: ${widget.stock.description}');
       logger.i('--- Sell Tax (salesTax code: ${widget.stock.salesTax}) ---');
       logger.i('  Ex Price: ${sellResult.exPrice}, Inc Price: ${sellResult.incPrice}');
       logger.i('  Tax %: ${sellResult.percentage}, Tax Type: ${sellResult.taxType}');

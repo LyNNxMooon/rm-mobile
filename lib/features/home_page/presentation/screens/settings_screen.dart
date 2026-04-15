@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'dart:async';
 import 'package:alert_info/alert_info.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
@@ -9,14 +10,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
-import 'package:rmstock_scanner/features/theme/presentation/bloc/theme_cubit.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_bloc.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_states.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/widgets/restore_backup_dialog.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/widgets/shopfronts_dialog.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmmobile/entities/vos/network_server_vo.dart';
+import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
+import 'package:rmmobile/features/home_page/presentation/widgets/restore_backup_dialog.dart';
+import 'package:rmmobile/features/home_page/presentation/widgets/shopfronts_dialog.dart';
+import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
@@ -30,6 +31,8 @@ import '../../../../utils/responsive_utils.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_bloc.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_events.dart';
 import '../../../stocktake/presentation/widgets/delete_all_confirmation_dialog.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'staff_login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -63,14 +66,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _savedShopfrontId = "";
   String _savedShopfrontName = "";
   bool _isRefreshingShopfront = false;
+  bool _isForceFullSyncInProgress = false;
 
   bool _isSyncInProgress(BuildContext context) {
-    return context.read<FetchStockBloc>().state is FetchStockProgress;
+    return context.read<FetchStockBloc>().state is FetchStockProgress ||
+        context.read<FetchCustomerBloc>().state is FetchCustomerProgress;
   }
 
   bool _blockIfSyncing(BuildContext context) {
     if (!_isSyncInProgress(context)) return false;
-    _showError(context, "Stock sync in progress. Please wait.");
+    _showError(context, "Sync in progress. Please wait.");
     return true;
   }
 
@@ -429,6 +434,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _cashDrawerIdentifier = state.identifier;
               });
             }
+            if (state is SettingsError && _isForceFullSyncInProgress) {
+              setState(() {
+                _isForceFullSyncInProgress = false;
+              });
+              _showError(context, state.message);
+            }
+            if (state is ForceFullSyncTriggered) {
+              setState(() {
+                _isForceFullSyncInProgress = false;
+              });
+              // Trigger both stock and customer syncs
+              context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
+              context.read<FetchCustomerBloc>().add(
+                StartCustomerSyncEvent(ipAddress: ""),
+              );
+              AlertInfo.show(
+                context: context,
+                text: "Full sync started for stocks and customers",
+                typeInfo: TypeInfo.info,
+                backgroundColor: colors.surface,
+                iconColor: kPrimaryColor,
+                textColor: colors.onSurface,
+                position: MessagePosition.top,
+                padding: 70,
+              );
+            }
           },
         ),
         BlocListener<DiscoverHostBloc, DiscoverHostStates>(
@@ -742,6 +773,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 child: Divider(height: 1, thickness: 0.5),
                               ),
                               _buildCashDrawerDropdown(),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildForceFullSyncTile(),
                             ],
                           ),
                         ),
@@ -1133,6 +1169,151 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showForceFullSyncConfirmation(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E2733) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          "Force Full Sync",
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          "This will re-download all stocks and customers from the server. This may take some time depending on the data size.\n\nDo you want to continue?",
+          style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black54,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: isDark ? Colors.white54 : Colors.grey),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              setState(() {
+                _isForceFullSyncInProgress = true;
+              });
+              context.read<SettingsBloc>().add(
+                ForceFullSyncEvent(shopfrontId: _savedShopfrontId),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kPrimaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text("Continue"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildForceFullSyncTile() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final bool isTablet = context.isTablet;
+
+    return BlocBuilder<FetchStockBloc, FetchStockStates>(
+      builder: (context, stockState) {
+        return BlocBuilder<FetchCustomerBloc, FetchCustomerStates>(
+          builder: (context, customerState) {
+            final bool isSyncing = stockState is FetchStockProgress ||
+                customerState is FetchCustomerProgress ||
+                _isForceFullSyncInProgress;
+
+            return InkWell(
+              onTap: isSyncing
+                  ? null
+                  : () {
+                      if (_savedShopfrontId.isEmpty) {
+                        _showError(context, "No shopfront selected.");
+                        return;
+                      }
+                      _showForceFullSyncConfirmation(context);
+                    },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.sync,
+                        size: 20,
+                        color: isDark ? Colors.white : colors.onHero,
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Force Full Sync",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? Colors.white70 : colors.onHero,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "Re-sync all stocks and customers",
+                            style: getSmartTitle(
+                              fontSize: 16,
+                              color: isDark ? Colors.white : colors.onHero,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isSyncing)
+                      SizedBox(
+                        width: isTablet ? 28 : 24,
+                        height: isTablet ? 28 : 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: kPrimaryColor,
+                        ),
+                      )
+                    else
+                      Icon(
+                        Icons.chevron_right,
+                        size: isTablet ? 28 : 24,
+                        color: isDark ? Colors.white54 : colors.onHero.withOpacity(0.5),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

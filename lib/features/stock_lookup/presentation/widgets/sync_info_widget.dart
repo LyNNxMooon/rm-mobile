@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/home_page/presentation/BLoC/home_screen_events.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/pending_stock_updates_screen.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/screens/pending_stock_updates_screen.dart';
+import 'package:rmmobile/utils/navigation_extension.dart';
 
 import '../../../../constants/colors.dart';
 //import '../../../../constants/theme_colors.dart';

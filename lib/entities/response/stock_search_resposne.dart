@@ -1,4 +1,4 @@
-import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmmobile/entities/vos/stock_vo.dart';
 
 class StockSearchResult {
   final StockVO? stock;

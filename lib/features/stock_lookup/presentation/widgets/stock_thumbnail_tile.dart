@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:rmstock_scanner/constants/images.dart';
-import 'package:rmstock_scanner/entities/vos/stock_vo.dart';
+import 'package:rmmobile/constants/images.dart';
+import 'package:rmmobile/entities/vos/stock_vo.dart';
 
 class StockThumbnailTile extends StatelessWidget {
   final StockVO stock;

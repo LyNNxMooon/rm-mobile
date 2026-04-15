@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
+import 'package:rational/rational.dart';
 
 import '../../local_db/local_db_dao.dart';
 import '../../utils/tax_calculation_utils.dart';
@@ -421,83 +423,46 @@ class CartItemData {
     if (stock?.isPackage == true && stock?.packageComponents != null) {
       final shop = shopfront ?? '';
       
-      // First pass: collect all component data with original values
+      // Helper for Rational conversion
+      Rational toR(double v) => Rational.parse(v.toString());
+      double fromR(Rational r) => r.toDecimal(scaleOnInfinitePrecision: 10).toDouble();
+      
+      // First pass: collect all component data with pre-calculated values from server
       final List<_ComponentBuildData> componentData = [];
       
       for (final comp in stock!.packageComponents!) {
         // Look up component stock data from database
         final compStock = await LocalDbDAO.instance.getStockById(comp.stockId, shop);
         
-        // Get cost_ex value for component with proper tax handling
+        // Use pre-calculated costEx from server, fallback to calculation only if null
         double compCostEx;
-        double? compCostTaxPercentage;
         if (compStock?.costEx != null) {
           compCostEx = compStock!.costEx!;
-        } else if (compStock?.cost != null && compStock!.cost > 0) {
-          // Look up goods_tax to determine tax_type
-          final compCostTaxResult = await TaxCalculationUtils.calculateCostTax(
-            cost: compStock.cost,
-            goodsTax: compStock.goodsTax,
-            shopfront: shop,
-          );
-          compCostTaxPercentage = compCostTaxResult.percentage;
-          if (compCostTaxResult.taxType == 0) {
-            // tax_type = 0: cost is ex-taxed, use directly
-            compCostEx = compStock.cost;
-          } else {
-            // tax_type != 0: cost is inc-taxed, calculate ex by removing tax
-            compCostEx = compCostTaxResult.exPrice;
-          }
         } else {
           compCostEx = 0.0;
         }
         
-        // Calculate costInc from costEx by directly applying tax percentage
-        double compCostInc = compStock?.costInc ?? 0.0;
-        if (compCostInc == 0.0 && compCostEx > 0) {
-          // Get tax percentage if not already fetched
-          if (compCostTaxPercentage == null && compStock?.goodsTax != null) {
-            final compCostTaxResult = await TaxCalculationUtils.calculateCostTax(
-              cost: compCostEx,
-              goodsTax: compStock?.goodsTax,
-              shopfront: shop,
-            );
-            compCostTaxPercentage = compCostTaxResult.percentage;
-          }
-          // Apply tax directly: costInc = costEx * (1 + percentage/100)
-          compCostInc = compCostTaxPercentage != null && compCostTaxPercentage > 0
-              ? compCostEx * (1 + compCostTaxPercentage / 100)
-              : compCostEx;
+        // Use pre-calculated costInc from server, fallback to calculation only if null
+        double compCostInc;
+        if (compStock?.costInc != null) {
+          compCostInc = compStock!.costInc!;
+        } else {
+          compCostInc = 0.0;
         }
         
-        // Get original sell_inc for component with proper tax handling
+        // Use pre-calculated sellInc from server
         double orgSellInc;
         if (comp.sellInc != null) {
           orgSellInc = comp.sellInc!;
         } else if (compStock?.sellInc != null) {
           orgSellInc = compStock!.sellInc!;
-        } else if (compStock?.sell != null && compStock!.sell > 0) {
-          // Look up sales_tax to determine tax_type
-          final compSellTaxResult = await TaxCalculationUtils.calculateSellTax(
-            sell: compStock.sell,
-            salesTax: compStock.salesTax,
-            shopfront: shop,
-          );
-          if (compSellTaxResult.taxType == 0) {
-            // tax_type = 0: sell is ex-taxed, apply tax to get inc
-            orgSellInc = compSellTaxResult.incPrice;
-          } else {
-            // tax_type != 0: sell is inc-taxed, use directly
-            orgSellInc = compStock.sell;
-          }
         } else {
           orgSellInc = 0.0;
         }
         
-        // Look up sales_tax in TaxCodes table to get tax_percentage
+        // Get tax info from component stock
         double? compTaxPercentage;
         int? compTaxType;
-        
         if (compStock?.salesTax != null) {
           final sellTaxResult = await TaxCalculationUtils.calculateSellTax(
             sell: orgSellInc,
@@ -508,76 +473,92 @@ class CartItemData {
           compTaxType = sellTaxResult.taxType;
         }
         
-        // Calculate original sell_ex from sell_inc using tax_percentage
-        final double orgSellEx = compTaxPercentage != null && compTaxPercentage > 0
-            ? orgSellInc / (1 + compTaxPercentage / 100)
-            : orgSellInc;
+        // Calculate sell_ex from sell_inc using tax_percentage with Rational precision
+        final Rational orgSellExR;
+        if (compTaxPercentage != null && compTaxPercentage > 0) {
+          // orgSellEx = orgSellInc / (1 + percentage/100)
+          final oneHundred = Rational.fromInt(100);
+          final taxRateR = toR(compTaxPercentage);
+          orgSellExR = toR(orgSellInc) / (Rational.one + taxRateR / oneHundred);
+        } else {
+          orgSellExR = toR(orgSellInc);
+        }
         
-        // Component GP for distribution ratio = (sell_ex - cost_ex) * qty
-        final double compGp = (orgSellEx - compCostEx) * comp.quantity;
+        // Component GP for distribution ratio = (sell_ex - cost) * qty using Rational
+        // Cost based on taxType
+        final costForGpR = toR((compTaxType ?? 0) == 0 ? compCostEx : compCostInc);
+        final compGpR = (orgSellExR - costForGpR) * toR(comp.quantity);
         
         componentData.add(_ComponentBuildData(
           comp: comp,
           compStock: compStock,
           orgSellInc: orgSellInc,
-          orgSellEx: orgSellEx,
+          orgSellExR: orgSellExR,
           costEx: compCostEx,
           costInc: compCostInc,
           taxPercentage: compTaxPercentage,
           taxType: compTaxType,
-          gp: compGp,
+          gpR: compGpR,
           rrp: orgSellInc, // RRP is the original inc sell price before distribution
         ));
       }
       
-      // Calculate totals for distribution
-      final double totalPackageInc = componentData.fold(0.0, 
-          (sum, c) => sum + c.orgSellInc * c.comp.quantity);
-      final double totalPackageGp = componentData.fold(0.0, (sum, c) => sum + c.gp);
+      // Calculate totals for distribution using Rational
+      Rational totalPackageIncR = Rational.zero;
+      Rational totalPackageGpR = Rational.zero;
+      for (final c in componentData) {
+        totalPackageIncR += toR(c.orgSellInc) * toR(c.comp.quantity);
+        totalPackageGpR += c.gpR;
+      }
       
       // Detect markup/markdown: compare header's actual sell price with sum of components
-      final double headerSellInc = item.incPrice;
-      final double priceDiff = headerSellInc - totalPackageInc; // positive = markup, negative = markdown
+      final headerSellIncR = toR(item.incPrice);
+      final priceDiffR = headerSellIncR - totalPackageIncR; // positive = markup, negative = markdown
       
       // Second pass: apply distribution if there's a pricing adjustment
       components = [];
       for (final data in componentData) {
-        double newSellInc = data.orgSellInc;
-        double newSellEx = data.orgSellEx;
+        Rational newSellIncR = toR(data.orgSellInc);
+        Rational newSellExR = data.orgSellExR;
+        final baseQtyR = toR(data.comp.quantity);
+        final packageQtyR = toR(item.qty);
+        final totalQtyR = baseQtyR * packageQtyR; // Component qty * package qty
+        final orgSellIncR = toR(data.orgSellInc);
+        final orgSellExR = data.orgSellExR;
         
-        if (priceDiff.abs() > 0.001) { // There's a pricing adjustment
-          double ratio;
+        if (priceDiffR.abs() > Rational.parse('0.001')) { // There's a pricing adjustment
+          Rational ratioR;
           
-          if (priceDiff < 0) {
+          if (priceDiffR < Rational.zero) {
             // Mark-down (discount)
-            final discount = priceDiff.abs();
-            if (totalPackageGp > 0 && totalPackageGp > discount) {
+            final discountR = priceDiffR.abs();
+            if (totalPackageGpR > Rational.zero && totalPackageGpR > discountR) {
               // Use GP ratio
-              ratio = totalPackageGp > 0 ? data.gp / totalPackageGp : 0;
+              ratioR = totalPackageGpR > Rational.zero ? data.gpR / totalPackageGpR : Rational.zero;
             } else {
               // Use sell_inc ratio
-              ratio = totalPackageInc > 0 ? (data.orgSellInc * data.comp.quantity) / totalPackageInc : 0;
+              ratioR = totalPackageIncR > Rational.zero ? (orgSellIncR * baseQtyR) / totalPackageIncR : Rational.zero;
             }
-            final comLineDiscount = discount * ratio;
-            newSellInc = data.orgSellInc - (comLineDiscount / data.comp.quantity);
+            final comLineDiscountR = discountR * ratioR;
+            newSellIncR = orgSellIncR - (comLineDiscountR / baseQtyR);
           } else {
             // Mark-up
-            final markup = priceDiff;
-            if (totalPackageGp > 0) {
+            final markupR = priceDiffR;
+            if (totalPackageGpR > Rational.zero) {
               // Use GP ratio
-              ratio = data.gp / totalPackageGp;
+              ratioR = data.gpR / totalPackageGpR;
             } else {
               // Use sell_inc ratio
-              ratio = totalPackageInc > 0 ? (data.orgSellInc * data.comp.quantity) / totalPackageInc : 0;
+              ratioR = totalPackageIncR > Rational.zero ? (orgSellIncR * baseQtyR) / totalPackageIncR : Rational.zero;
             }
-            final comLineShare = markup * ratio;
-            newSellInc = data.orgSellInc + (comLineShare / data.comp.quantity);
+            final comLineShareR = markupR * ratioR;
+            newSellIncR = orgSellIncR + (comLineShareR / baseQtyR);
           }
           
           // Calculate new_sell_ex maintaining the same ratio
-          newSellEx = data.orgSellInc > 0 
-              ? newSellInc * (data.orgSellEx / data.orgSellInc) 
-              : newSellInc;
+          newSellExR = orgSellIncR > Rational.zero 
+              ? newSellIncR * (orgSellExR / orgSellIncR) 
+              : newSellIncR;
         }
         
         // Only store description if it differs from stock description
@@ -585,23 +566,22 @@ class CartItemData {
             data.compStock != null && 
             data.comp.description != data.compStock!.description;
         
-        // Calculate GP based on taxType from sales_tax:
-        // taxType == 0 -> use costEx, taxType != 0 -> use costInc
-        final compCostForGp = (data.taxType ?? 0) == 0 ? data.costEx : data.costInc;
-        final compGpValue = (newSellEx - compCostForGp) * data.comp.quantity;
+        // Calculate GP based on taxType using Rational: (newSellEx - cost) * baseQty (per package, not total)
+        final compCostForGpR = toR((data.taxType ?? 0) == 0 ? data.costEx : data.costInc);
+        final compGpValueR = (newSellExR - compCostForGpR) * baseQtyR;
         
         components.add(CartItemData(
           code: data.comp.barcode ?? '',
           description: compDescOverridden ? data.comp.description : null,
-          qty: data.comp.quantity,
+          qty: fromR(totalQtyR), // Component qty * package qty
           stockId: data.comp.stockId,
-          sellInc: newSellInc,
-          sellEx: newSellEx,
+          sellInc: fromR(newSellIncR),  // Raw precise value
+          sellEx: fromR(newSellExR),    // Raw precise value
           costEx: data.costEx,
           costInc: data.costInc,
           taxPercentage: data.taxPercentage,
           taxType: data.taxType,
-          gp: compGpValue,
+          gp: fromR(compGpValueR),      // GP per package (not multiplied by package qty)
           salesTax: data.compStock?.salesTax,
           rrp: data.rrp,
           unitOfMeasure: data.compStock?.unitOfMeasure.toInt(),
@@ -651,24 +631,24 @@ class _ComponentBuildData {
   final dynamic comp; // PackageComponent
   final dynamic compStock; // StockVO?
   final double orgSellInc;
-  final double orgSellEx;
+  final Rational orgSellExR; // Calculated with Rational precision
   final double costEx;
   final double costInc;
   final double? taxPercentage;
   final int? taxType;
-  final double gp; // Used only for distribution ratio calculation
+  final Rational gpR; // Used only for distribution ratio calculation (raw precise)
   final double rrp; // Original inclusive sell price
   
   _ComponentBuildData({
     required this.comp,
     required this.compStock,
     required this.orgSellInc,
-    required this.orgSellEx,
+    required this.orgSellExR,
     required this.costEx,
     required this.costInc,
     this.taxPercentage,
     this.taxType,
-    required this.gp,
+    required this.gpR,
     required this.rrp,
   });
 }

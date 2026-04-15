@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "rmstock_scanner" "\0"
+            VALUE "CompanyName", "AAAPOS Pty Ltd" "\0"
+            VALUE "FileDescription", "RM Mobile" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "rmstock_scanner" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "rmstock_scanner.exe" "\0"
-            VALUE "ProductName", "rmstock_scanner" "\0"
+            VALUE "InternalName", "rmmobile" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 AAAPOS Pty Ltd. All rights reserved." "\0"
+            VALUE "OriginalFilename", "rmmobile.exe" "\0"
+            VALUE "ProductName", "RM Mobile" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

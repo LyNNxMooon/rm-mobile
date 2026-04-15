@@ -3,17 +3,18 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:languagetool_textfield/languagetool_textfield.dart';
-import 'package:rmstock_scanner/entities/vos/package_component.dart';
-import 'package:rmstock_scanner/entities/vos/pricing_grades.dart';
-import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/screens/package_components_screen.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/price_calculator_dialog.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/pricing_button.dart';
-import 'package:rmstock_scanner/features/stock_lookup/presentation/widgets/pricing_dialog.dart';
+import 'package:rmmobile/entities/vos/package_component.dart';
+import 'package:rmmobile/entities/vos/pricing_grades.dart';
+import 'package:rmmobile/entities/vos/pricing_rules.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/screens/package_components_screen.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/widgets/price_calculator_dialog.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/widgets/pricing_button.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/widgets/pricing_dialog.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/responsive_utils.dart';
+import '../../../../utils/tax_calculation_utils.dart';
 import '../BLoC/stock_lookup_bloc.dart';
 import '../BLoC/stock_lookup_events.dart';
 
@@ -123,7 +124,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     double exVal = 0.0;
 
     if (widget.taxPercentage > 0) {
-      exVal = incVal / (1 + widget.taxPercentage / 100);
+      // Use precise Rational arithmetic, rounds to 4 decimals
+      exVal = TaxCalculationUtils.calculateExclusivePrice(incVal, widget.taxPercentage);
     } else {
       exVal = incVal;
     }
@@ -141,7 +143,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     double incVal = 0.0;
 
     if (widget.taxPercentage > 0) {
-      incVal = exVal * (1 + widget.taxPercentage / 100);
+      // Use precise Rational arithmetic, rounds to 4 decimals
+      incVal = TaxCalculationUtils.calculateInclusivePrice(exVal, widget.taxPercentage);
     } else {
       incVal = exVal;
     }
@@ -168,8 +171,10 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
         _rrpController.text = result.toStringAsFixed(4);
 
         // Manually trigger the Ex Calculation since focus logic won't catch this
+        // Use precise Rational arithmetic, rounds to 4 decimals
         if (widget.taxPercentage > 0) {
-          _exRrpController.text = (result / (1 + widget.taxPercentage / 100)).toStringAsFixed(4);
+          final exVal = TaxCalculationUtils.calculateExclusivePrice(result, widget.taxPercentage);
+          _exRrpController.text = exVal.toStringAsFixed(4);
         } else {
           _exRrpController.text = result.toStringAsFixed(4);
         }

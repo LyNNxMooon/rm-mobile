@@ -1,5 +1,5 @@
-import 'package:rmstock_scanner/features/stock_lookup/domain/entities/sync_status.dart';
-import 'package:rmstock_scanner/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
+import 'package:rmmobile/features/stock_lookup/domain/entities/sync_status.dart';
+import 'package:rmmobile/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
 
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/internet_connection_utils.dart';

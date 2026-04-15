@@ -1,10 +1,10 @@
 
 /*
-import 'package:rmstock_scanner/entities/response/paginated_stock_response.dart';
-import 'package:rmstock_scanner/entities/vos/counted_stock_vo.dart';
-import 'package:rmstock_scanner/entities/vos/filter_criteria.dart';
-import 'package:rmstock_scanner/entities/vos/search_mode.dart';
-//import 'package:rmstock_scanner/local_db/local_db_dao.dart';
+import 'package:rmmobile/entities/response/paginated_stock_response.dart';
+import 'package:rmmobile/entities/vos/counted_stock_vo.dart';
+import 'package:rmmobile/entities/vos/filter_criteria.dart';
+import 'package:rmmobile/entities/vos/search_mode.dart';
+//import 'package:rmmobile/local_db/local_db_dao.dart';
 import '../../entities/vos/stock_vo.dart';
 
 class HiveDAOImpl

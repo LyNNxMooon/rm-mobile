@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../screens/pending_customer_queue_screen.dart';
 import '../BLoC/customer_lookup_bloc.dart';

@@ -1,9 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/entities/batch_commit_entities.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/entities/stocktake_audit_entities.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/use_cases/batch_commit_stocktake.dart';
-import 'package:rmstock_scanner/features/stocktake/domain/use_cases/has_unsynced_stocktakes.dart';
-import 'package:rmstock_scanner/utils/global_var_utils.dart';
+import 'package:rmmobile/features/stocktake/domain/entities/batch_commit_entities.dart';
+import 'package:rmmobile/features/stocktake/domain/entities/stocktake_audit_entities.dart';
+import 'package:rmmobile/features/stocktake/domain/use_cases/batch_commit_stocktake.dart';
+import 'package:rmmobile/features/stocktake/domain/use_cases/has_unsynced_stocktakes.dart';
+import 'package:rmmobile/utils/global_var_utils.dart';
 
 // ============================================================================
 // EVENTS
@@ -19,6 +19,12 @@ class StartBatchCommitEvent extends BatchCommitEvent {}
 class ResolveBatchAuditsEvent extends BatchCommitEvent {
   final bool applyAdjustments;
   ResolveBatchAuditsEvent({required this.applyAdjustments});
+}
+
+/// User selected specific audits to apply (when using checkbox selection)
+class ResolveBatchAuditsWithSelectionEvent extends BatchCommitEvent {
+  final List<AuditWithStockVO> selectedAudits;
+  ResolveBatchAuditsWithSelectionEvent({required this.selectedAudits});
 }
 
 /// Cancel the entire batch commit process
@@ -122,6 +128,7 @@ class BatchCommitBloc extends Bloc<BatchCommitEvent, BatchCommitState> {
   }) : super(BatchCommitInitial()) {
     on<StartBatchCommitEvent>(_onStart);
     on<ResolveBatchAuditsEvent>(_onResolveAudits);
+    on<ResolveBatchAuditsWithSelectionEvent>(_onResolveAuditsWithSelection);
     on<CancelBatchCommitEvent>(_onCancel);
   }
 
@@ -230,6 +237,14 @@ class BatchCommitBloc extends Bloc<BatchCommitEvent, BatchCommitState> {
 
     final auditsToApply = event.applyAdjustments ? _currentBatchAudits : <AuditWithStockVO>[];
     await _commitCurrentBatch(emit, auditsToApply);
+  }
+
+  Future<void> _onResolveAuditsWithSelection(
+    ResolveBatchAuditsWithSelectionEvent event,
+    Emitter<BatchCommitState> emit,
+  ) async {
+    if (_currentProgress == null) return;
+    await _commitCurrentBatch(emit, event.selectedAudits);
   }
 
   Future<void> _commitCurrentBatch(

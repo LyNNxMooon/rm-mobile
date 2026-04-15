@@ -4,16 +4,16 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
-import 'package:rmstock_scanner/constants/colors.dart';
-import 'package:rmstock_scanner/constants/theme_colors.dart';
-//import 'package:rmstock_scanner/constants/global_widgets.dart';
-import 'package:rmstock_scanner/constants/txt_styles.dart';
-import 'package:rmstock_scanner/features/loading_splash/presentation/screens/index_screen.dart';
-import 'package:rmstock_scanner/features/onboarding/onboarding_content.dart';
-import 'package:rmstock_scanner/features/onboarding/presentation/screens/welcome_video_screen.dart';
+import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/theme_colors.dart';
+//import 'package:rmmobile/constants/global_widgets.dart';
+import 'package:rmmobile/constants/txt_styles.dart';
+import 'package:rmmobile/features/loading_splash/presentation/screens/index_screen.dart';
+import 'package:rmmobile/features/onboarding/onboarding_content.dart';
+import 'package:rmmobile/features/onboarding/presentation/screens/welcome_video_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmstock_scanner/features/onboarding/presentation/BLoC/onboarding_bloc.dart';
-import 'package:rmstock_scanner/utils/responsive_utils.dart';
+import 'package:rmmobile/features/onboarding/presentation/BLoC/onboarding_bloc.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class OnboardingGateScreen extends StatefulWidget {

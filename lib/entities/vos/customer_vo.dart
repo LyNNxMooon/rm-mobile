@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rmstock_scanner/entities/vos/customer_address_vo.dart';
+import 'package:rmmobile/entities/vos/customer_address_vo.dart';
 part 'customer_vo.g.dart';
 
 @JsonSerializable()

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:rmstock_scanner/features/loading_splash/domain/repositories/loading_splash_repo.dart';
+import 'package:rmmobile/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 
 import '../../../../local_db/local_db_dao.dart';
 import '../../../../local_db/sqlite/sqlite_constants.dart';

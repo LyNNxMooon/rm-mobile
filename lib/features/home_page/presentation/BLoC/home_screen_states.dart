@@ -1,9 +1,9 @@
-import 'package:rmstock_scanner/entities/response/discover_response.dart';
-import 'package:rmstock_scanner/entities/response/authenticate_staff_response.dart';
-import 'package:rmstock_scanner/entities/response/paircode_response.dart';
-import 'package:rmstock_scanner/entities/response/pair_response.dart';
-import 'package:rmstock_scanner/entities/response/shopfront_response.dart';
-import 'package:rmstock_scanner/entities/vos/network_server_vo.dart';
+import 'package:rmmobile/entities/response/discover_response.dart';
+import 'package:rmmobile/entities/response/authenticate_staff_response.dart';
+import 'package:rmmobile/entities/response/paircode_response.dart';
+import 'package:rmmobile/entities/response/pair_response.dart';
+import 'package:rmmobile/entities/response/shopfront_response.dart';
+import 'package:rmmobile/entities/vos/network_server_vo.dart';
 
 //Network Servers fetching states
 abstract class FetchingNetworkServerStates {}
@@ -247,6 +247,16 @@ class DatabaseExportError extends SettingsState {
 
   DatabaseExportError({
     required this.message,
+    required this.retentionDays,
+    required this.autoBackupEnabled,
+  });
+}
+
+class ForceFullSyncTriggered extends SettingsState {
+  final int retentionDays;
+  final bool autoBackupEnabled;
+
+  ForceFullSyncTriggered({
     required this.retentionDays,
     required this.autoBackupEnabled,
   });

@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rmstock_scanner/entities/vos/pricing_grades.dart';
-import 'package:rmstock_scanner/entities/vos/pricing_rules.dart';
-import 'package:rmstock_scanner/entities/vos/package_component.dart';
-import 'package:rmstock_scanner/entities/vos/promotion_vo.dart';
+import 'package:rmmobile/entities/vos/pricing_grades.dart';
+import 'package:rmmobile/entities/vos/pricing_rules.dart';
+import 'package:rmmobile/entities/vos/package_component.dart';
+import 'package:rmmobile/entities/vos/promotion_vo.dart';
 part 'stock_vo.g.dart';
 
 @JsonSerializable()

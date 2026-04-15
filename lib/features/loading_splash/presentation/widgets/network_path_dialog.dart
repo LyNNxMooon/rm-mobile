@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
-import 'package:rmstock_scanner/features/loading_splash/presentation/BLoC/loading_splash_events.dart';
-import 'package:rmstock_scanner/utils/navigation_extension.dart';
+import 'package:rmmobile/features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
+import 'package:rmmobile/features/loading_splash/presentation/BLoC/loading_splash_events.dart';
+import 'package:rmmobile/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/modern_dialog_styles.dart';
