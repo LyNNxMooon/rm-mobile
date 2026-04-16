@@ -1240,15 +1240,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _isForceFullSyncInProgress;
 
             return InkWell(
-              onTap: isSyncing
-                  ? null
-                  : () {
-                      if (_savedShopfrontId.isEmpty) {
-                        _showError(context, "No shopfront selected.");
-                        return;
-                      }
-                      _showForceFullSyncConfirmation(context);
-                    },
+              onTap: () {
+                if (isSyncing) {
+                  _showError(context, "Sync in progress. Please wait.");
+                  return;
+                }
+                if (_savedShopfrontId.isEmpty) {
+                  _showError(context, "No shopfront selected.");
+                  return;
+                }
+                _showForceFullSyncConfirmation(context);
+              },
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
                 child: Row(
