@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/cupertino.dart';
@@ -156,6 +157,12 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                         state is CustomerListLoaded ? state.isAscending : true;
 
                     if (state is CustomerListLoaded) {
+                      final int totalCount =
+                          state.totalCount > 0 ? state.totalCount - 1 : 0;
+                      final int loadedCount = state.customers
+                          .where((c) => c.customerId != 0)
+                          .length;
+                      final int visibleCount = math.min(loadedCount, totalCount);
                       return Padding(
                         padding: const EdgeInsets.only(
                           left: 15,
@@ -197,7 +204,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              "${state.customers.length} of ${NumberFormat('#,###').format(state.totalCount)}",
+                              "$visibleCount of ${NumberFormat('#,###').format(totalCount)}",
                               style: TextStyle(
                                 color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                                 fontSize: 11,

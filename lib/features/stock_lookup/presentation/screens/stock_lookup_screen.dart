@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:audioplayers/audioplayers.dart';
@@ -313,6 +314,11 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     ? state.isAscending
                     : true;
                 if (state is StockListLoaded) {
+                  final int totalCount =
+                      state.totalCount > 0 ? state.totalCount - 1 : 0;
+                  final int loadedCount =
+                      state.stocks.where((s) => s.stockID != 0).length;
+                  final int visibleCount = math.min(loadedCount, totalCount);
                   return Padding(
                     padding: const EdgeInsets.only(
                       left: 15,
@@ -360,7 +366,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                         ],
                         const SizedBox(width: 16),
                         Text(
-                          "${state.stocks.length} of ${NumberFormat('#,###').format(state.totalCount)}",
+                          "$visibleCount of ${NumberFormat('#,###').format(totalCount)}",
                           style: TextStyle(
                             color: isDark ? Colors.white70 : kGreyColor,
                             fontSize: 11,

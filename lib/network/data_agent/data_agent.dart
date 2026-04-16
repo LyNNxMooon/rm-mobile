@@ -9,6 +9,8 @@ import 'package:rmmobile/entities/response/picture_upload_response.dart';
 import 'package:rmmobile/entities/response/shopfronts_api_response.dart';
 import 'package:rmmobile/entities/response/stock_lookup_api_response.dart';
 import 'package:rmmobile/entities/response/customer_lookup_api_response.dart';
+import 'package:rmmobile/entities/response/customer_metadata_response.dart';
+import 'package:rmmobile/entities/response/customer_ids_response.dart';
 import 'package:rmmobile/entities/response/customer_update_response.dart';
 import 'package:rmmobile/entities/response/customer_create_response.dart';
 import 'package:rmmobile/entities/response/customer_transactions_response.dart';
@@ -17,6 +19,8 @@ import 'package:rmmobile/entities/response/stocktake_backup_response.dart';
 import 'package:rmmobile/entities/response/stocktake_commit_response.dart';
 import 'package:rmmobile/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmmobile/entities/response/stocktake_limit_response.dart';
+import 'package:rmmobile/entities/response/stock_metadata_response.dart';
+import 'package:rmmobile/entities/response/stock_ids_response.dart';
 import 'package:rmmobile/entities/response/stock_update_response.dart';
 import 'package:rmmobile/entities/response/validate_response.dart';
 import 'package:rmmobile/entities/response/security_groups_response.dart';
@@ -54,6 +58,21 @@ abstract class DataAgent {
     Map<String, dynamic> body,
   );
 
+  Future<StockMetadataResponse> fetchStockMetadata(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+  );
+
+  Future<StockIdsResponse> fetchStockIds(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  );
+
   Future<StockUpdateResponse> updateShopfrontStock(
     String ip,
     int port,
@@ -63,6 +82,21 @@ abstract class DataAgent {
   );
 
   Future<CustomerLookupApiResponse> fetchShopfrontCustomers(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  );
+
+  Future<CustomerMetadataResponse> fetchCustomerMetadata(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+  );
+
+  Future<CustomerIdsResponse> fetchCustomerIds(
     String ip,
     int port,
     String shopfrontId,

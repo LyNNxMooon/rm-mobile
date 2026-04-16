@@ -10,6 +10,7 @@ import 'package:rmmobile/entities/vos/filter_criteria.dart';
 import 'package:rmmobile/entities/vos/search_mode.dart';
 import 'package:rmmobile/entities/vos/pricing_rules.dart';
 import 'package:rmmobile/entities/vos/stock_vo.dart';
+import 'package:rmmobile/entities/vos/sync_metadata.dart';
 import 'package:rmmobile/entities/vos/tax_code_vo.dart';
 
 import '../entities/response/paginated_stock_response.dart';
@@ -68,6 +69,12 @@ abstract class LocalDbDAO {
     required String shopfront,
     required List<num> stockIds,
   });
+  Future<SyncMetadata> getStockSyncMetadata(String shopfront);
+  Future<List<int>> getStockIdsInRange({
+    required String shopfront,
+    required int fromId,
+    required int toId,
+  });
   Future<List<Map<String, dynamic>>> getStocktakeHistorySessions({
     required String shopfront,
   });
@@ -111,6 +118,12 @@ abstract class LocalDbDAO {
   );
 
   Future<CustomerVO?> getCustomerById(int customerId, String shopfront);
+  Future<SyncMetadata> getCustomerSyncMetadata(String shopfront);
+  Future<List<int>> getCustomerIdsInRange({
+    required String shopfront,
+    required int fromId,
+    required int toId,
+  });
 
   /// Search for customer by priority: barcode → name → company → phone → email → address
   Future<CustomerSearchResult> getCustomerBySearch(String query, String shopfront);
@@ -338,5 +351,13 @@ abstract class LocalDbDAO {
   Future<void> deleteAllStocktake();
   Future<void> clearCustomersForShop(String shopfront);
   Future<void> clearStocksForShop(String shopfront);
+  Future<void> deleteStocksByIds({
+    required String shopfront,
+    required List<int> stockIds,
+  });
+  Future<void> deleteCustomersByIds({
+    required String shopfront,
+    required List<int> customerIds,
+  });
   Future<int> deleteHistoryOlderThan(DateTime cutoffUtc);
 }
