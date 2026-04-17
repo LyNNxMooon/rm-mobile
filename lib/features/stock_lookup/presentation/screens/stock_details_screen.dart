@@ -16,12 +16,12 @@ import 'package:languagetool_textfield/languagetool_textfield.dart';
 import 'package:rmmobile/entities/vos/stock_vo.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
-import 'package:rmmobile/local_db/local_db_dao.dart';
 import 'package:rmmobile/utils/global_var_utils.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/dialog_size_utils.dart';
@@ -69,7 +69,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
   @override
   void initState() {
-    _loadDescriptionCharLimit();
+    context.read<SettingsBloc>().add(LoadRmVersionEvent());
     
     _descriptionController = LanguageToolController();
     _descriptionController.text = widget.stock.description;
@@ -111,20 +111,13 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     super.initState();
   }
 
-  Future<void> _loadDescriptionCharLimit() async {
-    try {
-      final version = await LocalDbDAO.instance.getRMVersion();
-      if (version != null) {
-        // Parse major version number (e.g., "14.0" -> 14)
-        final majorVersion = int.tryParse(version.split('.').first) ?? 0;
-        if (majorVersion >= 14) {
-          setState(() {
-            _descriptionCharLimit = 100;
-          });
-        }
-      }
-    } catch (e) {
-      logger.e('Error loading RM version: $e');
+  void _applyRmVersion(String? version) {
+    if (version == null || version.isEmpty) return;
+    final majorVersion = int.tryParse(version.split('.').first) ?? 0;
+    if (majorVersion >= 14) {
+      setState(() {
+        _descriptionCharLimit = 100;
+      });
     }
   }
 
@@ -161,17 +154,26 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         logger.i('  Sell Ex: ${widget.stock.sellEx}, Sell Inc: ${widget.stock.sellInc}');
         logger.i('  Cost Ex: ${widget.stock.costEx}, Cost Inc: ${widget.stock.costInc}');
 
+        // Still load tax percentage from the tax code table for edit calculations
+        final sellResult = await TaxCalculationUtils.calculateSellTax(
+          sell: widget.stock.sell,
+          salesTax: widget.stock.salesTax,
+        );
+        final costResult = await TaxCalculationUtils.calculateCostTax(
+          cost: widget.stock.cost,
+          goodsTax: widget.stock.goodsTax,
+        );
+
         if (mounted) {
           setState(() {
             sell = widget.stock.sellInc!;
             exSell = widget.stock.sellEx!;
             cost = widget.stock.costInc!;
             exCost = widget.stock.costEx!;
-            // No tax percentage needed as server provides final values
-            sellTaxPercentage = 0;
-            sellTaxType = 0;
-            costTaxPercentage = 0;
-            costTaxType = 0;
+            sellTaxPercentage = sellResult.percentage;
+            sellTaxType = sellResult.taxType;
+            costTaxPercentage = costResult.percentage;
+            costTaxType = costResult.taxType;
             _taxLoaded = true;
           });
         }
@@ -525,6 +527,20 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     return raw;
   }
 
+  String _formatTaxLabel(String? code, double percentage) {
+    final trimmed = (code ?? '').trim();
+    if (trimmed.isEmpty) return '-';
+
+    if (percentage <= 0) {
+      return trimmed;
+    }
+
+    final displayPct = percentage % 1 == 0
+        ? percentage.toInt().toString()
+        : percentage.toStringAsFixed(2);
+    return '$trimmed ($displayPct%)';
+  }
+
   @override
   void dispose() {
     _descriptionController.dispose();
@@ -584,6 +600,13 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
     return MultiBlocListener(
       listeners: [
+        BlocListener<SettingsBloc, SettingsState>(
+          listener: (context, state) {
+            if (state is RmVersionLoaded && state.version != null) {
+              _applyRmVersion(state.version!);
+            }
+          },
+        ),
         BlocListener<StockImageUploadBloc, StockImageUploadState>(
           listener: (context, state) {
             if (state is StockImageUploaded) {
@@ -800,6 +823,14 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                         .toStringAsFixed(2),
                                   ).toString(),
                             exCost: exCost,
+                            costTaxLabel: _formatTaxLabel(
+                              widget.stock.goodsTax,
+                              costTaxPercentage,
+                            ),
+                            sellTaxLabel: _formatTaxLabel(
+                              widget.stock.salesTax,
+                              sellTaxPercentage,
+                            ),
                             lastSaleDate: _formatLastSaleDate(
                               widget.stock.lastSaleDate,
                             ),
@@ -824,6 +855,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           incCost: cost,
                           exCost: exCost,
                           taxPercentage: sellTaxPercentage,
+                          taxType: sellTaxType,
                           canUpdateSellPrice: !lockSellPrice && !isPackage,
                           pricingRules: widget.stock.pricingRules,
                           isPackage: isPackage,

@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
 import 'package:rmmobile/features/home_page/domain/repositories/home_repo.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/cleanup_history.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/clear_sync_timestamps.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/get_sale_session_counts.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/discover_host.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/authenticate_staff.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/load_dark_mode_enabled.dart';
@@ -15,6 +17,11 @@ import 'package:rmmobile/features/home_page/domain/use_cases/sign_out_staff.dart
 import 'package:rmmobile/features/home_page/domain/use_cases/update_auto_backup_enabled.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_dark_mode_enabled.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_retention_days.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/get_cash_drawer_identifier.dart'
+  as home_use_cases;
+import 'package:rmmobile/features/home_page/domain/use_cases/save_cash_drawer_identifier.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/export_database_file.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/get_rm_version.dart';
 import 'package:rmmobile/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 import 'package:rmmobile/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
 import 'package:rmmobile/features/stock_lookup/domain/use_cases/fetch_thumbnail.dart';
@@ -50,6 +57,7 @@ import '../features/home_page/domain/use_cases/fetch_stock_data.dart';
 import '../features/home_page/domain/use_cases/get_pair_codes.dart';
 import '../features/home_page/models/home_screen_models.dart';
 import '../features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import '../features/home_page/presentation/BLoC/session_counts_cubit.dart';
 import '../features/loading_splash/domain/use_cases/check_path_connection.dart';
 import '../features/loading_splash/domain/use_cases/delete_saved_path.dart';
 import '../features/loading_splash/domain/use_cases/fetch_saved_paths.dart';
@@ -63,10 +71,12 @@ import '../features/stock_lookup/domain/use_cases/get_pending_stock_updates_coun
 import '../features/stock_lookup/domain/use_cases/send_pending_stock_updates.dart';
 import '../features/stock_lookup/domain/use_cases/delete_pending_stock_updates.dart';
 import '../features/stock_lookup/domain/use_cases/update_single_stock.dart';
+import '../features/stock_lookup/domain/use_cases/resolve_package_component_stock.dart';
 import '../features/stock_lookup/domain/use_cases/get_shopfront_name.dart' as stock_lookup;
 import '../features/stock_lookup/domain/use_cases/seed_stock_sync_timestamp.dart';
 import '../features/stock_lookup/models/stock_lookup_models.dart';
 import '../features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
+import '../features/stock_lookup/presentation/BLoC/package_component_bloc.dart';
 import '../features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
 import '../features/customer_lookup/domain/use_cases/fetch_customer_data.dart';
 import '../features/customer_lookup/domain/use_cases/fetch_customer_transactions.dart';
@@ -119,6 +129,8 @@ import '../features/transactions/domain/use_cases/save_sales_setting.dart';
 import '../features/transactions/domain/use_cases/create_account_invoice.dart';
 import '../features/transactions/domain/use_cases/create_sales_order.dart';
 import '../features/transactions/domain/use_cases/create_quote.dart';
+import '../features/transactions/domain/use_cases/get_cash_drawer_identifier.dart'
+  as sales_use_cases;
 import '../features/transactions/domain/use_cases/create_layby.dart';
 import '../features/transactions/models/sales_model.dart';
 import '../features/transactions/presentation/BLoC/sales_bloc.dart';
@@ -152,6 +164,7 @@ Future<void> init() async {
     createSalesOrder: sl(),
     createQuote: sl(),
     createLayby: sl(),
+    getCashDrawerIdentifier: sl(),
     updateCustomerDetails: sl(),
   ));
   sl.registerFactory(() => StocktakeBloc(countAndSaveToLocaldb: sl()));
@@ -190,6 +203,9 @@ Future<void> init() async {
   // );
   sl.registerFactory(() => FetchStockBloc(fetchStockData: sl()));
   sl.registerFactory(() => StockListBloc(getPaginatedStock: sl()));
+  sl.registerFactory(
+    () => PackageComponentBloc(resolvePackageComponentStock: sl()),
+  );
   sl.registerFactory(() => FilterOptionsBloc(getFilterOptions: sl()));
   sl.registerFactory(() => FetchCustomerBloc(fetchCustomerData: sl()));
   sl.registerFactory(() => CustomerListBloc(getPaginatedCustomers: sl()));
@@ -197,7 +213,10 @@ Future<void> init() async {
   sl.registerFactory(() => StaffDetailBloc(getStaffDetail: sl()));
   sl.registerFactory(() => CustomerUpdateBloc(updateCustomerDetails: sl()));
   sl.registerFactory(
-    () => CustomerTransactionsBloc(getCustomerTransactionsLocal: sl()),
+    () => CustomerTransactionsBloc(
+      getCustomerTransactionsLocal: sl(),
+      fetchCustomerTransactions: sl(),
+    ),
   );
   sl.registerFactory(
     () => CustomerCreateBloc(
@@ -236,6 +255,11 @@ Future<void> init() async {
       updateAutoBackupEnabled: sl(),
       runAutoBackupIfDue: sl(),
       deleteAllStocktake: sl(),
+      getCashDrawerIdentifier: sl(),
+      saveCashDrawerIdentifier: sl(),
+      exportDatabaseFile: sl(),
+      getRmVersion: sl(),
+      clearSyncTimestamps: sl(),
     ),
   );
   sl.registerFactory(
@@ -243,6 +267,9 @@ Future<void> init() async {
       loadDarkModeEnabled: sl(),
       updateDarkModeEnabled: sl(),
     ),
+  );
+  sl.registerFactory(
+    () => SessionCountsCubit(getSaleSessionCounts: sl()),
   );
   sl.registerFactory(() => DiscoverHostBloc(discoverHost: sl()));
   sl.registerFactory(() => PairCodeBloc(getPairCodes: sl()));
@@ -321,6 +348,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CreateSalesOrder(sl()));
   sl.registerLazySingleton(() => CreateQuote(sl()));
   sl.registerLazySingleton(() => CreateLayby(sl()));
+  sl.registerLazySingleton(() => sales_use_cases.GetCashDrawerIdentifier(sl()));
   sl.registerLazySingleton(() => CountAndSaveToLocaldb(sl()));
   sl.registerLazySingleton(() => FetchNetworkPcs(sl()));
   // SMB LEGACY - Commented out
@@ -366,6 +394,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SendFinalStocktakeToRm(sl()));
   sl.registerLazySingleton(() => FetchThumbnail(sl()));
   sl.registerLazySingleton(() => FetchFullImage(sl()));
+  sl.registerLazySingleton(() => ResolvePackageComponentStock(sl()));
   sl.registerLazySingleton(() => FetchStocktakeHistorySessions());
   sl.registerLazySingleton(() => FetchStocktakeHistoryItems());
   sl.registerLazySingleton(() => LoadRetentionDays(sl()));
@@ -375,6 +404,12 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateAutoBackupEnabled(sl()));
   sl.registerLazySingleton(() => LoadDarkModeEnabled(sl()));
   sl.registerLazySingleton(() => UpdateDarkModeEnabled(sl()));
+  sl.registerLazySingleton(() => ClearSyncTimestamps(sl()));
+  sl.registerLazySingleton(() => GetSaleSessionCounts(sl()));
+  sl.registerLazySingleton(() => home_use_cases.GetCashDrawerIdentifier(sl()));
+  sl.registerLazySingleton(() => SaveCashDrawerIdentifier(sl()));
+  sl.registerLazySingleton(() => ExportDatabaseFile(sl()));
+  sl.registerLazySingleton(() => GetRmVersion(sl()));
   sl.registerLazySingleton(
     () => RunAutoBackupIfDue(repository: sl(), backupStocktake: sl()),
   );

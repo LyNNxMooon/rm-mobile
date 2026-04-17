@@ -114,6 +114,20 @@ abstract class HomeRepo {
   Future<SavedConnectionInfo> loadSavedConnectionInfo();
 
   Future<SavedStaffCredentials> loadSavedStaffCredentials();
+
+  Future<String?> getCashDrawerIdentifier();
+
+  Future<void> saveCashDrawerIdentifier(String identifier);
+
+  Future<String?> getRmVersion();
+
+  Future<void> checkpointDatabase();
+
+  Future<String> getDatabasePath();
+
+  Future<void> clearSyncTimestamps(String shopfrontId);
+
+  Future<Map<String, int>> getSaleSessionCounts(String shopfront);
 }
 
 class SavedConnectionInfo {

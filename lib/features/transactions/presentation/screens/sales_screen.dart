@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:get_it/get_it.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:alert_info/alert_info.dart';
 import 'package:rational/rational.dart';
@@ -27,7 +26,6 @@ import '../../../../entities/vos/stock_vo.dart';
 import '../../../../utils/navigation_extension.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../local_db/sqlite/sqlite_constants.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../domain/use_cases/save_sale_session.dart';
 import '../BLoC/sales_bloc.dart';
 import '../BLoC/sales_events.dart';
@@ -44,15 +42,13 @@ import '../widgets/not_permitted_dialog.dart';
 import '../widgets/out_of_stock_finalise_dialog.dart';
 import '../widgets/customer_comments_dialog.dart';
 import '../../../customer_lookup/presentation/screens/customer_transactions_screen.dart';
-import '../../../customer_lookup/domain/use_cases/fetch_customer_transactions.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
 import '../../../../utils/internet_connection_utils.dart';
 import '../../../../entities/vos/delivery_info_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 import 'delivery_details_screen.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
-
-final _sl = GetIt.instance;
 
 /// View mode options for cart (tablet only)
 enum CartViewMode {
@@ -713,7 +709,7 @@ class _SalesScreenState extends State<SalesScreen>
   @override
   void initState() {
     super.initState();
-    _salesBloc = _sl<SalesBloc>();
+    _salesBloc = context.read<SalesBloc>();
     _scannerController = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
       detectionTimeoutMs: 500,
@@ -812,6 +808,9 @@ class _SalesScreenState extends State<SalesScreen>
       _surveyController.text = _surveyValue;
       _commentValue = restoreResult.commentValue;
       _committedDeliveryAddress = restoreResult.deliveryAddress;
+      _deliveryInfo = restoreResult.deliveryAddress?.toDeliveryInfo(
+        customerId: restoreResult.customer?.customerId,
+      );
       _emailAuditData = restoreResult.emailAudit;
     });
 
@@ -837,7 +836,7 @@ class _SalesScreenState extends State<SalesScreen>
     if (shopfront.isEmpty) return;
 
     // Get cash drawer from local db
-    final drawer = await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+    final drawer = await _salesBloc.fetchCashDrawerIdentifier(fallback: 'M');
 
     // Get calculated totals with discount distribution (4dp precision)
     final totals = _calculatedTotals;
@@ -906,7 +905,6 @@ class _SalesScreenState extends State<SalesScreen>
     _actionsAnimationController.dispose();
     _scannerController.dispose();
     _audioPlayer.dispose();
-    _salesBloc.close();
     super.dispose();
   }
 
@@ -2838,8 +2836,7 @@ class _SalesScreenState extends State<SalesScreen>
         .map(_buildInvoicePackage)
         .toList();
 
-    final drawer =
-        await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+    final drawer = await _salesBloc.fetchCashDrawerIdentifier(fallback: 'M');
 
     final totals = _calculatedTotals;
 
@@ -2903,8 +2900,7 @@ class _SalesScreenState extends State<SalesScreen>
       ),
     );
 
-    final drawer =
-        await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+    final drawer = await _salesBloc.fetchCashDrawerIdentifier(fallback: 'M');
 
     final totals = _calculatedTotals;
 
@@ -3033,8 +3029,7 @@ class _SalesScreenState extends State<SalesScreen>
         .map(_buildInvoicePackage)
         .toList();
 
-    final drawer =
-        await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+    final drawer = await _salesBloc.fetchCashDrawerIdentifier(fallback: 'M');
 
     final totals = _calculatedTotals;
 
@@ -4162,7 +4157,9 @@ class _SalesScreenState extends State<SalesScreen>
     }
 
     try {
-      await _sl<FetchCustomerTransactions>()(_selectedCustomer!.customerId);
+      await context
+          .read<CustomerTransactionsBloc>()
+          .syncCustomerTransactions(_selectedCustomer!.customerId);
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
       Navigator.push(

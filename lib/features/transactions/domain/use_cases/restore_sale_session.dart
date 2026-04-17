@@ -100,6 +100,7 @@ class RestoreSaleSession {
         stock: stock,
         serialNumber: itemData.serialNumber,
         isEditing: false,
+        isPriceOverridden: itemData.isPriceOverridden,
         taxPercentage: taxPercentage,
         taxType: taxType,
         incPrice: incPrice,

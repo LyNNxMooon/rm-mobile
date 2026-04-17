@@ -302,6 +302,33 @@ class StockLookupModels implements StockLookupRepo {
   }
 
   @override
+  Future<StockVO?> resolvePackageComponentStock({
+    required int stockId,
+    String? barcode,
+  }) async {
+    try {
+      var stock =
+          await LocalDbDAO.instance.getStockByIdAnyShopfront(stockId);
+
+      if (stock == null && barcode != null && barcode.isNotEmpty) {
+        final shopfrontId =
+            (await LocalDbDAO.instance.getShopfrontId() ?? '').trim();
+        final searchResult =
+            await LocalDbDAO.instance.getStockBySearch(barcode, shopfrontId);
+        if (!searchResult.notFound && searchResult.stock != null) {
+          stock = searchResult.stock;
+        } else if (searchResult.duplicates.isNotEmpty) {
+          stock = searchResult.duplicates.first;
+        }
+      }
+
+      return stock;
+    } catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
   Future<String?> fetchAndCacheThumbnailPath({
     required String address,
     required String fullPath,

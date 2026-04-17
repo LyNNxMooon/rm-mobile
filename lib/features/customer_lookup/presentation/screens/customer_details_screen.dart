@@ -11,12 +11,11 @@ import 'package:rmmobile/entities/vos/customer_vo.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
-import 'package:rmmobile/features/customer_lookup/domain/use_cases/fetch_customer_transactions.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/screens/customer_transactions_screen.dart';
 import 'package:rmmobile/utils/enums.dart';
 import 'package:rmmobile/utils/global_var_utils.dart';
 import 'package:rmmobile/utils/internet_connection_utils.dart';
-import 'package:rmmobile/utils/dependency_injection_utils.dart' as di;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import '../../../../constants/colors.dart';
@@ -182,7 +181,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       }
 
       try {
-        await di.sl<FetchCustomerTransactions>()(widget.customer.customerId);
+        await context
+            .read<CustomerTransactionsBloc>()
+            .syncCustomerTransactions(widget.customer.customerId);
         if (!mounted) return;
         Navigator.of(context, rootNavigator: true).pop();
         Navigator.push(

@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:path/path.dart' as p;
+import 'package:sqflite/sqflite.dart';
 
 import 'package:rmmobile/entities/response/discover_response.dart';
 import 'package:rmmobile/entities/response/authenticate_staff_response.dart';
@@ -173,6 +175,27 @@ class HomeScreenModels implements HomeRepo {
         _kLastAutoBackupAtKey,
         timestamp.toUtc().toIso8601String(),
       );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<void> clearSyncTimestamps(String shopfrontId) async {
+    try {
+      final stockSyncKey = 'stock_sync_timestamp_$shopfrontId';
+      final customerSyncKey = 'customer_sync_timestamp_$shopfrontId';
+      await LocalDbDAO.instance.saveAppConfig(stockSyncKey, '');
+      await LocalDbDAO.instance.saveAppConfig(customerSyncKey, '');
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<Map<String, int>> getSaleSessionCounts(String shopfront) async {
+    try {
+      return await LocalDbDAO.instance.getSaleSessionCounts(shopfront);
     } on Exception catch (error) {
       return Future.error(error);
     }
@@ -566,6 +589,51 @@ class HomeScreenModels implements HomeRepo {
     } on Exception catch (error) {
       return Future.error(error);
     }
+  }
+  
+  @override
+  Future<String?> getCashDrawerIdentifier() async {
+    try {
+      return await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier');
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<void> saveCashDrawerIdentifier(String identifier) async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(
+        'cash_drawer_identifier',
+        identifier,
+      );
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<String?> getRmVersion() async {
+    try {
+      return await LocalDbDAO.instance.getRMVersion();
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<void> checkpointDatabase() async {
+    try {
+      await LocalDbDAO.instance.checkpointDatabase();
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<String> getDatabasePath() async {
+    final dbPath = await getDatabasesPath();
+    return p.join(dbPath, 'rm-mobile.db');
   }
 }
 

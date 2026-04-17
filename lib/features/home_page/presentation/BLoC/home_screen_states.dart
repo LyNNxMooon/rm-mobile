@@ -231,10 +231,12 @@ class CashDrawerIdentifierSaved extends SettingsState {
 }
 
 class DatabaseExported extends SettingsState {
+  final String path;
   final int retentionDays;
   final bool autoBackupEnabled;
 
   DatabaseExported({
+    required this.path,
     required this.retentionDays,
     required this.autoBackupEnabled,
   });
@@ -260,6 +262,12 @@ class ForceFullSyncTriggered extends SettingsState {
     required this.retentionDays,
     required this.autoBackupEnabled,
   });
+}
+
+class RmVersionLoaded extends SettingsState {
+  final String? version;
+
+  RmVersionLoaded({required this.version});
 }
 
 abstract class DiscoverHostStates {}

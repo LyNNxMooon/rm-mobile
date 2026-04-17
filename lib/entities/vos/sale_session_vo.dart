@@ -240,6 +240,7 @@ class CartItemData {
   final bool isDescriptionOverridden; // Only store description when overridden at POS
   final bool isPackage; // Whether this is a package item
   final bool isPromotion; // Whether item is on promotion (only for normal items, not packages/components)
+  final bool isPriceOverridden; // Whether price was manually overridden
   final List<CartItemData>? packageComponents; // Component lines for packages
 
   CartItemData({
@@ -263,6 +264,7 @@ class CartItemData {
     this.isDescriptionOverridden = false,
     this.isPackage = false,
     this.isPromotion = false,
+    this.isPriceOverridden = false,
     this.packageComponents,
   });
 
@@ -294,6 +296,7 @@ class CartItemData {
       isDescriptionOverridden: json['is_description_overridden'] == true,
       isPackage: json['is_package'] == true,
       isPromotion: json['is_promotion'] == true,
+      isPriceOverridden: json['is_price_overridden'] == true,
       packageComponents: components,
     );
   }
@@ -319,6 +322,7 @@ class CartItemData {
       'is_static': isStatic,
       'is_description_overridden': isDescriptionOverridden,
       'is_package': isPackage,
+      if (isPriceOverridden) 'is_price_overridden': true,
       if (isPromotion) 'is_promotion': isPromotion,
       if (packageComponents != null && packageComponents!.isNotEmpty)
         'package_components': packageComponents!.map((e) => e._toJsonAsComponent()).toList(),
@@ -621,6 +625,7 @@ class CartItemData {
       isDescriptionOverridden: isOverridden,
       isPackage: stock?.isPackage ?? false,
       isPromotion: stock?.isOnPromotion ?? false,
+      isPriceOverridden: item.isPriceOverridden,
       packageComponents: components,
     );
   }
@@ -757,6 +762,33 @@ class DeliveryAddressData {
       phone: info.phone.isNotEmpty ? info.phone : info.mobile,
       deliveryDate: formattedDeliveryDate,
       comment: info.notes,
+    );
+  }
+
+  DeliveryInfoVO toDeliveryInfo({int? customerId}) {
+    DateTime? parsedDate;
+    if (deliveryDate != null && deliveryDate!.trim().isNotEmpty) {
+      try {
+        parsedDate = DateFormat("dd/MM/yy '@'HH:mm").parse(deliveryDate!);
+      } catch (_) {
+        parsedDate = null;
+      }
+    }
+
+    return DeliveryInfoVO(
+      customerId: customerId,
+      recipientName: attention ?? '',
+      phone: phone ?? '',
+      addr1: addr1 ?? '',
+      addr2: addr2 ?? '',
+      addr3: addr3 ?? '',
+      suburb: suburb ?? '',
+      state: state ?? '',
+      postcode: postcode ?? '',
+      country: country ?? '',
+      deliveryDate: parsedDate,
+      notes: comment ?? '',
+      addressSource: 'other',
     );
   }
 }

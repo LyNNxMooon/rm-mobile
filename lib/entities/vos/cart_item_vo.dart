@@ -15,6 +15,7 @@ class CartItemVO {
   final String? serialNumber;
   final bool isEditing; // Whether item is in expanded edit mode
   final bool isNewlyAdded; // Whether item was just added (for auto-save logic)
+  final bool isPriceOverridden; // Whether price was manually overridden
   
   // Tax calculation fields
   final double taxPercentage; // Tax percentage from tax code table
@@ -36,6 +37,7 @@ class CartItemVO {
     this.serialNumber,
     this.isEditing = false,
     this.isNewlyAdded = false,
+    this.isPriceOverridden = false,
     this.taxPercentage = 0.0,
     this.taxType = 0,
     double? incPrice,
@@ -89,6 +91,7 @@ class CartItemVO {
     String? serialNumber,
     bool? isEditing,
     bool? isNewlyAdded,
+    bool? isPriceOverridden,
     double? taxPercentage,
     int? taxType,
     double? incPrice,
@@ -106,6 +109,7 @@ class CartItemVO {
       serialNumber: serialNumber ?? this.serialNumber,
       isEditing: isEditing ?? this.isEditing,
       isNewlyAdded: isNewlyAdded ?? this.isNewlyAdded,
+      isPriceOverridden: isPriceOverridden ?? this.isPriceOverridden,
       taxPercentage: taxPercentage ?? this.taxPercentage,
       taxType: taxType ?? this.taxType,
       incPrice: incPrice ?? this.incPrice,

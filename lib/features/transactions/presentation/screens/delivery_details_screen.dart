@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:alert_info/alert_info.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/customer_vo.dart';
 import '../../../../utils/responsive_utils.dart';
-import '../../domain/use_cases/search_customer_for_sale.dart';
+import '../BLoC/sales_bloc.dart';
 import '../../../../entities/vos/delivery_info_vo.dart';
 import 'customer_selection_screen.dart';
-
-final _sl = GetIt.instance;
 
 /// Delivery Details Screen for adding delivery information to a sale
 class DeliveryDetailsScreen extends StatefulWidget {
@@ -52,12 +50,9 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
   bool _isSearchingCustomer = false;
   bool _isLoadingCustomer = false;
 
-  late SearchCustomerForSale _searchCustomerUseCase;
-
   @override
   void initState() {
     super.initState();
-    _searchCustomerUseCase = _sl<SearchCustomerForSale>();
     _selectedCustomer = widget.initialCustomer;
 
     // If we have existing delivery info, restore it
@@ -97,6 +92,9 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
     _countryController.text = info.country;
     _notesController.text = info.notes;
     _deliveryDate = info.deliveryDate;
+    _deliveryTime = info.deliveryDate != null
+      ? TimeOfDay.fromDateTime(info.deliveryDate!)
+      : null;
 
     // Restore address source
     if (info.addressSource == "other") {
@@ -236,7 +234,9 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
     setState(() => _isLoadingCustomer = true);
 
     try {
-      final result = await _searchCustomerUseCase.call(query.trim());
+        final result = await context
+          .read<SalesBloc>()
+          .searchCustomer(query.trim());
 
       if (!mounted) return;
       setState(() => _isLoadingCustomer = false);
@@ -1006,13 +1006,21 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              displayFormat,
-              style: TextStyle(
-                color: isDark ? Colors.white : Colors.black87,
-                fontSize: 14,
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const ClampingScrollPhysics(),
+                child: Text(
+                  displayFormat,
+                  softWrap: false,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontSize: 14,
+                  ),
+                ),
               ),
             ),
+            const SizedBox(width: 8),
             Icon(
               Icons.keyboard_arrow_down,
               size: 18,

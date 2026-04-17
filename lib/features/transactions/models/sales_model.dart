@@ -164,4 +164,13 @@ class SalesModel implements SalesRepo {
       return Future.error(error);
     }
   }
+
+  @override
+  Future<String?> getCashDrawerIdentifier() async {
+    try {
+      return await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier');
+    } catch (error) {
+      return Future.error(error);
+    }
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/dependency_injection_utils.dart' as di;
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
@@ -370,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 BlocProvider(
-                  create: (_) => SessionCountsCubit(),
+                  create: (_) => di.sl<SessionCountsCubit>(),
                   child: GlassDrawer(
                     initialChildSize: drawerSizes.initialChildSize,
                     minChildSize: drawerSizes.minChildSize,

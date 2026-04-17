@@ -1,11 +1,8 @@
-import 'dart:io';
 import 'dart:ui';
 import 'dart:async';
 import 'package:alert_info/alert_info.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart' as p;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,7 +21,6 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/modern_dialog_styles.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/responsive_utils.dart';
@@ -112,7 +108,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _cashDrawerIdentifier = value;
     });
-    LocalDbDAO.instance.saveAppConfig(_kCashDrawerIdentifierKey, value);
+    context.read<SettingsBloc>().add(SaveCashDrawerIdentifierEvent(value));
   }
 
   String _getShopfrontLabel() {
@@ -413,7 +409,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return MultiBlocListener(
       listeners: [
         BlocListener<SettingsBloc, SettingsState>(
-          listener: (context, state) {
+          listener: (context, state) async {
             if (state is SettingsStocktakeDeleted) {
               context.read<FetchingStocktakeListBloc>().add(
                 FetchStocktakeListEvent(),
@@ -439,6 +435,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _isForceFullSyncInProgress = false;
               });
               _showError(context, state.message);
+            }
+            if (state is DatabaseExported) {
+              final xFile = XFile(state.path);
+              await Share.shareXFiles(
+                [xFile],
+                subject: 'RM Mobile Database Export',
+                text: 'Exported database file from RM Mobile app',
+              );
+            }
+            if (state is DatabaseExportError) {
+              showTopSnackBar(
+                Overlay.of(context),
+                CustomSnackBar.error(message: state.message),
+              );
             }
             if (state is ForceFullSyncTriggered) {
               setState(() {
@@ -502,9 +512,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Save cash drawer from API response if available
               if (state.response.cashDrawer != null &&
                   state.response.cashDrawer!.isNotEmpty) {
-                LocalDbDAO.instance.saveAppConfig(
-                  _kCashDrawerIdentifierKey,
-                  state.response.cashDrawer!,
+                context.read<SettingsBloc>().add(
+                  SaveCashDrawerIdentifierEvent(state.response.cashDrawer!),
                 );
                 setState(() {
                   _cashDrawerIdentifier = state.response.cashDrawer!;
@@ -874,7 +883,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         const SizedBox(height: 25),
 
-                        _buildSectionTitle("Maintenance"),
+                        _buildSectionTitle("Maintenance", lightOverrideColor: Colors.white),
                         _buildGlassContainer(
                           child: Column(
                             children: [
@@ -887,7 +896,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   if (_blockIfSyncing(context)) return;
                                   _showManualConnectionDialog(context);
                                 },
-                                titleColor: Color.fromARGB(255, 33, 211, 10),
+                                titleColor: Colors.white,
                               ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
@@ -908,6 +917,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     builder: (_) => const RestoreBackupDialog(),
                                   );
                                 },
+                                titleColor: Colors.white,
                               ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
@@ -922,6 +932,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   if (_blockIfSyncing(context)) return;
                                   _showDeleteConfirmation(context);
                                 },
+                                titleColor: Colors.white,
                               ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
@@ -933,6 +944,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 "Share the raw database file for support",
                                 Colors.orange,
                                 () => _exportAndShareDatabase(context),
+                                titleColor: Colors.white,
                               ),
                             ],
                           ),
@@ -998,9 +1010,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, {Color? lightOverrideColor}) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final Color effectiveColor = isDark
+        ? Colors.white70
+        : (lightOverrideColor ?? colors.onHero.withOpacity(0.7));
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, left: 10),
       child: Align(
@@ -1010,7 +1025,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white70 : colors.onHero.withOpacity(0.7),
+            color: effectiveColor,
             letterSpacing: 1.2,
           ),
         ),
@@ -1620,37 +1635,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _exportAndShareDatabase(BuildContext context) async {
-    try {
-      // Force WAL checkpoint to consolidate all data into main db file
-      await LocalDbDAO.instance.checkpointDatabase();
-      
-      final dbPath = await getDatabasesPath();
-      final path = p.join(dbPath, 'rm-mobile.db');
-      final dbFile = File(path);
-
-      if (!await dbFile.exists()) {
-        if (context.mounted) {
-          showTopSnackBar(
-            Overlay.of(context),
-            const CustomSnackBar.error(message: "Database file not found"),
-          );
-        }
-        return;
-      }
-
-      final xFile = XFile(path);
-      await Share.shareXFiles(
-        [xFile],
-        subject: 'RM Mobile Database Export',
-        text: 'Exported database file from RM Mobile app',
-      );
-    } catch (e) {
-      if (context.mounted) {
-        showTopSnackBar(
-          Overlay.of(context),
-          CustomSnackBar.error(message: "Failed to export database: $e"),
-        );
-      }
-    }
+    context.read<SettingsBloc>().add(ExportDatabaseEvent());
   }
 }

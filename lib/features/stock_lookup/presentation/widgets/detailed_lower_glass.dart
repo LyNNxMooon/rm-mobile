@@ -26,6 +26,7 @@ class DetailedLowerGlass extends StatefulWidget {
     required this.incCost,
     required this.exCost,
     required this.taxPercentage,
+    required this.taxType,
     required this.stockId,
     required this.descController,
     required this.custom1Controller,
@@ -46,6 +47,7 @@ class DetailedLowerGlass extends StatefulWidget {
   final double incCost;
   final double exCost;
   final double taxPercentage;
+  final int taxType;
   final num stockId;
   final LanguageToolController descController;
   final TextEditingController custom1Controller;
@@ -72,6 +74,10 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
   final FocusNode _rrpFocus = FocusNode();
   final FocusNode _exRrpFocus = FocusNode();
 
+  _PriceField _lastEdited = _PriceField.none;
+  double? _lastIncValue;
+  double? _lastExValue;
+
   @override
   void initState() {
     _rrpController = TextEditingController(
@@ -80,6 +86,9 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     _exRrpController = TextEditingController(
       text: widget.exSell.toStringAsFixed(4),
     );
+
+    _lastIncValue = widget.sell;
+    _lastExValue = widget.exSell;
 
     _rrpController.addListener(_onIncChanged);
     _exRrpController.addListener(_onExChanged);
@@ -121,6 +130,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     if (text.isEmpty) return;
 
     final double incVal = double.tryParse(text) ?? 0.0;
+    _lastEdited = _PriceField.inc;
+    _lastIncValue = incVal;
     double exVal = 0.0;
 
     if (widget.taxPercentage > 0) {
@@ -130,6 +141,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
       exVal = incVal;
     }
 
+    _lastExValue = exVal;
     _exRrpController.text = exVal.toStringAsFixed(4);
   }
 
@@ -140,6 +152,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     if (text.isEmpty) return;
 
     final double exVal = double.tryParse(text) ?? 0.0;
+    _lastEdited = _PriceField.ex;
+    _lastExValue = exVal;
     double incVal = 0.0;
 
     if (widget.taxPercentage > 0) {
@@ -149,6 +163,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
       incVal = exVal;
     }
 
+    _lastIncValue = incVal;
     _rrpController.text = incVal.toStringAsFixed(4);
   }
 
@@ -168,14 +183,18 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     if (result != null && mounted) {
       setState(() {
         // Set Inclusive Value
+        _lastEdited = _PriceField.inc;
+        _lastIncValue = result;
         _rrpController.text = result.toStringAsFixed(4);
 
         // Manually trigger the Ex Calculation since focus logic won't catch this
         // Use precise Rational arithmetic, rounds to 4 decimals
         if (widget.taxPercentage > 0) {
           final exVal = TaxCalculationUtils.calculateExclusivePrice(result, widget.taxPercentage);
+          _lastExValue = exVal;
           _exRrpController.text = exVal.toStringAsFixed(4);
         } else {
+          _lastExValue = result;
           _exRrpController.text = result.toStringAsFixed(4);
         }
       });
@@ -206,9 +225,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
   }
 
   void _submitPricingUpdate(PricingRules rules) {
-    final sellVal = widget.canUpdateSellPrice
-        ? double.tryParse(_exRrpController.text.trim())
-        : widget.exSell;
+    final sellVal = _resolveEditedSellValue();
 
     if (sellVal == null) {
       return;
@@ -555,11 +572,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
 
                   final updateButton = InkWell(
                     onTap: () {
-                      // If sell price is locked for this staff, keep the original
-                      // sell value and only push description changes.
-                      final sellVal = widget.canUpdateSellPrice
-                          ? double.tryParse(_exRrpController.text.trim())
-                          : widget.exSell;
+                      final sellVal = _resolveEditedSellValue();
 
                       if (sellVal == null) {
                         return;
@@ -708,4 +721,39 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
       ],
     );
   }
+
+  double? _resolveEditedSellValue() {
+    if (!widget.canUpdateSellPrice) {
+      return widget.exSell;
+    }
+
+    final bool expectsInclusive = widget.taxType != 0;
+
+    final double? incValue = _lastIncValue ?? double.tryParse(_rrpController.text.trim());
+    final double? exValue = _lastExValue ?? double.tryParse(_exRrpController.text.trim());
+
+    if (expectsInclusive) {
+      if (incValue != null) return incValue;
+      if (exValue == null) return null;
+      if (widget.taxPercentage <= 0) return exValue;
+      return TaxCalculationUtils.calculateInclusivePrice(
+        exValue,
+        widget.taxPercentage,
+      );
+    }
+
+    if (exValue != null) return exValue;
+    if (incValue == null) return null;
+    if (widget.taxPercentage <= 0) return incValue;
+    return TaxCalculationUtils.calculateExclusivePrice(
+      incValue,
+      widget.taxPercentage,
+    );
+  }
+}
+
+enum _PriceField {
+  none,
+  ex,
+  inc,
 }
