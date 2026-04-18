@@ -125,6 +125,13 @@ class CheckPathConnection {
         AppGlobals.instance.salesCustom = savedSalesCustom;
       }
 
+      // Load shopfront reminder
+      final savedReminder =
+          await LocalDbDAO.instance.getAppConfig(kShopfrontReminderKey);
+      if (savedReminder != null) {
+        AppGlobals.instance.shopfrontReminder = savedReminder;
+      }
+
       final String savedStaffId =
           ((await LocalDbDAO.instance.getAppConfig(kStaffIdKey)) ?? "").trim();
       final String savedStaffNo =

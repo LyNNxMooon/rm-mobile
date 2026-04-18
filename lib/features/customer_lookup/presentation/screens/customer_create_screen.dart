@@ -14,11 +14,17 @@ import 'package:rmmobile/utils/global_var_utils.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import 'package:rmmobile/entities/vos/pending_customer_creation_vo.dart';
 import 'package:rmmobile/utils/ios_done_bar.dart';
+import 'package:rmmobile/entities/vos/customer_vo.dart';
 
 class CustomerCreateScreen extends StatefulWidget {
   final PendingCustomerCreationVO? pendingCreation;
+  final bool returnCreatedCustomer;
 
-  const CustomerCreateScreen({super.key, this.pendingCreation});
+  const CustomerCreateScreen({
+    super.key,
+    this.pendingCreation,
+    this.returnCreatedCustomer = false,
+  });
 
   @override
   State<CustomerCreateScreen> createState() => _CustomerCreateScreenState();
@@ -454,6 +460,55 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
 
   String _abnDigitsOnly() {
     return _abnController.text.replaceAll(RegExp(r'\D'), '');
+  }
+
+  CustomerVO _buildCreatedCustomer(int customerId) {
+    final now = DateTime.now().toIso8601String();
+    return CustomerVO(
+      customerId: customerId,
+      barcode: _barcodeController.text.trim(),
+      grade: _parseInt(_gradeController.text, 0),
+      notes: _notesController.text.trim(),
+      comments: _commentsController.text.trim(),
+      status: _statusValue,
+      custom1: _custom1Controller.text.trim(),
+      custom2: _custom2Controller.text.trim(),
+      inactive: _inactiveValue,
+      dateModified: now,
+      surname: _surnameController.text.trim(),
+      givenNames: _givenNamesController.text.trim(),
+      position: _positionController.text.trim(),
+      company: _companyController.text.trim(),
+      salutation: _salutationController.text.trim(),
+      account: _accountValue,
+      openedId: _openedStaffId ?? 0,
+      ownerId: _ownerStaffId ?? 0,
+      limit: double.tryParse(_limitController.text.trim()) ?? 0,
+      days: _parseInt(_daysController.text, 0),
+      fromEOM: _fromEomValue,
+      addr1: _addr1Controller.text.trim(),
+      addr2: _addr2Controller.text.trim(),
+      addr3: _addr3Controller.text.trim(),
+      suburb: _suburbController.text.trim(),
+      state: _stateController.text.trim(),
+      postcode: _postcodeController.text.trim(),
+      country: _countryController.text.trim(),
+      phone: _phoneController.text.trim(),
+      fax: _faxController.text.trim(),
+      mobile: _mobileController.text.trim(),
+      email: _emailController.text.trim(),
+      abn: _abnDigitsOnly(),
+      overseas: _overseasValue,
+      external: false,
+      dateCreated: now,
+      isBarcodePrinted: false,
+      documentDeliveryType:
+          _parseInt(_documentDeliveryTypeController.text, 0),
+      groupEmailExclusionId: 0,
+      defaultDeliveryAddress:
+          _parseInt(_defaultDeliveryAddressController.text, 1),
+      addresses: const [],
+    );
   }
 
   void _setOverseasValue(bool value) {
@@ -1121,7 +1176,22 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               context.read<FetchCustomerBloc>().add(
                 StartCustomerSyncEvent(ipAddress: ""),
               );
-              Navigator.of(context).pop(true);
+              final isPending =
+                  state.message.toLowerCase().contains('saved locally');
+              CustomerVO? createdCustomer;
+              if (widget.returnCreatedCustomer && !isPending) {
+                final customerId =
+                    state.customerIds.isNotEmpty ? state.customerIds.first : 0;
+                if (customerId > 0) {
+                  createdCustomer = _buildCreatedCustomer(customerId);
+                }
+              }
+
+              if (widget.returnCreatedCustomer) {
+                Navigator.of(context).pop(createdCustomer);
+              } else {
+                Navigator.of(context).pop(true);
+              }
             } else if (state is CustomerCreateError) {
               setState(() {
                 _isSubmitting = false;

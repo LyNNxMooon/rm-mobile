@@ -501,17 +501,17 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
         ? Colors.grey.shade500 
         : kPrimaryColor;
     final Color effectiveSubtitleColor = isComingSoon 
-        ? Colors.grey.shade400 
-        : colors.onSurfaceMuted;
+      ? Colors.grey.shade400 
+      : (colors.isDark ? colors.onSurfaceMuted : kThirdColor.withOpacity(0.78));
     final Color effectiveIconColor = isComingSoon 
         ? Colors.grey.shade500 
         : kPrimaryColor;
     final Color? bgColor = isComingSoon
       ? (colors.isDark ? Colors.white10 : Colors.grey.shade200)
-      : null;
+      : (colors.isDark ? null : Colors.white);
     final LinearGradient? bgGradient = isComingSoon
       ? null
-      : (colors.isDark ? colors.glassGradient : colors.glassGradient);
+      : (colors.isDark ? colors.glassGradient : null);
 
     return AnimationConfiguration.staggeredGrid(
       position: index,

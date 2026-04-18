@@ -55,6 +55,8 @@ class StockVO {
   final String? goodsTax;
   @JsonKey(name: 'sales_tax')
   final String? salesTax;
+  @JsonKey(name: 'sales_prompt')
+  final String? salesPrompt;
   @JsonKey(name: 'date_modified')
   final String dateModified;
   final bool freight;
@@ -160,6 +162,7 @@ class StockVO {
       ),
       "goods_tax": _asNullableString(item["goods_tax"]),
       "sales_tax": _asNullableString(item["sales_tax"]),
+      "sales_prompt": _asNullableString(item["sales_prompt"]),
       "date_modified": _asString(item["date_modified"]),
       "freight": _asBool(item["freight"]),
       "tare_weight": _asNum(item["tare_weight"]),
@@ -216,6 +219,7 @@ class StockVO {
     required this.imageUrl,
     required this.goodsTax,
     required this.salesTax,
+    this.salesPrompt,
     required this.dateModified,
     required this.freight,
     required this.tareWeight,

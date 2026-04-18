@@ -196,6 +196,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
           cartItems: List.from(_cartItems),
           selectedCustomer: _selectedCustomer,
           lowStockWarning: warning,
+          salesPrompt: added.salesPrompt,
         ));
         return;
       }
@@ -277,6 +278,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
       lowStockWarning: warning,
+      salesPrompt: added.salesPrompt,
     ));
   }
 
@@ -330,6 +332,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
       lowStockWarning: warning,
+      salesPrompt: result.salesPrompt,
     ));
   }
 
@@ -351,6 +354,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 
     double totalQty = qty;
     bool negativeSellPrice = false;
+    String? salesPrompt;
     
     if (existingIndex >= 0) {
       // Update quantity of existing item
@@ -459,9 +463,18 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       );
       
       _cartItems.insert(0, newItem);
+
+      final prompt = stock.salesPrompt?.trim() ?? '';
+      if (prompt.isNotEmpty) {
+        salesPrompt = prompt;
+      }
     }
     
-    return _AddToCartResult(totalQty: totalQty, negativeSellPrice: negativeSellPrice);
+    return _AddToCartResult(
+      totalQty: totalQty,
+      negativeSellPrice: negativeSellPrice,
+      salesPrompt: salesPrompt,
+    );
   }
 
   void _onUpdateCartItemQty(
@@ -753,6 +766,11 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 class _AddToCartResult {
   final double totalQty;
   final bool negativeSellPrice;
+  final String? salesPrompt;
 
-  _AddToCartResult({required this.totalQty, required this.negativeSellPrice});
+  _AddToCartResult({
+    required this.totalQty,
+    required this.negativeSellPrice,
+    this.salesPrompt,
+  });
 }

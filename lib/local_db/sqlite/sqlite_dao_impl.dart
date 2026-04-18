@@ -250,6 +250,12 @@ class SQLiteDAOImpl extends LocalDbDAO {
         column: 'promotion',
         definition: 'TEXT',
       );
+      await _addColumnIfMissing(
+        db: _database!,
+        table: 'Stocks',
+        column: 'sales_prompt',
+        definition: 'TEXT',
+      );
       logger.d('Successfully initialized SQLite local database!');
     } catch (error) {
       logger.e('Error initializing for SQLite local database: $error');

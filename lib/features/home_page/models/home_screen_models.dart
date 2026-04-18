@@ -333,6 +333,15 @@ class HomeScreenModels implements HomeRepo {
           AppGlobals.instance.salesCustom = response.salesCustom;
         }
 
+        // Save shopfront reminder
+        if (response.reminder != null) {
+          await LocalDbDAO.instance.saveAppConfig(
+            kShopfrontReminderKey,
+            response.reminder!,
+          );
+          AppGlobals.instance.shopfrontReminder = response.reminder;
+        }
+
         // Save tax codes
         if (response.taxCodes != null && response.taxCodes!.isNotEmpty) {
           await LocalDbDAO.instance.saveTaxCodes(

@@ -31,6 +31,7 @@ const stocksTableCreationQuery = '''
     imageUrl TEXT,
     goods_tax TEXT,
     sales_tax TEXT,
+    sales_prompt TEXT,
     date_modified TEXT,
     freight INTEGER,
     tare_weight REAL,
@@ -131,6 +132,7 @@ const String kApiKey = "api_key";
 const String kHostNameKey = "host_name";
 const String kShopfrontIdKey = "shopfront_id";
 const String kRMVersionKey = "rm_version";
+const String kShopfrontReminderKey = "shopfront_reminder";
 const String kCustomerMaxIdPrefix = "customer_max_id_";
 const String kShopfrontNameKey = "shopfront_name";
 const String kDeviceIdKey = "device_id";

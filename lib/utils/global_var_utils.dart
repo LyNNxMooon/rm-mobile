@@ -9,6 +9,7 @@ class AppGlobals {
   String? currentPath;
   String? shopfront;
   String? salesCustom;
+  String? shopfrontReminder;
   String? _hostName;
   final ValueNotifier<String?> hostNameNotifier = ValueNotifier<String?>(null);
   Map<String, String> pairedShopfrontIdsByName = {};

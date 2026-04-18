@@ -22,6 +22,7 @@ class SalesTopHeader extends StatefulWidget {
   final VoidCallback? onViewCustomerTransactions;
   final VoidCallback? onCustomerFieldFocus;
   final VoidCallback? onGoToCustomerLookup;
+  final VoidCallback? onCreateCustomer;
 
   const SalesTopHeader({
     super.key,
@@ -40,6 +41,7 @@ class SalesTopHeader extends StatefulWidget {
     this.onViewModeChanged,
     this.onCustomerFieldFocus,
     this.onGoToCustomerLookup,
+    this.onCreateCustomer,
   });
 
   @override
@@ -340,6 +342,18 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
                 padding: const EdgeInsets.only(right: 12),
                 child: Icon(
                   Icons.double_arrow_rounded,
+                  size: 22,
+                  color: kPrimaryColor,
+                ),
+              ),
+            ),
+          if (!widget.hasCustomer && widget.onCreateCustomer != null)
+            GestureDetector(
+              onTap: widget.onCreateCustomer,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Icon(
+                  Icons.add_circle,
                   size: 22,
                   color: kPrimaryColor,
                 ),

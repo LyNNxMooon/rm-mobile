@@ -42,6 +42,7 @@ import '../widgets/not_permitted_dialog.dart';
 import '../widgets/out_of_stock_finalise_dialog.dart';
 import '../widgets/customer_comments_dialog.dart';
 import '../../../customer_lookup/presentation/screens/customer_transactions_screen.dart';
+import '../../../customer_lookup/presentation/screens/customer_create_screen.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
 import '../../../../utils/internet_connection_utils.dart';
 import '../../../../entities/vos/delivery_info_vo.dart';
@@ -167,6 +168,9 @@ class _SalesScreenState extends State<SalesScreen>
   bool _isRestoringSession = false;
   bool _isFinaliseProcessing = false;
   bool _isNegativeSellPriceDialogOpen = false;
+  bool _reminderShown = false;
+  bool _salesPromptDialogOpen = false;
+  DateTime? _lastSessionUpdatedAt;
 
   late AnimationController _actionsAnimationController;
   late Animation<double> _actionsAnimation;
@@ -737,6 +741,86 @@ class _SalesScreenState extends State<SalesScreen>
     });
   }
 
+  Future<void> _maybeShowShopfrontReminder() async {
+    if (_reminderShown || !mounted) return;
+    final reminder = AppGlobals.instance.shopfrontReminder?.trim() ?? '';
+    if (reminder.isEmpty) return;
+
+    _reminderShown = true;
+    final colors = context.appColors;
+    final isDark = colors.isDark;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark ? colors.surface : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Text(
+            "Reminder",
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            reminder,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showSalesPromptDialog(
+    String message,
+    AppThemeColors colors,
+    bool isDark,
+  ) async {
+    if (_salesPromptDialogOpen || !mounted) return;
+    _salesPromptDialogOpen = true;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark ? colors.surface : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Text(
+            "Sales Prompt",
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            message,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+    _salesPromptDialogOpen = false;
+  }
+
   Future<void> _checkSavedSessions() async {
     if (_sessionsChecked) return;
     _sessionsChecked = true;
@@ -749,7 +833,10 @@ class _SalesScreenState extends State<SalesScreen>
       sessionType: widget.title,
     );
 
-    if (sessions.isEmpty || !mounted) return;
+    if (sessions.isEmpty || !mounted) {
+      await _maybeShowShopfrontReminder();
+      return;
+    }
 
     final result = await SaleSessionPickerDialog.show(
       context: context,
@@ -768,11 +855,14 @@ class _SalesScreenState extends State<SalesScreen>
       // Starting new sale - optionally clear old sessions
       // For now, we keep them so user can continue later
     }
+
+    await _maybeShowShopfrontReminder();
   }
 
   Future<void> _restoreSession(SaleSessionVO session) async {
     _isRestoringSession = true;
     _currentSessionId = session.id;
+    _lastSessionUpdatedAt = session.updatedAt;
 
     final shopfront = AppGlobals.instance.shopfront ?? '';
     final restoreResult = await _salesBloc.restoreSaleSession(
@@ -828,6 +918,7 @@ class _SalesScreenState extends State<SalesScreen>
       if (_currentSessionId != null) {
         await _salesBloc.deleteSaleSession(sessionId: _currentSessionId!);
         _currentSessionId = null;
+        _lastSessionUpdatedAt = null;
       }
       return;
     }
@@ -870,6 +961,7 @@ class _SalesScreenState extends State<SalesScreen>
     );
 
     _currentSessionId = await _salesBloc.saveSaleSession(params);
+    _lastSessionUpdatedAt = DateTime.now();
   }
 
   Future<void> _deleteCurrentSession() async {
@@ -1130,6 +1222,11 @@ class _SalesScreenState extends State<SalesScreen>
               colors,
               isDark,
             );
+
+            final salesPrompt = state.salesPrompt?.trim() ?? '';
+            if (salesPrompt.isNotEmpty) {
+              await _showSalesPromptDialog(salesPrompt, colors, isDark);
+            }
           }
           
           // Handle low stock warning (show after CartUpdated or CartItemSaved)
@@ -1272,6 +1369,9 @@ class _SalesScreenState extends State<SalesScreen>
                                 ),
                               );
                             },
+                            onCreateCustomer: _selectedCustomer == null
+                                ? _openCustomerCreate
+                                : null,
                           ),
                           // Scanner Area
                           if (_showScanner)
@@ -2858,7 +2958,8 @@ class _SalesScreenState extends State<SalesScreen>
     final payload = <String, dynamic>{
       'customerId': customerId,
       'staffId': staffId,
-      'transactionDate': DateTime.now().toIso8601String(),
+        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
       'drawer': drawer,
@@ -2920,7 +3021,8 @@ class _SalesScreenState extends State<SalesScreen>
       'transactionType': 'SO',
       'customerId': customerId,
       'staffId': staffId,
-      'transactionDate': DateTime.now().toIso8601String(),
+        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
       'drawer': drawer,
@@ -2978,7 +3080,8 @@ class _SalesScreenState extends State<SalesScreen>
       'transactionType': 'QU',
       'customerId': customerId,
       'staffId': staffId,
-      'transactionDate': DateTime.now().toIso8601String(),
+        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
       'subtotal': _subtotal,
@@ -3047,7 +3150,8 @@ class _SalesScreenState extends State<SalesScreen>
     final payload = <String, dynamic>{
       'customerId': customerId,
       'staffId': staffId,
-      'transactionDate': DateTime.now().toIso8601String(),
+        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
       'drawer': drawer,
@@ -3310,6 +3414,7 @@ class _SalesScreenState extends State<SalesScreen>
       _surveyValue = '';
       _surveyController.clear();
       _commentValue = '';
+      _lastSessionUpdatedAt = null;
     });
 
     _runPostSaleDeltaSync();
@@ -4181,6 +4286,37 @@ class _SalesScreenState extends State<SalesScreen>
         ),
       );
     }
+  }
+
+  Future<void> _openCustomerCreate() async {
+    final createdCustomer = await Navigator.of(context).push<CustomerVO>(
+      MaterialPageRoute(
+        builder: (_) => const CustomerCreateScreen(
+          returnCreatedCustomer: true,
+        ),
+      ),
+    );
+
+    if (!mounted || createdCustomer == null) return;
+
+    if (widget.title == "Account Sales" && !createdCustomer.account) {
+      AlertInfo.show(
+        context: context,
+        text: "This customer is not an account customer",
+        typeInfo: TypeInfo.error,
+        backgroundColor: context.appColors.isDark
+            ? context.appColors.surface
+            : kSecondaryColor,
+        iconColor: kErrorColor,
+        textColor: kErrorColor,
+        position: MessagePosition.top,
+        padding: 70,
+      );
+      return;
+    }
+
+    _salesBloc.add(SelectCustomer(customer: createdCustomer));
+    setState(() => _selectedCustomer = createdCustomer);
   }
 
   void _showSalesSettingsDialog(BuildContext context) {
