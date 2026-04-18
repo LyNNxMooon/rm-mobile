@@ -279,25 +279,22 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
             : BorderSide.none,
       ),
       backgroundColor: surface,
-      child: AnimatedPadding(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: media.size.height * 0.88),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: dialogWidth,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Sell Price (RRP) Calculator",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: kPrimaryColor,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: media.size.height * 0.88 - media.viewInsets.bottom,
+          maxWidth: dialogWidth,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Sell Price (RRP) Calculator",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: kPrimaryColor,
                     ),
                   ),
                   const Divider(),
@@ -455,9 +452,7 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
               ),
             ),
           ),
-        ),
-      ),
-    );
+        );
   }
 
   Widget _numBtn(String label) {

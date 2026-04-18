@@ -340,6 +340,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                                 keyboardType: const TextInputType.numberWithOptions(
                                   decimal: true,
                                 ),
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: onGlass,
@@ -373,6 +375,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                                   keyboardType: const TextInputType.numberWithOptions(
                                     decimal: true,
                                   ),
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: onGlass,
@@ -438,6 +442,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                                 controller: _rrpController,
                                 focusNode: _rrpFocus,
                                 scrollPhysics: const ClampingScrollPhysics(),
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: onGlass,
@@ -471,6 +477,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                                   controller: _rrpController,
                                   focusNode: _rrpFocus,
                                   scrollPhysics: const ClampingScrollPhysics(),
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: onGlass,

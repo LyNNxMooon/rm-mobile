@@ -295,6 +295,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                               child: TextField(
                                 controller: widget.custom1Controller,
                                 scrollPhysics: const ClampingScrollPhysics(),
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: onGlass,
@@ -348,6 +350,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                                 child: TextField(
                                   controller: widget.custom1Controller,
                                   scrollPhysics: const ClampingScrollPhysics(),
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: onGlass,
@@ -437,6 +441,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                               child: TextField(
                                 controller: widget.custom2Controller,
                                 scrollPhysics: const ClampingScrollPhysics(),
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: onGlass,
@@ -490,6 +496,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                                 child: TextField(
                                   controller: widget.custom2Controller,
                                   scrollPhysics: const ClampingScrollPhysics(),
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: onGlass,

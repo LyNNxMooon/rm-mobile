@@ -20,6 +20,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/staff_barcode_lookup_bloc.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../utils/ios_done_bar.dart';
 
 class _AddressControllers {
   _AddressControllers({
@@ -262,6 +263,22 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   late Map<int, _AddressControllers> _secondaryAddressControllers;
 
+  // Focus nodes for numeric/phone fields (iOS Done Bar)
+  final FocusNode _phoneFocusNode = FocusNode();
+  final FocusNode _mobileFocusNode = FocusNode();
+  final FocusNode _faxFocusNode = FocusNode();
+  final FocusNode _postcodeFocusNode = FocusNode();
+  final FocusNode _limitFocusNode = FocusNode();
+  final FocusNode _daysFocusNode = FocusNode();
+  final FocusNode _abnFocusNode = FocusNode();
+  // Focus nodes for secondary address fields
+  final FocusNode _addr2PhoneFocusNode = FocusNode();
+  final FocusNode _addr2MobileFocusNode = FocusNode();
+  final FocusNode _addr2PostcodeFocusNode = FocusNode();
+  final FocusNode _addr3PhoneFocusNode = FocusNode();
+  final FocusNode _addr3MobileFocusNode = FocusNode();
+  final FocusNode _addr3PostcodeFocusNode = FocusNode();
+
   @override
   void initState() {
     _initControllers();
@@ -318,6 +335,22 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     for (final address in _secondaryAddressControllers.values) {
       address.dispose();
     }
+
+    // Dispose focus nodes for numeric/phone fields
+    _phoneFocusNode.dispose();
+    _mobileFocusNode.dispose();
+    _faxFocusNode.dispose();
+    _postcodeFocusNode.dispose();
+    _limitFocusNode.dispose();
+    _daysFocusNode.dispose();
+    _abnFocusNode.dispose();
+    // Dispose secondary address focus nodes
+    _addr2PhoneFocusNode.dispose();
+    _addr2MobileFocusNode.dispose();
+    _addr2PostcodeFocusNode.dispose();
+    _addr3PhoneFocusNode.dispose();
+    _addr3MobileFocusNode.dispose();
+    _addr3PostcodeFocusNode.dispose();
 
     super.dispose();
   }
@@ -794,6 +827,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     bool isValid = false,
     bool isLoading = false,
     List<TextInputFormatter>? inputFormatters,
+    FocusNode? focusNode,
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
@@ -822,9 +856,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 flex: 4,
                 child: TextField(
                   controller: controller,
+                  focusNode: focusNode,
                   keyboardType: keyboardType,
                   maxLines: maxLines,
                   scrollPhysics: const ClampingScrollPhysics(),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                   style: TextStyle(
                     fontSize: baseSize,
                     color: isDark ? colors.onSurface : Colors.black87,
@@ -869,6 +906,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     String label,
     TextEditingController controller, {
     TextInputType? keyboardType,
+    FocusNode? focusNode,
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
@@ -898,7 +936,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             flex: 4,
             child: TextField(
               controller: controller,
+              focusNode: focusNode,
               keyboardType: keyboardType,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusScope.of(context).unfocus(),
               style: TextStyle(
                 fontSize: baseSize,
                 color: isDark ? colors.onSurface : Colors.black87,
@@ -1027,6 +1068,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           "Postcode",
           address.postcode,
           keyboardType: TextInputType.number,
+          focusNode: addressNumber == 2 ? _addr2PostcodeFocusNode : _addr3PostcodeFocusNode,
         ),
       );
       widgets.add(_buildEditRow("Country", address.country));
@@ -1035,6 +1077,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           "Phone",
           address.phone,
           keyboardType: TextInputType.phone,
+          focusNode: addressNumber == 2 ? _addr2PhoneFocusNode : _addr3PhoneFocusNode,
         ),
       );
       widgets.add(
@@ -1042,6 +1085,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           "Mobile",
           address.mobile,
           keyboardType: TextInputType.phone,
+          focusNode: addressNumber == 2 ? _addr2MobileFocusNode : _addr3MobileFocusNode,
         ),
       );
       widgets.add(
@@ -1716,6 +1760,38 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         ),
                       ),
                     ),
+                    IosDoneBarMulti(
+                      focusNodes: [
+                        _phoneFocusNode,
+                        _mobileFocusNode,
+                        _faxFocusNode,
+                        _postcodeFocusNode,
+                        _limitFocusNode,
+                        _daysFocusNode,
+                        _abnFocusNode,
+                        _addr2PhoneFocusNode,
+                        _addr2MobileFocusNode,
+                        _addr2PostcodeFocusNode,
+                        _addr3PhoneFocusNode,
+                        _addr3MobileFocusNode,
+                        _addr3PostcodeFocusNode,
+                      ],
+                      onDone: () {
+                        _phoneFocusNode.unfocus();
+                        _mobileFocusNode.unfocus();
+                        _faxFocusNode.unfocus();
+                        _postcodeFocusNode.unfocus();
+                        _limitFocusNode.unfocus();
+                        _daysFocusNode.unfocus();
+                        _abnFocusNode.unfocus();
+                        _addr2PhoneFocusNode.unfocus();
+                        _addr2MobileFocusNode.unfocus();
+                        _addr2PostcodeFocusNode.unfocus();
+                        _addr3PhoneFocusNode.unfocus();
+                        _addr3MobileFocusNode.unfocus();
+                        _addr3PostcodeFocusNode.unfocus();
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -2101,12 +2177,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 "Phone",
                 _phoneController,
                 keyboardType: TextInputType.phone,
+                focusNode: _phoneFocusNode,
               ),
               _buildEditIconRow(
                 Icons.phone_iphone_outlined,
                 "Mobile",
                 _mobileController,
                 keyboardType: TextInputType.phone,
+                focusNode: _mobileFocusNode,
               ),
               _buildEditIconRow(
                 Icons.email_outlined,
@@ -2119,6 +2197,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 "Fax",
                 _faxController,
                 keyboardType: TextInputType.phone,
+                focusNode: _faxFocusNode,
               ),
             ]
           : [
@@ -2183,6 +2262,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 "Postcode",
                 _postcodeController,
                 keyboardType: TextInputType.number,
+                focusNode: _postcodeFocusNode,
               ),
               _buildEditRow("Country", _countryController),
               const SizedBox(height: 8),
@@ -2308,11 +2388,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             "Credit Limit",
             _limitController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            focusNode: _limitFocusNode,
           ),
           _buildEditRow(
             "Payment Days",
             _daysController,
             keyboardType: TextInputType.number,
+            focusNode: _daysFocusNode,
           ),
           _buildSwitchRow(
             "From EOM",
@@ -2618,6 +2700,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   _abnController,
                   keyboardType: TextInputType.number,
                   inputFormatters: [_AbnInputFormatter()],
+                  focusNode: _abnFocusNode,
                 ),
               _buildDropdownRow<int>(
                 label: "Default Delivery",

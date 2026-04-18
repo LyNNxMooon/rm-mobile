@@ -171,6 +171,17 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   final FocusNode _daysFocusNode = FocusNode();
   final FocusNode _limitFocusNode = FocusNode();
   final FocusNode _abnFocusNode = FocusNode();
+  // Focus nodes for phone fields (iOS Done Bar)
+  final FocusNode _phoneFocusNode = FocusNode();
+  final FocusNode _mobileFocusNode = FocusNode();
+  final FocusNode _faxFocusNode = FocusNode();
+  // Focus nodes for secondary address fields
+  final FocusNode _addr2PhoneFocusNode = FocusNode();
+  final FocusNode _addr2MobileFocusNode = FocusNode();
+  final FocusNode _addr2PostcodeFocusNode = FocusNode();
+  final FocusNode _addr3PhoneFocusNode = FocusNode();
+  final FocusNode _addr3MobileFocusNode = FocusNode();
+  final FocusNode _addr3PostcodeFocusNode = FocusNode();
 
   late Map<int, _AddressControllers> _secondaryAddressControllers;
 
@@ -437,6 +448,17 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     _daysFocusNode.dispose();
     _limitFocusNode.dispose();
     _abnFocusNode.dispose();
+    // Dispose focus nodes for phone fields
+    _phoneFocusNode.dispose();
+    _mobileFocusNode.dispose();
+    _faxFocusNode.dispose();
+    // Dispose secondary address focus nodes
+    _addr2PhoneFocusNode.dispose();
+    _addr2MobileFocusNode.dispose();
+    _addr2PostcodeFocusNode.dispose();
+    _addr3PhoneFocusNode.dispose();
+    _addr3MobileFocusNode.dispose();
+    _addr3PostcodeFocusNode.dispose();
 
     for (final address in _secondaryAddressControllers.values) {
       address.dispose();
@@ -862,6 +884,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               keyboardType: keyboardType,
               maxLines: maxLines,
               scrollPhysics: const ClampingScrollPhysics(),
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
               style: TextStyle(
                 fontSize: baseSize,
                 color: isDark ? colors.onSurface : Colors.black87,
@@ -1003,6 +1027,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                 child: TextFormField(
                   controller: controller,
                   keyboardType: TextInputType.text,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
                   style: TextStyle(
                     fontSize: baseSize,
                     color: isDark ? colors.onSurface : Colors.black87,
@@ -1076,6 +1102,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
           "Postcode",
           address.postcode,
           keyboardType: TextInputType.number,
+          focusNode: addressNumber == 2 ? _addr2PostcodeFocusNode : _addr3PostcodeFocusNode,
         ),
       );
       widgets.add(_buildEditRow("Country", address.country));
@@ -1084,6 +1111,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
           "Phone",
           address.phone,
           keyboardType: TextInputType.phone,
+          focusNode: addressNumber == 2 ? _addr2PhoneFocusNode : _addr3PhoneFocusNode,
         ),
       );
       widgets.add(
@@ -1091,6 +1119,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
           "Mobile",
           address.mobile,
           keyboardType: TextInputType.phone,
+          focusNode: addressNumber == 2 ? _addr2MobileFocusNode : _addr3MobileFocusNode,
         ),
       );
       widgets.add(
@@ -1423,16 +1452,19 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                   "Phone",
                                   _phoneController,
                                   keyboardType: TextInputType.phone,
+                                  focusNode: _phoneFocusNode,
                                 ),
                                 _buildEditRow(
                                   "Fax",
                                   _faxController,
                                   keyboardType: TextInputType.phone,
+                                  focusNode: _faxFocusNode,
                                 ),
                                 _buildEditRow(
                                   "Mobile",
                                   _mobileController,
                                   keyboardType: TextInputType.phone,
+                                  focusNode: _mobileFocusNode,
                                 ),
                                 _buildEditRow(
                                   "Email",
@@ -1650,12 +1682,30 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                       _daysFocusNode,
                       _limitFocusNode,
                       _abnFocusNode,
+                      _phoneFocusNode,
+                      _mobileFocusNode,
+                      _faxFocusNode,
+                      _addr2PhoneFocusNode,
+                      _addr2MobileFocusNode,
+                      _addr2PostcodeFocusNode,
+                      _addr3PhoneFocusNode,
+                      _addr3MobileFocusNode,
+                      _addr3PostcodeFocusNode,
                     ],
                     onDone: () {
                       _postcodeFocusNode.unfocus();
                       _daysFocusNode.unfocus();
                       _limitFocusNode.unfocus();
                       _abnFocusNode.unfocus();
+                      _phoneFocusNode.unfocus();
+                      _mobileFocusNode.unfocus();
+                      _faxFocusNode.unfocus();
+                      _addr2PhoneFocusNode.unfocus();
+                      _addr2MobileFocusNode.unfocus();
+                      _addr2PostcodeFocusNode.unfocus();
+                      _addr3PhoneFocusNode.unfocus();
+                      _addr3MobileFocusNode.unfocus();
+                      _addr3PostcodeFocusNode.unfocus();
                     },
                   ),
                 ],
