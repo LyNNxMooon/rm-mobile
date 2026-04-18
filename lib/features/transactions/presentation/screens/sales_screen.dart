@@ -1835,10 +1835,10 @@ class _SalesScreenState extends State<SalesScreen>
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
 
     // Calculate aspect ratio based on content needs (higher = shorter tiles)
-    // Large tablets get shorter tiles
+    // Large tablets get taller tiles (lower aspect ratio)
     final double childAspectRatio = isLandscape
-        ? (isMediumTablet ? 5.5 : (isLargeTablet ? 6.5 : 5.2))
-        : (isMediumTablet ? 3.4 : (isLargeTablet ? 4.6 : 3.2));
+        ? (isMediumTablet ? 5.5 : (isLargeTablet ? 5.8 : 5.2))
+        : (isMediumTablet ? 3.4 : (isLargeTablet ? 4.0 : 3.2));
 
     return AnimationLimiter(
       child: GridView.builder(
@@ -1874,20 +1874,72 @@ class _SalesScreenState extends State<SalesScreen>
     final bool isMediumTablet = context.isMediumTablet;
     final bool isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
-    final bool isLargeTabletPortrait = !isMediumTablet && !isLandscape;
+    final bool isLargeTablet = !isMediumTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
 
     // More columns for medium tablets, and in landscape mode use 6 columns with smaller cards
     final int crossAxisCount = isLandscape ? 6 : (isMediumTablet ? 5 : 4);
     // Landscape: higher aspect ratio for smaller cards, Portrait: lower for taller cards
-    // Large tablet: higher aspect ratio to reduce extra space below price
     final double childAspectRatio = isLandscape
         ? (isMediumTablet ? 0.88 : 0.95)
-        : (isMediumTablet ? 0.65 : (isLargeTabletPortrait ? 0.92 : 0.60));
+        : (isMediumTablet ? 0.65 : 0.60);
     // More spacing in landscape, less in portrait
     final double spacing = isLandscape ? 14 : 8;
 
+    // For large tablets, use Wrap with flexible height cards
+    if (isLargeTablet) {
+      final double screenWidth = MediaQuery.of(context).size.width;
+      final double horizontalPadding = 24; // 12 left + 12 right
+      final double totalSpacing = spacing * (crossAxisCount - 1);
+      final double cardWidth =
+          (screenWidth - horizontalPadding - totalSpacing) / crossAxisCount;
+
+      return AnimationLimiter(
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
+            padding:
+                const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 80),
+            child: Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
+              alignment: WrapAlignment.start,
+              crossAxisAlignment: WrapCrossAlignment.start,
+              children: _cartItems.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                return AnimationConfiguration.staggeredGrid(
+                  position: index,
+                  duration: const Duration(milliseconds: 300),
+                  columnCount: crossAxisCount,
+                  child: ScaleAnimation(
+                    child: FadeInAnimation(
+                      child: SizedBox(
+                        width: cardWidth,
+                        child: _buildCartLargeIconTileFlexible(
+                          item,
+                          index,
+                          colors,
+                          isDark,
+                          uiScale,
+                          isLandscape,
+                          cardWidth,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // For medium tablets and phones, use GridView with fixed aspect ratio
     return AnimationLimiter(
       child: GridView.builder(
         controller: _scrollController,
@@ -1915,8 +1967,8 @@ class _SalesScreenState extends State<SalesScreen>
                   isDark,
                   uiScale,
                   isLandscape,
-                  isLargeTabletPortrait,
-                  !isMediumTablet,
+                  false, // isLargeTabletPortrait - not used for medium tablets
+                  false, // isLargeTablet
                 ),
               ),
             ),
@@ -2294,6 +2346,178 @@ class _SalesScreenState extends State<SalesScreen>
                       ],
                     ),
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Large icon tile with flexible height for large tablets (content-based height)
+  Widget _buildCartLargeIconTileFlexible(
+    CartItemVO item,
+    int index,
+    AppThemeColors colors,
+    bool isDark,
+    double uiScale,
+    bool isLandscape,
+    double cardWidth,
+  ) {
+    final double displayExt = _isIncTax ? item.extension : item.extensionEx;
+
+    // Calculate thumbnail height based on card width (square-ish with some ratio)
+    final double thumbnailHeight = isLandscape ? cardWidth * 0.85 : cardWidth;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        _salesBloc.add(EditCartItem(index: index));
+      },
+      child: Dismissible(
+        key: Key('cart_largeicon_flex_${item.code}_$index'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            color: Colors.red.shade400,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.delete, color: Colors.white, size: 24),
+        ),
+        onDismissed: (_) {
+          _salesBloc.add(RemoveCartItem(index: index));
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? Color.lerp(colors.surface, Colors.white, 0.06)
+                : kSecondaryColor,
+            borderRadius: BorderRadius.circular(10),
+            border: isDark
+                ? Border.all(color: Colors.white.withOpacity(0.18))
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black.withOpacity(0.35)
+                    : kThirdColor.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Allow content-based height
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Thumbnail with fixed height based on card width
+              Container(
+                width: double.infinity,
+                height: thumbnailHeight,
+                margin: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 10,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: item.stock?.imageUrl != null
+                          ? Image.network(
+                              item.stock!.imageUrl!,
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Image.asset(
+                                overviewPlaceholder,
+                                fit: BoxFit.fill,
+                                width: double.infinity,
+                                height: double.infinity,
+                              ),
+                            )
+                          : Image.asset(
+                              overviewPlaceholder,
+                              fit: BoxFit.fill,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
+                    ),
+                    // Qty badge
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: kPrimaryColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          "×${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
+                          style: TextStyle(
+                            fontSize: 11 * uiScale,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Item details - flexible height content
+              Padding(
+                padding: const EdgeInsets.only(left: 8, right: 8, bottom: 3),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Description
+                    Text(
+                      item.description,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : kThirdColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 2),
+                    // Code/Barcode
+                    Text(
+                      item.code,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: kPrimaryColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 2),
+                    // Extension (price)
+                    Text(
+                      "\$${displayExt.toStringAsFixed(2)}",
+                      style: TextStyle(
+                        fontSize: 13 * uiScale,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
             ],
