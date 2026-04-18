@@ -161,7 +161,7 @@ CustomerLaybyItem _$CustomerLaybyItemFromJson(Map<String, dynamic> json) =>
     CustomerLaybyItem(
       date: json['date'] as String,
       laybyNo: (json['laybyNo'] as num).toInt(),
-      lastPayment: json['lastPayment'] as String,
+      lastPayment: json['lastPayment'] as String?,
       total: json['total'] as num,
       amountOwing: json['amountOwing'] as num,
     );

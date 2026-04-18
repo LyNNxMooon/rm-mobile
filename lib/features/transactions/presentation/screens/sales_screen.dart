@@ -131,6 +131,10 @@ class _SalesScreenState extends State<SalesScreen>
 
   final bool _isPaymentMode = false;
   bool _showScanner = false;
+  bool _isScannerOpening = false;
+  bool _scannerAddedItem = false;
+  bool _hadSearchFocusBeforeScan = false;
+  bool _skipNextSearchFocus = false;
   bool _showActions = false;
   bool _isIncTax = true;
   bool _isCompactView = false;
@@ -170,6 +174,7 @@ class _SalesScreenState extends State<SalesScreen>
   bool _isNegativeSellPriceDialogOpen = false;
   bool _reminderShown = false;
   bool _salesPromptDialogOpen = false;
+  bool _lowStockDialogOpen = false;
   DateTime? _lastSessionUpdatedAt;
 
   late AnimationController _actionsAnimationController;
@@ -501,6 +506,38 @@ class _SalesScreenState extends State<SalesScreen>
     if (_showScanner) {
       setState(() => _showScanner = false);
     }
+    _isScannerOpening = false;
+    _hadSearchFocusBeforeScan = false;
+    _scannerAddedItem = false;
+  }
+
+  void _focusSearchField({bool force = false}) {
+    if (!mounted) return;
+    if (_showScanner || _isScannerOpening) {
+      return;
+    }
+    if (!force) {
+      final hasEditingItem = _cartItems.any((item) => item.isEditing);
+      if (_skipNextSearchFocus) {
+        _skipNextSearchFocus = false;
+        return;
+      }
+      if (_scannerAddedItem) {
+        if (_showScanner) {
+          return;
+        }
+        _scannerAddedItem = false;
+      }
+      if (hasEditingItem || _isFinaliseProcessing || _salesPromptDialogOpen || _lowStockDialogOpen) {
+        return;
+      }
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (force || !_searchFocusNode.hasFocus) {
+        _searchFocusNode.requestFocus();
+      }
+    });
   }
 
   /// Toggles the scanner with proper keyboard dismissal to prevent overflow
@@ -508,13 +545,19 @@ class _SalesScreenState extends State<SalesScreen>
     if (_showScanner) {
       // Closing scanner - do it immediately
       setState(() => _showScanner = false);
+      _isScannerOpening = false;
+      _hadSearchFocusBeforeScan = false;
+      _scannerAddedItem = false;
     } else {
       // Opening scanner - first dismiss keyboard, wait for animation, then open
+      _isScannerOpening = true;
+      _hadSearchFocusBeforeScan = _searchFocusNode.hasFocus;
       FocusScope.of(context).unfocus();
       // Wait for keyboard to close to prevent overflow during transition
       await Future.delayed(const Duration(milliseconds: 150));
       if (mounted) {
         setState(() => _showScanner = true);
+        _isScannerOpening = false;
       }
     }
   }
@@ -730,6 +773,10 @@ class _SalesScreenState extends State<SalesScreen>
     // Close scanner when search field is focused
     _searchFocusNode.addListener(() {
       if (_searchFocusNode.hasFocus) {
+        if (_showScanner || _isScannerOpening) {
+          _searchFocusNode.unfocus();
+          return;
+        }
         _closeScanner();
       }
     });
@@ -907,6 +954,7 @@ class _SalesScreenState extends State<SalesScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _isRestoringSession = false;
+        _focusSearchField(force: true);
       }
     });
   }
@@ -1016,6 +1064,11 @@ class _SalesScreenState extends State<SalesScreen>
     HapticFeedback.heavyImpact();
     await _audioPlayer.stop();
     _audioPlayer.play(_beepSource);
+
+    if (_hadSearchFocusBeforeScan) {
+      _skipNextSearchFocus = true;
+    }
+    _scannerAddedItem = true;
 
     // Search for stock
     _salesBloc.add(
@@ -1213,6 +1266,7 @@ class _SalesScreenState extends State<SalesScreen>
               isDark,
             );
             if (!proceed) return;
+            _focusSearchField();
           } else if (state is CartUpdated) {
             if (_isRestoringSession) return;
             // Save session immediately when cart is updated
@@ -1233,12 +1287,18 @@ class _SalesScreenState extends State<SalesScreen>
           if ((state is CartUpdated || state is CartItemSaved) && 
               state.lowStockWarning != null && 
               state.lowStockWarning!.hasWarning) {
-            LowStockWarningDialog.show(
+            _lowStockDialogOpen = true;
+            await LowStockWarningDialog.show(
               context: context,
               message: state.lowStockWarning!.message ?? '',
               colors: colors,
               isDark: isDark,
             );
+            _lowStockDialogOpen = false;
+          }
+
+          if (state is CartUpdated && state.cartItems.isNotEmpty) {
+            _focusSearchField();
           }
           
           if (state is CustomerDuplicatesFound) {
