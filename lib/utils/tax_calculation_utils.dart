@@ -49,8 +49,8 @@ class TaxCalculationUtils {
   /// Returns a [TaxCalculationResult] with both ex and inc prices.
   /// 
   /// Logic:
-  /// - If tax_type == 0 or 1: basePrice is Ex-tax, calculate Inc = Ex * (1 + percentage/100)
-  /// - If tax_type >= 2: basePrice is Inc-tax, calculate Ex = Inc / (1 + percentage/100)
+  /// - If tax_type == 0: basePrice is Ex-tax, calculate Inc = Ex * (1 + percentage/100)
+  /// - Else: basePrice is Inc-tax, calculate Ex = Inc / (1 + percentage/100)
   static Future<TaxCalculationResult> calculateTax({
     required double basePrice,
     required String? taxCodeString,
@@ -110,14 +110,14 @@ class TaxCalculationUtils {
     Rational incPriceRational;
     Rational taxAmountRational;
 
-    if (taxCode.taxType == 0 || taxCode.taxType == 1) {
-      // tax_type == 0 or 1: basePrice is Ex-tax (exclusive)
+    if (taxCode.taxType == 0) {
+      // tax_type == 0: basePrice is Ex-tax (exclusive)
       // Calculate inclusive price
       exPriceRational = basePriceRational;
       incPriceRational = basePriceRational * multiplier;
       taxAmountRational = incPriceRational - exPriceRational;
     } else {
-      // tax_type >= 2: basePrice is Inc-tax (inclusive)
+      // tax_type != 0: basePrice is Inc-tax (inclusive)
       // Calculate exclusive price
       incPriceRational = basePriceRational;
       exPriceRational = basePriceRational / multiplier;

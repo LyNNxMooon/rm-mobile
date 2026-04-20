@@ -85,7 +85,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     on<ClearCustomer>(_onClearCustomer);
   }
 
-  Future<String> fetchCashDrawerIdentifier({String fallback = 'M'}) {
+  Future<String> fetchCashDrawerIdentifier({String fallback = 'A'}) {
     return getCashDrawerIdentifier(fallback: fallback);
   }
 
