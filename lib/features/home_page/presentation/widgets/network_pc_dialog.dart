@@ -45,11 +45,19 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
   }
 
   void _startPairingFlow(NetworkServerVO pc, BuildContext context) {
+    final discoveredPort = pc.port;
     setState(() {
       _selectedPc = pc;
-      _selectedPort = _defaultAgentPort;
+      _selectedPort = discoveredPort ?? _defaultAgentPort;
       _isPairFlowLoading = true;
     });
+
+    if (discoveredPort != null && discoveredPort > 0) {
+      context.read<PairCodeBloc>().add(
+        GetPairCodesEvent(ip: pc.ipAddress, port: discoveredPort),
+      );
+      return;
+    }
 
     context.read<DiscoverHostBloc>().add(
       DiscoverHostEvent(ip: pc.ipAddress, port: _defaultAgentPort),
@@ -237,81 +245,18 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Display code section
-                      Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            kPrimaryColor.withOpacity(isDark ? 0.15 : 0.08),
-                            kPrimaryColor.withOpacity(isDark ? 0.08 : 0.04),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: kPrimaryColor.withOpacity(0.2),
-                          width: 1,
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "The code is displayed on the AAAPOS RMMobile Service Hub Server.\nEnter that code below to continue.",
+                          style: Theme.of(context).inputDecorationTheme.hintStyle ??
+                              TextStyle(
+                                fontSize: 15,
+                                color: colors.onSurfaceMuted,
+                              ),
                         ),
                       ),
-                      child: Column(
-                        children: [
-                          Text(
-                            "Your Code",
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: colors.onSurfaceMuted,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: SelectableText(
-                                  pairCode,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDark ? Colors.white : colors.onSurface,
-                                    letterSpacing: 4,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: kPrimaryColor.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: IconButton(
-                                  onPressed: () {
-                                    Clipboard.setData(ClipboardData(text: pairCode));
-                                    AlertInfo.show(
-                                      context: context,
-                                      text: "Pair code copied",
-                                      typeInfo: TypeInfo.success,
-                                      backgroundColor: colors.surface,
-                                      iconColor: kPrimaryColor,
-                                      textColor: colors.onSurface,
-                                      padding: 70,
-                                      position: MessagePosition.top,
-                                    );
-                                  },
-                                  icon: Icon(Icons.copy_rounded, size: 20),
-                                  color: kPrimaryColor,
-                                  tooltip: "Copy code",
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
                     // Input section
                     SizedBox(
                       height: fieldHeight,
@@ -474,6 +419,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
             if (state is PairCodeError) {
               setState(() => _isPairFlowLoading = false);
               _showError(context, state.message);
+              _showManualPortDialog(context);
             }
           },
         ),

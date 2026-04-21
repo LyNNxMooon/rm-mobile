@@ -24,11 +24,37 @@ class HomeScreenModels implements HomeRepo {
   static const String _kAutoBackupEnabledKey = "auto_backup_enabled";
   static const String _kLastAutoBackupAtKey = "last_auto_backup_at";
   static const String _kDarkModeEnabledKey = "dark_mode_enabled";
+  static const int _defaultAgentPort = 5000;
 
   @override
   Future<List<NetworkServerVO>> fetchNetworkServers() async {
     try {
-      return LanNetworkServiceImpl.instance.scanNetwork();
+      final scanned = await LanNetworkServiceImpl.instance.scanNetwork();
+      if (scanned.isEmpty) return [];
+
+      final responses = await Future.wait(
+        scanned.map((pc) async {
+          try {
+            final response = await DataAgentImpl.instance.discoverHost(
+              pc.ipAddress,
+              _defaultAgentPort,
+            );
+            if (!response.isAgent) return null;
+            final displayName = response.serverName.trim().isNotEmpty
+                ? response.serverName
+                : pc.hostName;
+            return NetworkServerVO(
+              ipAddress: pc.ipAddress,
+              hostName: displayName,
+              port: response.port,
+            );
+          } catch (_) {
+            return null;
+          }
+        }),
+      );
+
+      return responses.whereType<NetworkServerVO>().toList();
     } on Exception catch (error) {
       return Future.error(error);
     }
