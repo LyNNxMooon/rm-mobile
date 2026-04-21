@@ -530,7 +530,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     if (event.index < 0 || event.index >= _cartItems.length) return;
 
     _cartItems[event.index] = _cartItems[event.index].copyWith(
-      serialNumber: event.serialNumber,
+      serialNumbers: event.serialNumbers,
     );
     emit(CartUpdated(cartItems: List.from(_cartItems), selectedCustomer: _selectedCustomer));
   }

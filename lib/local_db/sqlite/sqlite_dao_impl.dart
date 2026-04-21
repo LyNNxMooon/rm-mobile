@@ -253,6 +253,12 @@ class SQLiteDAOImpl extends LocalDbDAO {
       await _addColumnIfMissing(
         db: _database!,
         table: 'Stocks',
+        column: 'serial_numbers',
+        definition: 'TEXT',
+      );
+      await _addColumnIfMissing(
+        db: _database!,
+        table: 'Stocks',
         column: 'sales_prompt',
         definition: 'TEXT',
       );
@@ -656,15 +662,6 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return PaginatedStockResult(items, count, matchedFields: matchedFields);
       }
 
-      // Fast existence check
-      Future<bool> exists(String whereClause, List<dynamic> args) async {
-        final res = await db.rawQuery(
-          'SELECT 1 FROM Stocks WHERE $whereClause LIMIT 1',
-          args,
-        );
-        return res.isNotEmpty;
-      }
-
       if (q.isEmpty) {
         return runQuery(whereClause: baseWhere, args: baseArgs, matchedColumn: null);
       }
@@ -684,18 +681,70 @@ class SQLiteDAOImpl extends LocalDbDAO {
         'custom2',
       ];
 
-      for (final column in searchPriority) {
-        final whereClause = '$baseWhere AND $column LIKE ?';
-        final args = [...baseArgs, searchPattern];
-        if (await exists(whereClause, args)) {
-          return runQuery(whereClause: whereClause, args: args, matchedColumn: column);
+      bool matchesValue(String value) {
+        final normalized = value.toLowerCase();
+        final needle = q.toLowerCase();
+        if (searchMode == SearchMode.prefix) {
+          return normalized.startsWith(needle);
+        }
+        return normalized.contains(needle);
+      }
+
+      String? matchedColumnForRow(Map<String, dynamic> row) {
+        for (final column in searchPriority) {
+          final value = row[column];
+          if (value != null && matchesValue(value.toString())) {
+            return column;
+          }
+        }
+        return null;
+      }
+
+      final matchClause = searchPriority.map((col) => '$col LIKE ?').join(' OR ');
+      final whereClause = '$baseWhere AND ($matchClause)';
+      final whereArgs = [
+        ...baseArgs,
+        ...List.filled(searchPriority.length, searchPattern),
+      ];
+
+      final orderCase = searchPriority
+          .asMap()
+          .entries
+          .map((entry) => 'WHEN ${entry.value} LIKE ? THEN ${entry.key}')
+          .join(' ');
+      final orderedBy =
+          'CASE $orderCase ELSE ${searchPriority.length} END, $safeSortColumn ${ascending ? 'ASC' : 'DESC'}';
+
+      final countFuture = db.rawQuery(
+        'SELECT COUNT(*) as count FROM Stocks WHERE $whereClause',
+        whereArgs,
+      );
+
+      final dataFuture = db.rawQuery(
+        'SELECT * FROM Stocks WHERE $whereClause ORDER BY $orderedBy LIMIT ? OFFSET ?',
+        [
+          ...whereArgs,
+          ...List.filled(searchPriority.length, searchPattern),
+          limit,
+          offset,
+        ],
+      );
+
+      final results = await Future.wait([dataFuture, countFuture]);
+      final rows = results[0] as List<Map<String, dynamic>>;
+      final items = rows.map((e) => StockVO.fromJson(e)).toList();
+      final int count =
+          Sqflite.firstIntValue(results[1] as List<Map<String, dynamic>>) ?? 0;
+
+      final Map<int, String> matchedFields = {};
+      for (var i = 0; i < rows.length; i++) {
+        final matchedColumn = matchedColumnForRow(rows[i]);
+        if (matchedColumn != null) {
+          matchedFields[items[i].stockID.toInt()] = matchedColumn;
         }
       }
 
-      // No match in any prioritized column.
-      final fallbackWhere = '$baseWhere AND Barcode LIKE ?';
-      final fallbackArgs = [...baseArgs, searchPattern];
-      return runQuery(whereClause: fallbackWhere, args: fallbackArgs, matchedColumn: 'Barcode');
+      return PaginatedStockResult(items, count, matchedFields: matchedFields);
     } catch (error) {
       logger.e('Error searching stocks: $error');
       return Future.error(error);
@@ -3301,15 +3350,6 @@ class SQLiteDAOImpl extends LocalDbDAO {
         );
       }
 
-      // Fast existence check
-      Future<bool> exists(String whereClause, List<dynamic> args) async {
-        final res = await db.rawQuery(
-          'SELECT 1 FROM Customers WHERE $whereClause LIMIT 1',
-          args,
-        );
-        return res.isNotEmpty;
-      }
-
       if (q.isEmpty) {
         return runQuery(whereClause: baseWhere, args: baseArgs, matchedColumn: null);
       }
@@ -3331,18 +3371,85 @@ class SQLiteDAOImpl extends LocalDbDAO {
         'email',
       ];
 
-      for (final column in searchPriority) {
-        final whereClause = '$baseWhere AND $column LIKE ?';
-        final args = [...baseArgs, searchPattern];
-        if (await exists(whereClause, args)) {
-          return runQuery(whereClause: whereClause, args: args, matchedColumn: column);
+      bool matchesValue(String value) {
+        final normalized = value.toLowerCase();
+        final needle = q.toLowerCase();
+        if (searchMode == SearchMode.prefix) {
+          return normalized.startsWith(needle);
+        }
+        return normalized.contains(needle);
+      }
+
+      String? matchedColumnForRow(Map<String, dynamic> row) {
+        for (final column in searchPriority) {
+          final value = row[column];
+          if (value != null && matchesValue(value.toString())) {
+            return column;
+          }
+        }
+        return null;
+      }
+
+      final matchClause = searchPriority.map((col) => '$col LIKE ?').join(' OR ');
+      final whereClause = '$baseWhere AND ($matchClause)';
+      final whereArgs = [
+        ...baseArgs,
+        ...List.filled(searchPriority.length, searchPattern),
+      ];
+
+      final orderCase = searchPriority
+          .asMap()
+          .entries
+          .map((entry) => 'WHEN ${entry.value} LIKE ? THEN ${entry.key}')
+          .join(' ');
+      final orderedBy =
+          'CASE $orderCase ELSE ${searchPriority.length} END, $safeSortColumn ${ascending ? 'ASC' : 'DESC'}';
+
+      final countFuture = db.rawQuery(
+        'SELECT COUNT(*) as count FROM Customers WHERE $whereClause',
+        whereArgs,
+      );
+
+      final dataFuture = db.rawQuery(
+        'SELECT * FROM Customers WHERE $whereClause ORDER BY $orderedBy LIMIT ? OFFSET ?',
+        [
+          ...whereArgs,
+          ...List.filled(searchPriority.length, searchPattern),
+          limit,
+          offset,
+        ],
+      );
+
+      final results = await Future.wait([dataFuture, countFuture]);
+      final rows = results[0] as List<Map<String, dynamic>>;
+      final int count =
+          Sqflite.firstIntValue(results[1] as List<Map<String, dynamic>>) ?? 0;
+
+      final List<CustomerVO> customers = [];
+      for (final row in rows) {
+        final customerId = row['customer_id'] as int;
+        final addresses = await _getCustomerAddresses(
+          db,
+          customerId,
+          shopfront,
+        );
+        customers.add(_customerFromRow(row, addresses));
+      }
+
+      final Map<int, String> matchedFields = {};
+      for (var i = 0; i < rows.length; i++) {
+        final matchedColumn = matchedColumnForRow(rows[i]);
+        if (matchedColumn != null) {
+          matchedFields[customers[i].customerId] = matchedColumn;
         }
       }
 
-      // No match in any prioritized column.
-      final fallbackWhere = '$baseWhere AND barcode LIKE ?';
-      final fallbackArgs = [...baseArgs, searchPattern];
-      return runQuery(whereClause: fallbackWhere, args: fallbackArgs, matchedColumn: 'barcode');
+      return PaginatedCustomerResult(
+        customers: customers,
+        totalCount: count,
+        hasMore: offset + customers.length < count,
+        matchedFields: matchedFields,
+      );
     } catch (error) {
       logger.e('Error searching customers: $error');
       return Future.error(error);

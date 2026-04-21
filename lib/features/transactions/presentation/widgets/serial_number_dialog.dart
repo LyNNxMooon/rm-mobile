@@ -3,19 +3,18 @@ import 'package:intl/intl.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../entities/vos/serial_number_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 
-/// Model for available serial numbers
-class SerialItem {
-  final String serialNumber;
-  final int ageInDays;
-  final DateTime? warrantyExpiry;
+class _SerialRow {
+  SerialNumberVO entry;
+  bool selected;
+  final TextEditingController numberController;
 
-  SerialItem({
-    required this.serialNumber,
-    required this.ageInDays,
-    this.warrantyExpiry,
-  });
+  _SerialRow({
+    required this.entry,
+    required this.selected,
+  }) : numberController = TextEditingController(text: entry.number);
 }
 
 /// Dialog for selecting/entering serial numbers for a stock item
@@ -23,8 +22,8 @@ class SerialNumberDialog extends StatefulWidget {
   final String barcode;
   final String description;
   final int targetQuantity;
-  final List<SerialItem> availableSerials;
-  final List<String>? initialSelected;
+  final List<SerialNumberVO> availableSerials;
+  final List<SerialNumberVO>? initialSelected;
 
   const SerialNumberDialog({
     super.key,
@@ -36,15 +35,15 @@ class SerialNumberDialog extends StatefulWidget {
   });
 
   /// Shows the dialog and returns selected serial numbers (or null if cancelled)
-  static Future<List<String>?> show({
+  static Future<List<SerialNumberVO>?> show({
     required BuildContext context,
     required String barcode,
     required String description,
     required int targetQuantity,
-    required List<SerialItem> availableSerials,
-    List<String>? initialSelected,
+    required List<SerialNumberVO> availableSerials,
+    List<SerialNumberVO>? initialSelected,
   }) {
-    return showDialog<List<String>>(
+    return showDialog<List<SerialNumberVO>>(
       context: context,
       barrierDismissible: false,
       builder: (_) => SerialNumberDialog(
@@ -63,54 +62,112 @@ class SerialNumberDialog extends StatefulWidget {
 
 class _SerialNumberDialogState extends State<SerialNumberDialog> {
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _manualEntryController = TextEditingController();
-  final Set<String> _selectedSerials = {};
+  final List<_SerialRow> _rows = [];
   String _searchQuery = '';
-  bool _showManualEntry = false;
+  final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialSelected != null) {
-      _selectedSerials.addAll(widget.initialSelected!);
+    final initialSelected = widget.initialSelected ?? const <SerialNumberVO>[];
+
+    for (final serial in widget.availableSerials) {
+      final isSelected = _isInitiallySelected(serial, initialSelected);
+      _rows.add(_SerialRow(entry: serial, selected: isSelected));
+    }
+
+    for (final selected in initialSelected) {
+      final alreadyAdded = _rows.any((row) => _matchesSerial(row.entry, selected));
+      if (!alreadyAdded) {
+        _rows.add(_SerialRow(entry: selected, selected: true));
+      }
     }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _manualEntryController.dispose();
+    for (final row in _rows) {
+      row.numberController.dispose();
+    }
     super.dispose();
   }
 
-  List<SerialItem> get _filteredSerials {
-    if (_searchQuery.isEmpty) return widget.availableSerials;
+  List<_SerialRow> get _filteredRows {
+    if (_searchQuery.isEmpty) return _rows;
     final query = _searchQuery.toLowerCase();
-    return widget.availableSerials
-        .where((s) => s.serialNumber.toLowerCase().contains(query))
+    return _rows
+        .where((row) => row.entry.number.toLowerCase().contains(query))
         .toList();
   }
 
-  bool get _canSelect => _selectedSerials.length < widget.targetQuantity;
-  bool get _isValid => _selectedSerials.length == widget.targetQuantity;
+  int get _selectedCount => _rows.where((row) => row.selected).length;
+  bool get _canSelect => _selectedCount < widget.targetQuantity;
+  bool get _isValid =>
+      _selectedCount == widget.targetQuantity &&
+      _rows.where((row) => row.selected).every((row) => row.entry.hasNumber);
 
-  void _toggleSerial(String serial) {
+  void _toggleSerial(_SerialRow row) {
     setState(() {
-      if (_selectedSerials.contains(serial)) {
-        _selectedSerials.remove(serial);
+      if (row.selected) {
+        row.selected = false;
       } else if (_canSelect) {
-        _selectedSerials.add(serial);
+        row.selected = true;
       }
     });
   }
 
-  void _addManualSerial() {
-    final serial = _manualEntryController.text.trim();
-    if (serial.isNotEmpty && _canSelect) {
+  void _addEmptyRow() {
+    setState(() {
+      final shouldSelect = _canSelect;
+      const entry = SerialNumberVO();
+      _rows.insert(0, _SerialRow(entry: entry, selected: shouldSelect));
+    });
+  }
+
+  bool _isInitiallySelected(
+    SerialNumberVO candidate,
+    List<SerialNumberVO> selected,
+  ) {
+    return selected.any((entry) => _matchesSerial(candidate, entry));
+  }
+
+  bool _matchesSerial(SerialNumberVO left, SerialNumberVO right) {
+    if (left.serialAuditId != null && right.serialAuditId != null) {
+      return left.serialAuditId == right.serialAuditId;
+    }
+    return left.number.trim().isNotEmpty && left.number == right.number;
+  }
+
+  DateTime? _parseDate(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+    return DateTime.tryParse(trimmed);
+  }
+
+  String _formatDate(DateTime date) => _dateFormat.format(date);
+
+  List<SerialNumberVO> _buildSelectedSerials() {
+    return _rows
+        .where((row) => row.selected && row.entry.hasNumber)
+        .map((row) {
+          final number = row.numberController.text.trim();
+          return row.entry.copyWith(number: number);
+        })
+        .toList();
+  }
+
+  Future<void> _pickWarrantyDate(_SerialRow row) async {
+    final initialDate = _parseDate(row.entry.warrantyDate) ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
       setState(() {
-        _selectedSerials.add(serial);
-        _manualEntryController.clear();
-        _showManualEntry = false;
+        row.entry = row.entry.copyWith(warrantyDate: _formatDate(picked));
       });
     }
   }
@@ -129,7 +186,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
     final dialogHeight = isTablet ? 750.0 : MediaQuery.of(context).size.height * 0.7;
 
     return Dialog(
-      insetPadding: EdgeInsets.symmetric(horizontal: 15),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 15),
       backgroundColor: isDark ? colors.surface : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SizedBox(
@@ -137,16 +194,11 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
         height: dialogHeight,
         child: Column(
           children: [
-            // Top Section (1 part) - Stock Header
             _buildHeader(colors, isDark, isTablet, uiScale),
-
-            // Middle Section (2 parts) - Available Serials Table
             Expanded(
               flex: 2,
               child: _buildSerialsTable(colors, isDark, isTablet, uiScale),
             ),
-
-            // Bottom Section (1 part) - Search, Manual Entry, Actions
             _buildBottomSection(colors, isDark, isTablet, uiScale),
           ],
         ),
@@ -166,7 +218,6 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
       ),
       child: Row(
         children: [
-          // Barcode & Description
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,7 +246,6 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
             ),
           ),
           SizedBox(width: 12 * uiScale),
-          // Selection Counter
           Container(
             padding: EdgeInsets.symmetric(
               horizontal: (isTablet ? 14 : 10) * uiScale,
@@ -223,7 +273,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                 ),
                 SizedBox(height: 2 * uiScale),
                 Text(
-                  "${_selectedSerials.length} / ${widget.targetQuantity}",
+                  "$_selectedCount / ${widget.targetQuantity}",
                   style: TextStyle(
                     fontSize: (isTablet ? 18 : 16) * uiScale,
                     fontWeight: FontWeight.bold,
@@ -241,8 +291,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
   }
 
   Widget _buildSerialsTable(AppThemeColors colors, bool isDark, bool isTablet, double uiScale) {
-    final filtered = _filteredSerials;
-    final dateFormat = DateFormat('dd/MM/yyyy');
+    final filtered = _filteredRows;
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: (isTablet ? 16 : 12) * uiScale),
@@ -255,7 +304,6 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
       ),
       child: Column(
         children: [
-          // Table Header
           Container(
             padding: EdgeInsets.symmetric(
               horizontal: (isTablet ? 12 : 8) * uiScale,
@@ -270,7 +318,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
             ),
             child: Row(
               children: [
-                SizedBox(width: 40 * uiScale), // Checkbox space
+                SizedBox(width: 40 * uiScale),
                 Expanded(
                   flex: isTablet ? 3 : 2,
                   child: Text(
@@ -309,7 +357,6 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
               ],
             ),
           ),
-          // Table Body
           Expanded(
             child: filtered.isEmpty
                 ? Center(
@@ -333,12 +380,12 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                         color: isDark ? Colors.white12 : Colors.grey.shade200,
                       ),
                       itemBuilder: (context, index) {
-                        final item = filtered[index];
-                        final isSelected = _selectedSerials.contains(item.serialNumber);
+                        final row = filtered[index];
+                        final isSelected = row.selected;
                         final isDisabled = !isSelected && !_canSelect;
 
                         return InkWell(
-                          onTap: isDisabled ? null : () => _toggleSerial(item.serialNumber),
+                          onTap: isDisabled ? null : () => _toggleSerial(row),
                           child: Opacity(
                             opacity: isDisabled ? 0.5 : 1.0,
                             child: Padding(
@@ -348,23 +395,21 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                               ),
                               child: Row(
                                 children: [
-                                  // Checkbox
                                   SizedBox(
                                     width: 40 * uiScale,
                                     child: Checkbox(
                                       value: isSelected,
                                       onChanged: isDisabled
                                           ? null
-                                          : (_) => _toggleSerial(item.serialNumber),
+                                          : (_) => _toggleSerial(row),
                                       activeColor: kPrimaryColor,
                                       visualDensity: VisualDensity.compact,
                                     ),
                                   ),
-                                  // Serial Number
                                   Expanded(
                                     flex: isTablet ? 3 : 2,
-                                    child: Text(
-                                      item.serialNumber,
+                                    child: TextField(
+                                      controller: row.numberController,
                                       style: TextStyle(
                                         fontFamily: 'monospace',
                                         fontSize: (isTablet ? 13 : 11) * uiScale,
@@ -373,14 +418,23 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                                             ? kPrimaryColor
                                             : (isDark ? Colors.white : Colors.black87),
                                       ),
-                                      overflow: TextOverflow.ellipsis,
+                                      decoration: const InputDecoration(
+                                        isDense: true,
+                                        border: InputBorder.none,
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          row.entry = row.entry.copyWith(number: value.trim());
+                                        });
+                                      },
                                     ),
                                   ),
-                                  // Age
                                   SizedBox(
                                     width: (isTablet ? 70 : 50) * uiScale,
                                     child: Text(
-                                      "${item.ageInDays}d",
+                                      row.entry.ageInDays != null
+                                          ? "${row.entry.ageInDays}d"
+                                          : "-",
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: (isTablet ? 12 : 10) * uiScale,
@@ -388,19 +442,34 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                                       ),
                                     ),
                                   ),
-                                  // Warranty
                                   SizedBox(
                                     width: (isTablet ? 110 : 80) * uiScale,
-                                    child: Text(
-                                      item.warrantyExpiry != null
-                                          ? dateFormat.format(item.warrantyExpiry!)
-                                          : "-",
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                        fontSize: (isTablet ? 12 : 10) * uiScale,
-                                        color: _isWarrantyExpired(item.warrantyExpiry)
-                                            ? kErrorColor
-                                            : (isDark ? Colors.white70 : Colors.blueGrey.shade600),
+                                    child: InkWell(
+                                      onTap: () => _pickWarrantyDate(row),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              row.entry.warrantyDate.isNotEmpty
+                                                  ? row.entry.warrantyDate
+                                                  : "-",
+                                              textAlign: TextAlign.right,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: (isTablet ? 12 : 10) * uiScale,
+                                                color: isDark
+                                                    ? Colors.white70
+                                                    : Colors.blueGrey.shade600,
+                                              ),
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.arrow_drop_down,
+                                            size: (isTablet ? 18 : 16) * uiScale,
+                                            color: colors.onSurfaceMuted,
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -418,11 +487,6 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
     );
   }
 
-  bool _isWarrantyExpired(DateTime? warranty) {
-    if (warranty == null) return false;
-    return warranty.isBefore(DateTime.now());
-  }
-
   Widget _buildBottomSection(AppThemeColors colors, bool isDark, bool isTablet, double uiScale) {
     return Container(
       padding: EdgeInsets.all((isTablet ? 16 : 12) * uiScale),
@@ -436,7 +500,6 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Search Bar
           Container(
             height: (isTablet ? 44 : 40) * uiScale,
             decoration: BoxDecoration(
@@ -497,110 +560,28 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
             ),
           ),
           SizedBox(height: 10 * uiScale),
-
-          // Manual Entry Area
-          if (_showManualEntry) ...[
-            Container(
-              padding: EdgeInsets.all(10 * uiScale),
-              decoration: BoxDecoration(
-                color: isDark ? colors.surface : Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: kPrimaryColor.withOpacity(0.5)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _manualEntryController,
-                      autofocus: true,
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: (isTablet ? 14 : 13) * uiScale,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Enter serial number',
-                        hintStyle: TextStyle(
-                          fontSize: (isTablet ? 14 : 13) * uiScale,
-                          color: colors.onSurfaceMuted,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                        isDense: true,
-                      ),
-                      onSubmitted: (_) => _addManualSerial(),
-                    ),
-                  ),
-                  SizedBox(width: 8 * uiScale),
-                  GestureDetector(
-                    onTap: _addManualSerial,
-                    child: Container(
-                      padding: EdgeInsets.all(8 * uiScale),
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Icon(
-                        Icons.add,
-                        size: 18 * uiScale,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 6 * uiScale),
-                  GestureDetector(
-                    onTap: () => setState(() {
-                      _showManualEntry = false;
-                      _manualEntryController.clear();
-                    }),
-                    child: Container(
-                      padding: EdgeInsets.all(8 * uiScale),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade400,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Icon(
-                        Icons.close,
-                        size: 18 * uiScale,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 10 * uiScale),
-          ],
-
-          // Action Buttons Row
           Row(
             children: [
-              // Create Serial Entry Button
-              if (!_showManualEntry && _canSelect)
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => setState(() => _showManualEntry = true),
-                   // icon: Icon(Icons.add, size: 18 * uiScale),
-                    label: Text(
-                      "Add",
-                      style: TextStyle(fontSize: (isTablet ? 13 : 12) * uiScale),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _addEmptyRow,
+                  label: Text(
+                    "Add",
+                    style: TextStyle(fontSize: (isTablet ? 13 : 12) * uiScale),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: kPrimaryColor,
+                    side: const BorderSide(color: kPrimaryColor),
+                    padding: EdgeInsets.symmetric(
+                      vertical: (isTablet ? 12 : 10) * uiScale,
                     ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: kPrimaryColor,
-                      side: const BorderSide(color: kPrimaryColor),
-                      padding: EdgeInsets.symmetric(
-                        vertical: (isTablet ? 12 : 10) * uiScale,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
-              if (!_showManualEntry && _canSelect)
-                SizedBox(width: 10 * uiScale),
-
-              // Cancel Button
+              ),
+              SizedBox(width: 10 * uiScale),
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(null),
@@ -623,12 +604,10 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                 ),
               ),
               SizedBox(width: 10 * uiScale),
-
-              // Confirm Button
               Expanded(
                 child: ElevatedButton(
                   onPressed: _isValid
-                      ? () => Navigator.of(context).pop(_selectedSerials.toList())
+                      ? () => Navigator.of(context).pop(_buildSelectedSerials())
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kPrimaryColor,

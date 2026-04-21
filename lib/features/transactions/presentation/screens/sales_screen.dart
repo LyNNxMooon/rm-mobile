@@ -2545,6 +2545,7 @@ class _SalesScreenState extends State<SalesScreen>
         isTablet: isTablet,
         isIncTax: _isIncTax,
         allowPriceEdit: AppGlobals.instance.hasPermission("Miscellaneous_LockSellPrice"),
+        hideSerialButton: widget.title == "Quotes",
         onQtyChanged: (qty) {
           _salesBloc.add(UpdateCartItemQty(index: index, qty: qty));
         },
@@ -2555,9 +2556,9 @@ class _SalesScreenState extends State<SalesScreen>
           }
           _salesBloc.add(UpdateCartItemPrice(index: index, price: price, isIncPrice: _isIncTax));
         },
-        onSerialChanged: (serial) {
+        onSerialChanged: (serials) {
           _salesBloc.add(
-            UpdateCartItemSerial(index: index, serialNumber: serial),
+            UpdateCartItemSerial(index: index, serialNumbers: serials),
           );
         },
         onDescriptionChanged: (description) {
@@ -2824,6 +2825,69 @@ class _SalesScreenState extends State<SalesScreen>
     final isQuotes = widget.title == "Quotes";
     final isLayby = widget.title == "Lay-bys";
     final isSales = widget.title == "Sales";
+
+    final hasIncompleteSerials = _cartItems.any((item) {
+      if (!item.trackSerial) return false;
+      final requiredQty = item.qty.toInt();
+      if (requiredQty <= 0) return false;
+      final assignedCount = item.serialNumbers
+          .where((serial) => serial.number.trim().isNotEmpty)
+          .length;
+      return assignedCount < requiredQty;
+    });
+
+    if (hasIncompleteSerials && !isQuotes) {
+      final shouldContinue = await showDialog<bool>(
+        context: context,
+        builder: (ctx) {
+          final colors = context.appColors;
+          final isDark = colors.isDark;
+          return AlertDialog(
+            backgroundColor: isDark ? colors.surface : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: Text(
+              "RetailManager Question",
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            content: Text(
+              "You have not selected or entered all required serial numbers\n\nContinue?",
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black54,
+                fontSize: 15,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(
+                  "No",
+                  style: TextStyle(
+                    color: isDark ? Colors.white54 : Colors.black45,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kPrimaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text("Yes"),
+              ),
+            ],
+          );
+        },
+      );
+      if (shouldContinue != true) {
+        return;
+      }
+    }
 
     // Check if sale is at a loss and prompt for confirmation
     final totals = _calculatedTotals;
@@ -3316,8 +3380,8 @@ class _SalesScreenState extends State<SalesScreen>
       'totalEx': totals.totalEx,
       'totalInc': _total,
       'status': 0,
-      'lines': cartItemsData
-          .map(_buildSalesOrderLine)
+        'lines': cartItemsData
+          .map((item) => _buildSalesOrderLine(item, includeSerialNumbers: true))
           .toList(growable: false),
     };
 
@@ -3374,8 +3438,8 @@ class _SalesScreenState extends State<SalesScreen>
       'totalEx': totals.totalEx,
       'totalInc': _total,
       'status': 3,
-      'lines': cartItemsData
-          .map(_buildSalesOrderLine)
+        'lines': cartItemsData
+          .map((item) => _buildSalesOrderLine(item, includeSerialNumbers: false))
           .toList(growable: false),
     };
 
@@ -3476,6 +3540,11 @@ class _SalesScreenState extends State<SalesScreen>
       'isStatic': item.isStatic,
     };
 
+    final serialNumbers = _serialNumbersPayload(item);
+    if (serialNumbers != null) {
+      payload['serial_numbers'] = serialNumbers;
+    }
+
     if (item.description?.isNotEmpty == true) {
       payload['description'] = item.description;
     }
@@ -3512,7 +3581,10 @@ class _SalesScreenState extends State<SalesScreen>
     return payload;
   }
 
-  Map<String, dynamic> _buildSalesOrderLine(CartItemData item) {
+  Map<String, dynamic> _buildSalesOrderLine(
+    CartItemData item, {
+    required bool includeSerialNumbers,
+  }) {
     final payload = <String, dynamic>{
       'stockId': item.stockId ?? 0,
       'quantity': item.qty,
@@ -3529,6 +3601,13 @@ class _SalesScreenState extends State<SalesScreen>
       'isPromotion': item.isPromotion,
       'isPackage': item.isPackage,
     };
+
+    if (includeSerialNumbers) {
+      final serialNumbers = _serialNumbersPayload(item);
+      if (serialNumbers != null) {
+        payload['serial_numbers'] = serialNumbers;
+      }
+    }
 
     if (item.description?.isNotEmpty == true) {
       payload['description'] = item.description;
@@ -3583,11 +3662,26 @@ class _SalesScreenState extends State<SalesScreen>
           components.map(_buildInvoiceComponentLine).toList(growable: false),
     };
 
+    final serialNumbers = _serialNumbersPayload(item);
+    if (serialNumbers != null) {
+      payload['serial_numbers'] = serialNumbers;
+    }
+
     if (item.description?.isNotEmpty == true) {
       payload['description'] = item.description;
     }
 
     return payload;
+  }
+
+  List<Map<String, dynamic>>? _serialNumbersPayload(CartItemData item) {
+    if (item.serialNumbers.isEmpty) return null;
+    final serials = item.serialNumbers
+        .where((serial) => serial.number.trim().isNotEmpty)
+        .map((serial) => serial.toApiPayload())
+        .toList();
+    if (serials.isEmpty) return null;
+    return serials;
   }
 
   void _showAccountSalesError(String message) {

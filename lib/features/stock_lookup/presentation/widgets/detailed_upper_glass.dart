@@ -566,7 +566,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                   image: "assets/images/cost_white.png",
                   icon: Icons.percent,
                   iconBgColor: Colors.deepPurpleAccent,
-                  label: "Cost Tax / Sell Tax",
+                  label: "Cost / Sell Tax",
                   value: "${widget.costTaxLabel} / ${widget.sellTaxLabel}",
                 ),
                 SizedBox(height: rowGap),

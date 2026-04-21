@@ -8,6 +8,7 @@ import '../../local_db/local_db_dao.dart';
 import '../../utils/tax_calculation_utils.dart';
 import 'cart_item_vo.dart';
 import 'delivery_info_vo.dart';
+import 'serial_number_vo.dart';
 
 /// Value Object for persisted sale sessions.
 /// Captures the full state of a sale transaction for later continuation.
@@ -164,6 +165,7 @@ class SaleSessionVO {
     };
   }
 
+
   /// Create a copy with updated values
   SaleSessionVO copyWith({
     int? id,
@@ -219,7 +221,7 @@ class CartItemData {
   final String code;
   final String? description; // Only stored when overridden at POS
   final double qty;
-  final String? serialNumber;
+  final List<SerialNumberVO> serialNumbers;
   final int? stockId;
   
   // Price fields
@@ -247,7 +249,7 @@ class CartItemData {
     required this.code,
     this.description,
     required this.qty,
-    this.serialNumber,
+    this.serialNumbers = const [],
     this.stockId,
     required this.sellInc,
     required this.sellEx,
@@ -274,12 +276,14 @@ class CartItemData {
       final decoded = json['package_components'] as List;
       components = decoded.map((e) => CartItemData.fromJson(e as Map<String, dynamic>)).toList();
     }
+
+    final serialNumbers = _serialNumbersFromJson(json);
     
     return CartItemData(
       code: json['code'] as String,
       description: json['description'] as String?,
       qty: (json['qty'] as num).toDouble(),
-      serialNumber: json['serial_number'] as String?,
+      serialNumbers: serialNumbers,
       stockId: json['stock_id'] as int?,
       sellInc: (json['sell_inc'] as num?)?.toDouble() ?? 0.0,
       sellEx: (json['sell_ex'] as num?)?.toDouble() ?? 0.0,
@@ -306,7 +310,8 @@ class CartItemData {
       'code': code,
       if (description != null) 'description': description,
       'qty': qty,
-      'serial_number': serialNumber,
+      if (serialNumbers.isNotEmpty)
+        'serial_numbers': serialNumbers.map((e) => e.toJson()).toList(),
       'stock_id': stockId,
       'sell_inc': sellInc,
       'sell_ex': sellEx,
@@ -335,7 +340,8 @@ class CartItemData {
       'code': code,
       if (description != null) 'description': description,
       'qty': qty,
-      'serial_number': serialNumber,
+      if (serialNumbers.isNotEmpty)
+        'serial_numbers': serialNumbers.map((e) => e.toJson()).toList(),
       'stock_id': stockId,
       'sell_inc': sellInc,
       'sell_ex': sellEx,
@@ -351,6 +357,54 @@ class CartItemData {
       'is_static': isStatic,
       'is_description_overridden': isDescriptionOverridden,
     };
+  }
+
+  static List<SerialNumberVO> _serialNumbersFromJson(
+    Map<String, dynamic> json,
+  ) {
+    final rawList = json['serial_numbers'];
+    if (rawList is List) {
+      return rawList
+          .map((item) {
+            if (item is SerialNumberVO) return item;
+            if (item is Map<String, dynamic>) {
+              return SerialNumberVO.fromJson(item);
+            }
+            if (item is Map) {
+              return SerialNumberVO.fromJson(Map<String, dynamic>.from(item));
+            }
+            return const SerialNumberVO();
+          })
+          .where((item) => item.number.trim().isNotEmpty || item.serialAuditId != null)
+          .toList();
+    }
+
+    if (rawList is String && rawList.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawList);
+        if (decoded is List) {
+          return decoded
+              .map((item) {
+                if (item is Map<String, dynamic>) {
+                  return SerialNumberVO.fromJson(item);
+                }
+                if (item is Map) {
+                  return SerialNumberVO.fromJson(Map<String, dynamic>.from(item));
+                }
+                return const SerialNumberVO();
+              })
+              .where((item) => item.number.trim().isNotEmpty || item.serialAuditId != null)
+              .toList();
+        }
+      } catch (_) {}
+    }
+
+    final legacy = json['serial_number'];
+    if (legacy is String && legacy.trim().isNotEmpty) {
+      return [SerialNumberVO(number: legacy.trim())];
+    }
+
+    return const <SerialNumberVO>[];
   }
 
   /// Create from CartItemVO (async to lookup goods_tax for costInc calculation)
@@ -598,6 +652,10 @@ class CartItemData {
     
     // Only store description if it was overridden at POS
     final isOverridden = item.description != stock?.description;
+
+    final serialNumbers = item.serialNumbers
+      .where((serial) => serial.number.trim().isNotEmpty)
+      .toList();
     
     // Calculate GP based on taxType from sales_tax:
     // taxType == 0 -> use costEx, taxType != 0 -> use costInc
@@ -608,7 +666,7 @@ class CartItemData {
       code: item.code,
       description: isOverridden ? item.description : null,
       qty: item.qty,
-      serialNumber: item.serialNumber,
+      serialNumbers: serialNumbers,
       stockId: stock?.stockID.toInt(),
       sellInc: item.incPrice,
       sellEx: item.exPrice,

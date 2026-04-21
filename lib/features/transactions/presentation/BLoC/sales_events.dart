@@ -1,5 +1,6 @@
 import '../../../../entities/vos/stock_vo.dart';
 import '../../../../entities/vos/customer_vo.dart';
+import '../../../../entities/vos/serial_number_vo.dart';
 
 /// Base class for all sales events
 abstract class SalesEvent {}
@@ -74,8 +75,8 @@ class UpdateCartItemPrice extends SalesEvent {
 /// Update cart item serial number
 class UpdateCartItemSerial extends SalesEvent {
   final int index;
-  final String serialNumber;
-  UpdateCartItemSerial({required this.index, required this.serialNumber});
+  final List<SerialNumberVO> serialNumbers;
+  UpdateCartItemSerial({required this.index, required this.serialNumbers});
 }
 
 /// Update cart item description (for allow_renaming items)
