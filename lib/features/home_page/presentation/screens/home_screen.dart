@@ -322,7 +322,10 @@ class _HomeScreenState extends State<HomeScreen> {
             if (state is StaffSignedOut ||
                 state is StaffUnauthenticated ||
                 state is StaffAuthError) {
-              _promptStaffLoginIfNeeded(force: true);
+              // Don't redirect if shopfront dialog is handling the login flow
+              if (!AppGlobals.instance.isShopfrontDialogOpen) {
+                _promptStaffLoginIfNeeded(force: true);
+              }
             }
           },
         ),

@@ -469,10 +469,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
     try {
       final db = _database!;
 
-      // 1) Barcode exact match (ALL matches) - exclude default stock
+      // 1) Barcode exact match (case-insensitive, ALL matches) - exclude default stock
       final barcodeRows = await db.query(
         'Stocks',
-        where: 'Barcode = ? AND shopfront = ? AND stock_id != 0',
+        where: 'LOWER(Barcode) = LOWER(?) AND shopfront = ? AND stock_id != 0',
         whereArgs: [query, shopfront],
       );
 
@@ -1199,7 +1199,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
     final db = _database!;
     final rows = await db.query(
       'Stocks',
-      where: 'Barcode = ? AND shopfront = ?',
+      where: 'LOWER(Barcode) = LOWER(?) AND shopfront = ?',
       whereArgs: [barcode, shopfront],
     );
 

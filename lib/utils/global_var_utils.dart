@@ -77,6 +77,9 @@ class AppGlobals {
     return candidate.isEmpty ? fallback : candidate;
   }
 
+  /// Flag to track when ShopfrontsDialog is open (to prevent redirect on auth errors)
+  bool isShopfrontDialogOpen = false;
+
   final String defaultLanFolder = "C/AAAPOS RM-Mobile";
   final String defaultUserName = "RM-Mobile-User";
   final String defaultPwd = "retailmanager";

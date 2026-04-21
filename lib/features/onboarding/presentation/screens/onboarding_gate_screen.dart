@@ -59,28 +59,66 @@ class _OnboardingGateScreenState extends State<OnboardingGateScreen> {
     await SystemNavigator.pop();
   }
 
+  /// Build light theme for onboarding screens (always light mode)
+  ThemeData _buildLightTheme() {
+    final ColorScheme scheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF0F8ABE),
+      brightness: Brightness.light,
+    );
+
+    return ThemeData(
+      brightness: Brightness.light,
+      fontFamily: "Inter",
+      colorScheme: scheme,
+      scaffoldBackgroundColor: const Color(0xFFF6F7F8),
+      appBarTheme: AppBarTheme(
+        backgroundColor: const Color(0xFFF6F7F8),
+        foregroundColor: scheme.onSurface,
+        elevation: 0,
+      ),
+      dialogBackgroundColor: Colors.white,
+      dividerColor: const Color(0xFFE1E5EA),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Widget body;
+    final bool needsLightTheme;
+    
     if (_isLoading) {
+      needsLightTheme = true;
       body = Scaffold(
         backgroundColor: Colors.black,
         body: Container(
-          decoration: BoxDecoration(gradient: context.appColors.heroGradient),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF0F8ABE), Color(0xFF0A5E7A)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
           child: const SizedBox()
         ),
       );
     } else if (!_termsAccepted && !_movedToTermsInCurrentLaunch) {
+      needsLightTheme = true;
       if (!_movedToWelcomeInCurrentLaunch) {
         body = WelcomeScreen(onContinue: _onVideoWelcomeContinue);
       } else {
         body = _WelcomeScreen(onContinue: _onWelcomeContinue);
       }
     } else if (!_termsAccepted) {
+      needsLightTheme = true;
       body = _TermsScreen(onAgree: _onTermsAgree, onDecline: _onTermsDecline);
     } else {
+      needsLightTheme = false;
       body = const IndexScreen();
     }
+
+    final Widget themedBody = needsLightTheme
+        ? Theme(data: _buildLightTheme(), child: body)
+        : body;
 
     return BlocListener<OnboardingBloc, OnboardingState>(
       listener: (context, state) {
@@ -102,7 +140,7 @@ class _OnboardingGateScreenState extends State<OnboardingGateScreen> {
           );
         }
       },
-      child: body,
+      child: themedBody,
     );
   }
 }

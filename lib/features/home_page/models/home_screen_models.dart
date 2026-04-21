@@ -152,7 +152,7 @@ class HomeScreenModels implements HomeRepo {
       final raw = await LocalDbDAO.instance.getAppConfig(
         _kDarkModeEnabledKey,
       );
-      if (raw == null || raw.isEmpty) return false;
+      if (raw == null || raw.isEmpty) return true; // Default to dark mode
       return raw == "1";
     } on Exception catch (error) {
       return Future.error(error);

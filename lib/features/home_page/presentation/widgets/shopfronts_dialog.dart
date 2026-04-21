@@ -60,11 +60,13 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
   @override
   void initState() {
     super.initState();
+    AppGlobals.instance.isShopfrontDialogOpen = true;
     context.read<StaffAuthBloc>().add(LoadConnectionInfoEvent());
   }
 
   @override
   void dispose() {
+    AppGlobals.instance.isShopfrontDialogOpen = false;
     _userNameController.dispose();
     _pwdController.dispose();
     _staffNoController.dispose();
