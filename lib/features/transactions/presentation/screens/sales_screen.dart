@@ -12,7 +12,9 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:alert_info/alert_info.dart';
 import 'package:rational/rational.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 
@@ -31,7 +33,6 @@ import '../BLoC/sales_bloc.dart';
 import '../BLoC/sales_events.dart';
 import '../BLoC/sales_states.dart';
 import '../../../home_page/presentation/BLoC/home_screen_events.dart';
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'stock_selection_screen.dart';
 import 'customer_selection_screen.dart';
 import '../widgets/finalise_sale_dialog.dart';
@@ -171,6 +172,10 @@ class _SalesScreenState extends State<SalesScreen>
   final Map<String, double> _promptedQtyByCode = {};
   bool _isRestoringSession = false;
   bool _isFinaliseProcessing = false;
+  bool _isPostSyncing = false;
+  bool _postSaleSyncRequested = false;
+  bool _postStockSyncing = false;
+  bool _postCustomerSyncing = false;
   bool _isNegativeSellPriceDialogOpen = false;
   bool _reminderShown = false;
   bool _salesPromptDialogOpen = false;
@@ -1187,135 +1192,35 @@ class _SalesScreenState extends State<SalesScreen>
 
     return BlocProvider.value(
       value: _salesBloc,
-      child: BlocListener<SalesBloc, SalesState>(
-        listener: (context, state) async {
-          if (state is StockDuplicatesFound) {
-            // Navigate to stock selection screen
-            final selected = await Navigator.push<StockVO>(
-              context,
-              MaterialPageRoute(
-                builder: (_) => StockSelectionScreen(matches: state.matches),
-              ),
-            );
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<SalesBloc, SalesState>(
+            listener: (context, state) async {
+              if (state is StockDuplicatesFound) {
+                // Navigate to stock selection screen
+                final selected = await Navigator.push<StockVO>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => StockSelectionScreen(matches: state.matches),
+                  ),
+                );
 
-            if (selected != null && mounted) {
-              _salesBloc.add(
-                SelectStock(
-                  stock: selected,
-                  skipEditMode: _scanIndividualUnits && _skipSellPrice,
-                  autoRemindLowStock: _autoRemindLowStock,
-                  preventAddIfNoStock: _preventAddIfNoStock,
-                ),
-              );
-            } else {
-              _salesBloc.add(ResetSearchState());
-            }
-          } else if (state is StockNotFound) {
-            AlertInfo.show(
-              context: context,
-              text: state.message,
-              typeInfo: TypeInfo.error,
-              backgroundColor: isDark ? colors.surface : kSecondaryColor,
-              iconColor: kErrorColor,
-              textColor: kErrorColor,
-              position: MessagePosition.top,
-              padding: 70,
-            );
-          } else if (state is StockSearchError) {
-            AlertInfo.show(
-              context: context,
-              text: state.error,
-              typeInfo: TypeInfo.error,
-              backgroundColor: isDark ? colors.surface : kSecondaryColor,
-              iconColor: kErrorColor,
-              textColor: kErrorColor,
-              position: MessagePosition.top,
-              padding: 70,
-            );
-          } else if (state is StockNotPermitted) {
-            NotPermittedDialog.show(
-              context: context,
-              message: state.message,
-              colors: colors,
-              isDark: isDark,
-            );
-          } else if (state is NegativeSellPriceFound) {
-            _showNegativeSellPriceError();
-          } else if (state is FractionalItemFound) {
-            // Handle fractional item based on settings
-            await _handleFractionalItem(state.stock, colors, isDark);
-          } else if (state is CartUpdated && state.message != null) {
-            AlertInfo.show(
-              context: context,
-              text: state.message!,
-              typeInfo: TypeInfo.success,
-              backgroundColor: isDark ? colors.surface : kSecondaryColor,
-              iconColor: kPrimaryColor,
-              textColor: kPrimaryColor,
-              position: MessagePosition.top,
-              padding: 70,
-            );
-          }
-
-          if (state is CartItemSaved) {
-            final savedItem = state.cartItems[state.index];
-            final proceed = await _promptBelowCostOnSave(
-              savedItem,
-              state.index,
-              colors,
-              isDark,
-            );
-            if (!proceed) return;
-            _focusSearchField();
-          } else if (state is CartUpdated) {
-            if (_isRestoringSession) return;
-            // Save session immediately when cart is updated
-            _saveCurrentSession();
-            await _promptBelowCostOnAddIfNeeded(
-              state.cartItems,
-              colors,
-              isDark,
-            );
-
-            final salesPrompt = state.salesPrompt?.trim() ?? '';
-            if (salesPrompt.isNotEmpty) {
-              await _showSalesPromptDialog(salesPrompt, colors, isDark);
-            }
-          }
-          
-          // Handle low stock warning (show after CartUpdated or CartItemSaved)
-          if ((state is CartUpdated || state is CartItemSaved) && 
-              state.lowStockWarning != null && 
-              state.lowStockWarning!.hasWarning) {
-            _lowStockDialogOpen = true;
-            await LowStockWarningDialog.show(
-              context: context,
-              message: state.lowStockWarning!.message ?? '',
-              colors: colors,
-              isDark: isDark,
-            );
-            _lowStockDialogOpen = false;
-          }
-
-          if (state is CartUpdated && state.cartItems.isNotEmpty) {
-            _focusSearchField();
-          }
-          
-          if (state is CustomerDuplicatesFound) {
-            // Navigate to customer selection screen
-            final selected = await Navigator.push<CustomerVO>(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CustomerSelectionScreen(matches: state.matches),
-              ),
-            );
-
-            if (selected != null && mounted) {
-                // For Account Sales, validate customer is an account customer
-                if (widget.title == "Account Sales" && !selected.account) {
+                if (selected != null && mounted) {
+                  _salesBloc.add(
+                    SelectStock(
+                      stock: selected,
+                      skipEditMode: _scanIndividualUnits && _skipSellPrice,
+                      autoRemindLowStock: _autoRemindLowStock,
+                      preventAddIfNoStock: _preventAddIfNoStock,
+                    ),
+                  );
+                } else {
+                  _salesBloc.add(ResetSearchState());
+                }
+              } else if (state is StockNotFound) {
                 AlertInfo.show(
                   context: context,
-                  text: "This customer is not an account customer",
+                  text: state.message,
                   typeInfo: TypeInfo.error,
                   backgroundColor: isDark ? colors.surface : kSecondaryColor,
                   iconColor: kErrorColor,
@@ -1323,58 +1228,184 @@ class _SalesScreenState extends State<SalesScreen>
                   position: MessagePosition.top,
                   padding: 70,
                 );
-                _salesBloc.add(ResetSearchState());
-              } else {
-                _salesBloc.add(SelectCustomer(customer: selected));
-                setState(() => _selectedCustomer = selected);
-                // Note: Don't call _checkAndShowCustomerComments here - 
-                // it will be triggered by CustomerSelected state listener
+              } else if (state is StockSearchError) {
+                AlertInfo.show(
+                  context: context,
+                  text: state.error,
+                  typeInfo: TypeInfo.error,
+                  backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                  iconColor: kErrorColor,
+                  textColor: kErrorColor,
+                  position: MessagePosition.top,
+                  padding: 70,
+                );
+              } else if (state is StockNotPermitted) {
+                NotPermittedDialog.show(
+                  context: context,
+                  message: state.message,
+                  colors: colors,
+                  isDark: isDark,
+                );
+              } else if (state is NegativeSellPriceFound) {
+                _showNegativeSellPriceError();
+              } else if (state is FractionalItemFound) {
+                // Handle fractional item based on settings
+                await _handleFractionalItem(state.stock, colors, isDark);
+              } else if (state is CartUpdated && state.message != null) {
+                AlertInfo.show(
+                  context: context,
+                  text: state.message!,
+                  typeInfo: TypeInfo.success,
+                  backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                  iconColor: kPrimaryColor,
+                  textColor: kPrimaryColor,
+                  position: MessagePosition.top,
+                  padding: 70,
+                );
               }
-            } else {
-              _salesBloc.add(ResetSearchState());
-            }
-          } else if (state is CustomerSelected) {
-            // For Account Sales, validate customer is an account customer
-            if (widget.title == "Account Sales" &&
-                !(state.selectedCustomer?.account ?? false)) {
-              AlertInfo.show(
-                context: context,
-                text: "This customer is not an account customer",
-                typeInfo: TypeInfo.error,
-                backgroundColor: isDark ? colors.surface : kSecondaryColor,
-                iconColor: kErrorColor,
-                textColor: kErrorColor,
-                position: MessagePosition.top,
-                padding: 70,
-              );
-            } else {
-              setState(() => _selectedCustomer = state.selectedCustomer);
-              _checkAndShowCustomerComments(state.selectedCustomer);
-            }
-          } else if (state is CustomerNotFound) {
-            AlertInfo.show(
-              context: context,
-              text: state.message,
-              typeInfo: TypeInfo.error,
-              backgroundColor: isDark ? colors.surface : kSecondaryColor,
-              iconColor: kErrorColor,
-              textColor: kErrorColor,
-              position: MessagePosition.top,
-              padding: 70,
-            );
-          } else if (state is CustomerSearchError) {
-            AlertInfo.show(
-              context: context,
-              text: state.error,
-              typeInfo: TypeInfo.error,
-              backgroundColor: isDark ? colors.surface : kSecondaryColor,
-              iconColor: kErrorColor,
-              textColor: kErrorColor,
-              position: MessagePosition.top,
-              padding: 70,
-            );
-          }
-        },
+
+              if (state is CartItemSaved) {
+                final savedItem = state.cartItems[state.index];
+                final proceed = await _promptBelowCostOnSave(
+                  savedItem,
+                  state.index,
+                  colors,
+                  isDark,
+                );
+                if (!proceed) return;
+                _focusSearchField();
+              } else if (state is CartUpdated) {
+                if (_isRestoringSession) return;
+                // Save session immediately when cart is updated
+                _saveCurrentSession();
+                await _promptBelowCostOnAddIfNeeded(
+                  state.cartItems,
+                  colors,
+                  isDark,
+                );
+
+                final salesPrompt = state.salesPrompt?.trim() ?? '';
+                if (salesPrompt.isNotEmpty) {
+                  await _showSalesPromptDialog(salesPrompt, colors, isDark);
+                }
+              }
+
+              // Handle low stock warning (show after CartUpdated or CartItemSaved)
+              if ((state is CartUpdated || state is CartItemSaved) &&
+                  state.lowStockWarning != null &&
+                  state.lowStockWarning!.hasWarning) {
+                _lowStockDialogOpen = true;
+                await LowStockWarningDialog.show(
+                  context: context,
+                  message: state.lowStockWarning!.message ?? '',
+                  colors: colors,
+                  isDark: isDark,
+                );
+                _lowStockDialogOpen = false;
+              }
+
+              if (state is CartUpdated && state.cartItems.isNotEmpty) {
+                _focusSearchField();
+              }
+
+              if (state is CustomerDuplicatesFound) {
+                // Navigate to customer selection screen
+                final selected = await Navigator.push<CustomerVO>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CustomerSelectionScreen(matches: state.matches),
+                  ),
+                );
+
+                if (selected != null && mounted) {
+                  // For Account Sales, validate customer is an account customer
+                  if (widget.title == "Account Sales" && !selected.account) {
+                    AlertInfo.show(
+                      context: context,
+                      text: "This customer is not an account customer",
+                      typeInfo: TypeInfo.error,
+                      backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                      iconColor: kErrorColor,
+                      textColor: kErrorColor,
+                      position: MessagePosition.top,
+                      padding: 70,
+                    );
+                    _salesBloc.add(ResetSearchState());
+                  } else {
+                    _salesBloc.add(SelectCustomer(customer: selected));
+                    setState(() => _selectedCustomer = selected);
+                    // Note: Don't call _checkAndShowCustomerComments here -
+                    // it will be triggered by CustomerSelected state listener
+                  }
+                } else {
+                  _salesBloc.add(ResetSearchState());
+                }
+              } else if (state is CustomerSelected) {
+                // For Account Sales, validate customer is an account customer
+                if (widget.title == "Account Sales" &&
+                    !(state.selectedCustomer?.account ?? false)) {
+                  AlertInfo.show(
+                    context: context,
+                    text: "This customer is not an account customer",
+                    typeInfo: TypeInfo.error,
+                    backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                    iconColor: kErrorColor,
+                    textColor: kErrorColor,
+                    position: MessagePosition.top,
+                    padding: 70,
+                  );
+                } else {
+                  setState(() => _selectedCustomer = state.selectedCustomer);
+                  _checkAndShowCustomerComments(state.selectedCustomer);
+                }
+              } else if (state is CustomerNotFound) {
+                AlertInfo.show(
+                  context: context,
+                  text: state.message,
+                  typeInfo: TypeInfo.error,
+                  backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                  iconColor: kErrorColor,
+                  textColor: kErrorColor,
+                  position: MessagePosition.top,
+                  padding: 70,
+                );
+              } else if (state is CustomerSearchError) {
+                AlertInfo.show(
+                  context: context,
+                  text: state.error,
+                  typeInfo: TypeInfo.error,
+                  backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                  iconColor: kErrorColor,
+                  textColor: kErrorColor,
+                  position: MessagePosition.top,
+                  padding: 70,
+                );
+              }
+            },
+          ),
+          BlocListener<FetchStockBloc, FetchStockStates>(
+            listener: (context, state) {
+              if (!_postSaleSyncRequested) return;
+              if (state is FetchStockProgress) {
+                _postStockSyncing = true;
+              } else if (state is FetchStockSuccess || state is FetchStockError) {
+                _postStockSyncing = false;
+              }
+              _updatePostSyncing();
+            },
+          ),
+          BlocListener<FetchCustomerBloc, FetchCustomerStates>(
+            listener: (context, state) {
+              if (!_postSaleSyncRequested) return;
+              if (state is FetchCustomerProgress) {
+                _postCustomerSyncing = true;
+              } else if (state is FetchCustomerSuccess || state is FetchCustomerFailure) {
+                _postCustomerSyncing = false;
+              }
+              _updatePostSyncing();
+            },
+          ),
+        ],
         child: BlocBuilder<SalesBloc, SalesState>(
           builder: (context, state) {
             return Stack(
@@ -1484,70 +1515,17 @@ class _SalesScreenState extends State<SalesScreen>
                   ),
                 ),
                 if (_isFinaliseProcessing)
-                  Positioned.fill(
-                    child: AbsorbPointer(
-                      child: Container(
-                        color: Colors.black45,
-                        child: SafeArea(
-                          child: Center(
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 16,
-                              ),
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 320),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 20,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? colors.surface : Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const SizedBox(
-                                        width: 32,
-                                        height: 32,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 3,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                            kPrimaryColor,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        "Processing...",
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: isDark
-                                              ? Colors.white
-                                              : Colors.black87,
-                                          decoration: TextDecoration.none,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  _buildBlockingOverlay(
+                    colors: colors,
+                    isDark: isDark,
+                    message: "Processing...",
+                  ),
+                if (_isPostSyncing)
+                  _buildBlockingOverlay(
+                    colors: colors,
+                    isDark: isDark,
+                    message: "Re-syncing...",
+                    showPanel: false,
                   ),
               ],
             );
@@ -1808,6 +1786,91 @@ class _SalesScreenState extends State<SalesScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildBlockingOverlay({
+    required AppThemeColors colors,
+    required bool isDark,
+    required String message,
+    bool showPanel = true,
+  }) {
+    return Positioned.fill(
+      child: AbsorbPointer(
+        child: Container(
+          color: Colors.black45,
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: showPanel
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 20,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark ? colors.surface : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: _buildBlockingContent(message, isDark),
+                        )
+                      : _buildBlockingContent(message, isDark),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlockingContent(String message, bool isDark) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(
+          width: 32,
+          height: 32,
+          child: CircularProgressIndicator(
+            strokeWidth: 3,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              kPrimaryColor,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          message,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.black87,
+            decoration: TextDecoration.none,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _updatePostSyncing() {
+    if (!mounted) return;
+    final syncing = _postStockSyncing || _postCustomerSyncing;
+    setState(() => _isPostSyncing = syncing);
+    if (!syncing) {
+      _postSaleSyncRequested = false;
+    }
   }
 
   Widget _buildGridHeader(
@@ -3801,9 +3864,13 @@ class _SalesScreenState extends State<SalesScreen>
   void _runPostSaleDeltaSync() {
     if (!mounted) return;
 
-    // Trigger delta sync for stocks and customers after successful sale
+    _postSaleSyncRequested = true;
+    _postStockSyncing = true;
+    _postCustomerSyncing = false;
+    _updatePostSyncing();
+
+    // Trigger delta sync for stocks after successful sale
     context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-    context.read<FetchCustomerBloc>().add(StartCustomerSyncEvent(ipAddress: ""));
   }
 
   void _showSurveyScannerDialog(

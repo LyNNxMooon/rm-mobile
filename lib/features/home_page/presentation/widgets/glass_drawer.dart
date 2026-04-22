@@ -16,11 +16,9 @@ import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_states.dart';
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import '../../../transactions/presentation/screens/sales_screen.dart';
 import '../../../transactions/presentation/BLoC/sales_bloc.dart';
 import '../BLoC/home_screen_bloc.dart';
-import '../BLoC/home_screen_events.dart';
 import '../BLoC/home_screen_states.dart';
 import '../BLoC/session_counts_cubit.dart';
 import '../screens/coming_soon_screen.dart';
@@ -344,12 +342,6 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
       context.navigateToNext(const CustomerLookupScreen());
     } else if (action == "sales") {
       if (_blockTransactionsIfSyncing(context)) return;
-      if (!_isSyncInProgress(context)) {
-        context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-        context
-            .read<FetchCustomerBloc>()
-            .add(StartCustomerSyncEvent(ipAddress: ""));
-      }
       context.navigateToNext(
         BlocProvider(
           create: (_) => sl<SalesBloc>(),
@@ -362,12 +354,6 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
       ).then((_) => _loadSessionCounts());
     } else if (action == "account_sales") {
       if (_blockTransactionsIfSyncing(context)) return;
-      if (!_isSyncInProgress(context)) {
-        context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-        context
-            .read<FetchCustomerBloc>()
-            .add(StartCustomerSyncEvent(ipAddress: ""));
-      }
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
           Overlay.of(context),
@@ -389,12 +375,6 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
       ).then((_) => _loadSessionCounts());
     } else if (action == "sales_order") {
       if (_blockTransactionsIfSyncing(context)) return;
-      if (!_isSyncInProgress(context)) {
-        context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-        context
-            .read<FetchCustomerBloc>()
-            .add(StartCustomerSyncEvent(ipAddress: ""));
-      }
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
           Overlay.of(context),
@@ -416,12 +396,6 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
       ).then((_) => _loadSessionCounts());
     } else if (action == "quotes") {
       if (_blockTransactionsIfSyncing(context)) return;
-      if (!_isSyncInProgress(context)) {
-        context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-        context
-            .read<FetchCustomerBloc>()
-            .add(StartCustomerSyncEvent(ipAddress: ""));
-      }
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
           Overlay.of(context),
@@ -443,12 +417,6 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
       ).then((_) => _loadSessionCounts());
     } else if (action == "lay_bys") {
       if (_blockTransactionsIfSyncing(context)) return;
-      if (!_isSyncInProgress(context)) {
-        context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-        context
-            .read<FetchCustomerBloc>()
-            .add(StartCustomerSyncEvent(ipAddress: ""));
-      }
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
           Overlay.of(context),

@@ -15,6 +15,7 @@ import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states
 import 'package:rmmobile/features/home_page/presentation/widgets/restore_backup_dialog.dart';
 import 'package:rmmobile/features/home_page/presentation/widgets/shopfronts_dialog.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/sync_utils.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
@@ -28,7 +29,6 @@ import '../../../stocktake/presentation/BLoC/stocktake_bloc.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_events.dart';
 import '../../../stocktake/presentation/widgets/delete_all_confirmation_dialog.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'staff_login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -455,10 +455,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _isForceFullSyncInProgress = false;
               });
               // Trigger both stock and customer syncs
-              context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-              context.read<FetchCustomerBloc>().add(
-                StartCustomerSyncEvent(ipAddress: ""),
-              );
+              runSequentialStockThenCustomerSync(context);
               AlertInfo.show(
                 context: context,
                 text: "Full sync started for stocks and customers",

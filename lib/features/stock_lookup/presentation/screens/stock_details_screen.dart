@@ -20,8 +20,6 @@ import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states
 import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_events.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
-import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmmobile/utils/global_var_utils.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/dialog_size_utils.dart';
@@ -506,11 +504,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
     context.read<FetchStockBloc>().add(
       StartSyncEvent(ipAddress: ""),
-    );
-    context.read<FetchCustomerBloc>().add(
-      StartCustomerSyncEvent(
-        ipAddress: "",
-      ),
     );
     _shouldSyncOnExit = false;
   }

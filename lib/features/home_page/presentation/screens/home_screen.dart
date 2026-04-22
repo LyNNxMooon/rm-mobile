@@ -10,9 +10,8 @@ import '../../../../constants/theme_colors.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
 import '../../../../utils/responsive_utils.dart';
+import '../../../../utils/sync_utils.dart';
 
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_states.dart';
 import '../../../stock_lookup/presentation/widgets/stock_request_error_dialog.dart';
@@ -254,9 +253,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (currentState is! FetchStockProgress) {
       context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-      context.read<FetchCustomerBloc>().add(
-        StartCustomerSyncEvent(ipAddress: ""),
-      );
     }
 
     context.navigateToNext(const ScannerScreen());
@@ -453,10 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
           previous is! ConnectedToShopfront && current is ConnectedToShopfront,
       listener: (context, state) {
         if (state is ConnectedToShopfront) {
-          context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-          context.read<FetchCustomerBloc>().add(
-            StartCustomerSyncEvent(ipAddress: ""),
-          );
+          runSequentialStockThenCustomerSync(context);
         }
         if (state is ShopfrontConnectionError) {
           showTopSnackBar(

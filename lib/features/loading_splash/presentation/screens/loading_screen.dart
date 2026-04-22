@@ -1,8 +1,6 @@
 import 'dart:ui'; // Required for ImageFilter (Blur)
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
@@ -12,6 +10,7 @@ import 'package:rmmobile/utils/global_var_utils.dart';
 import 'package:rmmobile/utils/log_utils.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/responsive_utils.dart';
+import 'package:rmmobile/utils/sync_utils.dart';
 
 //import '../../../../constants/theme_colors.dart';
 //import '../../../../constants/global_widgets.dart';
@@ -169,10 +168,7 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   void _startDataSync(BuildContext context) {
     // Start syncs in background - don't wait for them
-    context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-    context.read<FetchCustomerBloc>().add(
-      StartCustomerSyncEvent(ipAddress: ""),
-    );
+    runSequentialStockThenCustomerSync(context);
     // Navigation will happen automatically via IndexScreen state change
   }
 
