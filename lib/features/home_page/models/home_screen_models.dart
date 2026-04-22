@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:path/path.dart' as p;
+import 'package:sqflite/sqflite.dart';
 
 import 'package:rmmobile/entities/response/discover_response.dart';
 import 'package:rmmobile/entities/response/authenticate_staff_response.dart';
@@ -22,11 +24,37 @@ class HomeScreenModels implements HomeRepo {
   static const String _kAutoBackupEnabledKey = "auto_backup_enabled";
   static const String _kLastAutoBackupAtKey = "last_auto_backup_at";
   static const String _kDarkModeEnabledKey = "dark_mode_enabled";
+  static const int _defaultAgentPort = 5000;
 
   @override
   Future<List<NetworkServerVO>> fetchNetworkServers() async {
     try {
-      return LanNetworkServiceImpl.instance.scanNetwork();
+      final scanned = await LanNetworkServiceImpl.instance.scanNetwork();
+      if (scanned.isEmpty) return [];
+
+      final responses = await Future.wait(
+        scanned.map((pc) async {
+          try {
+            final response = await DataAgentImpl.instance.discoverHost(
+              pc.ipAddress,
+              _defaultAgentPort,
+            );
+            if (!response.isAgent) return null;
+            final displayName = response.serverName.trim().isNotEmpty
+                ? response.serverName
+                : pc.hostName;
+            return NetworkServerVO(
+              ipAddress: pc.ipAddress,
+              hostName: displayName,
+              port: response.port,
+            );
+          } catch (_) {
+            return null;
+          }
+        }),
+      );
+
+      return responses.whereType<NetworkServerVO>().toList();
     } on Exception catch (error) {
       return Future.error(error);
     }
@@ -124,7 +152,7 @@ class HomeScreenModels implements HomeRepo {
       final raw = await LocalDbDAO.instance.getAppConfig(
         _kDarkModeEnabledKey,
       );
-      if (raw == null || raw.isEmpty) return false;
+      if (raw == null || raw.isEmpty) return true; // Default to dark mode
       return raw == "1";
     } on Exception catch (error) {
       return Future.error(error);
@@ -173,6 +201,27 @@ class HomeScreenModels implements HomeRepo {
         _kLastAutoBackupAtKey,
         timestamp.toUtc().toIso8601String(),
       );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<void> clearSyncTimestamps(String shopfrontId) async {
+    try {
+      final stockSyncKey = 'stock_sync_timestamp_$shopfrontId';
+      final customerSyncKey = 'customer_sync_timestamp_$shopfrontId';
+      await LocalDbDAO.instance.saveAppConfig(stockSyncKey, '');
+      await LocalDbDAO.instance.saveAppConfig(customerSyncKey, '');
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<Map<String, int>> getSaleSessionCounts(String shopfront) async {
+    try {
+      return await LocalDbDAO.instance.getSaleSessionCounts(shopfront);
     } on Exception catch (error) {
       return Future.error(error);
     }
@@ -308,6 +357,15 @@ class HomeScreenModels implements HomeRepo {
             response.salesCustom!,
           );
           AppGlobals.instance.salesCustom = response.salesCustom;
+        }
+
+        // Save shopfront reminder
+        if (response.reminder != null) {
+          await LocalDbDAO.instance.saveAppConfig(
+            kShopfrontReminderKey,
+            response.reminder!,
+          );
+          AppGlobals.instance.shopfrontReminder = response.reminder;
         }
 
         // Save tax codes
@@ -566,6 +624,51 @@ class HomeScreenModels implements HomeRepo {
     } on Exception catch (error) {
       return Future.error(error);
     }
+  }
+  
+  @override
+  Future<String?> getCashDrawerIdentifier() async {
+    try {
+      return await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier');
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<void> saveCashDrawerIdentifier(String identifier) async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(
+        'cash_drawer_identifier',
+        identifier,
+      );
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<String?> getRmVersion() async {
+    try {
+      return await LocalDbDAO.instance.getRMVersion();
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<void> checkpointDatabase() async {
+    try {
+      await LocalDbDAO.instance.checkpointDatabase();
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+  
+  @override
+  Future<String> getDatabasePath() async {
+    final dbPath = await getDatabasesPath();
+    return p.join(dbPath, 'rm-mobile.db');
   }
 }
 

@@ -10,6 +10,7 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/images.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
+import '../../../../entities/vos/serial_number_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 import 'serial_number_dialog.dart';
 import 'breakdown_widgets.dart';
@@ -80,13 +81,14 @@ class ExpandedEditCartTile extends StatefulWidget {
   final bool isTablet;
   final Function(double qty) onQtyChanged;
   final Function(double price) onPriceChanged;
-  final Function(String serial) onSerialChanged;
+  final Function(List<SerialNumberVO> serials) onSerialChanged;
   final Function(String description)? onDescriptionChanged;
   final VoidCallback onSave;
   final VoidCallback onDelete;
   final bool isIncTax;
   final double taxRate;
   final bool allowPriceEdit;
+  final bool hideSerialButton;
 
   const ExpandedEditCartTile({
     super.key,
@@ -104,6 +106,7 @@ class ExpandedEditCartTile extends StatefulWidget {
     this.isIncTax = true,
     this.taxRate = 0.1,
     this.allowPriceEdit = true,
+    this.hideSerialButton = false,
   });
 
   @override
@@ -113,7 +116,6 @@ class ExpandedEditCartTile extends StatefulWidget {
 class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   late TextEditingController _qtyController;
   late TextEditingController _priceController;
-  late TextEditingController _serialController;
   late TextEditingController _descriptionController;
 
   // Focus nodes to track active editing (prevents cursor jumping)
@@ -150,9 +152,6 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     _priceController = TextEditingController(
       text: _formatSellPrice(_displayPrice),
     );
-    _serialController = TextEditingController(
-      text: widget.item.serialNumber ?? '',
-    );
     _descriptionController = TextEditingController(
       text: widget.item.description,
     );
@@ -184,7 +183,6 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     _qtyFocusNode.dispose();
     _priceFocusNode.dispose();
     _descriptionFocusNode.dispose();
-    _serialController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -563,11 +561,11 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Action buttons
-                      if (widget.item.trackSerial) ...[
+                      if (widget.item.trackSerial && !widget.hideSerialButton) ...[
                         _buildSerialButton(
                           onTap: () => _showSerialDialog(context),
                           isTablet: isTablet,
-                          hasValue: widget.item.serialNumber?.isNotEmpty == true,
+                          hasValue: widget.item.serialNumbers.isNotEmpty,
                         ),
                         SizedBox(width: isTablet ? 6 : 4),
                       ],
@@ -1110,31 +1108,21 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   }
 
   void _showSerialDialog(BuildContext context) async {
-    // For now, generate sample serials for demonstration
-    final sampleSerials = List.generate(
-      10,
-      (i) => SerialItem(
-        serialNumber: 'SN-${widget.item.code}-${1000 + i}',
-        ageInDays: (i + 1) * 15,
-        warrantyExpiry: DateTime.now().add(Duration(days: 365 - (i * 30))),
-      ),
-    );
+    final availableSerials = widget.item.stock?.serialNumbers ?? const <SerialNumberVO>[];
 
     final result = await SerialNumberDialog.show(
       context: context,
       barcode: widget.item.code,
       description: widget.item.description,
       targetQuantity: widget.item.qty.toInt(),
-      availableSerials: sampleSerials,
-      initialSelected: widget.item.serialNumber?.isNotEmpty == true
-          ? [widget.item.serialNumber!]
+      availableSerials: availableSerials,
+      initialSelected: widget.item.serialNumbers.isNotEmpty
+          ? List<SerialNumberVO>.from(widget.item.serialNumbers)
           : null,
     );
 
-    if (result != null && result.isNotEmpty) {
-      // Join multiple serials with comma if qty > 1
-      widget.onSerialChanged(result.join(', '));
-      _serialController.text = result.join(', ');
+    if (result != null) {
+      widget.onSerialChanged(result);
     }
   }
 

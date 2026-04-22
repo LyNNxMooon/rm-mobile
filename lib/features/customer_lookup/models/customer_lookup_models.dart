@@ -4,6 +4,8 @@ import 'package:rmmobile/entities/response/customer_update_response.dart';
 import 'package:rmmobile/entities/response/customer_create_response.dart';
 import 'package:rmmobile/entities/vos/customer_vo.dart';
 import 'package:rmmobile/entities/vos/search_mode.dart';
+import 'dart:math' as math;
+import 'package:rmmobile/entities/vos/sync_metadata.dart';
 import 'package:rmmobile/features/customer_lookup/domain/entities/customer_sync_status.dart';
 import 'package:rmmobile/features/customer_lookup/domain/entities/customer_transactions_local_data.dart';
 import 'package:rmmobile/features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
@@ -186,6 +188,14 @@ class CustomerLookupModels implements CustomerLookupRepo {
         );
       }
 
+      yield* _reconcileDeletedCustomers(
+        ip: resolvedIp,
+        port: resolvedPort,
+        shopfrontId: resolvedShopfrontId,
+        apiKey: resolvedApiKey,
+        shopfrontName: resolvedShopfrontName,
+      );
+
       await LocalDbDAO.instance.renewPendingCustomerCreationIds(
         resolvedShopfrontName,
       );
@@ -193,6 +203,85 @@ class CustomerLookupModels implements CustomerLookupRepo {
       yield CustomerSyncStatus(1, 1, "Customer sync completed.");
     } on Exception catch (error) {
       yield* Stream.error(error);
+    }
+  }
+
+  Stream<CustomerSyncStatus> _reconcileDeletedCustomers({
+    required String ip,
+    required int port,
+    required String shopfrontId,
+    required String apiKey,
+    required String shopfrontName,
+  }) async* {
+    final localMeta =
+        await LocalDbDAO.instance.getCustomerSyncMetadata(shopfrontName);
+    final serverMeta = await DataAgentImpl.instance.fetchCustomerMetadata(
+      ip,
+      port,
+      shopfrontId,
+      apiKey,
+    );
+    final serverSnapshot = SyncMetadata(
+      count: serverMeta.metadata.count,
+      minId: serverMeta.metadata.minCustomerId,
+      maxId: serverMeta.metadata.maxCustomerId,
+      checksum: serverMeta.metadata.idChecksum,
+    );
+
+    if (localMeta.matches(serverSnapshot)) {
+      return;
+    }
+
+    if (localMeta.count == 0) {
+      return;
+    }
+
+    final int startId = localMeta.minId;
+    final int endId = localMeta.maxId;
+    if (endId < startId) return;
+
+    const int chunkSize = 10000;
+    final int totalChunks = ((endId - startId) ~/ chunkSize) + 1;
+
+    for (int chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      final int fromId = startId + (chunkIndex * chunkSize);
+      final int toId = math.min(fromId + chunkSize - 1, endId);
+
+      yield CustomerSyncStatus(
+        chunkIndex + 1,
+        totalChunks,
+        "Reconciling deleted customers... (${chunkIndex + 1}/$totalChunks)",
+      );
+
+      final response = await DataAgentImpl.instance.fetchCustomerIds(
+        ip,
+        port,
+        shopfrontId,
+        apiKey,
+        {
+          'fromCustomerId': fromId,
+          'toCustomerId': toId,
+        },
+      );
+
+      final localIds = await LocalDbDAO.instance.getCustomerIdsInRange(
+        shopfront: shopfrontName,
+        fromId: fromId,
+        toId: toId,
+      );
+
+      if (localIds.isEmpty) continue;
+
+      final serverIds = response.customerIds.toSet();
+      final missing =
+          localIds.where((id) => !serverIds.contains(id)).toList();
+
+      if (missing.isNotEmpty) {
+        await LocalDbDAO.instance.deleteCustomersByIds(
+          shopfront: shopfrontName,
+          customerIds: missing,
+        );
+      }
     }
   }
 

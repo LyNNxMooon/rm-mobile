@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmmobile/local_db/local_db_dao.dart';
 import 'package:rmmobile/utils/global_var_utils.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/get_sale_session_counts.dart';
 
 /// State for session counts
 class SessionCountsState {
@@ -25,7 +25,10 @@ class SessionCountsState {
 
 /// Cubit for managing sale session counts
 class SessionCountsCubit extends Cubit<SessionCountsState> {
-  SessionCountsCubit() : super(const SessionCountsState());
+  SessionCountsCubit({required this.getSaleSessionCounts})
+      : super(const SessionCountsState());
+
+  final GetSaleSessionCounts getSaleSessionCounts;
 
   Future<void> loadSessionCounts() async {
     final shopfront = AppGlobals.instance.shopfront;
@@ -34,7 +37,7 @@ class SessionCountsCubit extends Cubit<SessionCountsState> {
     emit(state.copyWith(isLoading: true));
 
     try {
-      final counts = await LocalDbDAO.instance.getSaleSessionCounts(shopfront);
+      final counts = await getSaleSessionCounts(shopfront);
       emit(state.copyWith(counts: counts, isLoading: false));
     } catch (e) {
       emit(state.copyWith(isLoading: false));

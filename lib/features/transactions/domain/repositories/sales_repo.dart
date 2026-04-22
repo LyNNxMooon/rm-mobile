@@ -21,4 +21,7 @@ abstract class SalesRepo {
 
   /// Create layby
   Future<InvoiceResponse> createLayby(Map<String, dynamic> body);
+
+  /// Get cash drawer identifier for transactions
+  Future<String?> getCashDrawerIdentifier();
 }

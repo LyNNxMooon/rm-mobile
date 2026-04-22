@@ -11,7 +11,11 @@ import 'package:rmmobile/entities/response/pair_response.dart';
 import 'package:rmmobile/entities/response/picture_upload_response.dart';
 import 'package:rmmobile/entities/response/shopfronts_api_response.dart';
 import 'package:rmmobile/entities/response/stock_lookup_api_response.dart';
+import 'package:rmmobile/entities/response/stock_metadata_response.dart';
+import 'package:rmmobile/entities/response/stock_ids_response.dart';
 import 'package:rmmobile/entities/response/customer_lookup_api_response.dart';
+import 'package:rmmobile/entities/response/customer_metadata_response.dart';
+import 'package:rmmobile/entities/response/customer_ids_response.dart';
 import 'package:rmmobile/entities/response/customer_update_response.dart';
 import 'package:rmmobile/entities/response/customer_create_response.dart';
 import 'package:rmmobile/entities/response/customer_transactions_response.dart';
@@ -254,6 +258,53 @@ class DataAgentImpl implements DataAgent {
   }
 
   @override
+  Future<StockMetadataResponse> fetchStockMetadata(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .fetchStockMetadata(shopfrontId, apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
+    } on Exception catch (error) {
+      logger.e('Error fetching stock metadata from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<StockIdsResponse> fetchStockIds(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .fetchStockIds(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
+    } on Exception catch (error) {
+      logger.e('Error fetching stock ids from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
   Future<StockUpdateResponse> updateShopfrontStock(
     String ip,
     int port,
@@ -297,6 +348,53 @@ class DataAgentImpl implements DataAgent {
       );
     } on Exception catch (error) {
       logger.e('Error fetching shopfront customers from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<CustomerMetadataResponse> fetchCustomerMetadata(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .fetchCustomerMetadata(shopfrontId, apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
+    } on Exception catch (error) {
+      logger.e('Error fetching customer metadata from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<CustomerIdsResponse> fetchCustomerIds(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .fetchCustomerIds(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
+    } on Exception catch (error) {
+      logger.e('Error fetching customer ids from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }

@@ -1,11 +1,8 @@
-import 'dart:io';
 import 'dart:ui';
 import 'dart:async';
 import 'package:alert_info/alert_info.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart' as p;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,13 +15,13 @@ import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states
 import 'package:rmmobile/features/home_page/presentation/widgets/restore_backup_dialog.dart';
 import 'package:rmmobile/features/home_page/presentation/widgets/shopfronts_dialog.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/sync_utils.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/modern_dialog_styles.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/responsive_utils.dart';
@@ -32,7 +29,6 @@ import '../../../stocktake/presentation/BLoC/stocktake_bloc.dart';
 import '../../../stocktake/presentation/BLoC/stocktake_events.dart';
 import '../../../stocktake/presentation/widgets/delete_all_confirmation_dialog.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'staff_login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -112,7 +108,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _cashDrawerIdentifier = value;
     });
-    LocalDbDAO.instance.saveAppConfig(_kCashDrawerIdentifierKey, value);
+    context.read<SettingsBloc>().add(SaveCashDrawerIdentifierEvent(value));
   }
 
   String _getShopfrontLabel() {
@@ -413,7 +409,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return MultiBlocListener(
       listeners: [
         BlocListener<SettingsBloc, SettingsState>(
-          listener: (context, state) {
+          listener: (context, state) async {
             if (state is SettingsStocktakeDeleted) {
               context.read<FetchingStocktakeListBloc>().add(
                 FetchStocktakeListEvent(),
@@ -440,15 +436,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               });
               _showError(context, state.message);
             }
+            if (state is DatabaseExported) {
+              final xFile = XFile(state.path);
+              await Share.shareXFiles(
+                [xFile],
+                subject: 'RM Mobile Database Export',
+                text: 'Exported database file from RM Mobile app',
+              );
+            }
+            if (state is DatabaseExportError) {
+              showTopSnackBar(
+                Overlay.of(context),
+                CustomSnackBar.error(message: state.message),
+              );
+            }
             if (state is ForceFullSyncTriggered) {
               setState(() {
                 _isForceFullSyncInProgress = false;
               });
               // Trigger both stock and customer syncs
-              context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-              context.read<FetchCustomerBloc>().add(
-                StartCustomerSyncEvent(ipAddress: ""),
-              );
+              runSequentialStockThenCustomerSync(context);
               AlertInfo.show(
                 context: context,
                 text: "Full sync started for stocks and customers",
@@ -502,9 +509,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Save cash drawer from API response if available
               if (state.response.cashDrawer != null &&
                   state.response.cashDrawer!.isNotEmpty) {
-                LocalDbDAO.instance.saveAppConfig(
-                  _kCashDrawerIdentifierKey,
-                  state.response.cashDrawer!,
+                context.read<SettingsBloc>().add(
+                  SaveCashDrawerIdentifierEvent(state.response.cashDrawer!),
                 );
                 setState(() {
                   _cashDrawerIdentifier = state.response.cashDrawer!;
@@ -874,7 +880,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         const SizedBox(height: 25),
 
-                        _buildSectionTitle("Maintenance"),
+                        _buildSectionTitle("Maintenance", lightOverrideColor: Colors.white),
                         _buildGlassContainer(
                           child: Column(
                             children: [
@@ -887,7 +893,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   if (_blockIfSyncing(context)) return;
                                   _showManualConnectionDialog(context);
                                 },
-                                titleColor: Color.fromARGB(255, 33, 211, 10),
+                                titleColor: Colors.white,
                               ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
@@ -908,6 +914,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     builder: (_) => const RestoreBackupDialog(),
                                   );
                                 },
+                                titleColor: Colors.white,
                               ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
@@ -922,6 +929,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   if (_blockIfSyncing(context)) return;
                                   _showDeleteConfirmation(context);
                                 },
+                                titleColor: Colors.white,
                               ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
@@ -933,6 +941,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 "Share the raw database file for support",
                                 Colors.orange,
                                 () => _exportAndShareDatabase(context),
+                                titleColor: Colors.white,
                               ),
                             ],
                           ),
@@ -998,9 +1007,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, {Color? lightOverrideColor}) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final Color effectiveColor = isDark
+        ? Colors.white70
+        : (lightOverrideColor ?? colors.onHero.withOpacity(0.7));
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, left: 10),
       child: Align(
@@ -1010,7 +1022,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white70 : colors.onHero.withOpacity(0.7),
+            color: effectiveColor,
             letterSpacing: 1.2,
           ),
         ),
@@ -1240,15 +1252,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _isForceFullSyncInProgress;
 
             return InkWell(
-              onTap: isSyncing
-                  ? null
-                  : () {
-                      if (_savedShopfrontId.isEmpty) {
-                        _showError(context, "No shopfront selected.");
-                        return;
-                      }
-                      _showForceFullSyncConfirmation(context);
-                    },
+              onTap: () {
+                if (isSyncing) {
+                  _showError(context, "Sync in progress. Please wait.");
+                  return;
+                }
+                if (_savedShopfrontId.isEmpty) {
+                  _showError(context, "No shopfront selected.");
+                  return;
+                }
+                _showForceFullSyncConfirmation(context);
+              },
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
                 child: Row(
@@ -1618,37 +1632,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _exportAndShareDatabase(BuildContext context) async {
-    try {
-      // Force WAL checkpoint to consolidate all data into main db file
-      await LocalDbDAO.instance.checkpointDatabase();
-      
-      final dbPath = await getDatabasesPath();
-      final path = p.join(dbPath, 'rm-mobile.db');
-      final dbFile = File(path);
-
-      if (!await dbFile.exists()) {
-        if (context.mounted) {
-          showTopSnackBar(
-            Overlay.of(context),
-            const CustomSnackBar.error(message: "Database file not found"),
-          );
-        }
-        return;
-      }
-
-      final xFile = XFile(path);
-      await Share.shareXFiles(
-        [xFile],
-        subject: 'RM Mobile Database Export',
-        text: 'Exported database file from RM Mobile app',
-      );
-    } catch (e) {
-      if (context.mounted) {
-        showTopSnackBar(
-          Overlay.of(context),
-          CustomSnackBar.error(message: "Failed to export database: $e"),
-        );
-      }
-    }
+    context.read<SettingsBloc>().add(ExportDatabaseEvent());
   }
 }

@@ -8,12 +8,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:get_it/get_it.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:alert_info/alert_info.dart';
 import 'package:rational/rational.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 
@@ -27,13 +28,11 @@ import '../../../../entities/vos/stock_vo.dart';
 import '../../../../utils/navigation_extension.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../local_db/sqlite/sqlite_constants.dart';
-import '../../../../local_db/local_db_dao.dart';
 import '../../domain/use_cases/save_sale_session.dart';
 import '../BLoC/sales_bloc.dart';
 import '../BLoC/sales_events.dart';
 import '../BLoC/sales_states.dart';
 import '../../../home_page/presentation/BLoC/home_screen_events.dart';
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import 'stock_selection_screen.dart';
 import 'customer_selection_screen.dart';
 import '../widgets/finalise_sale_dialog.dart';
@@ -44,15 +43,14 @@ import '../widgets/not_permitted_dialog.dart';
 import '../widgets/out_of_stock_finalise_dialog.dart';
 import '../widgets/customer_comments_dialog.dart';
 import '../../../customer_lookup/presentation/screens/customer_transactions_screen.dart';
-import '../../../customer_lookup/domain/use_cases/fetch_customer_transactions.dart';
+import '../../../customer_lookup/presentation/screens/customer_create_screen.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
 import '../../../../utils/internet_connection_utils.dart';
 import '../../../../entities/vos/delivery_info_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 import 'delivery_details_screen.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
-
-final _sl = GetIt.instance;
 
 /// View mode options for cart (tablet only)
 enum CartViewMode {
@@ -134,6 +132,10 @@ class _SalesScreenState extends State<SalesScreen>
 
   final bool _isPaymentMode = false;
   bool _showScanner = false;
+  bool _isScannerOpening = false;
+  bool _scannerAddedItem = false;
+  bool _hadSearchFocusBeforeScan = false;
+  bool _skipNextSearchFocus = false;
   bool _showActions = false;
   bool _isIncTax = true;
   bool _isCompactView = false;
@@ -170,7 +172,15 @@ class _SalesScreenState extends State<SalesScreen>
   final Map<String, double> _promptedQtyByCode = {};
   bool _isRestoringSession = false;
   bool _isFinaliseProcessing = false;
+  bool _isPostSyncing = false;
+  bool _postSaleSyncRequested = false;
+  bool _postStockSyncing = false;
+  bool _postCustomerSyncing = false;
   bool _isNegativeSellPriceDialogOpen = false;
+  bool _reminderShown = false;
+  bool _salesPromptDialogOpen = false;
+  bool _lowStockDialogOpen = false;
+  DateTime? _lastSessionUpdatedAt;
 
   late AnimationController _actionsAnimationController;
   late Animation<double> _actionsAnimation;
@@ -501,6 +511,38 @@ class _SalesScreenState extends State<SalesScreen>
     if (_showScanner) {
       setState(() => _showScanner = false);
     }
+    _isScannerOpening = false;
+    _hadSearchFocusBeforeScan = false;
+    _scannerAddedItem = false;
+  }
+
+  void _focusSearchField({bool force = false}) {
+    if (!mounted) return;
+    if (_showScanner || _isScannerOpening) {
+      return;
+    }
+    if (!force) {
+      final hasEditingItem = _cartItems.any((item) => item.isEditing);
+      if (_skipNextSearchFocus) {
+        _skipNextSearchFocus = false;
+        return;
+      }
+      if (_scannerAddedItem) {
+        if (_showScanner) {
+          return;
+        }
+        _scannerAddedItem = false;
+      }
+      if (hasEditingItem || _isFinaliseProcessing || _salesPromptDialogOpen || _lowStockDialogOpen) {
+        return;
+      }
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (force || !_searchFocusNode.hasFocus) {
+        _searchFocusNode.requestFocus();
+      }
+    });
   }
 
   /// Toggles the scanner with proper keyboard dismissal to prevent overflow
@@ -508,13 +550,19 @@ class _SalesScreenState extends State<SalesScreen>
     if (_showScanner) {
       // Closing scanner - do it immediately
       setState(() => _showScanner = false);
+      _isScannerOpening = false;
+      _hadSearchFocusBeforeScan = false;
+      _scannerAddedItem = false;
     } else {
       // Opening scanner - first dismiss keyboard, wait for animation, then open
+      _isScannerOpening = true;
+      _hadSearchFocusBeforeScan = _searchFocusNode.hasFocus;
       FocusScope.of(context).unfocus();
       // Wait for keyboard to close to prevent overflow during transition
       await Future.delayed(const Duration(milliseconds: 150));
       if (mounted) {
         setState(() => _showScanner = true);
+        _isScannerOpening = false;
       }
     }
   }
@@ -713,7 +761,7 @@ class _SalesScreenState extends State<SalesScreen>
   @override
   void initState() {
     super.initState();
-    _salesBloc = _sl<SalesBloc>();
+    _salesBloc = context.read<SalesBloc>();
     _scannerController = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
       detectionTimeoutMs: 500,
@@ -730,6 +778,10 @@ class _SalesScreenState extends State<SalesScreen>
     // Close scanner when search field is focused
     _searchFocusNode.addListener(() {
       if (_searchFocusNode.hasFocus) {
+        if (_showScanner || _isScannerOpening) {
+          _searchFocusNode.unfocus();
+          return;
+        }
         _closeScanner();
       }
     });
@@ -739,6 +791,86 @@ class _SalesScreenState extends State<SalesScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkSavedSessions();
     });
+  }
+
+  Future<void> _maybeShowShopfrontReminder() async {
+    if (_reminderShown || !mounted) return;
+    final reminder = AppGlobals.instance.shopfrontReminder?.trim() ?? '';
+    if (reminder.isEmpty) return;
+
+    _reminderShown = true;
+    final colors = context.appColors;
+    final isDark = colors.isDark;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark ? colors.surface : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Text(
+            "Reminder",
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            reminder,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showSalesPromptDialog(
+    String message,
+    AppThemeColors colors,
+    bool isDark,
+  ) async {
+    if (_salesPromptDialogOpen || !mounted) return;
+    _salesPromptDialogOpen = true;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark ? colors.surface : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Text(
+            "Sales Prompt",
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            message,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+    _salesPromptDialogOpen = false;
   }
 
   Future<void> _checkSavedSessions() async {
@@ -753,7 +885,10 @@ class _SalesScreenState extends State<SalesScreen>
       sessionType: widget.title,
     );
 
-    if (sessions.isEmpty || !mounted) return;
+    if (sessions.isEmpty || !mounted) {
+      await _maybeShowShopfrontReminder();
+      return;
+    }
 
     final result = await SaleSessionPickerDialog.show(
       context: context,
@@ -772,11 +907,14 @@ class _SalesScreenState extends State<SalesScreen>
       // Starting new sale - optionally clear old sessions
       // For now, we keep them so user can continue later
     }
+
+    await _maybeShowShopfrontReminder();
   }
 
   Future<void> _restoreSession(SaleSessionVO session) async {
     _isRestoringSession = true;
     _currentSessionId = session.id;
+    _lastSessionUpdatedAt = session.updatedAt;
 
     final shopfront = AppGlobals.instance.shopfront ?? '';
     final restoreResult = await _salesBloc.restoreSaleSession(
@@ -812,12 +950,16 @@ class _SalesScreenState extends State<SalesScreen>
       _surveyController.text = _surveyValue;
       _commentValue = restoreResult.commentValue;
       _committedDeliveryAddress = restoreResult.deliveryAddress;
+      _deliveryInfo = restoreResult.deliveryAddress?.toDeliveryInfo(
+        customerId: restoreResult.customer?.customerId,
+      );
       _emailAuditData = restoreResult.emailAudit;
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _isRestoringSession = false;
+        _focusSearchField(force: true);
       }
     });
   }
@@ -829,6 +971,7 @@ class _SalesScreenState extends State<SalesScreen>
       if (_currentSessionId != null) {
         await _salesBloc.deleteSaleSession(sessionId: _currentSessionId!);
         _currentSessionId = null;
+        _lastSessionUpdatedAt = null;
       }
       return;
     }
@@ -837,7 +980,7 @@ class _SalesScreenState extends State<SalesScreen>
     if (shopfront.isEmpty) return;
 
     // Get cash drawer from local db
-    final drawer = await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+    final drawer = await _salesBloc.fetchCashDrawerIdentifier(fallback: 'M');
 
     // Get calculated totals with discount distribution (4dp precision)
     final totals = _calculatedTotals;
@@ -871,6 +1014,7 @@ class _SalesScreenState extends State<SalesScreen>
     );
 
     _currentSessionId = await _salesBloc.saveSaleSession(params);
+    _lastSessionUpdatedAt = DateTime.now();
   }
 
   Future<void> _deleteCurrentSession() async {
@@ -906,7 +1050,6 @@ class _SalesScreenState extends State<SalesScreen>
     _actionsAnimationController.dispose();
     _scannerController.dispose();
     _audioPlayer.dispose();
-    _salesBloc.close();
     super.dispose();
   }
 
@@ -926,6 +1069,11 @@ class _SalesScreenState extends State<SalesScreen>
     HapticFeedback.heavyImpact();
     await _audioPlayer.stop();
     _audioPlayer.play(_beepSource);
+
+    if (_hadSearchFocusBeforeScan) {
+      _skipNextSearchFocus = true;
+    }
+    _scannerAddedItem = true;
 
     // Search for stock
     _salesBloc.add(
@@ -1044,123 +1192,35 @@ class _SalesScreenState extends State<SalesScreen>
 
     return BlocProvider.value(
       value: _salesBloc,
-      child: BlocListener<SalesBloc, SalesState>(
-        listener: (context, state) async {
-          if (state is StockDuplicatesFound) {
-            // Navigate to stock selection screen
-            final selected = await Navigator.push<StockVO>(
-              context,
-              MaterialPageRoute(
-                builder: (_) => StockSelectionScreen(matches: state.matches),
-              ),
-            );
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<SalesBloc, SalesState>(
+            listener: (context, state) async {
+              if (state is StockDuplicatesFound) {
+                // Navigate to stock selection screen
+                final selected = await Navigator.push<StockVO>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => StockSelectionScreen(matches: state.matches),
+                  ),
+                );
 
-            if (selected != null && mounted) {
-              _salesBloc.add(
-                SelectStock(
-                  stock: selected,
-                  skipEditMode: _scanIndividualUnits && _skipSellPrice,
-                  autoRemindLowStock: _autoRemindLowStock,
-                  preventAddIfNoStock: _preventAddIfNoStock,
-                ),
-              );
-            } else {
-              _salesBloc.add(ResetSearchState());
-            }
-          } else if (state is StockNotFound) {
-            AlertInfo.show(
-              context: context,
-              text: state.message,
-              typeInfo: TypeInfo.error,
-              backgroundColor: isDark ? colors.surface : kSecondaryColor,
-              iconColor: kErrorColor,
-              textColor: kErrorColor,
-              position: MessagePosition.top,
-              padding: 70,
-            );
-          } else if (state is StockSearchError) {
-            AlertInfo.show(
-              context: context,
-              text: state.error,
-              typeInfo: TypeInfo.error,
-              backgroundColor: isDark ? colors.surface : kSecondaryColor,
-              iconColor: kErrorColor,
-              textColor: kErrorColor,
-              position: MessagePosition.top,
-              padding: 70,
-            );
-          } else if (state is StockNotPermitted) {
-            NotPermittedDialog.show(
-              context: context,
-              message: state.message,
-              colors: colors,
-              isDark: isDark,
-            );
-          } else if (state is NegativeSellPriceFound) {
-            _showNegativeSellPriceError();
-          } else if (state is FractionalItemFound) {
-            // Handle fractional item based on settings
-            await _handleFractionalItem(state.stock, colors, isDark);
-          } else if (state is CartUpdated && state.message != null) {
-            AlertInfo.show(
-              context: context,
-              text: state.message!,
-              typeInfo: TypeInfo.success,
-              backgroundColor: isDark ? colors.surface : kSecondaryColor,
-              iconColor: kPrimaryColor,
-              textColor: kPrimaryColor,
-              position: MessagePosition.top,
-              padding: 70,
-            );
-          }
-
-          if (state is CartItemSaved) {
-            final savedItem = state.cartItems[state.index];
-            final proceed = await _promptBelowCostOnSave(
-              savedItem,
-              state.index,
-              colors,
-              isDark,
-            );
-            if (!proceed) return;
-          } else if (state is CartUpdated) {
-            if (_isRestoringSession) return;
-            // Save session immediately when cart is updated
-            _saveCurrentSession();
-            await _promptBelowCostOnAddIfNeeded(
-              state.cartItems,
-              colors,
-              isDark,
-            );
-          }
-          
-          // Handle low stock warning (show after CartUpdated or CartItemSaved)
-          if ((state is CartUpdated || state is CartItemSaved) && 
-              state.lowStockWarning != null && 
-              state.lowStockWarning!.hasWarning) {
-            LowStockWarningDialog.show(
-              context: context,
-              message: state.lowStockWarning!.message ?? '',
-              colors: colors,
-              isDark: isDark,
-            );
-          }
-          
-          if (state is CustomerDuplicatesFound) {
-            // Navigate to customer selection screen
-            final selected = await Navigator.push<CustomerVO>(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CustomerSelectionScreen(matches: state.matches),
-              ),
-            );
-
-            if (selected != null && mounted) {
-                // For Account Sales, validate customer is an account customer
-                if (widget.title == "Account Sales" && !selected.account) {
+                if (selected != null && mounted) {
+                  _salesBloc.add(
+                    SelectStock(
+                      stock: selected,
+                      skipEditMode: _scanIndividualUnits && _skipSellPrice,
+                      autoRemindLowStock: _autoRemindLowStock,
+                      preventAddIfNoStock: _preventAddIfNoStock,
+                    ),
+                  );
+                } else {
+                  _salesBloc.add(ResetSearchState());
+                }
+              } else if (state is StockNotFound) {
                 AlertInfo.show(
                   context: context,
-                  text: "This customer is not an account customer",
+                  text: state.message,
                   typeInfo: TypeInfo.error,
                   backgroundColor: isDark ? colors.surface : kSecondaryColor,
                   iconColor: kErrorColor,
@@ -1168,58 +1228,184 @@ class _SalesScreenState extends State<SalesScreen>
                   position: MessagePosition.top,
                   padding: 70,
                 );
-                _salesBloc.add(ResetSearchState());
-              } else {
-                _salesBloc.add(SelectCustomer(customer: selected));
-                setState(() => _selectedCustomer = selected);
-                // Note: Don't call _checkAndShowCustomerComments here - 
-                // it will be triggered by CustomerSelected state listener
+              } else if (state is StockSearchError) {
+                AlertInfo.show(
+                  context: context,
+                  text: state.error,
+                  typeInfo: TypeInfo.error,
+                  backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                  iconColor: kErrorColor,
+                  textColor: kErrorColor,
+                  position: MessagePosition.top,
+                  padding: 70,
+                );
+              } else if (state is StockNotPermitted) {
+                NotPermittedDialog.show(
+                  context: context,
+                  message: state.message,
+                  colors: colors,
+                  isDark: isDark,
+                );
+              } else if (state is NegativeSellPriceFound) {
+                _showNegativeSellPriceError();
+              } else if (state is FractionalItemFound) {
+                // Handle fractional item based on settings
+                await _handleFractionalItem(state.stock, colors, isDark);
+              } else if (state is CartUpdated && state.message != null) {
+                AlertInfo.show(
+                  context: context,
+                  text: state.message!,
+                  typeInfo: TypeInfo.success,
+                  backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                  iconColor: kPrimaryColor,
+                  textColor: kPrimaryColor,
+                  position: MessagePosition.top,
+                  padding: 70,
+                );
               }
-            } else {
-              _salesBloc.add(ResetSearchState());
-            }
-          } else if (state is CustomerSelected) {
-            // For Account Sales, validate customer is an account customer
-            if (widget.title == "Account Sales" &&
-                !(state.selectedCustomer?.account ?? false)) {
-              AlertInfo.show(
-                context: context,
-                text: "This customer is not an account customer",
-                typeInfo: TypeInfo.error,
-                backgroundColor: isDark ? colors.surface : kSecondaryColor,
-                iconColor: kErrorColor,
-                textColor: kErrorColor,
-                position: MessagePosition.top,
-                padding: 70,
-              );
-            } else {
-              setState(() => _selectedCustomer = state.selectedCustomer);
-              _checkAndShowCustomerComments(state.selectedCustomer);
-            }
-          } else if (state is CustomerNotFound) {
-            AlertInfo.show(
-              context: context,
-              text: state.message,
-              typeInfo: TypeInfo.error,
-              backgroundColor: isDark ? colors.surface : kSecondaryColor,
-              iconColor: kErrorColor,
-              textColor: kErrorColor,
-              position: MessagePosition.top,
-              padding: 70,
-            );
-          } else if (state is CustomerSearchError) {
-            AlertInfo.show(
-              context: context,
-              text: state.error,
-              typeInfo: TypeInfo.error,
-              backgroundColor: isDark ? colors.surface : kSecondaryColor,
-              iconColor: kErrorColor,
-              textColor: kErrorColor,
-              position: MessagePosition.top,
-              padding: 70,
-            );
-          }
-        },
+
+              if (state is CartItemSaved) {
+                final savedItem = state.cartItems[state.index];
+                final proceed = await _promptBelowCostOnSave(
+                  savedItem,
+                  state.index,
+                  colors,
+                  isDark,
+                );
+                if (!proceed) return;
+                _focusSearchField();
+              } else if (state is CartUpdated) {
+                if (_isRestoringSession) return;
+                // Save session immediately when cart is updated
+                _saveCurrentSession();
+                await _promptBelowCostOnAddIfNeeded(
+                  state.cartItems,
+                  colors,
+                  isDark,
+                );
+
+                final salesPrompt = state.salesPrompt?.trim() ?? '';
+                if (salesPrompt.isNotEmpty) {
+                  await _showSalesPromptDialog(salesPrompt, colors, isDark);
+                }
+              }
+
+              // Handle low stock warning (show after CartUpdated or CartItemSaved)
+              if ((state is CartUpdated || state is CartItemSaved) &&
+                  state.lowStockWarning != null &&
+                  state.lowStockWarning!.hasWarning) {
+                _lowStockDialogOpen = true;
+                await LowStockWarningDialog.show(
+                  context: context,
+                  message: state.lowStockWarning!.message ?? '',
+                  colors: colors,
+                  isDark: isDark,
+                );
+                _lowStockDialogOpen = false;
+              }
+
+              if (state is CartUpdated && state.cartItems.isNotEmpty) {
+                _focusSearchField();
+              }
+
+              if (state is CustomerDuplicatesFound) {
+                // Navigate to customer selection screen
+                final selected = await Navigator.push<CustomerVO>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CustomerSelectionScreen(matches: state.matches),
+                  ),
+                );
+
+                if (selected != null && mounted) {
+                  // For Account Sales, validate customer is an account customer
+                  if (widget.title == "Account Sales" && !selected.account) {
+                    AlertInfo.show(
+                      context: context,
+                      text: "This customer is not an account customer",
+                      typeInfo: TypeInfo.error,
+                      backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                      iconColor: kErrorColor,
+                      textColor: kErrorColor,
+                      position: MessagePosition.top,
+                      padding: 70,
+                    );
+                    _salesBloc.add(ResetSearchState());
+                  } else {
+                    _salesBloc.add(SelectCustomer(customer: selected));
+                    setState(() => _selectedCustomer = selected);
+                    // Note: Don't call _checkAndShowCustomerComments here -
+                    // it will be triggered by CustomerSelected state listener
+                  }
+                } else {
+                  _salesBloc.add(ResetSearchState());
+                }
+              } else if (state is CustomerSelected) {
+                // For Account Sales, validate customer is an account customer
+                if (widget.title == "Account Sales" &&
+                    !(state.selectedCustomer?.account ?? false)) {
+                  AlertInfo.show(
+                    context: context,
+                    text: "This customer is not an account customer",
+                    typeInfo: TypeInfo.error,
+                    backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                    iconColor: kErrorColor,
+                    textColor: kErrorColor,
+                    position: MessagePosition.top,
+                    padding: 70,
+                  );
+                } else {
+                  setState(() => _selectedCustomer = state.selectedCustomer);
+                  _checkAndShowCustomerComments(state.selectedCustomer);
+                }
+              } else if (state is CustomerNotFound) {
+                AlertInfo.show(
+                  context: context,
+                  text: state.message,
+                  typeInfo: TypeInfo.error,
+                  backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                  iconColor: kErrorColor,
+                  textColor: kErrorColor,
+                  position: MessagePosition.top,
+                  padding: 70,
+                );
+              } else if (state is CustomerSearchError) {
+                AlertInfo.show(
+                  context: context,
+                  text: state.error,
+                  typeInfo: TypeInfo.error,
+                  backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                  iconColor: kErrorColor,
+                  textColor: kErrorColor,
+                  position: MessagePosition.top,
+                  padding: 70,
+                );
+              }
+            },
+          ),
+          BlocListener<FetchStockBloc, FetchStockStates>(
+            listener: (context, state) {
+              if (!_postSaleSyncRequested) return;
+              if (state is FetchStockProgress) {
+                _postStockSyncing = true;
+              } else if (state is FetchStockSuccess || state is FetchStockError) {
+                _postStockSyncing = false;
+              }
+              _updatePostSyncing();
+            },
+          ),
+          BlocListener<FetchCustomerBloc, FetchCustomerStates>(
+            listener: (context, state) {
+              if (!_postSaleSyncRequested) return;
+              if (state is FetchCustomerProgress) {
+                _postCustomerSyncing = true;
+              } else if (state is FetchCustomerSuccess || state is FetchCustomerFailure) {
+                _postCustomerSyncing = false;
+              }
+              _updatePostSyncing();
+            },
+          ),
+        ],
         child: BlocBuilder<SalesBloc, SalesState>(
           builder: (context, state) {
             return Stack(
@@ -1274,6 +1460,9 @@ class _SalesScreenState extends State<SalesScreen>
                                 ),
                               );
                             },
+                            onCreateCustomer: _selectedCustomer == null
+                                ? _openCustomerCreate
+                                : null,
                           ),
                           // Scanner Area
                           if (_showScanner)
@@ -1326,70 +1515,17 @@ class _SalesScreenState extends State<SalesScreen>
                   ),
                 ),
                 if (_isFinaliseProcessing)
-                  Positioned.fill(
-                    child: AbsorbPointer(
-                      child: Container(
-                        color: Colors.black45,
-                        child: SafeArea(
-                          child: Center(
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 16,
-                              ),
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 320),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 20,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? colors.surface : Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const SizedBox(
-                                        width: 32,
-                                        height: 32,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 3,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                            kPrimaryColor,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        "Processing...",
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: isDark
-                                              ? Colors.white
-                                              : Colors.black87,
-                                          decoration: TextDecoration.none,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  _buildBlockingOverlay(
+                    colors: colors,
+                    isDark: isDark,
+                    message: "Processing...",
+                  ),
+                if (_isPostSyncing)
+                  _buildBlockingOverlay(
+                    colors: colors,
+                    isDark: isDark,
+                    message: "Re-syncing...",
+                    showPanel: false,
                   ),
               ],
             );
@@ -1652,6 +1788,91 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
+  Widget _buildBlockingOverlay({
+    required AppThemeColors colors,
+    required bool isDark,
+    required String message,
+    bool showPanel = true,
+  }) {
+    return Positioned.fill(
+      child: AbsorbPointer(
+        child: Container(
+          color: Colors.black45,
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: showPanel
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 20,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark ? colors.surface : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: _buildBlockingContent(message, isDark),
+                        )
+                      : _buildBlockingContent(message, isDark),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlockingContent(String message, bool isDark) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(
+          width: 32,
+          height: 32,
+          child: CircularProgressIndicator(
+            strokeWidth: 3,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              kPrimaryColor,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          message,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.black87,
+            decoration: TextDecoration.none,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _updatePostSyncing() {
+    if (!mounted) return;
+    final syncing = _postStockSyncing || _postCustomerSyncing;
+    setState(() => _isPostSyncing = syncing);
+    if (!syncing) {
+      _postSaleSyncRequested = false;
+    }
+  }
+
   Widget _buildGridHeader(
     String title,
     AppThemeColors colors, {
@@ -1677,10 +1898,10 @@ class _SalesScreenState extends State<SalesScreen>
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
 
     // Calculate aspect ratio based on content needs (higher = shorter tiles)
-    // Large tablets get shorter tiles
+    // Large tablets get taller tiles (lower aspect ratio)
     final double childAspectRatio = isLandscape
-        ? (isMediumTablet ? 5.5 : (isLargeTablet ? 6.5 : 5.2))
-        : (isMediumTablet ? 3.4 : (isLargeTablet ? 4.6 : 3.2));
+        ? (isMediumTablet ? 5.5 : (isLargeTablet ? 5.8 : 5.2))
+        : (isMediumTablet ? 3.4 : (isLargeTablet ? 4.0 : 3.2));
 
     return AnimationLimiter(
       child: GridView.builder(
@@ -1716,20 +1937,72 @@ class _SalesScreenState extends State<SalesScreen>
     final bool isMediumTablet = context.isMediumTablet;
     final bool isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
-    final bool isLargeTabletPortrait = !isMediumTablet && !isLandscape;
+    final bool isLargeTablet = !isMediumTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
 
     // More columns for medium tablets, and in landscape mode use 6 columns with smaller cards
     final int crossAxisCount = isLandscape ? 6 : (isMediumTablet ? 5 : 4);
     // Landscape: higher aspect ratio for smaller cards, Portrait: lower for taller cards
-    // Large tablet: higher aspect ratio to reduce extra space below price
     final double childAspectRatio = isLandscape
         ? (isMediumTablet ? 0.88 : 0.95)
-        : (isMediumTablet ? 0.65 : (isLargeTabletPortrait ? 0.92 : 0.60));
+        : (isMediumTablet ? 0.65 : 0.60);
     // More spacing in landscape, less in portrait
     final double spacing = isLandscape ? 14 : 8;
 
+    // For large tablets, use Wrap with flexible height cards
+    if (isLargeTablet) {
+      final double screenWidth = MediaQuery.of(context).size.width;
+      final double horizontalPadding = 24; // 12 left + 12 right
+      final double totalSpacing = spacing * (crossAxisCount - 1);
+      final double cardWidth =
+          (screenWidth - horizontalPadding - totalSpacing) / crossAxisCount;
+
+      return AnimationLimiter(
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
+            padding:
+                const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 80),
+            child: Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
+              alignment: WrapAlignment.start,
+              crossAxisAlignment: WrapCrossAlignment.start,
+              children: _cartItems.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                return AnimationConfiguration.staggeredGrid(
+                  position: index,
+                  duration: const Duration(milliseconds: 300),
+                  columnCount: crossAxisCount,
+                  child: ScaleAnimation(
+                    child: FadeInAnimation(
+                      child: SizedBox(
+                        width: cardWidth,
+                        child: _buildCartLargeIconTileFlexible(
+                          item,
+                          index,
+                          colors,
+                          isDark,
+                          uiScale,
+                          isLandscape,
+                          cardWidth,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // For medium tablets and phones, use GridView with fixed aspect ratio
     return AnimationLimiter(
       child: GridView.builder(
         controller: _scrollController,
@@ -1757,8 +2030,8 @@ class _SalesScreenState extends State<SalesScreen>
                   isDark,
                   uiScale,
                   isLandscape,
-                  isLargeTabletPortrait,
-                  !isMediumTablet,
+                  false, // isLargeTabletPortrait - not used for medium tablets
+                  false, // isLargeTablet
                 ),
               ),
             ),
@@ -2145,6 +2418,178 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
+  /// Large icon tile with flexible height for large tablets (content-based height)
+  Widget _buildCartLargeIconTileFlexible(
+    CartItemVO item,
+    int index,
+    AppThemeColors colors,
+    bool isDark,
+    double uiScale,
+    bool isLandscape,
+    double cardWidth,
+  ) {
+    final double displayExt = _isIncTax ? item.extension : item.extensionEx;
+
+    // Calculate thumbnail height based on card width (square-ish with some ratio)
+    final double thumbnailHeight = isLandscape ? cardWidth * 0.85 : cardWidth;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        _salesBloc.add(EditCartItem(index: index));
+      },
+      child: Dismissible(
+        key: Key('cart_largeicon_flex_${item.code}_$index'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            color: Colors.red.shade400,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.delete, color: Colors.white, size: 24),
+        ),
+        onDismissed: (_) {
+          _salesBloc.add(RemoveCartItem(index: index));
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? Color.lerp(colors.surface, Colors.white, 0.06)
+                : kSecondaryColor,
+            borderRadius: BorderRadius.circular(10),
+            border: isDark
+                ? Border.all(color: Colors.white.withOpacity(0.18))
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black.withOpacity(0.35)
+                    : kThirdColor.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Allow content-based height
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Thumbnail with fixed height based on card width
+              Container(
+                width: double.infinity,
+                height: thumbnailHeight,
+                margin: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 10,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: item.stock?.imageUrl != null
+                          ? Image.network(
+                              item.stock!.imageUrl!,
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Image.asset(
+                                overviewPlaceholder,
+                                fit: BoxFit.fill,
+                                width: double.infinity,
+                                height: double.infinity,
+                              ),
+                            )
+                          : Image.asset(
+                              overviewPlaceholder,
+                              fit: BoxFit.fill,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
+                    ),
+                    // Qty badge
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: kPrimaryColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          "×${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
+                          style: TextStyle(
+                            fontSize: 11 * uiScale,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Item details - flexible height content
+              Padding(
+                padding: const EdgeInsets.only(left: 8, right: 8, bottom: 3),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Description
+                    Text(
+                      item.description,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : kThirdColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 2),
+                    // Code/Barcode
+                    Text(
+                      item.code,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: kPrimaryColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 2),
+                    // Extension (price)
+                    Text(
+                      "\$${displayExt.toStringAsFixed(2)}",
+                      style: TextStyle(
+                        fontSize: 13 * uiScale,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Builds a cart tile based on edit mode state
   Widget _buildCartTileWithEditMode(
     CartItemVO item,
@@ -2163,6 +2608,7 @@ class _SalesScreenState extends State<SalesScreen>
         isTablet: isTablet,
         isIncTax: _isIncTax,
         allowPriceEdit: AppGlobals.instance.hasPermission("Miscellaneous_LockSellPrice"),
+        hideSerialButton: widget.title == "Quotes",
         onQtyChanged: (qty) {
           _salesBloc.add(UpdateCartItemQty(index: index, qty: qty));
         },
@@ -2173,9 +2619,9 @@ class _SalesScreenState extends State<SalesScreen>
           }
           _salesBloc.add(UpdateCartItemPrice(index: index, price: price, isIncPrice: _isIncTax));
         },
-        onSerialChanged: (serial) {
+        onSerialChanged: (serials) {
           _salesBloc.add(
-            UpdateCartItemSerial(index: index, serialNumber: serial),
+            UpdateCartItemSerial(index: index, serialNumbers: serials),
           );
         },
         onDescriptionChanged: (description) {
@@ -2442,6 +2888,69 @@ class _SalesScreenState extends State<SalesScreen>
     final isQuotes = widget.title == "Quotes";
     final isLayby = widget.title == "Lay-bys";
     final isSales = widget.title == "Sales";
+
+    final hasIncompleteSerials = _cartItems.any((item) {
+      if (!item.trackSerial) return false;
+      final requiredQty = item.qty.toInt();
+      if (requiredQty <= 0) return false;
+      final assignedCount = item.serialNumbers
+          .where((serial) => serial.number.trim().isNotEmpty)
+          .length;
+      return assignedCount < requiredQty;
+    });
+
+    if (hasIncompleteSerials && !isQuotes) {
+      final shouldContinue = await showDialog<bool>(
+        context: context,
+        builder: (ctx) {
+          final colors = context.appColors;
+          final isDark = colors.isDark;
+          return AlertDialog(
+            backgroundColor: isDark ? colors.surface : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: Text(
+              "RetailManager Question",
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            content: Text(
+              "You have not selected or entered all required serial numbers\n\nContinue?",
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black54,
+                fontSize: 15,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(
+                  "No",
+                  style: TextStyle(
+                    color: isDark ? Colors.white54 : Colors.black45,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kPrimaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text("Yes"),
+              ),
+            ],
+          );
+        },
+      );
+      if (shouldContinue != true) {
+        return;
+      }
+    }
 
     // Check if sale is at a loss and prompt for confirmation
     final totals = _calculatedTotals;
@@ -2838,8 +3347,7 @@ class _SalesScreenState extends State<SalesScreen>
         .map(_buildInvoicePackage)
         .toList();
 
-    final drawer =
-        await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+    final drawer = await _salesBloc.fetchCashDrawerIdentifier(fallback: 'M');
 
     final totals = _calculatedTotals;
 
@@ -2861,7 +3369,8 @@ class _SalesScreenState extends State<SalesScreen>
     final payload = <String, dynamic>{
       'customerId': customerId,
       'staffId': staffId,
-      'transactionDate': DateTime.now().toIso8601String(),
+        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
       'drawer': drawer,
@@ -2903,8 +3412,7 @@ class _SalesScreenState extends State<SalesScreen>
       ),
     );
 
-    final drawer =
-        await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+    final drawer = await _salesBloc.fetchCashDrawerIdentifier(fallback: 'M');
 
     final totals = _calculatedTotals;
 
@@ -2924,7 +3432,8 @@ class _SalesScreenState extends State<SalesScreen>
       'transactionType': 'SO',
       'customerId': customerId,
       'staffId': staffId,
-      'transactionDate': DateTime.now().toIso8601String(),
+        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
       'drawer': drawer,
@@ -2934,8 +3443,8 @@ class _SalesScreenState extends State<SalesScreen>
       'totalEx': totals.totalEx,
       'totalInc': _total,
       'status': 0,
-      'lines': cartItemsData
-          .map(_buildSalesOrderLine)
+        'lines': cartItemsData
+          .map((item) => _buildSalesOrderLine(item, includeSerialNumbers: true))
           .toList(growable: false),
     };
 
@@ -2982,7 +3491,8 @@ class _SalesScreenState extends State<SalesScreen>
       'transactionType': 'QU',
       'customerId': customerId,
       'staffId': staffId,
-      'transactionDate': DateTime.now().toIso8601String(),
+        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
       'subtotal': _subtotal,
@@ -2991,8 +3501,8 @@ class _SalesScreenState extends State<SalesScreen>
       'totalEx': totals.totalEx,
       'totalInc': _total,
       'status': 3,
-      'lines': cartItemsData
-          .map(_buildSalesOrderLine)
+        'lines': cartItemsData
+          .map((item) => _buildSalesOrderLine(item, includeSerialNumbers: false))
           .toList(growable: false),
     };
 
@@ -3033,8 +3543,7 @@ class _SalesScreenState extends State<SalesScreen>
         .map(_buildInvoicePackage)
         .toList();
 
-    final drawer =
-        await LocalDbDAO.instance.getAppConfig('cash_drawer_identifier') ?? 'M';
+    final drawer = await _salesBloc.fetchCashDrawerIdentifier(fallback: 'M');
 
     final totals = _calculatedTotals;
 
@@ -3052,7 +3561,8 @@ class _SalesScreenState extends State<SalesScreen>
     final payload = <String, dynamic>{
       'customerId': customerId,
       'staffId': staffId,
-      'transactionDate': DateTime.now().toIso8601String(),
+        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
       'drawer': drawer,
@@ -3093,6 +3603,11 @@ class _SalesScreenState extends State<SalesScreen>
       'isStatic': item.isStatic,
     };
 
+    final serialNumbers = _serialNumbersPayload(item);
+    if (serialNumbers != null) {
+      payload['serial_numbers'] = serialNumbers;
+    }
+
     if (item.description?.isNotEmpty == true) {
       payload['description'] = item.description;
     }
@@ -3129,7 +3644,10 @@ class _SalesScreenState extends State<SalesScreen>
     return payload;
   }
 
-  Map<String, dynamic> _buildSalesOrderLine(CartItemData item) {
+  Map<String, dynamic> _buildSalesOrderLine(
+    CartItemData item, {
+    required bool includeSerialNumbers,
+  }) {
     final payload = <String, dynamic>{
       'stockId': item.stockId ?? 0,
       'quantity': item.qty,
@@ -3146,6 +3664,13 @@ class _SalesScreenState extends State<SalesScreen>
       'isPromotion': item.isPromotion,
       'isPackage': item.isPackage,
     };
+
+    if (includeSerialNumbers) {
+      final serialNumbers = _serialNumbersPayload(item);
+      if (serialNumbers != null) {
+        payload['serial_numbers'] = serialNumbers;
+      }
+    }
 
     if (item.description?.isNotEmpty == true) {
       payload['description'] = item.description;
@@ -3200,11 +3725,26 @@ class _SalesScreenState extends State<SalesScreen>
           components.map(_buildInvoiceComponentLine).toList(growable: false),
     };
 
+    final serialNumbers = _serialNumbersPayload(item);
+    if (serialNumbers != null) {
+      payload['serial_numbers'] = serialNumbers;
+    }
+
     if (item.description?.isNotEmpty == true) {
       payload['description'] = item.description;
     }
 
     return payload;
+  }
+
+  List<Map<String, dynamic>>? _serialNumbersPayload(CartItemData item) {
+    if (item.serialNumbers.isEmpty) return null;
+    final serials = item.serialNumbers
+        .where((serial) => serial.number.trim().isNotEmpty)
+        .map((serial) => serial.toApiPayload())
+        .toList();
+    if (serials.isEmpty) return null;
+    return serials;
   }
 
   void _showAccountSalesError(String message) {
@@ -3315,6 +3855,7 @@ class _SalesScreenState extends State<SalesScreen>
       _surveyValue = '';
       _surveyController.clear();
       _commentValue = '';
+      _lastSessionUpdatedAt = null;
     });
 
     _runPostSaleDeltaSync();
@@ -3323,9 +3864,13 @@ class _SalesScreenState extends State<SalesScreen>
   void _runPostSaleDeltaSync() {
     if (!mounted) return;
 
-    // Trigger delta sync for stocks and customers after successful sale
+    _postSaleSyncRequested = true;
+    _postStockSyncing = true;
+    _postCustomerSyncing = false;
+    _updatePostSyncing();
+
+    // Trigger delta sync for stocks after successful sale
     context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-    context.read<FetchCustomerBloc>().add(StartCustomerSyncEvent(ipAddress: ""));
   }
 
   void _showSurveyScannerDialog(
@@ -4162,7 +4707,9 @@ class _SalesScreenState extends State<SalesScreen>
     }
 
     try {
-      await _sl<FetchCustomerTransactions>()(_selectedCustomer!.customerId);
+      await context
+          .read<CustomerTransactionsBloc>()
+          .syncCustomerTransactions(_selectedCustomer!.customerId);
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
       Navigator.push(
@@ -4184,6 +4731,37 @@ class _SalesScreenState extends State<SalesScreen>
         ),
       );
     }
+  }
+
+  Future<void> _openCustomerCreate() async {
+    final createdCustomer = await Navigator.of(context).push<CustomerVO>(
+      MaterialPageRoute(
+        builder: (_) => const CustomerCreateScreen(
+          returnCreatedCustomer: true,
+        ),
+      ),
+    );
+
+    if (!mounted || createdCustomer == null) return;
+
+    if (widget.title == "Account Sales" && !createdCustomer.account) {
+      AlertInfo.show(
+        context: context,
+        text: "This customer is not an account customer",
+        typeInfo: TypeInfo.error,
+        backgroundColor: context.appColors.isDark
+            ? context.appColors.surface
+            : kSecondaryColor,
+        iconColor: kErrorColor,
+        textColor: kErrorColor,
+        position: MessagePosition.top,
+        padding: 70,
+      );
+      return;
+    }
+
+    _salesBloc.add(SelectCustomer(customer: createdCustomer));
+    setState(() => _selectedCustomer = createdCustomer);
   }
 
   void _showSalesSettingsDialog(BuildContext context) {

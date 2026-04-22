@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/dependency_injection_utils.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
@@ -13,7 +14,10 @@ import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/responsive_utils.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
+import '../../../customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import '../../../transactions/presentation/screens/sales_screen.dart';
+import '../../../transactions/presentation/BLoC/sales_bloc.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_states.dart';
 import '../BLoC/session_counts_cubit.dart';
@@ -56,6 +60,22 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
 
   void _loadSessionCounts() {
     context.read<SessionCountsCubit>().loadSessionCounts();
+  }
+
+  bool _isSyncInProgress(BuildContext context) {
+    return context.read<FetchStockBloc>().state is FetchStockProgress ||
+        context.read<FetchCustomerBloc>().state is FetchCustomerProgress;
+  }
+
+  bool _blockTransactionsIfSyncing(BuildContext context) {
+    if (!_isSyncInProgress(context)) return false;
+    showTopSnackBar(
+      Overlay.of(context),
+      const CustomSnackBar.info(
+        message: "Sync in progress. Please wait.",
+      ),
+    );
+    return true;
   }
 
   @override
@@ -321,12 +341,19 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
       }
       context.navigateToNext(const CustomerLookupScreen());
     } else if (action == "sales") {
-      context.navigateToNext(const SalesScreen(
-        title: "Sales",
-        themeColor: Colors.green,
-        icon: Icons.point_of_sale_outlined,
-      )).then((_) => _loadSessionCounts());
+      if (_blockTransactionsIfSyncing(context)) return;
+      context.navigateToNext(
+        BlocProvider(
+          create: (_) => sl<SalesBloc>(),
+          child: const SalesScreen(
+            title: "Sales",
+            themeColor: Colors.green,
+            icon: Icons.point_of_sale_outlined,
+          ),
+        ),
+      ).then((_) => _loadSessionCounts());
     } else if (action == "account_sales") {
+      if (_blockTransactionsIfSyncing(context)) return;
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
           Overlay.of(context),
@@ -336,12 +363,18 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
         );
         return;
       }
-      context.navigateToNext(const SalesScreen(
-        title: "Account Sales",
-        themeColor: Color.fromARGB(255, 238, 130, 166),
-        icon: Icons.receipt_long_outlined,
-      )).then((_) => _loadSessionCounts());
+      context.navigateToNext(
+        BlocProvider(
+          create: (_) => sl<SalesBloc>(),
+          child: const SalesScreen(
+            title: "Account Sales",
+            themeColor: Color.fromARGB(255, 238, 130, 166),
+            icon: Icons.receipt_long_outlined,
+          ),
+        ),
+      ).then((_) => _loadSessionCounts());
     } else if (action == "sales_order") {
+      if (_blockTransactionsIfSyncing(context)) return;
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
           Overlay.of(context),
@@ -351,12 +384,18 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
         );
         return;
       }
-      context.navigateToNext(const SalesScreen(
-        title: "Sales Order",
-        themeColor: Color.fromARGB(255, 44, 133, 211),
-        icon: Icons.shopping_cart_outlined,
-      )).then((_) => _loadSessionCounts());
+      context.navigateToNext(
+        BlocProvider(
+          create: (_) => sl<SalesBloc>(),
+          child: const SalesScreen(
+            title: "Sales Order",
+            themeColor: Color.fromARGB(255, 44, 133, 211),
+            icon: Icons.shopping_cart_outlined,
+          ),
+        ),
+      ).then((_) => _loadSessionCounts());
     } else if (action == "quotes") {
+      if (_blockTransactionsIfSyncing(context)) return;
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
           Overlay.of(context),
@@ -366,12 +405,18 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
         );
         return;
       }
-      context.navigateToNext(const SalesScreen(
-        title: "Quotes",
-        themeColor: Colors.orange,
-        icon: Icons.request_quote_outlined,
-      )).then((_) => _loadSessionCounts());
+      context.navigateToNext(
+        BlocProvider(
+          create: (_) => sl<SalesBloc>(),
+          child: const SalesScreen(
+            title: "Quotes",
+            themeColor: Colors.orange,
+            icon: Icons.request_quote_outlined,
+          ),
+        ),
+      ).then((_) => _loadSessionCounts());
     } else if (action == "lay_bys") {
+      if (_blockTransactionsIfSyncing(context)) return;
       if (!AppGlobals.instance.hasPermission("Transaction_Sales")) {
         showTopSnackBar(
           Overlay.of(context),
@@ -381,11 +426,16 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
         );
         return;
       }
-      context.navigateToNext(const SalesScreen(
-        title: "Lay-bys",
-        themeColor: Color.fromARGB(255, 152, 86, 165),
-        icon: Icons.inventory_2_outlined,
-      )).then((_) => _loadSessionCounts());
+      context.navigateToNext(
+        BlocProvider(
+          create: (_) => sl<SalesBloc>(),
+          child: const SalesScreen(
+            title: "Lay-bys",
+            themeColor: Color.fromARGB(255, 152, 86, 165),
+            icon: Icons.inventory_2_outlined,
+          ),
+        ),
+      ).then((_) => _loadSessionCounts());
     } else {
       context.navigateToNext(const ComingSoonScreen());
     }
@@ -419,17 +469,17 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
         ? Colors.grey.shade500 
         : kPrimaryColor;
     final Color effectiveSubtitleColor = isComingSoon 
-        ? Colors.grey.shade400 
-        : colors.onSurfaceMuted;
+      ? Colors.grey.shade400 
+      : (colors.isDark ? colors.onSurfaceMuted : kThirdColor.withOpacity(0.78));
     final Color effectiveIconColor = isComingSoon 
         ? Colors.grey.shade500 
         : kPrimaryColor;
     final Color? bgColor = isComingSoon
       ? (colors.isDark ? Colors.white10 : Colors.grey.shade200)
-      : null;
+      : (colors.isDark ? null : Colors.white);
     final LinearGradient? bgGradient = isComingSoon
       ? null
-      : (colors.isDark ? colors.glassGradient : colors.glassGradient);
+      : (colors.isDark ? colors.glassGradient : null);
 
     return AnimationConfiguration.staggeredGrid(
       position: index,

@@ -98,8 +98,9 @@ class RestoreSaleSession {
         sellPrice: incPrice, // Use inclusive price as sell price
         costPrice: itemData.costEx > 0 ? itemData.costEx : itemData.costInc,
         stock: stock,
-        serialNumber: itemData.serialNumber,
+        serialNumbers: itemData.serialNumbers,
         isEditing: false,
+        isPriceOverridden: itemData.isPriceOverridden,
         taxPercentage: taxPercentage,
         taxType: taxType,
         incPrice: incPrice,

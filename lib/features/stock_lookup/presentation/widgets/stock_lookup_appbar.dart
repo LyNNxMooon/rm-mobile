@@ -8,8 +8,6 @@ import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/responsive_utils.dart';
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import '../../../home_page/presentation/BLoC/home_screen_bloc.dart';
 import '../../../home_page/presentation/BLoC/home_screen_events.dart';
 import '../../../home_page/presentation/BLoC/home_screen_states.dart';
@@ -166,9 +164,6 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                       onTap: () {
                         context.read<FetchStockBloc>().add(
                           StartSyncEvent(ipAddress: ""),
-                        );
-                        context.read<FetchCustomerBloc>().add(
-                          StartCustomerSyncEvent(ipAddress: ""),
                         );
                       },
                       borderRadius: BorderRadius.circular(12),

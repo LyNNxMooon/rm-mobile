@@ -142,7 +142,7 @@ class CustomerIvPayItem {
 class CustomerLaybyItem {
   final String date;
   final int laybyNo;
-  final String lastPayment;
+  final String? lastPayment;
   final num total;
   final num amountOwing;
 

@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:rational/rational.dart';
 
+import 'serial_number_vo.dart';
 import 'stock_vo.dart';
 
 /// Value Object for cart items in Sales transactions.
@@ -12,9 +13,10 @@ class CartItemVO {
   double sellPrice; // Base sell price from stock (could be ex or inc depending on taxType)
   final double? costPrice;
   final StockVO? stock; // Full stock data for reference
-  final String? serialNumber;
+  final List<SerialNumberVO> serialNumbers;
   final bool isEditing; // Whether item is in expanded edit mode
   final bool isNewlyAdded; // Whether item was just added (for auto-save logic)
+  final bool isPriceOverridden; // Whether price was manually overridden
   
   // Tax calculation fields
   final double taxPercentage; // Tax percentage from tax code table
@@ -33,9 +35,10 @@ class CartItemVO {
     required this.sellPrice,
     this.costPrice,
     this.stock,
-    this.serialNumber,
+    this.serialNumbers = const [],
     this.isEditing = false,
     this.isNewlyAdded = false,
+    this.isPriceOverridden = false,
     this.taxPercentage = 0.0,
     this.taxType = 0,
     double? incPrice,
@@ -86,9 +89,10 @@ class CartItemVO {
     double? sellPrice,
     double? costPrice,
     StockVO? stock,
-    String? serialNumber,
+    List<SerialNumberVO>? serialNumbers,
     bool? isEditing,
     bool? isNewlyAdded,
+    bool? isPriceOverridden,
     double? taxPercentage,
     int? taxType,
     double? incPrice,
@@ -103,9 +107,10 @@ class CartItemVO {
       sellPrice: sellPrice ?? this.sellPrice,
       costPrice: costPrice ?? this.costPrice,
       stock: stock ?? this.stock,
-      serialNumber: serialNumber ?? this.serialNumber,
+      serialNumbers: serialNumbers ?? this.serialNumbers,
       isEditing: isEditing ?? this.isEditing,
       isNewlyAdded: isNewlyAdded ?? this.isNewlyAdded,
+      isPriceOverridden: isPriceOverridden ?? this.isPriceOverridden,
       taxPercentage: taxPercentage ?? this.taxPercentage,
       taxType: taxType ?? this.taxType,
       incPrice: incPrice ?? this.incPrice,

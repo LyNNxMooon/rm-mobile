@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:math' as math;
 
 import 'package:rmmobile/entities/response/paginated_stock_response.dart';
 import 'package:rmmobile/entities/response/picture_upload_response.dart';
@@ -6,6 +7,7 @@ import 'package:rmmobile/entities/response/stock_update_response.dart';
 import 'package:rmmobile/entities/vos/search_mode.dart';
 import 'package:rmmobile/entities/vos/stock_vo.dart';
 import 'package:rmmobile/entities/vos/pricing_rules.dart';
+import 'package:rmmobile/entities/vos/sync_metadata.dart';
 import 'package:rmmobile/features/stock_lookup/domain/entities/sync_status.dart';
 import 'package:rmmobile/features/stock_lookup/domain/repositories/stock_lookup_repo.dart';
 import 'package:rmmobile/network/data_agent/data_agent_impl.dart';
@@ -154,10 +156,97 @@ class StockLookupModels implements StockLookupRepo {
         );
       }
 
+      yield* _reconcileDeletedStocks(
+        ip: resolvedIp,
+        port: resolvedPort,
+        shopfrontId: resolvedShopfrontId,
+        apiKey: resolvedApiKey,
+        shopfrontName: resolvedShopfrontName,
+      );
+
       await LocalDbDAO.instance.saveAppConfig(syncKey, latestSyncTimestamp);
       yield SyncStatus(1, 1, "Stock sync completed.");
     } on Exception catch (error) {
       yield* Stream.error(error);
+    }
+  }
+
+  Stream<SyncStatus> _reconcileDeletedStocks({
+    required String ip,
+    required int port,
+    required String shopfrontId,
+    required String apiKey,
+    required String shopfrontName,
+  }) async* {
+    final localMeta =
+        await LocalDbDAO.instance.getStockSyncMetadata(shopfrontName);
+    final serverMeta = await DataAgentImpl.instance.fetchStockMetadata(
+      ip,
+      port,
+      shopfrontId,
+      apiKey,
+    );
+    final serverSnapshot = SyncMetadata(
+      count: serverMeta.metadata.count,
+      minId: serverMeta.metadata.minStockId,
+      maxId: serverMeta.metadata.maxStockId,
+      checksum: serverMeta.metadata.idChecksum,
+    );
+
+    if (localMeta.matches(serverSnapshot)) {
+      return;
+    }
+
+    if (localMeta.count == 0) {
+      return;
+    }
+
+    final int startId = localMeta.minId;
+    final int endId = localMeta.maxId;
+    if (endId < startId) return;
+
+    const int chunkSize = 10000;
+    final int totalChunks = ((endId - startId) ~/ chunkSize) + 1;
+
+    for (int chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      final int fromId = startId + (chunkIndex * chunkSize);
+      final int toId = math.min(fromId + chunkSize - 1, endId);
+
+      yield SyncStatus(
+        chunkIndex + 1,
+        totalChunks,
+        "Reconciling deleted stocks... (${chunkIndex + 1}/$totalChunks)",
+      );
+
+      final response = await DataAgentImpl.instance.fetchStockIds(
+        ip,
+        port,
+        shopfrontId,
+        apiKey,
+        {
+          'from_stock_id': fromId,
+          'to_stock_id': toId,
+        },
+      );
+
+      final localIds = await LocalDbDAO.instance.getStockIdsInRange(
+        shopfront: shopfrontName,
+        fromId: fromId,
+        toId: toId,
+      );
+
+      if (localIds.isEmpty) continue;
+
+      final serverIds = response.stockIds.toSet();
+      final missing =
+          localIds.where((id) => !serverIds.contains(id)).toList();
+
+      if (missing.isNotEmpty) {
+        await LocalDbDAO.instance.deleteStocksByIds(
+          shopfront: shopfrontName,
+          stockIds: missing,
+        );
+      }
     }
   }
 
@@ -209,6 +298,33 @@ class StockLookupModels implements StockLookupRepo {
       };
     } on Exception catch (error) {
       return Future.error("Failed to load filters: $error");
+    }
+  }
+
+  @override
+  Future<StockVO?> resolvePackageComponentStock({
+    required int stockId,
+    String? barcode,
+  }) async {
+    try {
+      var stock =
+          await LocalDbDAO.instance.getStockByIdAnyShopfront(stockId);
+
+      if (stock == null && barcode != null && barcode.isNotEmpty) {
+        final shopfrontId =
+            (await LocalDbDAO.instance.getShopfrontId() ?? '').trim();
+        final searchResult =
+            await LocalDbDAO.instance.getStockBySearch(barcode, shopfrontId);
+        if (!searchResult.notFound && searchResult.stock != null) {
+          stock = searchResult.stock;
+        } else if (searchResult.duplicates.isNotEmpty) {
+          stock = searchResult.duplicates.first;
+        }
+      }
+
+      return stock;
+    } catch (error) {
+      return Future.error(error);
     }
   }
 

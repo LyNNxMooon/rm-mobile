@@ -8,6 +8,7 @@ import 'package:rmmobile/features/onboarding/presentation/screens/onboarding_gat
 import 'package:rmmobile/features/onboarding/presentation/BLoC/onboarding_bloc.dart';
 //import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/package_component_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
@@ -135,6 +136,9 @@ class _MyAppState extends State<MyApp> {
         // ),
         BlocProvider<FetchStockBloc>(create: (_) => sl<FetchStockBloc>()),
         BlocProvider<StockListBloc>(create: (_) => sl<StockListBloc>()),
+        BlocProvider<PackageComponentBloc>(
+          create: (_) => sl<PackageComponentBloc>(),
+        ),
         BlocProvider<FilterOptionsBloc>(create: (_) => sl<FilterOptionsBloc>()),
         BlocProvider<FetchCustomerBloc>(create: (_) => sl<FetchCustomerBloc>()),
         BlocProvider<CustomerListBloc>(create: (_) => sl<CustomerListBloc>()),

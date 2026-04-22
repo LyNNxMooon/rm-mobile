@@ -5,6 +5,7 @@ import 'package:rmmobile/entities/vos/pricing_grades.dart';
 import 'package:rmmobile/entities/vos/pricing_rules.dart';
 import 'package:rmmobile/entities/vos/package_component.dart';
 import 'package:rmmobile/entities/vos/promotion_vo.dart';
+import 'package:rmmobile/entities/vos/serial_number_vo.dart';
 part 'stock_vo.g.dart';
 
 @JsonSerializable()
@@ -55,6 +56,8 @@ class StockVO {
   final String? goodsTax;
   @JsonKey(name: 'sales_tax')
   final String? salesTax;
+  @JsonKey(name: 'sales_prompt')
+  final String? salesPrompt;
   @JsonKey(name: 'date_modified')
   final String dateModified;
   final bool freight;
@@ -65,6 +68,12 @@ class StockVO {
   final bool weighted;
   @JsonKey(name: 'track_serial')
   final bool trackSerial;
+  @JsonKey(
+    name: 'serial_numbers',
+    fromJson: _serialNumbersFromJson,
+    toJson: _serialNumbersToJson,
+  )
+  final List<SerialNumberVO> serialNumbers;
   @JsonKey(name: 'last_sale_date')
   final String? lastSaleDate;
   @JsonKey(name: 'allow_renaming')
@@ -160,6 +169,7 @@ class StockVO {
       ),
       "goods_tax": _asNullableString(item["goods_tax"]),
       "sales_tax": _asNullableString(item["sales_tax"]),
+      "sales_prompt": _asNullableString(item["sales_prompt"]),
       "date_modified": _asString(item["date_modified"]),
       "freight": _asBool(item["freight"]),
       "tare_weight": _asNum(item["tare_weight"]),
@@ -182,6 +192,7 @@ class StockVO {
       "pricing_grades_global": item["pricing_grades_global"],
       "is_on_promotion": _asBool(item["is_on_promotion"]),
       "promotion": item["promotion"],
+      "serial_numbers": item["serial_numbers"],
     };
 
     return StockVO.fromJsonNetwork(mapped);
@@ -216,6 +227,7 @@ class StockVO {
     required this.imageUrl,
     required this.goodsTax,
     required this.salesTax,
+    this.salesPrompt,
     required this.dateModified,
     required this.freight,
     required this.tareWeight,
@@ -236,6 +248,7 @@ class StockVO {
     this.pricingGradesGlobal,
     this.isOnPromotion = false,
     this.promotion,
+    this.serialNumbers = const [],
   });
 
   static String _asString(dynamic value) {
@@ -413,6 +426,52 @@ class StockVO {
   static Object? _promotionToJson(PromotionVO? promo) {
     if (promo == null) return null;
     return jsonEncode(promo.toJson());
+  }
+
+  static List<SerialNumberVO> _serialNumbersFromJson(Object? value) {
+    if (value == null) return <SerialNumberVO>[];
+    if (value is List) {
+      return value
+          .map((item) {
+            if (item is SerialNumberVO) return item;
+            if (item is Map<String, dynamic>) {
+              return SerialNumberVO.fromJson(item);
+            }
+            if (item is Map) {
+              return SerialNumberVO.fromJson(Map<String, dynamic>.from(item));
+            }
+            return const SerialNumberVO();
+          })
+          .where((item) => item.number.isNotEmpty || item.serialAuditId != null)
+          .toList();
+    }
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return <SerialNumberVO>[];
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is List) {
+          return decoded
+              .map((item) {
+                if (item is Map<String, dynamic>) {
+                  return SerialNumberVO.fromJson(item);
+                }
+                if (item is Map) {
+                  return SerialNumberVO.fromJson(Map<String, dynamic>.from(item));
+                }
+                return const SerialNumberVO();
+              })
+              .where((item) => item.number.isNotEmpty || item.serialAuditId != null)
+              .toList();
+        }
+      } catch (_) {}
+    }
+    return <SerialNumberVO>[];
+  }
+
+  static Object? _serialNumbersToJson(List<SerialNumberVO>? serials) {
+    if (serials == null || serials.isEmpty) return null;
+    return jsonEncode(serials.map((s) => s.toJson()).toList());
   }
 
   /// Returns the effective sell price for a given customer grade,

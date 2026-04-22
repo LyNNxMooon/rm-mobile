@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rmmobile/features/customer_lookup/domain/use_cases/fetch_customer_transactions.dart';
 import 'package:rmmobile/features/customer_lookup/domain/use_cases/get_customer_transactions_local.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_events.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_states.dart';
@@ -6,10 +7,18 @@ import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_tra
 class CustomerTransactionsBloc
     extends Bloc<CustomerTransactionsEvent, CustomerTransactionsState> {
   final GetCustomerTransactionsLocal getCustomerTransactionsLocal;
+  final FetchCustomerTransactions fetchCustomerTransactions;
 
-  CustomerTransactionsBloc({required this.getCustomerTransactionsLocal})
+  CustomerTransactionsBloc({
+    required this.getCustomerTransactionsLocal,
+    required this.fetchCustomerTransactions,
+  })
       : super(CustomerTransactionsInitial()) {
     on<LoadCustomerTransactionsEvent>(_onLoadCustomerTransactions);
+  }
+
+  Future<void> syncCustomerTransactions(int customerId) async {
+    await fetchCustomerTransactions(customerId);
   }
 
   Future<void> _onLoadCustomerTransactions(

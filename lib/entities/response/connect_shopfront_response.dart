@@ -10,6 +10,7 @@ class ConnectShopfrontResponse {
   final String message;
   final String? version;
   final String? salesCustom;
+  final String? reminder;
   final List<TaxCodeVO>? taxCodes;
 
   ConnectShopfrontResponse({
@@ -19,6 +20,7 @@ class ConnectShopfrontResponse {
     required this.message,
     this.version,
     this.salesCustom,
+    this.reminder,
     this.taxCodes,
   });
 

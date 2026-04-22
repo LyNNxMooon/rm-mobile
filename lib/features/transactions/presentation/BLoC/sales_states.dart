@@ -8,7 +8,13 @@ abstract class SalesState {
   final List<CartItemVO> cartItems;
   final CustomerVO? selectedCustomer;
   final LowStockWarning? lowStockWarning;
-  const SalesState({this.cartItems = const [], this.selectedCustomer, this.lowStockWarning});
+  final String? salesPrompt;
+  const SalesState({
+    this.cartItems = const [],
+    this.selectedCustomer,
+    this.lowStockWarning,
+    this.salesPrompt,
+  });
 }
 
 /// Initial state - empty cart
@@ -65,6 +71,7 @@ class CartUpdated extends SalesState {
     this.message,
     super.selectedCustomer,
     super.lowStockWarning,
+    super.salesPrompt,
   });
 }
 

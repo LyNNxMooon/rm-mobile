@@ -23,6 +23,8 @@ class DetailedUpperGlass extends StatefulWidget {
     required this.cost,
     required this.sell,
     required this.exCost,
+    required this.costTaxLabel,
+    required this.sellTaxLabel,
     required this.dept,
     required this.lastSaleDate,
     required this.showCostPrices,
@@ -42,6 +44,8 @@ class DetailedUpperGlass extends StatefulWidget {
   final double cost;
   final double sell;
   final double exCost;
+  final String costTaxLabel;
+  final String sellTaxLabel;
   final String dept;
   final String lastSaleDate;
   final bool showCostPrices;
@@ -291,6 +295,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                               child: TextField(
                                 controller: widget.custom1Controller,
                                 scrollPhysics: const ClampingScrollPhysics(),
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: onGlass,
@@ -344,6 +350,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                                 child: TextField(
                                   controller: widget.custom1Controller,
                                   scrollPhysics: const ClampingScrollPhysics(),
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: onGlass,
@@ -433,6 +441,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                               child: TextField(
                                 controller: widget.custom2Controller,
                                 scrollPhysics: const ClampingScrollPhysics(),
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: onGlass,
@@ -486,6 +496,8 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                                 child: TextField(
                                   controller: widget.custom2Controller,
                                   scrollPhysics: const ClampingScrollPhysics(),
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: onGlass,
@@ -550,6 +562,14 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               ),
               SizedBox(height: rowGap),
               if (widget.showCostPrices) ...[
+                StockInfoRow(
+                  image: "assets/images/cost_white.png",
+                  icon: Icons.percent,
+                  iconBgColor: Colors.deepPurpleAccent,
+                  label: "Cost / Sell Tax",
+                  value: "${widget.costTaxLabel} / ${widget.sellTaxLabel}",
+                ),
+                SizedBox(height: rowGap),
                 StockInfoRow(
                   image: "assets/images/cost_white.png",
                   icon: Icons.monetization_on_outlined,

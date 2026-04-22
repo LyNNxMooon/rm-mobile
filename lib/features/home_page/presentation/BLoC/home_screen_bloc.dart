@@ -1,11 +1,7 @@
-import 'dart:io';
 import 'package:bloc/bloc.dart';
-import 'package:path/path.dart' as p;
-import 'package:share_plus/share_plus.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/cleanup_history.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/clear_sync_timestamps.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/discover_host.dart';
-import 'package:rmmobile/local_db/local_db_dao.dart';
 import 'package:rmmobile/entities/response/authenticate_staff_response.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/authenticate_staff.dart';
 // SMB LEGACY - Commented out
@@ -23,6 +19,10 @@ import 'package:rmmobile/features/home_page/domain/use_cases/load_retention_days
 import 'package:rmmobile/features/home_page/domain/use_cases/run_auto_backup_if_due.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_auto_backup_enabled.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_retention_days.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/get_cash_drawer_identifier.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/save_cash_drawer_identifier.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/export_database_file.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/get_rm_version.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
 import 'package:rmmobile/features/stock_lookup/domain/entities/sync_status.dart';
@@ -361,8 +361,6 @@ class FetchStockBloc extends Bloc<FetchStockEvents, FetchStockStates> {
 }
 
 class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
-  static const String _kCashDrawerIdentifierKey = 'cash_drawer_identifier';
-
   final LoadRetentionDays loadRetentionDays;
   final UpdateRetentionDays updateRetentionDays;
   final CleanupHistory cleanupHistory;
@@ -370,6 +368,11 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final UpdateAutoBackupEnabled updateAutoBackupEnabled;
   final RunAutoBackupIfDue runAutoBackupIfDue;
   final DeleteAllStocktake deleteAllStocktake;
+  final GetCashDrawerIdentifier getCashDrawerIdentifier;
+  final SaveCashDrawerIdentifier saveCashDrawerIdentifier;
+  final ExportDatabaseFile exportDatabaseFile;
+  final GetRmVersion getRmVersion;
+  final ClearSyncTimestamps clearSyncTimestamps;
 
   int _currentRetentionDays = 30;
   bool _autoBackupEnabled = true;
@@ -383,6 +386,11 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     required this.updateAutoBackupEnabled,
     required this.runAutoBackupIfDue,
     required this.deleteAllStocktake,
+    required this.getCashDrawerIdentifier,
+    required this.saveCashDrawerIdentifier,
+    required this.exportDatabaseFile,
+    required this.getRmVersion,
+    required this.clearSyncTimestamps,
   }) : super(SettingsInitial()) {
     on<LoadSettingsEvent>(_onLoad);
     on<ChangeRetentionDaysEvent>(_onChangeRetention);
@@ -393,6 +401,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<LoadCashDrawerIdentifierEvent>(_onLoadCashDrawerIdentifier);
     on<SaveCashDrawerIdentifierEvent>(_onSaveCashDrawerIdentifier);
     on<ExportDatabaseEvent>(_onExportDatabase);
+    on<LoadRmVersionEvent>(_onLoadRmVersion);
     on<ForceFullSyncEvent>(_onForceFullSync);
   }
 
@@ -511,7 +520,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Emitter<SettingsState> emit,
   ) async {
     try {
-      final value = await LocalDbDAO.instance.getAppConfig(_kCashDrawerIdentifierKey);
+      final value = await getCashDrawerIdentifier();
       _cashDrawerIdentifier = (value != null && value.isNotEmpty) ? value : 'A';
       emit(CashDrawerIdentifierLoaded(
         identifier: _cashDrawerIdentifier,
@@ -528,7 +537,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Emitter<SettingsState> emit,
   ) async {
     try {
-      await LocalDbDAO.instance.saveAppConfig(_kCashDrawerIdentifierKey, event.identifier);
+      await saveCashDrawerIdentifier(event.identifier);
       _cashDrawerIdentifier = event.identifier;
       emit(CashDrawerIdentifierSaved(
         identifier: _cashDrawerIdentifier,
@@ -545,27 +554,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Emitter<SettingsState> emit,
   ) async {
     try {
-      final dbPath = await getDatabasesPath();
-      final path = p.join(dbPath, 'rm-mobile.db');
-      final dbFile = File(path);
-
-      if (!await dbFile.exists()) {
-        emit(DatabaseExportError(
-          message: 'Database file not found',
-          retentionDays: _currentRetentionDays,
-          autoBackupEnabled: _autoBackupEnabled,
-        ));
-        return;
-      }
-
-      final xFile = XFile(path);
-      await Share.shareXFiles(
-        [xFile],
-        subject: 'RM Mobile Database Export',
-        text: 'Exported database file from RM Mobile app',
-      );
-
       emit(DatabaseExported(
+        path: await exportDatabaseFile(),
         retentionDays: _currentRetentionDays,
         autoBackupEnabled: _autoBackupEnabled,
       ));
@@ -578,16 +568,25 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
+  Future<void> _onLoadRmVersion(
+    LoadRmVersionEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      final version = await getRmVersion();
+      emit(RmVersionLoaded(version: version));
+    } catch (e) {
+      emit(SettingsError(e.toString()));
+    }
+  }
+
   Future<void> _onForceFullSync(
     ForceFullSyncEvent event,
     Emitter<SettingsState> emit,
   ) async {
     try {
       // Clear sync timestamps to force full sync
-      final stockSyncKey = 'stock_sync_timestamp_${event.shopfrontId}';
-      final customerSyncKey = 'customer_sync_timestamp_${event.shopfrontId}';
-      await LocalDbDAO.instance.saveAppConfig(stockSyncKey, '');
-      await LocalDbDAO.instance.saveAppConfig(customerSyncKey, '');
+      await clearSyncTimestamps(event.shopfrontId);
       emit(ForceFullSyncTriggered(
         retentionDays: _currentRetentionDays,
         autoBackupEnabled: _autoBackupEnabled,

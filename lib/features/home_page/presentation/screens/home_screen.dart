@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/dependency_injection_utils.dart' as di;
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
@@ -9,9 +10,8 @@ import '../../../../constants/theme_colors.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/log_utils.dart';
 import '../../../../utils/responsive_utils.dart';
+import '../../../../utils/sync_utils.dart';
 
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
-import '../../../customer_lookup/presentation/BLoC/customer_lookup_events.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import '../../../loading_splash/presentation/BLoC/loading_splash_states.dart';
 import '../../../stock_lookup/presentation/widgets/stock_request_error_dialog.dart';
@@ -253,9 +253,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (currentState is! FetchStockProgress) {
       context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-      context.read<FetchCustomerBloc>().add(
-        StartCustomerSyncEvent(ipAddress: ""),
-      );
     }
 
     context.navigateToNext(const ScannerScreen());
@@ -321,7 +318,10 @@ class _HomeScreenState extends State<HomeScreen> {
             if (state is StaffSignedOut ||
                 state is StaffUnauthenticated ||
                 state is StaffAuthError) {
-              _promptStaffLoginIfNeeded(force: true);
+              // Don't redirect if shopfront dialog is handling the login flow
+              if (!AppGlobals.instance.isShopfrontDialogOpen) {
+                _promptStaffLoginIfNeeded(force: true);
+              }
             }
           },
         ),
@@ -370,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 BlocProvider(
-                  create: (_) => SessionCountsCubit(),
+                  create: (_) => di.sl<SessionCountsCubit>(),
                   child: GlassDrawer(
                     initialChildSize: drawerSizes.initialChildSize,
                     minChildSize: drawerSizes.minChildSize,
@@ -449,10 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
           previous is! ConnectedToShopfront && current is ConnectedToShopfront,
       listener: (context, state) {
         if (state is ConnectedToShopfront) {
-          context.read<FetchStockBloc>().add(StartSyncEvent(ipAddress: ""));
-          context.read<FetchCustomerBloc>().add(
-            StartCustomerSyncEvent(ipAddress: ""),
-          );
+          runSequentialStockThenCustomerSync(context);
         }
         if (state is ShopfrontConnectionError) {
           showTopSnackBar(

@@ -35,6 +35,7 @@ StockVO _$StockVOFromJson(Map<String, dynamic> json) => StockVO(
   imageUrl: json['imageUrl'] as String?,
   goodsTax: json['goods_tax'] as String?,
   salesTax: json['sales_tax'] as String?,
+  salesPrompt: json['sales_prompt'] as String?,
   dateModified: json['date_modified'] as String,
   freight: json['freight'] == 1,
   tareWeight: json['tare_weight'] as num,
@@ -55,6 +56,7 @@ StockVO _$StockVOFromJson(Map<String, dynamic> json) => StockVO(
   pricingGradesGlobal: StockVO._pricingGradesFromJson(json['pricing_grades_global']),
   isOnPromotion: json['is_on_promotion'] == 1,
   promotion: StockVO._promotionFromJson(json['promotion']),
+  serialNumbers: StockVO._serialNumbersFromJson(json['serial_numbers']),
 );
 
 StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
@@ -86,6 +88,7 @@ StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
   imageUrl: json['imageUrl'] as String?,
   goodsTax: json['goods_tax'] as String?,
   salesTax: json['sales_tax'] as String?,
+  salesPrompt: json['sales_prompt'] as String?,
   dateModified: json['date_modified'] as String,
   freight: json['freight'],
   tareWeight: json['tare_weight'] as num,
@@ -106,6 +109,7 @@ StockVO _$StockVOFromJsonNetwork(Map<String, dynamic> json) => StockVO(
   pricingGradesGlobal: StockVO._pricingGradesFromJson(json['pricing_grades_global']),
   isOnPromotion: json['is_on_promotion'] ?? false,
   promotion: StockVO._promotionFromJson(json['promotion']),
+  serialNumbers: StockVO._serialNumbersFromJson(json['serial_numbers']),
 );
 
 Map<String, dynamic> _$StockVOToJson(
@@ -141,6 +145,7 @@ Map<String, dynamic> _$StockVOToJson(
   'imageUrl': instance.imageUrl,
   'goods_tax': instance.goodsTax,
   'sales_tax': instance.salesTax,
+  'sales_prompt': instance.salesPrompt,
   'date_modified': instance.dateModified,
   'freight': instance.freight ? 1 : 0,
   'tare_weight': instance.tareWeight,
@@ -161,4 +166,5 @@ Map<String, dynamic> _$StockVOToJson(
   'pricing_grades_global': StockVO._pricingGradesToJson(instance.pricingGradesGlobal),
   'is_on_promotion': instance.isOnPromotion ? 1 : 0,
   'promotion': StockVO._promotionToJson(instance.promotion),
+  'serial_numbers': StockVO._serialNumbersToJson(instance.serialNumbers),
 };

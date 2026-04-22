@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
@@ -24,16 +25,27 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
   String _display = "0";
   double? _firstOperand;
   String? _operator;
+  late final TextEditingController _displayController;
 
   bool _shouldResetInput = false;
 
   bool _isCostSelected = false;
   bool _isExclusiveSelected = false;
+  bool _percentMode = false;
+  double? _percentBase;
 
   @override
   void initState() {
     super.initState();
     _display = _formatNumber(widget.currentSell);
+    _displayController = TextEditingController(text: _display);
+    _displayController.addListener(_onDisplayChanged);
+  }
+
+  @override
+  void dispose() {
+    _displayController.dispose();
+    super.dispose();
   }
 
   String _formatNumber(double num) {
@@ -42,6 +54,54 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
       s = s.substring(0, s.length - 1);
     }
     return s;
+  }
+
+  void _onDisplayChanged() {
+    final raw = _displayController.text;
+    if (raw.isEmpty) {
+      _display = "0";
+      return;
+    }
+
+    final sanitized = _sanitizeNumber(raw);
+    if (sanitized != raw) {
+      _displayController.value = TextEditingValue(
+        text: sanitized,
+        selection: TextSelection.collapsed(offset: sanitized.length),
+      );
+    }
+    _display = sanitized.isEmpty ? "0" : sanitized;
+
+    if (_isCostSelected) {
+      _isCostSelected = false;
+      _isExclusiveSelected = false;
+    }
+  }
+
+  String _sanitizeNumber(String value) {
+    if (value.isEmpty) return value;
+    final buffer = StringBuffer();
+    bool dotSeen = false;
+    for (final ch in value.split('')) {
+      if (ch == '.') {
+        if (dotSeen) continue;
+        dotSeen = true;
+        buffer.write(ch);
+      } else if (RegExp(r'[0-9]').hasMatch(ch)) {
+        buffer.write(ch);
+      }
+    }
+    return buffer.toString();
+  }
+
+  void _setDisplay(String value) {
+    _display = value;
+    if (_displayController.text != value) {
+      _displayController.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value.length),
+      );
+    }
   }
 
   void _updateDisplayBasedOnSelection() {
@@ -55,9 +115,11 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
       }
 
       setState(() {
-        _display = _formatNumber(valueToSet);
+        _setDisplay(_formatNumber(valueToSet));
         _firstOperand = null;
         _operator = null;
+        _percentMode = false;
+        _percentBase = null;
         _shouldResetInput = true;
       });
     }
@@ -66,14 +128,14 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
   void _onNumberTap(String number) {
     setState(() {
       if (_shouldResetInput) {
-        _display = number == "." ? "0." : number;
+        _setDisplay(number == "." ? "0." : number);
         _shouldResetInput = false;
       } else {
         if (_display == "0" && number != ".") {
-          _display = number;
+          _setDisplay(number);
         } else {
           if (number == "." && _display.contains(".")) return;
-          _display += number;
+          _setDisplay("$_display$number");
         }
       }
 
@@ -86,6 +148,8 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
 
   void _onOperatorTap(String nextOp) {
     setState(() {
+      _percentMode = false;
+      _percentBase = null;
       final double currentVal = double.tryParse(_display) ?? 0.0;
 
       if (_firstOperand == null) {
@@ -122,12 +186,21 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
         break;
     }
 
-    _display = _formatNumber(result);
+    _setDisplay(_formatNumber(result));
     _firstOperand = result;
   }
 
   void _onEqualsTap() {
     setState(() {
+      if (_percentMode && _percentBase != null) {
+        final double percent = double.tryParse(_display) ?? 0.0;
+        final result = _percentBase! * (percent / 100);
+        _setDisplay(_formatNumber(result));
+        _percentMode = false;
+        _percentBase = null;
+        _shouldResetInput = true;
+        return;
+      }
       if (_operator != null && _firstOperand != null) {
         _calculateIntermediate();
         _operator = null;
@@ -138,49 +211,49 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
   }
 
   void _onPercentTap() {
-    final double currentValue = double.tryParse(_display) ?? 0.0;
-
     setState(() {
+      final double currentValue = double.tryParse(_display) ?? 0.0;
+
       if (_firstOperand != null && _operator != null) {
         if (_operator == "+" || _operator == "-") {
           final result = _firstOperand! * (currentValue / 100);
-          _display = _formatNumber(result);
+          _setDisplay(_formatNumber(result));
         } else {
           final result = currentValue / 100;
-          _display = _formatNumber(result);
+          _setDisplay(_formatNumber(result));
         }
-      } else {
-        final result = currentValue / 100;
-        _display = _formatNumber(result);
+        _shouldResetInput = true;
+        return;
       }
 
+      _percentBase = currentValue;
+      _percentMode = true;
+      _firstOperand = null;
+      _operator = null;
+      _setDisplay("0");
       _shouldResetInput = true;
     });
   }
 
   void _onClear() {
     setState(() {
-      _display = "0";
+      _setDisplay("0");
       _firstOperand = null;
       _operator = null;
       _shouldResetInput = false;
       _isCostSelected = false;
       _isExclusiveSelected = false;
+      _percentMode = false;
+      _percentBase = null;
     });
   }
 
   void _onBackspace() {
-    if (_shouldResetInput && _operator == null) {
-      _onClear();
-      return;
-    }
-
-    if (_display.isNotEmpty && _display != "0") {
-      setState(() {
-        _display = _display.substring(0, _display.length - 1);
-        if (_display.isEmpty || _display == "-") _display = "0";
-      });
-    }
+    if (_display.isEmpty || _display == "0") return;
+    setState(() {
+      final updated = _display.substring(0, _display.length - 1);
+      _setDisplay(updated.isEmpty || updated == "-" ? "0" : updated);
+    });
   }
 
   @override
@@ -206,25 +279,22 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
             : BorderSide.none,
       ),
       backgroundColor: surface,
-      child: AnimatedPadding(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: media.size.height * 0.88),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: dialogWidth,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Sell Price (RRP) Calculator",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: kPrimaryColor,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: media.size.height * 0.88 - media.viewInsets.bottom,
+          maxWidth: dialogWidth,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Sell Price (RRP) Calculator",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: kPrimaryColor,
                     ),
                   ),
                   const Divider(),
@@ -276,26 +346,39 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 16,
+                  TextField(
+                    controller: _displayController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
-                    decoration: BoxDecoration(
-                      color: surfaceAlt,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: divider),
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
                     ),
-                    child: Text(
-                      _display,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                    ],
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      filled: true,
+                      fillColor: surfaceAlt,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: divider),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: divider),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: divider),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 15),
@@ -309,8 +392,8 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
                     children: [
                       _actionBtn("C", _onClear, color: kErrorColor),
                       _opBtn("%", _onPercentTap),
-                      _opBtn("/", () => _onOperatorTap("/")),
-                      _actionBtn("?", _onBackspace, color: Colors.orange),
+                      _opBtn("÷", () => _onOperatorTap("/")),
+                      _iconActionBtn(Icons.backspace_outlined, _onBackspace),
                       _numBtn("7"),
                       _numBtn("8"),
                       _numBtn("9"),
@@ -369,9 +452,7 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
               ),
             ),
           ),
-        ),
-      ),
-    );
+        );
   }
 
   Widget _numBtn(String label) {
@@ -454,6 +535,21 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
             color: color,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _iconActionBtn(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        alignment: Alignment.center,
+        child: Icon(icon, size: 20, color: Colors.orange),
       ),
     );
   }

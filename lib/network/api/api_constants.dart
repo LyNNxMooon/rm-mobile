@@ -12,9 +12,17 @@ const kEndPointForShopfronts = "/shopfronts";
 const kEndPointForConnectShopfront =
     "/shopfronts/{$kPathParamForShopfrontId}/connect";
 const kEndPointForStockLookup = "/shopfronts/{$kPathParamForShopfrontId}/stock";
+const kEndPointForStockMetadata =
+    "/shopfronts/{$kPathParamForShopfrontId}/stock/metadata";
+const kEndPointForStockIds =
+    "/shopfronts/{$kPathParamForShopfrontId}/stock/ids";
 const kEndPointForShopfrontStockUpdate =
     "/shopfronts/{$kPathParamForShopfrontId}/stock/update";
 const kEndPointForCustomerLookup = "/shopfronts/{$kPathParamForShopfrontId}/customers";
+const kEndPointForCustomerMetadata =
+    "/shopfronts/{$kPathParamForShopfrontId}/customers/metadata";
+const kEndPointForCustomerIds =
+    "/shopfronts/{$kPathParamForShopfrontId}/customers/ids";
 const kEndPointForCustomerCreate = "/shopfronts/{$kPathParamForShopfrontId}/customers/create";
 const kEndPointForCustomerUpdate =
     "/shopfronts/{$kPathParamForShopfrontId}/customers/update";

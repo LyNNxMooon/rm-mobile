@@ -75,6 +75,7 @@ import 'package:rmmobile/entities/vos/customer_address_vo.dart';
 import 'package:rmmobile/entities/vos/search_mode.dart';
 import 'package:rmmobile/entities/vos/stock_vo.dart';
 import 'package:rmmobile/entities/vos/tax_code_vo.dart';
+import 'package:rmmobile/entities/vos/sync_metadata.dart';
 import 'package:rmmobile/local_db/local_db_dao.dart';
 import 'package:rmmobile/local_db/sqlite/sqlite_constants.dart';
 import 'package:sqflite/sqflite.dart';
@@ -247,6 +248,18 @@ class SQLiteDAOImpl extends LocalDbDAO {
         db: _database!,
         table: 'Stocks',
         column: 'promotion',
+        definition: 'TEXT',
+      );
+      await _addColumnIfMissing(
+        db: _database!,
+        table: 'Stocks',
+        column: 'serial_numbers',
+        definition: 'TEXT',
+      );
+      await _addColumnIfMissing(
+        db: _database!,
+        table: 'Stocks',
+        column: 'sales_prompt',
         definition: 'TEXT',
       );
       logger.d('Successfully initialized SQLite local database!');
@@ -456,10 +469,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
     try {
       final db = _database!;
 
-      // 1) Barcode exact match (ALL matches) - exclude default stock
+      // 1) Barcode exact match (case-insensitive, ALL matches) - exclude default stock
       final barcodeRows = await db.query(
         'Stocks',
-        where: 'Barcode = ? AND shopfront = ? AND stock_id != 0',
+        where: 'LOWER(Barcode) = LOWER(?) AND shopfront = ? AND stock_id != 0',
         whereArgs: [query, shopfront],
       );
 
@@ -649,15 +662,6 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return PaginatedStockResult(items, count, matchedFields: matchedFields);
       }
 
-      // Fast existence check
-      Future<bool> exists(String whereClause, List<dynamic> args) async {
-        final res = await db.rawQuery(
-          'SELECT 1 FROM Stocks WHERE $whereClause LIMIT 1',
-          args,
-        );
-        return res.isNotEmpty;
-      }
-
       if (q.isEmpty) {
         return runQuery(whereClause: baseWhere, args: baseArgs, matchedColumn: null);
       }
@@ -677,18 +681,70 @@ class SQLiteDAOImpl extends LocalDbDAO {
         'custom2',
       ];
 
-      for (final column in searchPriority) {
-        final whereClause = '$baseWhere AND $column LIKE ?';
-        final args = [...baseArgs, searchPattern];
-        if (await exists(whereClause, args)) {
-          return runQuery(whereClause: whereClause, args: args, matchedColumn: column);
+      bool matchesValue(String value) {
+        final normalized = value.toLowerCase();
+        final needle = q.toLowerCase();
+        if (searchMode == SearchMode.prefix) {
+          return normalized.startsWith(needle);
+        }
+        return normalized.contains(needle);
+      }
+
+      String? matchedColumnForRow(Map<String, dynamic> row) {
+        for (final column in searchPriority) {
+          final value = row[column];
+          if (value != null && matchesValue(value.toString())) {
+            return column;
+          }
+        }
+        return null;
+      }
+
+      final matchClause = searchPriority.map((col) => '$col LIKE ?').join(' OR ');
+      final whereClause = '$baseWhere AND ($matchClause)';
+      final whereArgs = [
+        ...baseArgs,
+        ...List.filled(searchPriority.length, searchPattern),
+      ];
+
+      final orderCase = searchPriority
+          .asMap()
+          .entries
+          .map((entry) => 'WHEN ${entry.value} LIKE ? THEN ${entry.key}')
+          .join(' ');
+      final orderedBy =
+          'CASE $orderCase ELSE ${searchPriority.length} END, $safeSortColumn ${ascending ? 'ASC' : 'DESC'}';
+
+      final countFuture = db.rawQuery(
+        'SELECT COUNT(*) as count FROM Stocks WHERE $whereClause',
+        whereArgs,
+      );
+
+      final dataFuture = db.rawQuery(
+        'SELECT * FROM Stocks WHERE $whereClause ORDER BY $orderedBy LIMIT ? OFFSET ?',
+        [
+          ...whereArgs,
+          ...List.filled(searchPriority.length, searchPattern),
+          limit,
+          offset,
+        ],
+      );
+
+      final results = await Future.wait([dataFuture, countFuture]);
+      final rows = results[0] as List<Map<String, dynamic>>;
+      final items = rows.map((e) => StockVO.fromJson(e)).toList();
+      final int count =
+          Sqflite.firstIntValue(results[1] as List<Map<String, dynamic>>) ?? 0;
+
+      final Map<int, String> matchedFields = {};
+      for (var i = 0; i < rows.length; i++) {
+        final matchedColumn = matchedColumnForRow(rows[i]);
+        if (matchedColumn != null) {
+          matchedFields[items[i].stockID.toInt()] = matchedColumn;
         }
       }
 
-      // No match in any prioritized column.
-      final fallbackWhere = '$baseWhere AND Barcode LIKE ?';
-      final fallbackArgs = [...baseArgs, searchPattern];
-      return runQuery(whereClause: fallbackWhere, args: fallbackArgs, matchedColumn: 'Barcode');
+      return PaginatedStockResult(items, count, matchedFields: matchedFields);
     } catch (error) {
       logger.e('Error searching stocks: $error');
       return Future.error(error);
@@ -873,6 +929,62 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error loading stocks by ids in $shopfront: $error');
       return Future.error("Error loading stocks by ids: $error");
+    }
+  }
+
+  @override
+  Future<SyncMetadata> getStockSyncMetadata(String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) AS count, '
+        'MIN(stock_id) AS min_id, '
+        'MAX(stock_id) AS max_id, '
+        'COALESCE(SUM(stock_id), 0) AS checksum '
+        'FROM Stocks WHERE shopfront = ?',
+        [shopfront],
+      );
+
+      final row = result.isNotEmpty ? result.first : <String, Object?>{};
+      final count = (row['count'] as num?)?.toInt() ?? 0;
+      final minId = (row['min_id'] as num?)?.toInt() ?? 0;
+      final maxId = (row['max_id'] as num?)?.toInt() ?? 0;
+      final checksum = (row['checksum'] as num?)?.toInt() ?? 0;
+
+      return SyncMetadata(
+        count: count,
+        minId: minId,
+        maxId: maxId,
+        checksum: checksum,
+      );
+    } catch (error) {
+      logger.e('Error getting stock metadata for $shopfront: $error');
+      return Future.error("Error getting stock metadata: $error");
+    }
+  }
+
+  @override
+  Future<List<int>> getStockIdsInRange({
+    required String shopfront,
+    required int fromId,
+    required int toId,
+  }) async {
+    try {
+      if (toId < fromId) return [];
+      final db = _database!;
+      final rows = await db.query(
+        'Stocks',
+        columns: ['stock_id'],
+        where: 'shopfront = ? AND stock_id BETWEEN ? AND ?',
+        whereArgs: [shopfront, fromId, toId],
+        orderBy: 'stock_id ASC',
+      );
+      return rows
+          .map((row) => (row['stock_id'] as num).toInt())
+          .toList();
+    } catch (error) {
+      logger.e('Error getting stock ids for $shopfront: $error');
+      return Future.error("Error getting stock ids: $error");
     }
   }
 
@@ -1087,7 +1199,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
     final db = _database!;
     final rows = await db.query(
       'Stocks',
-      where: 'Barcode = ? AND shopfront = ?',
+      where: 'LOWER(Barcode) = LOWER(?) AND shopfront = ?',
       whereArgs: [barcode, shopfront],
     );
 
@@ -1532,6 +1644,35 @@ class SQLiteDAOImpl extends LocalDbDAO {
       logger.d('Cleared master Stocks for $shopfront');
     } catch (error) {
       logger.e('Error clearing stocks for $shopfront: $error');
+    }
+  }
+
+  @override
+  Future<void> deleteStocksByIds({
+    required String shopfront,
+    required List<int> stockIds,
+  }) async {
+    try {
+      if (stockIds.isEmpty) return;
+      final db = _database!;
+      final ids = stockIds.where((id) => id > 0).toSet().toList();
+      if (ids.isEmpty) return;
+
+      const int batchSize = 900;
+      await db.transaction((txn) async {
+        for (int i = 0; i < ids.length; i += batchSize) {
+          final chunk = ids.skip(i).take(batchSize).toList();
+          final placeholders = List.filled(chunk.length, '?').join(',');
+          await txn.delete(
+            'Stocks',
+            where: 'shopfront = ? AND stock_id IN ($placeholders)',
+            whereArgs: [shopfront, ...chunk],
+          );
+        }
+      });
+    } catch (error) {
+      logger.e('Error deleting stocks by ids for $shopfront: $error');
+      return Future.error("Error deleting stocks by ids: $error");
     }
   }
 
@@ -3209,15 +3350,6 @@ class SQLiteDAOImpl extends LocalDbDAO {
         );
       }
 
-      // Fast existence check
-      Future<bool> exists(String whereClause, List<dynamic> args) async {
-        final res = await db.rawQuery(
-          'SELECT 1 FROM Customers WHERE $whereClause LIMIT 1',
-          args,
-        );
-        return res.isNotEmpty;
-      }
-
       if (q.isEmpty) {
         return runQuery(whereClause: baseWhere, args: baseArgs, matchedColumn: null);
       }
@@ -3239,18 +3371,85 @@ class SQLiteDAOImpl extends LocalDbDAO {
         'email',
       ];
 
-      for (final column in searchPriority) {
-        final whereClause = '$baseWhere AND $column LIKE ?';
-        final args = [...baseArgs, searchPattern];
-        if (await exists(whereClause, args)) {
-          return runQuery(whereClause: whereClause, args: args, matchedColumn: column);
+      bool matchesValue(String value) {
+        final normalized = value.toLowerCase();
+        final needle = q.toLowerCase();
+        if (searchMode == SearchMode.prefix) {
+          return normalized.startsWith(needle);
+        }
+        return normalized.contains(needle);
+      }
+
+      String? matchedColumnForRow(Map<String, dynamic> row) {
+        for (final column in searchPriority) {
+          final value = row[column];
+          if (value != null && matchesValue(value.toString())) {
+            return column;
+          }
+        }
+        return null;
+      }
+
+      final matchClause = searchPriority.map((col) => '$col LIKE ?').join(' OR ');
+      final whereClause = '$baseWhere AND ($matchClause)';
+      final whereArgs = [
+        ...baseArgs,
+        ...List.filled(searchPriority.length, searchPattern),
+      ];
+
+      final orderCase = searchPriority
+          .asMap()
+          .entries
+          .map((entry) => 'WHEN ${entry.value} LIKE ? THEN ${entry.key}')
+          .join(' ');
+      final orderedBy =
+          'CASE $orderCase ELSE ${searchPriority.length} END, $safeSortColumn ${ascending ? 'ASC' : 'DESC'}';
+
+      final countFuture = db.rawQuery(
+        'SELECT COUNT(*) as count FROM Customers WHERE $whereClause',
+        whereArgs,
+      );
+
+      final dataFuture = db.rawQuery(
+        'SELECT * FROM Customers WHERE $whereClause ORDER BY $orderedBy LIMIT ? OFFSET ?',
+        [
+          ...whereArgs,
+          ...List.filled(searchPriority.length, searchPattern),
+          limit,
+          offset,
+        ],
+      );
+
+      final results = await Future.wait([dataFuture, countFuture]);
+      final rows = results[0] as List<Map<String, dynamic>>;
+      final int count =
+          Sqflite.firstIntValue(results[1] as List<Map<String, dynamic>>) ?? 0;
+
+      final List<CustomerVO> customers = [];
+      for (final row in rows) {
+        final customerId = row['customer_id'] as int;
+        final addresses = await _getCustomerAddresses(
+          db,
+          customerId,
+          shopfront,
+        );
+        customers.add(_customerFromRow(row, addresses));
+      }
+
+      final Map<int, String> matchedFields = {};
+      for (var i = 0; i < rows.length; i++) {
+        final matchedColumn = matchedColumnForRow(rows[i]);
+        if (matchedColumn != null) {
+          matchedFields[customers[i].customerId] = matchedColumn;
         }
       }
 
-      // No match in any prioritized column.
-      final fallbackWhere = '$baseWhere AND barcode LIKE ?';
-      final fallbackArgs = [...baseArgs, searchPattern];
-      return runQuery(whereClause: fallbackWhere, args: fallbackArgs, matchedColumn: 'barcode');
+      return PaginatedCustomerResult(
+        customers: customers,
+        totalCount: count,
+        hasMore: offset + customers.length < count,
+        matchedFields: matchedFields,
+      );
     } catch (error) {
       logger.e('Error searching customers: $error');
       return Future.error(error);
@@ -3389,6 +3588,62 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error getting customer by ID in $shopfront: $error');
       return Future.error("Error getting customer: $error");
+    }
+  }
+
+  @override
+  Future<SyncMetadata> getCustomerSyncMetadata(String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) AS count, '
+        'MIN(customer_id) AS min_id, '
+        'MAX(customer_id) AS max_id, '
+        'COALESCE(SUM(customer_id), 0) AS checksum '
+        'FROM Customers WHERE shopfront = ?',
+        [shopfront],
+      );
+
+      final row = result.isNotEmpty ? result.first : <String, Object?>{};
+      final count = (row['count'] as num?)?.toInt() ?? 0;
+      final minId = (row['min_id'] as num?)?.toInt() ?? 0;
+      final maxId = (row['max_id'] as num?)?.toInt() ?? 0;
+      final checksum = (row['checksum'] as num?)?.toInt() ?? 0;
+
+      return SyncMetadata(
+        count: count,
+        minId: minId,
+        maxId: maxId,
+        checksum: checksum,
+      );
+    } catch (error) {
+      logger.e('Error getting customer metadata for $shopfront: $error');
+      return Future.error("Error getting customer metadata: $error");
+    }
+  }
+
+  @override
+  Future<List<int>> getCustomerIdsInRange({
+    required String shopfront,
+    required int fromId,
+    required int toId,
+  }) async {
+    try {
+      if (toId < fromId) return [];
+      final db = _database!;
+      final rows = await db.query(
+        'Customers',
+        columns: ['customer_id'],
+        where: 'shopfront = ? AND customer_id BETWEEN ? AND ?',
+        whereArgs: [shopfront, fromId, toId],
+        orderBy: 'customer_id ASC',
+      );
+      return rows
+          .map((row) => (row['customer_id'] as num).toInt())
+          .toList();
+    } catch (error) {
+      logger.e('Error getting customer ids for $shopfront: $error');
+      return Future.error("Error getting customer ids: $error");
     }
   }
 
@@ -3992,6 +4247,40 @@ class SQLiteDAOImpl extends LocalDbDAO {
       logger.d('Cleared customers for $shopfront');
     } catch (error) {
       logger.e('Error clearing customers for $shopfront: $error');
+    }
+  }
+
+  @override
+  Future<void> deleteCustomersByIds({
+    required String shopfront,
+    required List<int> customerIds,
+  }) async {
+    try {
+      if (customerIds.isEmpty) return;
+      final db = _database!;
+      final ids = customerIds.where((id) => id > 0).toSet().toList();
+      if (ids.isEmpty) return;
+
+      const int batchSize = 900;
+      await db.transaction((txn) async {
+        for (int i = 0; i < ids.length; i += batchSize) {
+          final chunk = ids.skip(i).take(batchSize).toList();
+          final placeholders = List.filled(chunk.length, '?').join(',');
+          await txn.delete(
+            'CustomerAddresses',
+            where: 'shopfront = ? AND customer_id IN ($placeholders)',
+            whereArgs: [shopfront, ...chunk],
+          );
+          await txn.delete(
+            'Customers',
+            where: 'shopfront = ? AND customer_id IN ($placeholders)',
+            whereArgs: [shopfront, ...chunk],
+          );
+        }
+      });
+    } catch (error) {
+      logger.e('Error deleting customers by ids for $shopfront: $error');
+      return Future.error("Error deleting customers by ids: $error");
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../entities/response/customer_search_response.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../entities/vos/customer_vo.dart';
 import '../../../../entities/vos/stock_vo.dart';
@@ -19,6 +20,7 @@ import '../../domain/use_cases/create_account_invoice.dart';
 import '../../domain/use_cases/create_sales_order.dart';
 import '../../domain/use_cases/create_quote.dart';
 import '../../domain/use_cases/create_layby.dart';
+import '../../domain/use_cases/get_cash_drawer_identifier.dart';
 import '../../../customer_lookup/domain/use_cases/update_customer_details.dart';
 import 'sales_events.dart';
 import 'sales_states.dart';
@@ -39,6 +41,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   final CreateSalesOrder createSalesOrder;
   final CreateQuote createQuote;
   final CreateLayby createLayby;
+  final GetCashDrawerIdentifier getCashDrawerIdentifier;
   final UpdateCustomerDetails updateCustomerDetails;
   final List<CartItemVO> _cartItems = [];
   CustomerVO? _selectedCustomer;
@@ -59,6 +62,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     required this.createSalesOrder,
     required this.createQuote,
     required this.createLayby,
+    required this.getCashDrawerIdentifier,
     required this.updateCustomerDetails,
   }) : super(const SalesInitial()) {
     on<SearchStock>(_onSearchStock);
@@ -79,6 +83,14 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     on<SearchCustomer>(_onSearchCustomer);
     on<SelectCustomer>(_onSelectCustomer);
     on<ClearCustomer>(_onClearCustomer);
+  }
+
+  Future<String> fetchCashDrawerIdentifier({String fallback = 'A'}) {
+    return getCashDrawerIdentifier(fallback: fallback);
+  }
+
+  Future<CustomerSearchResult> searchCustomer(String query) {
+    return searchCustomerForSale(query);
   }
 
   Future<void> _onRecalculatePricesForGrade(
@@ -184,6 +196,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
           cartItems: List.from(_cartItems),
           selectedCustomer: _selectedCustomer,
           lowStockWarning: warning,
+          salesPrompt: added.salesPrompt,
         ));
         return;
       }
@@ -265,6 +278,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
       lowStockWarning: warning,
+      salesPrompt: added.salesPrompt,
     ));
   }
 
@@ -318,6 +332,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
       lowStockWarning: warning,
+      salesPrompt: result.salesPrompt,
     ));
   }
 
@@ -339,6 +354,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 
     double totalQty = qty;
     bool negativeSellPrice = false;
+    String? salesPrompt;
     
     if (existingIndex >= 0) {
       // Update quantity of existing item
@@ -447,9 +463,18 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       );
       
       _cartItems.insert(0, newItem);
+
+      final prompt = stock.salesPrompt?.trim() ?? '';
+      if (prompt.isNotEmpty) {
+        salesPrompt = prompt;
+      }
     }
     
-    return _AddToCartResult(totalQty: totalQty, negativeSellPrice: negativeSellPrice);
+    return _AddToCartResult(
+      totalQty: totalQty,
+      negativeSellPrice: negativeSellPrice,
+      salesPrompt: salesPrompt,
+    );
   }
 
   void _onUpdateCartItemQty(
@@ -493,6 +518,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       sellPrice: incPrice, // sellPrice stores the base price as inc
       incPrice: incPrice,
       exPrice: exPrice,
+      isPriceOverridden: true,
     );
     emit(CartUpdated(cartItems: List.from(_cartItems), selectedCustomer: _selectedCustomer));
   }
@@ -504,7 +530,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     if (event.index < 0 || event.index >= _cartItems.length) return;
 
     _cartItems[event.index] = _cartItems[event.index].copyWith(
-      serialNumber: event.serialNumber,
+      serialNumbers: event.serialNumbers,
     );
     emit(CartUpdated(cartItems: List.from(_cartItems), selectedCustomer: _selectedCustomer));
   }
@@ -678,6 +704,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       final stock = item.stock;
       
       if (stock == null) continue; // Skip items without stock reference
+      if (item.isPriceOverridden) continue; // Preserve manual or grade overrides
       
       // Get effective sell price based on customer grade
       final effectiveResult = stock.getEffectiveSellPrice(customerGrade);
@@ -739,6 +766,11 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 class _AddToCartResult {
   final double totalQty;
   final bool negativeSellPrice;
+  final String? salesPrompt;
 
-  _AddToCartResult({required this.totalQty, required this.negativeSellPrice});
+  _AddToCartResult({
+    required this.totalQty,
+    required this.negativeSellPrice,
+    this.salesPrompt,
+  });
 }

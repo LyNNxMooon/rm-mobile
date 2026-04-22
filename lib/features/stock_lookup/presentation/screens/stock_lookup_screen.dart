@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:audioplayers/audioplayers.dart';
@@ -313,6 +314,11 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     ? state.isAscending
                     : true;
                 if (state is StockListLoaded) {
+                  final int totalCount =
+                      state.totalCount > 0 ? state.totalCount - 1 : 0;
+                  final int loadedCount =
+                      state.stocks.where((s) => s.stockID != 0).length;
+                  final int visibleCount = math.min(loadedCount, totalCount);
                   return Padding(
                     padding: const EdgeInsets.only(
                       left: 15,
@@ -360,7 +366,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                         ],
                         const SizedBox(width: 16),
                         Text(
-                          "${state.stocks.length} of ${NumberFormat('#,###').format(state.totalCount)}",
+                          "$visibleCount of ${NumberFormat('#,###').format(totalCount)}",
                           style: TextStyle(
                             color: isDark ? Colors.white70 : kGreyColor,
                             fontSize: 11,
@@ -799,11 +805,9 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
       case StockViewMode.largeIcons:
         // Medium tablets get 5 columns, large tablets get 5 columns with shorter cards
         crossAxisCount = 5;
-        childAspectRatio = isLargeTablet
-            ? (hasSearchQuery ? 0.85 : 0.95)
-            : isMediumTablet 
-                ? (hasSearchQuery ? 0.70 : 0.85) 
-                : (hasSearchQuery ? 0.58 : 0.75);
+        childAspectRatio = isMediumTablet 
+            ? (hasSearchQuery ? 0.70 : 0.85) 
+            : (hasSearchQuery ? 0.58 : 0.75);
         break;
       default:
         crossAxisCount = 2;
@@ -812,6 +816,72 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
             ? (isMediumTablet ? 95.0 : 130.0) 
             : (isMediumTablet ? 70.0 : 100.0);
         childAspectRatio = (itemWidth / minItemHeight).clamp(2.0, 7.0);
+    }
+
+    // For large tablets in largeIcons mode, use Wrap with flexible height cards
+    if (isLargeTablet && _viewMode == StockViewMode.largeIcons) {
+      const double spacing = 12;
+      final double horizontalPadding = 30; // 15 left + 15 right
+      final double totalSpacing = spacing * (crossAxisCount - 1);
+      final double cardWidth =
+          (availableWidth - horizontalPadding + 30 - totalSpacing) / crossAxisCount;
+
+      return AnimationLimiter(
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(
+              left: 15,
+              right: 15,
+              top: 0,
+              bottom: 100,
+            ),
+            child: Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
+              alignment: WrapAlignment.start,
+              crossAxisAlignment: WrapCrossAlignment.start,
+              children: [
+                ...state.stocks.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final stock = entry.value;
+                  return AnimationConfiguration.staggeredGrid(
+                    position: index,
+                    duration: const Duration(milliseconds: 400),
+                    columnCount: crossAxisCount,
+                    child: ScaleAnimation(
+                      child: FadeInAnimation(
+                        child: SizedBox(
+                          width: cardWidth,
+                          child: _buildGridTileFlexible(
+                            stock,
+                            index,
+                            isDark,
+                            colors,
+                            state.currentQuery,
+                            cardWidth,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                // Loading indicator
+                if (!state.hasReachedMax)
+                  SizedBox(
+                    width: cardWidth,
+                    height: 60,
+                    child: const Center(
+                      child: CupertinoActivityIndicator(),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     return AnimationLimiter(
@@ -1058,6 +1128,157 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Flexible height grid tile for large tablets (content-based height, shows up to custom1)
+  Widget _buildGridTileFlexible(
+    StockVO stock,
+    int index,
+    bool isDark,
+    AppThemeColors colors,
+    String query,
+    double cardWidth,
+  ) {
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
+    final String trimmedQuery = query.trim();
+
+    // Fixed font sizes for large tablets
+    const double descFontSize = 14.0;
+    const double barcodeFontSize = 13.0;
+    final double customFontSize = 11 * uiScale;
+
+    // Calculate thumbnail height based on card width (square-ish)
+    final double thumbnailHeight = cardWidth - 16; // Account for margins
+
+    return GestureDetector(
+      onTap: () {
+        if (_isSyncInProgress()) {
+          _showSyncBlockedMessage();
+          return;
+        }
+        context.navigateToNext(StockDetailsScreen(stock: stock));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? Color.lerp(colors.surface, Colors.white, 0.06)
+              : kSecondaryColor,
+          borderRadius: BorderRadius.circular(12),
+          border: isDark
+              ? Border.all(color: Colors.white.withOpacity(0.18))
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withOpacity(0.35)
+                  : kThirdColor.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Allow content-based height
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Thumbnail with fixed height based on card width
+            Container(
+              width: double.infinity,
+              height: thumbnailHeight,
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : kBgColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Hero(
+                  tag: 'stock_image_${stock.stockID}',
+                  child: StockThumbnailTile(stock: stock),
+                ),
+              ),
+            ),
+            // Info - flexible height content
+            Padding(
+              padding: const EdgeInsets.only(left: 8, right: 8, bottom: 3),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Description
+                  HighlightedText(
+                    text: stock.description,
+                    query: trimmedQuery,
+                    highlightColor: Colors.amber.withOpacity(0.6),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : kThirdColor,
+                      fontSize: descFontSize,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    applyTextScaler: true,
+                  ),
+                  const SizedBox(height: 2),
+                  // Barcode
+                  HighlightedText(
+                    text: stock.barcode,
+                    query: trimmedQuery,
+                    highlightColor: Colors.amber.withOpacity(0.6),
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: barcodeFontSize,
+                      color: kPrimaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    applyTextScaler: true,
+                  ),
+                  const SizedBox(height: 2),
+                  // Sell Price
+                  Text(
+                    '\$${_formatSellPrice(stock)}',
+                    style: TextStyle(
+                      fontSize: barcodeFontSize,
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  // Custom1 row - always reserve space for consistent card height
+                  const SizedBox(height: 2),
+                  (stock.custom1 != null && stock.custom1!.isNotEmpty)
+                      ? HighlightedText(
+                          text: stock.custom1!,
+                          query: trimmedQuery,
+                          highlightColor: Colors.amber.withOpacity(0.6),
+                          style: TextStyle(
+                            fontSize: customFontSize,
+                            height: 1.0,
+                            color: isDark ? Colors.white70 : kGreyColor,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          applyTextScaler: true,
+                        )
+                      : Text(
+                          ' ', // Invisible placeholder with identical style
+                          style: TextStyle(
+                            fontSize: customFontSize,
+                            height: 1.0,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
