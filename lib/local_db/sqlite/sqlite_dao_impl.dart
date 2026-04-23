@@ -139,11 +139,28 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
           // 2. Create Indexes for fast searching
           await db.execute(createIdxStocksBarcode);
+          await db.execute(createIdxStocksBarcodeNoCase);
           await db.execute(createIdxStocksDesc);
+          await db.execute(createIdxStocksDescNoCase);
+          await db.execute(createIdxStocksCustom1);
+          await db.execute(createIdxStocksCustom2);
           await db.execute(createIdxCustBarcode);
+          await db.execute(createIdxCustBarcodeNoCase);
           await db.execute(createIdxCustSurname);
           await db.execute(createIdxCustGivenNames);
           await db.execute(createIdxCustCompany);
+          await db.execute(createIdxCustPhone);
+          await db.execute(createIdxCustMobile);
+          await db.execute(createIdxCustFax);
+          await db.execute(createIdxCustEmail);
+          await db.execute(createIdxCustSuburb);
+          await db.execute(createIdxCustState);
+          await db.execute(createIdxCustPostcode);
+          await db.execute(createIdxCustCustom1);
+          await db.execute(createIdxCustCustom2);
+          await db.execute(createIdxStocktakeBarcode);
+          await db.execute(createIdxStocktakeDescription);
+          await db.execute(createIdxStocktakeDate);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
           if (oldVersion < 2) {
@@ -468,12 +485,14 @@ class SQLiteDAOImpl extends LocalDbDAO {
   ) async {
     try {
       final db = _database!;
+      final trimmed = query.trim();
+      if (trimmed.isEmpty) return StockSearchResult.none();
 
       // 1) Barcode exact match (case-insensitive, ALL matches) - exclude default stock
       final barcodeRows = await db.query(
         'Stocks',
-        where: 'LOWER(Barcode) = LOWER(?) AND shopfront = ? AND stock_id != 0',
-        whereArgs: [query, shopfront],
+        where: 'Barcode = ? COLLATE NOCASE AND shopfront = ? AND stock_id != 0',
+        whereArgs: [trimmed, shopfront],
       );
 
       if (barcodeRows.isNotEmpty) {
@@ -487,11 +506,30 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return StockSearchResult.duplicates(matches);
       }
 
-      // 2) Description LIKE match (ALL matches) - exclude default stock
+      // 2) Description exact match (case-insensitive, ALL matches) - exclude default stock
+      final descriptionExactRows = await db.query(
+        'Stocks',
+        where:
+            'description = ? COLLATE NOCASE AND shopfront = ? AND stock_id != 0',
+        whereArgs: [trimmed, shopfront],
+      );
+
+      if (descriptionExactRows.isNotEmpty) {
+        final matches =
+            descriptionExactRows.map((e) => StockVO.fromJson(e)).toList();
+
+        if (matches.length == 1) {
+          return StockSearchResult.found(matches.first);
+        }
+
+        return StockSearchResult.duplicates(matches);
+      }
+
+      // 3) Description LIKE match (ALL matches) - exclude default stock
       final descriptionRows = await db.query(
         'Stocks',
         where: 'description LIKE ? AND shopfront = ? AND stock_id != 0',
-        whereArgs: ['%$query%', shopfront],
+        whereArgs: ['%$trimmed%', shopfront],
       );
 
       if (descriptionRows.isNotEmpty) {
@@ -504,11 +542,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return StockSearchResult.duplicates(matches);
       }
 
-      // 3) Custom1 LIKE match (ALL matches) - exclude default stock
+      // 4) Custom1 LIKE match (ALL matches) - exclude default stock
       final custom1Rows = await db.query(
         'Stocks',
         where: 'custom1 LIKE ? AND shopfront = ? AND stock_id != 0',
-        whereArgs: ['%$query%', shopfront],
+        whereArgs: ['%$trimmed%', shopfront],
       );
 
       if (custom1Rows.isNotEmpty) {
@@ -521,11 +559,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return StockSearchResult.duplicates(matches);
       }
 
-      // 4) Custom2 LIKE match (ALL matches) - exclude default stock
+      // 5) Custom2 LIKE match (ALL matches) - exclude default stock
       final custom2Rows = await db.query(
         'Stocks',
         where: 'custom2 LIKE ? AND shopfront = ? AND stock_id != 0',
-        whereArgs: ['%$query%', shopfront],
+        whereArgs: ['%$trimmed%', shopfront],
       );
 
       if (custom2Rows.isNotEmpty) {
@@ -1197,10 +1235,12 @@ class SQLiteDAOImpl extends LocalDbDAO {
     String shopfront,
   ) async {
     final db = _database!;
+    final trimmed = barcode.trim();
+    if (trimmed.isEmpty) return [];
     final rows = await db.query(
       'Stocks',
-      where: 'LOWER(Barcode) = LOWER(?) AND shopfront = ?',
-      whereArgs: [barcode, shopfront],
+      where: 'Barcode = ? COLLATE NOCASE AND shopfront = ?',
+      whereArgs: [trimmed, shopfront],
     );
 
     return rows.map((e) => StockVO.fromJson(e)).toList();
@@ -3665,7 +3705,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
       // 1. Exact barcode match
       var results = await db.query(
         'Customers',
-        where: 'shopfront = ? AND barcode = ?',
+        where: 'shopfront = ? AND barcode = ? COLLATE NOCASE',
         whereArgs: [shopfront, q],
         limit: 10,
       );

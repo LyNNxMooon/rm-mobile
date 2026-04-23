@@ -1,5 +1,6 @@
 // ignore_for_file: unnecessary_underscores
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -176,6 +177,10 @@ class _SalesScreenState extends State<SalesScreen>
   bool _postSaleSyncRequested = false;
   bool _postStockSyncing = false;
   bool _postCustomerSyncing = false;
+  bool _isSearchLoading = false;
+  Timer? _searchLoadingTimer;
+  bool _isCustomerSearchLoading = false;
+  Timer? _customerSearchLoadingTimer;
   bool _isNegativeSellPriceDialogOpen = false;
   bool _reminderShown = false;
   bool _salesPromptDialogOpen = false;
@@ -1043,6 +1048,8 @@ class _SalesScreenState extends State<SalesScreen>
 
   @override
   void dispose() {
+    _searchLoadingTimer?.cancel();
+    _customerSearchLoadingTimer?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     _discountController.dispose();
@@ -1051,6 +1058,42 @@ class _SalesScreenState extends State<SalesScreen>
     _scannerController.dispose();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  void _startSearchLoadingDelay() {
+    _searchLoadingTimer?.cancel();
+    _isSearchLoading = false;
+    _searchLoadingTimer = Timer(const Duration(milliseconds: 200), () {
+      if (!mounted) return;
+      if (_salesBloc.state is StockSearching) {
+        setState(() => _isSearchLoading = true);
+      }
+    });
+  }
+
+  void _stopSearchLoading() {
+    _searchLoadingTimer?.cancel();
+    if (_isSearchLoading && mounted) {
+      setState(() => _isSearchLoading = false);
+    }
+  }
+
+  void _startCustomerSearchLoadingDelay() {
+    _customerSearchLoadingTimer?.cancel();
+    _isCustomerSearchLoading = false;
+    _customerSearchLoadingTimer = Timer(const Duration(milliseconds: 200), () {
+      if (!mounted) return;
+      if (_salesBloc.state is CustomerSearching) {
+        setState(() => _isCustomerSearchLoading = true);
+      }
+    });
+  }
+
+  void _stopCustomerSearchLoading() {
+    _customerSearchLoadingTimer?.cancel();
+    if (_isCustomerSearchLoading && mounted) {
+      setState(() => _isCustomerSearchLoading = false);
+    }
   }
 
   void _onBarcodeScanned(String barcode) async {
@@ -1196,6 +1239,18 @@ class _SalesScreenState extends State<SalesScreen>
         listeners: [
           BlocListener<SalesBloc, SalesState>(
             listener: (context, state) async {
+              if (state is StockSearching) {
+                _startSearchLoadingDelay();
+              } else {
+                _stopSearchLoading();
+              }
+
+              if (state is CustomerSearching) {
+                _startCustomerSearchLoadingDelay();
+              } else {
+                _stopCustomerSearchLoading();
+              }
+
               if (state is StockDuplicatesFound) {
                 // Navigate to stock selection screen
                 final selected = await Navigator.push<StockVO>(
@@ -1520,12 +1575,18 @@ class _SalesScreenState extends State<SalesScreen>
                     isDark: isDark,
                     message: "Processing...",
                   ),
+                if (_isSearchLoading || _isCustomerSearchLoading)
+                  _buildBlockingOverlay(
+                    colors: colors,
+                    isDark: isDark,
+                    message: "",
+                  ),
                 if (_isPostSyncing)
                   _buildBlockingOverlay(
                     colors: colors,
                     isDark: isDark,
                     message: "Re-syncing...",
-                    showPanel: false,
+                    showPanel: true,
                   ),
               ],
             );
@@ -1837,6 +1898,7 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Widget _buildBlockingContent(String message, bool isDark) {
+    final hasMessage = message.trim().isNotEmpty;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1850,16 +1912,18 @@ class _SalesScreenState extends State<SalesScreen>
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          message,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : Colors.black87,
-            decoration: TextDecoration.none,
+        if (hasMessage) ...[
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : Colors.black87,
+              decoration: TextDecoration.none,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
