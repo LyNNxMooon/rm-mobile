@@ -11,6 +11,7 @@ import '../../../../constants/images.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../entities/vos/serial_number_vo.dart';
+import '../../../../utils/formatting_utils.dart';
 import '../../../../utils/responsive_utils.dart';
 import 'serial_number_dialog.dart';
 import 'breakdown_widgets.dart';
@@ -534,7 +535,10 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                     ),
                   ),
                   Text(
-                    "\$${_displayExtension.toStringAsFixed(2)}",
+                    FormattingUtils.formatCurrencyWithDecimals(
+                      _displayExtension,
+                      2,
+                    ),
                     style: TextStyle(
                       fontSize: isTablet ? 15 : 13,
                       fontWeight: FontWeight.bold,
@@ -593,6 +597,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                                 maxDecimals: 4,
                                 enabled: widget.allowPriceEdit,
                                 focusNode: _priceFocusNode,
+                                selectAllOnTap: true,
                                 onChanged: (value) {
                                   final price = double.tryParse(value);
                                   if (price != null) widget.onPriceChanged(price);
@@ -727,6 +732,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     required Function(String) onChanged,
     bool enabled = true,
     FocusNode? focusNode,
+    bool selectAllOnTap = false,
   }) {
     final fieldHeight = isTablet ? 52.0 : 30.0;
     
@@ -745,6 +751,17 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
       textAlignVertical: TextAlignVertical.center,
       maxLines: 1,
       minLines: 1,
+      onTap: selectAllOnTap
+          ? () {
+              final text = controller.text;
+              if (text.isNotEmpty) {
+                controller.selection = TextSelection(
+                  baseOffset: 0,
+                  extentOffset: text.length,
+                );
+              }
+            }
+          : null,
       inputFormatters: isNumber
           ? [FilteringTextInputFormatter.allow(RegExp(r'^-?\d*'))]
           : [FilteringTextInputFormatter.allow(RegExp(decimalPattern))],
@@ -1428,7 +1445,10 @@ class MobileCartTile extends StatelessWidget {
                       ),
                     ),
                   Text(
-                    "\$${_displayExtension.toStringAsFixed(2)}",
+                    FormattingUtils.formatCurrencyWithDecimals(
+                      _displayExtension,
+                      2,
+                    ),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -1598,7 +1618,10 @@ class TabletCartTile extends StatelessWidget {
           SizedBox(
             width: 130,
             child: Text(
-              "\$${_displayExtension.toStringAsFixed(2)}",
+                  FormattingUtils.formatCurrencyWithDecimals(
+                    _displayExtension,
+                    2,
+                  ),
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -1693,7 +1716,10 @@ class CompactCartTile extends StatelessWidget {
               SizedBox(
                 width: isTablet ? 130 : 65,
                 child: Text(
-                  "\$${_displayExtension.toStringAsFixed(2)}",
+                  FormattingUtils.formatCurrencyWithDecimals(
+                    _displayExtension,
+                    2,
+                  ),
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     fontSize: isTablet ? 15 : 12,

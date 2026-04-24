@@ -28,6 +28,40 @@ class SalesSearchBar extends StatelessWidget {
     this.onGoToStockLookup,
   });
 
+  Widget _buildIconButton({
+    required bool isTablet,
+    required bool isDark,
+    required AppThemeColors colors,
+    required IconData icon,
+    required VoidCallback onTap,
+    required Color iconColor,
+    bool isActive = false,
+  }) {
+    final double size = isTablet ? 38 : 34;
+    final Color borderColor = isDark
+        ? Colors.white30
+        : (isActive ? kPrimaryColor.withOpacity(0.8) : kPrimaryColor.withOpacity(0.55));
+    final Color background = isActive
+        ? kPrimaryColor.withOpacity(isDark ? 0.25 : 0.18)
+        : (isDark ? colors.surfaceAlt : kPrimaryColor.withOpacity(0.08));
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: size + 6,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: borderColor),
+        ),
+        child: Icon(icon, color: iconColor, size: isTablet ? 22 : 20),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
@@ -73,41 +107,44 @@ class SalesSearchBar extends StatelessWidget {
               ),
             ),
             // Torch toggle (only visible when scanner is open)
-            if (showScanner)
-              GestureDetector(
-                onTap: onTorchToggle,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Icon(
-                    isTorchOn ? Icons.flash_on : Icons.flash_off,
-                    color: isTorchOn ? Colors.amber : colors.onSurfaceMuted,
-                    size: 22,
-                  ),
+            if (showScanner) ...[
+              Padding(
+                padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
+                child: _buildIconButton(
+                  isTablet: isTablet,
+                  isDark: isDark,
+                  colors: colors,
+                  icon: isTorchOn ? Icons.flash_on : Icons.flash_off,
+                  onTap: onTorchToggle,
+                  iconColor: isTorchOn ? Colors.amber : colors.onSurfaceMuted,
+                  isActive: isTorchOn,
                 ),
               ),
+            ],
             // Scanner toggle
-            GestureDetector(
-              onTap: onScannerToggle,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(
-                  Icons.qr_code_scanner,
-                  color: showScanner ? Colors.green : kPrimaryColor,
-                  size: 22,
-                ),
+            Padding(
+              padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
+              child: _buildIconButton(
+                isTablet: isTablet,
+                isDark: isDark,
+                colors: colors,
+                icon: Icons.qr_code_scanner,
+                onTap: onScannerToggle,
+                iconColor: showScanner ? Colors.green : kPrimaryColor,
+                isActive: showScanner,
               ),
             ),
             // Go to Stock Lookup button
             if (onGoToStockLookup != null)
-              GestureDetector(
-                onTap: onGoToStockLookup,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Icon(
-                    Icons.double_arrow_rounded,
-                    color: kPrimaryColor,
-                    size: 22,
-                  ),
+              Padding(
+                padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
+                child: _buildIconButton(
+                  isTablet: isTablet,
+                  isDark: isDark,
+                  colors: colors,
+                  icon: Icons.double_arrow_rounded,
+                  onTap: onGoToStockLookup!,
+                  iconColor: kPrimaryColor,
                 ),
               ),
           ],

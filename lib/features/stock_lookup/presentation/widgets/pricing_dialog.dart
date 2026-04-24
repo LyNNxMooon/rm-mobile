@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:rmmobile/constants/colors.dart';
 import 'package:rmmobile/constants/theme_colors.dart';
 import 'package:rmmobile/entities/vos/pricing_grades.dart';
 import 'package:rmmobile/entities/vos/pricing_rules.dart';
 import 'package:rmmobile/utils/dialog_size_utils.dart';
+import 'package:rmmobile/utils/formatting_utils.dart';
 import 'package:rmmobile/utils/responsive_utils.dart';
 
 class PricingDialog extends StatefulWidget {
@@ -690,8 +690,7 @@ class _PricingDialogState extends State<PricingDialog> {
   }
 
   String _formatMoney(double value) {
-    final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
-    return formatter.format(value);
+    return FormattingUtils.formatCurrencyWithDecimals(value, 2);
   }
 
   double _parseValue(String text) {

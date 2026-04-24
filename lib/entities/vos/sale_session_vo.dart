@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:rational/rational.dart';
 
 import '../../local_db/local_db_dao.dart';
+import '../../utils/formatting_utils.dart';
 import '../../utils/tax_calculation_utils.dart';
 import 'cart_item_vo.dart';
 import 'delivery_info_vo.dart';
@@ -81,7 +82,8 @@ class SaleSessionVO {
   double get totalQuantity => cartItems.fold(0.0, (sum, item) => sum + item.qty);
 
   /// Formatted total for display
-  String get formattedTotal => '\$${subtotal.toStringAsFixed(2)}';
+  String get formattedTotal =>
+      FormattingUtils.formatCurrencyWithDecimals(subtotal, 2);
 
   /// Create from database row
   factory SaleSessionVO.fromMap(Map<String, dynamic> map) {

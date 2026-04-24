@@ -7,6 +7,7 @@ import 'package:rmmobile/features/customer_lookup/domain/entities/customer_trans
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_events.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_states.dart';
+import 'package:rmmobile/utils/formatting_utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CustomerTransactionsScreen extends StatefulWidget {
@@ -520,8 +521,7 @@ class _CustomerTransactionsScreenState
     if (value == null) return "-";
     final num? parsed = value is num ? value : num.tryParse(value.toString());
     if (parsed == null) return value.toString();
-    final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
-    return formatter.format(parsed);
+    return FormattingUtils.formatCurrencyWithDecimals(parsed.toDouble(), 2);
   }
 
   String _formatNumber(Object? value) {

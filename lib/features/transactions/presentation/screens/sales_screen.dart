@@ -29,6 +29,7 @@ import '../../../../entities/vos/stock_vo.dart';
 import '../../../../utils/navigation_extension.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../local_db/sqlite/sqlite_constants.dart';
+import '../../../../utils/formatting_utils.dart';
 import '../../domain/use_cases/save_sale_session.dart';
 import '../BLoC/sales_bloc.dart';
 import '../BLoC/sales_events.dart';
@@ -2234,7 +2235,10 @@ class _SalesScreenState extends State<SalesScreen>
                           child: Row(
                             children: [
                               Text(
-                                "\$${displayPrice.toStringAsFixed(2)}",
+                                FormattingUtils.formatCurrencyWithDecimals(
+                                  displayPrice,
+                                  2,
+                                ),
                                 style: TextStyle(
                                   fontSize: 12 * uiScale,
                                   color: colors.onSurfaceMuted,
@@ -2275,7 +2279,10 @@ class _SalesScreenState extends State<SalesScreen>
                               const SizedBox(width: 6),
                               // Extension price
                               Text(
-                                "\$${displayExt.toStringAsFixed(2)}",
+                                FormattingUtils.formatCurrencyWithDecimals(
+                                  displayExt,
+                                  2,
+                                ),
                                 style: TextStyle(
                                   fontSize: 13 * uiScale,
                                   fontWeight: FontWeight.bold,
@@ -2462,7 +2469,10 @@ class _SalesScreenState extends State<SalesScreen>
                         const SizedBox(height: 2),
                         // Extension
                         Text(
-                          "\$${displayExt.toStringAsFixed(2)}",
+                          FormattingUtils.formatCurrencyWithDecimals(
+                            displayExt,
+                            2,
+                          ),
                           style: TextStyle(
                             fontSize: 13 * uiScale,
                             fontWeight: FontWeight.bold,
@@ -2636,7 +2646,10 @@ class _SalesScreenState extends State<SalesScreen>
                     const SizedBox(height: 2),
                     // Extension (price)
                     Text(
-                      "\$${displayExt.toStringAsFixed(2)}",
+                      FormattingUtils.formatCurrencyWithDecimals(
+                        displayExt,
+                        2,
+                      ),
                       style: TextStyle(
                         fontSize: 13 * uiScale,
                         fontWeight: FontWeight.bold,
@@ -2862,7 +2875,12 @@ class _SalesScreenState extends State<SalesScreen>
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  "\$${(_totalPaid >= _total ? 0.0 : _total - _totalPaid).toStringAsFixed(2)}",
+                                  FormattingUtils.formatCurrencyWithDecimals(
+                                    _totalPaid >= _total
+                                        ? 0.0
+                                        : _total - _totalPaid,
+                                    2,
+                                  ),
                                   style: TextStyle(
                                     fontSize: isTablet ? 22 : 18,
                                     letterSpacing: -0.5,
@@ -2888,7 +2906,7 @@ class _SalesScreenState extends State<SalesScreen>
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              "${isTablet ? 'Subtotal' : 'Sub'}: \$${_displaySubtotal.toStringAsFixed(2)}",
+                              "${isTablet ? 'Subtotal' : 'Sub'}: ${FormattingUtils.formatCurrencyWithDecimals(_displaySubtotal, 2)}",
                               style: TextStyle(
                                 color: colors.onSurfaceMuted,
                                 fontSize: isTablet ? 14 : 12.5,
@@ -2897,7 +2915,7 @@ class _SalesScreenState extends State<SalesScreen>
                             ),
                             SizedBox(height: isTablet ? 6 : 8),
                             Text(
-                              "Discount: \$${_discount.toStringAsFixed(2)}",
+                              "Discount: ${FormattingUtils.formatCurrencyWithDecimals(_discount, 2)}",
                               style: TextStyle(
                                 color: _discount > 0
                                     ? kPrimaryColor
@@ -2911,7 +2929,7 @@ class _SalesScreenState extends State<SalesScreen>
                           ),
                           SizedBox(height: isTablet ? 6 : 8),
                           Text(
-                            "Rounding: \$${_rounding.toStringAsFixed(2)}",
+                            "Rounding: ${FormattingUtils.formatCurrencyWithDecimals(_rounding, 2)}",
                             style: TextStyle(
                               color: colors.onSurfaceMuted,
                               fontSize: isTablet ? 14 : 12.5,
@@ -2922,7 +2940,10 @@ class _SalesScreenState extends State<SalesScreen>
                           Transform.translate(
                             offset: Offset(0, isTablet ? 0 : -8),
                             child: Text(
-                              "\$${_displayTotal.toStringAsFixed(2)}",
+                              FormattingUtils.formatCurrencyWithDecimals(
+                                _displayTotal,
+                                2,
+                              ),
                               style: TextStyle(
                                 fontSize: isTablet ? 22 : 18,
                                 fontWeight: FontWeight.w900,
@@ -4407,137 +4428,146 @@ class _SalesScreenState extends State<SalesScreen>
   ) {
     _closeScanner();
     final controller = TextEditingController(text: _commentValue);
+    final isTablet = context.isTablet;
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
       builder: (dialogContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
-          ),
-          child: Container(
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Add Comment",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
+        final bottomInset = MediaQuery.of(dialogContext).viewInsets.bottom;
+        return AnimatedPadding(
+          duration: const Duration(milliseconds: 150),
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Center(
+            child: SingleChildScrollView(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: isTablet
+                      ? 520
+                      : MediaQuery.of(dialogContext).size.width * 0.92,
+                  padding: EdgeInsets.all(isTablet ? 24 : 18),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-                    if (_commentValue.isNotEmpty)
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _commentValue = '';
-                          });
-                          Navigator.of(dialogContext).pop();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            "Remove",
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Add Comment",
                             style: TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          if (_commentValue.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _commentValue = '';
+                                });
+                                Navigator.of(dialogContext).pop();
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.redAccent.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  "Remove",
+                                  style: TextStyle(
+                                    color: Colors.redAccent,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: controller,
+                        autofocus: true,
+                        maxLines: 4,
+                        maxLength: 225,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: "Enter comment...",
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.white30 : Colors.grey.shade400,
+                          ),
+                          filled: true,
+                          fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.all(12),
+                          counterStyle: TextStyle(
+                            color: isDark ? Colors.white54 : Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _commentValue = controller.text.trim();
+                            });
+                            Navigator.of(dialogContext).pop();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF30B24C), Color(0xFF60D394)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              "Save",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: controller,
-                  autofocus: true,
-                  maxLines: 4,
-                  maxLength: 225,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: "Enter comment...",
-                    hintStyle: TextStyle(
-                      color: isDark ? Colors.white30 : Colors.grey.shade400,
-                    ),
-                    filled: true,
-                    fillColor: isDark ? colors.surface : Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.all(12),
-                    counterStyle: TextStyle(
-                      color: isDark ? Colors.white54 : Colors.grey.shade600,
-                      fontSize: 12,
-                    ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _commentValue = controller.text.trim();
-                      });
-                      Navigator.of(dialogContext).pop();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF30B24C), Color(0xFF60D394)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        "Save",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -4552,170 +4582,181 @@ class _SalesScreenState extends State<SalesScreen>
   ) {
     _closeScanner();
     _surveyController.text = _surveyValue;
+    final isTablet = context.isTablet;
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
       builder: (dialogContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
-          ),
-          child: Container(
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _surveyLabel,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
+        final bottomInset = MediaQuery.of(dialogContext).viewInsets.bottom;
+        return AnimatedPadding(
+          duration: const Duration(milliseconds: 150),
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Center(
+            child: SingleChildScrollView(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: isTablet
+                      ? 520
+                      : MediaQuery.of(dialogContext).size.width * 0.92,
+                  padding: EdgeInsets.all(isTablet ? 24 : 18),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Scanner button
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(dialogContext).pop();
-                            _showSurveyScannerDialog(context, colors, isDark);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: kPrimaryColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Icon(
-                              Icons.qr_code_scanner,
-                              size: 18,
-                              color: kPrimaryColor,
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _surveyLabel,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
                             ),
                           ),
-                        ),
-                        if (_surveyValue.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _surveyValue = '';
-                                _surveyController.clear();
-                              });
-                              Navigator.of(dialogContext).pop();
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.redAccent.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                "Remove",
-                                style: TextStyle(
-                                  color: Colors.redAccent,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(dialogContext).pop();
+                                  _showSurveyScannerDialog(context, colors, isDark);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: kPrimaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Icon(
+                                    Icons.qr_code_scanner,
+                                    size: 18,
+                                    color: kPrimaryColor,
+                                  ),
                                 ),
                               ),
-                            ),
+                              if (_surveyValue.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _surveyValue = '';
+                                      _surveyController.clear();
+                                    });
+                                    Navigator.of(dialogContext).pop();
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.redAccent.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      "Remove",
+                                      style: TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _surveyController,
-                  autofocus: true,
-                  maxLines: 1,
-                  maxLength: 20,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: "Enter value...",
-                    hintStyle: TextStyle(
-                      color: isDark ? Colors.white30 : Colors.grey.shade400,
-                    ),
-                    filled: true,
-                    fillColor: isDark ? colors.surface : Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    counterStyle: TextStyle(
-                      color: isDark ? Colors.white54 : Colors.grey.shade600,
-                      fontSize: 11,
-                    ),
-                  ),
-                  onSubmitted: (value) {
-                    setState(() {
-                      _surveyValue = value.trim();
-                    });
-                    Navigator.of(dialogContext).pop();
-                  },
-                ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _surveyValue = _surveyController.text.trim();
-                      });
-                      Navigator.of(dialogContext).pop();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
                       ),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF30B24C), Color(0xFF60D394)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        "Save",
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _surveyController,
+                        autofocus: true,
+                        maxLines: 1,
+                        maxLength: 20,
                         style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
                           fontSize: 14,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: "Enter value...",
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.white30 : Colors.grey.shade400,
+                          ),
+                          filled: true,
+                          fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
+                          counterStyle: TextStyle(
+                            color: isDark ? Colors.white54 : Colors.grey.shade600,
+                            fontSize: 11,
+                          ),
+                        ),
+                        onSubmitted: (value) {
+                          setState(() {
+                            _surveyValue = value.trim();
+                          });
+                          Navigator.of(dialogContext).pop();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _surveyValue = _surveyController.text.trim();
+                            });
+                            Navigator.of(dialogContext).pop();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF30B24C), Color(0xFF60D394)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              "Save",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         );
@@ -5639,7 +5680,10 @@ class _SalesScreenState extends State<SalesScreen>
                                           scrollDirection: Axis.horizontal,
                                           reverse: true,
                                           child: Text(
-                                            "\$${tempDiscount.toStringAsFixed(2)}",
+                                            FormattingUtils.formatCurrencyWithDecimals(
+                                              tempDiscount,
+                                              2,
+                                            ),
                                             style: TextStyle(
                                               fontSize: isTablet ? 18 : 16,
                                               fontWeight: FontWeight.bold,
@@ -5678,7 +5722,10 @@ class _SalesScreenState extends State<SalesScreen>
                                           scrollDirection: Axis.horizontal,
                                           reverse: true,
                                           child: Text(
-                                            "\$${(_subtotal - tempDiscount).toStringAsFixed(2)}",
+                                            FormattingUtils.formatCurrencyWithDecimals(
+                                              _subtotal - tempDiscount,
+                                              2,
+                                            ),
                                             style: TextStyle(
                                               fontSize: isTablet ? 18 : 16,
                                               fontWeight: FontWeight.bold,
@@ -5858,7 +5905,7 @@ class _SalesScreenState extends State<SalesScreen>
             scrollDirection: Axis.horizontal,
             reverse: true,
             child: Text(
-              "\$${amount.toStringAsFixed(4)}",
+              FormattingUtils.formatCurrencyWithDecimals(amount, 4),
               style: TextStyle(
                 fontSize: isTablet ? 16 : 14,
                 fontWeight: FontWeight.bold,
@@ -6239,7 +6286,10 @@ class _SalesScreenState extends State<SalesScreen>
                   ),
                   if (item == "Add Discount" && _discountValue > 0)
                     Text(
-                      "\$${_discountValue.toStringAsFixed(2)}",
+                      FormattingUtils.formatCurrencyWithDecimals(
+                        _discountValue,
+                        2,
+                      ),
                       style: TextStyle(
                         color: kPrimaryColor,
                         fontWeight: FontWeight.bold,

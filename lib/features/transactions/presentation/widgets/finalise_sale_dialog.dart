@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../utils/formatting_utils.dart';
 import '../../../../entities/vos/customer_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 
@@ -176,7 +177,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
               ),
               const SizedBox(height: 4),
               Text(
-                '\$${change.toStringAsFixed(2)}',
+                FormattingUtils.formatCurrencyWithDecimals(change, 2),
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -647,7 +648,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
                     if (hasAmount) ...[
                       const SizedBox(width: 6),
                       Text(
-                        "\$${amount.toStringAsFixed(0)}",
+                        FormattingUtils.formatCurrencyWithDecimals(amount, 0),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -741,7 +742,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           ),
         ),
         Text(
-          "\$${amount.toStringAsFixed(2)}",
+          FormattingUtils.formatCurrencyWithDecimals(amount, 2),
           style: TextStyle(
             fontSize: isLarge ? 18 : 15,
             fontWeight: FontWeight.bold,
@@ -1132,7 +1133,10 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "\$${(change > 0 ? change : 0.0).toStringAsFixed(2)}",
+                  FormattingUtils.formatCurrencyWithDecimals(
+                    change > 0 ? change : 0.0,
+                    2,
+                  ),
                   style: TextStyle(
                     fontSize: isTablet ? 36 : 32,
                     fontWeight: FontWeight.bold,
@@ -1190,7 +1194,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           ),
         ),
         Text(
-          "\$${amount.toStringAsFixed(2)}",
+          FormattingUtils.formatCurrencyWithDecimals(amount, 2),
           style: TextStyle(
             fontSize: isLarge ? 18 : 15,
             fontWeight: FontWeight.bold,

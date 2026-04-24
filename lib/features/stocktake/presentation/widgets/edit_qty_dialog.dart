@@ -10,6 +10,7 @@ import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.d
 import 'package:rmmobile/utils/dialog_size_utils.dart';
 import 'package:rmmobile/utils/ios_done_bar.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/formatting_utils.dart';
 
 class StockDetailsDialog extends StatelessWidget {
   const StockDetailsDialog({super.key});
@@ -286,12 +287,12 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                 _buildDetailRow(
                   Icons.attach_money,
                   "Cost Price",
-                  "\$${widget.cost.toStringAsFixed(2)}",
+                  FormattingUtils.formatCurrencyWithDecimals(widget.cost, 2),
                 ),
                 _buildDetailRow(
                   Icons.attach_money,
                   "Sell Price",
-                  "\$${widget.sell.toStringAsFixed(2)}",
+                  FormattingUtils.formatCurrencyWithDecimals(widget.sell, 2),
                 ),
                 _buildDetailRow(
                   CupertinoIcons.cube_box_fill,

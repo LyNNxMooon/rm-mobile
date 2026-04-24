@@ -119,6 +119,45 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     }
   }
 
+  Widget _buildFieldIconButton({
+    required bool isTablet,
+    required bool isDark,
+    required AppThemeColors colors,
+    required IconData icon,
+    required VoidCallback onTap,
+    required Color iconColor,
+    bool isMuted = false,
+  }) {
+    final double height = isTablet ? 36 : 32;
+    final double width = isTablet ? 42 : 38;
+    final Color borderColor = isDark
+        ? Colors.white24
+        : (isMuted ? Colors.grey.shade400 : kPrimaryColor.withOpacity(0.55));
+    final Color background = isMuted
+        ? (isDark ? colors.surface : Colors.grey.shade100)
+        : (isDark ? colors.surfaceAlt : kPrimaryColor.withOpacity(0.08));
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: width,
+        height: height,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: borderColor),
+        ),
+        child: Icon(
+          icon,
+          size: isTablet ? 22 : 20,
+          color: iconColor,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
@@ -323,42 +362,45 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
           ),
           // Close button (only show if customer is selected, allowing to cancel search)
           if (widget.hasCustomer)
-            GestureDetector(
-              onTap: _exitSearchMode,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(
-                  Icons.close,
-                  size: 22,
-                  color: colors.onSurfaceMuted,
-                ),
+            Padding(
+              padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
+              child: _buildFieldIconButton(
+                isTablet: isTablet,
+                isDark: isDark,
+                colors: colors,
+                icon: Icons.close,
+                onTap: _exitSearchMode,
+                iconColor: colors.onSurfaceMuted,
+                isMuted: true,
               ),
             ),
           // Go to Customer Lookup button (only show when no customer)
           if (!widget.hasCustomer && widget.onGoToCustomerLookup != null)
-            GestureDetector(
-              onTap: widget.onGoToCustomerLookup,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Icon(
-                  Icons.double_arrow_rounded,
-                  size: 22,
-                  color: kPrimaryColor,
-                ),
+            Padding(
+              padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
+              child: _buildFieldIconButton(
+                isTablet: isTablet,
+                isDark: isDark,
+                colors: colors,
+                icon: Icons.double_arrow_rounded,
+                onTap: widget.onGoToCustomerLookup!,
+                iconColor: kPrimaryColor,
               ),
             ),
-          if (!widget.hasCustomer && widget.onCreateCustomer != null)
-            GestureDetector(
-              onTap: widget.onCreateCustomer,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Icon(
-                  Icons.add_circle,
-                  size: 22,
-                  color: kPrimaryColor,
-                ),
+          if (!widget.hasCustomer && widget.onCreateCustomer != null) ...[
+            SizedBox(width: isTablet ? 10 : 8),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildFieldIconButton(
+                isTablet: isTablet,
+                isDark: isDark,
+                colors: colors,
+                icon: Icons.add_circle,
+                onTap: widget.onCreateCustomer!,
+                iconColor: kPrimaryColor,
               ),
             ),
+          ],
         ],
       ),
     );
@@ -427,27 +469,29 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
               ),
             ),
           // View transactions button
-          GestureDetector(
-            onTap: widget.onViewCustomerTransactions,
-            child: Padding(
-              padding: EdgeInsets.only(left: 8, right: isTablet ? 0 : 4),
-              child: Icon(
-                Icons.receipt_long_outlined,
-                size: isTablet ? 26 : 22,
-                color: kPrimaryColor,
-              ),
+          Padding(
+            padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
+            child: _buildFieldIconButton(
+              isTablet: isTablet,
+              isDark: isDark,
+              colors: colors,
+              icon: Icons.receipt_long_outlined,
+              onTap: widget.onViewCustomerTransactions ?? () {},
+              iconColor: kPrimaryColor,
             ),
           ),
           // Clear button
-          GestureDetector(
-            onTap: widget.onCustomerClear,
-            child: Padding(
-              padding: EdgeInsets.only(left: isTablet ? 15 : 0, right: 12),
-              child: Icon(
-                Icons.close,
-                size: isTablet ? 26 : 22,
-                color: colors.onSurfaceMuted,
-              ),
+          SizedBox(width: isTablet ? 10 : 8),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _buildFieldIconButton(
+              isTablet: isTablet,
+              isDark: isDark,
+              colors: colors,
+              icon: Icons.close,
+              onTap: widget.onCustomerClear ?? () {},
+              iconColor: colors.onSurfaceMuted,
+              isMuted: true,
             ),
           ),
         ],

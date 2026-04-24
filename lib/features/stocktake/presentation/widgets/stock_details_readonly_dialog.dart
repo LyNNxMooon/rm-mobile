@@ -7,6 +7,7 @@ import 'package:rmmobile/entities/vos/stock_vo.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_bloc.dart'; // Adjust if needed
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.dart'; // Adjust if needed
 import 'package:rmmobile/utils/dialog_size_utils.dart';
+import 'package:rmmobile/utils/formatting_utils.dart';
 
 class StockDetailsReadOnlyDialog extends StatelessWidget {
   const StockDetailsReadOnlyDialog({super.key});
@@ -256,12 +257,12 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
                 _buildDetailRow(
                   Icons.attach_money,
                   "Cost Price",
-                  "\$${widget.cost.toStringAsFixed(2)}",
+                  FormattingUtils.formatCurrencyWithDecimals(widget.cost, 2),
                 ),
                 _buildDetailRow(
                   Icons.attach_money,
                   "Sell Price",
-                  "\$${widget.sell.toStringAsFixed(2)}",
+                  FormattingUtils.formatCurrencyWithDecimals(widget.sell, 2),
                 ),
                 _buildDetailRow(
                   CupertinoIcons.cube_box_fill,

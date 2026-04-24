@@ -17,6 +17,7 @@ import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_st
 import 'package:rmmobile/features/stock_lookup/presentation/screens/stock_details_screen.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/widgets/breathing_stock_loader.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/widgets/stock_thumbnail_tile.dart';
+import 'package:rmmobile/utils/formatting_utils.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/text_highlight_utils.dart';
 import '../../../../../../constants/colors.dart';
@@ -1483,7 +1484,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     if ((stock.salesTax ?? "") == "GST") {
       sell = stock.sell * 1.1;
     }
-    return sell.toStringAsFixed(2);
+    return FormattingUtils.formatFixedWithCommas(sell, 2);
   }
 
   Widget emptyOrErrorWidget() {
