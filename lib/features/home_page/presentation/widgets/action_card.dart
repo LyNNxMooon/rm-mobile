@@ -26,9 +26,9 @@ class ActionCard extends StatelessWidget {
     final double scale = isTablet
         ? (context.shortestSide / 768).clamp(0.85, 1.3)
         : 1.0;
-    final double titleSize = isTablet ? (16 * scale).clamp(16.0, 19.0) : 16.0;
+    final double titleSize = isTablet ? (14 * scale).clamp(14.0, 19.0) : 14.0;
     final double subTitleSize =
-        isTablet ? (14 * scale).clamp(12.0, 14.0) : 14.0;
+      isTablet ? (11 * scale).clamp(11.0, 14.0) : 12.0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -75,7 +75,10 @@ class ActionCard extends StatelessWidget {
                           subtitle,
                           style: TextStyle(
                             fontSize: subTitleSize,
-                            color: colors.onSurfaceMuted,
+                            color: colors.isDark
+                                ? colors.onSurfaceMuted
+                                : kThirdColor.withOpacity(0.78),
+                            fontWeight: FontWeight.w500,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
