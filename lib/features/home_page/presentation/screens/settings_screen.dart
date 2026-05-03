@@ -20,6 +20,7 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/modern_dialog_styles.dart';
+import '../../../../constants/standard_dialog.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
@@ -1190,16 +1191,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E2733) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          "Force Full Sync",
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+      builder: (ctx) => StandardDialog(
+        title: "Force Full Sync",
+        colors: colors,
+        isDark: isDark,
+        onClose: () => Navigator.of(ctx).pop(),
         content: Text(
           "This will re-download all stocks and customers from the server. This may take some time depending on the data size.\n\nDo you want to continue?",
           style: TextStyle(
@@ -1207,14 +1203,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         actions: [
-          TextButton(
+          DialogTextAction(
+            label: "Cancel",
+            style: DialogActionStyle.dangerOutline,
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              "Cancel",
-              style: TextStyle(color: isDark ? Colors.white54 : Colors.grey),
-            ),
           ),
-          ElevatedButton(
+          DialogTextAction(
+            label: "Continue",
+            style: DialogActionStyle.primary,
             onPressed: () {
               Navigator.of(ctx).pop();
               setState(() {
@@ -1224,14 +1220,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ForceFullSyncEvent(shopfrontId: _savedShopfrontId),
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kPrimaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text("Continue"),
           ),
         ],
       ),

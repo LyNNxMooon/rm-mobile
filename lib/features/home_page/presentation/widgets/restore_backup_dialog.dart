@@ -3,13 +3,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/standard_dialog.dart';
 import 'package:rmmobile/constants/theme_colors.dart';
 import 'package:rmmobile/entities/vos/backup_session_vo.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.dart';
 import 'package:rmmobile/utils/global_var_utils.dart';
-import 'package:rmmobile/utils/dialog_size_utils.dart';
 
 class RestoreBackupDialog extends StatelessWidget {
   const RestoreBackupDialog({super.key});
@@ -27,62 +27,15 @@ class RestoreBackupDialog extends StatelessWidget {
     final bool isDark = colors.isDark;
     final double maxDialogHeight = MediaQuery.of(context).size.height * 0.7;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: isDark ? const Color(0xFF2B3644) : colors.surface,
-      elevation: 10,
-      insetPadding: dialogInsetPadding(context),
-      child: Container(
-        padding: const EdgeInsets.only(bottom: 20),
+    return StandardDialog(
+      title: "Restore Session",
+      colors: colors,
+      isDark: isDark,
+      content: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxDialogHeight),
-        width: double.maxFinite,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                gradient: isDark ? kGColor : null,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.restore_page_outlined,
-                      color: isDark ? Colors.white : kPrimaryColor,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: Text(
-                      "Restore Session",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : colors.onSurface,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 15),
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: isDark ? Colors.white24 : colors.divider,
-            ),
-
             Flexible(
               child: BlocConsumer<BackupRestoreBloc, BackupRestoreState>(
                 listener: (context, state) {
@@ -177,9 +130,8 @@ class RestoreBackupDialog extends StatelessWidget {
                     }
 
                     String currentShopfront =
-                        (AppGlobals.instance.shopfront ?? "").split(r'\').last;
+                      (AppGlobals.instance.shopfront ?? "").split(r'\\').last;
 
-           
                     final filteredSessions = state.sessions.where((session) {
                       return session.fileName.contains(
                         "_backup_${currentShopfront}_",
@@ -218,44 +170,16 @@ class RestoreBackupDialog extends StatelessWidget {
                 },
               ),
             ),
-
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: isDark ? Colors.white24 : colors.divider,
-            ),
-
-            // --- Footer ---
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 15, 20, 0),
-              child: SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(
-                        color: isDark ? Colors.white24 : colors.divider,
-                      ),
-                    ),
-                  ),
-                  child: Text(
-                    "Cancel",
-                    style: TextStyle(
-                      color: isDark
-                          ? Colors.white70
-                          : colors.onSurfaceMuted,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
+      actions: [
+        DialogTextAction(
+          label: "Cancel",
+          style: DialogActionStyle.dangerOutline,
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
     );
   }
 

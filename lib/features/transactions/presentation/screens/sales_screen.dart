@@ -1,4 +1,4 @@
-// ignore_for_file: unnecessary_underscores
+﻿// ignore_for_file: unnecessary_underscores
 
 import 'dart:async';
 import 'dart:convert';
@@ -35,6 +35,7 @@ import '../BLoC/sales_bloc.dart';
 import '../BLoC/sales_events.dart';
 import '../BLoC/sales_states.dart';
 import '../../../home_page/presentation/BLoC/home_screen_events.dart';
+import '../../../../constants/standard_dialog.dart';
 import 'stock_selection_screen.dart';
 import 'customer_selection_screen.dart';
 import '../widgets/finalise_sale_dialog.dart';
@@ -125,10 +126,10 @@ class _SalesScreenState extends State<SalesScreen>
 
   // Delivery info (stored until user leaves screen)
   DeliveryInfoVO? _deliveryInfo;
-  
+
   // Committed delivery address for API payload (set when "Commit" in delivery_details_screen)
   DeliveryAddressData? _committedDeliveryAddress;
-  
+
   // Email audit data for API payload (set when "Email & Commit" is selected)
   EmailAuditData? _emailAuditData;
 
@@ -194,8 +195,8 @@ class _SalesScreenState extends State<SalesScreen>
   /// Gets the survey label from AppGlobals.salesCustom or defaults to "Add Survey"
   String get _surveyLabel =>
       AppGlobals.instance.salesCustom?.trim().isNotEmpty == true
-          ? AppGlobals.instance.salesCustom!
-          : "Add Survey";
+      ? AppGlobals.instance.salesCustom!
+      : "Add Survey";
 
   List<String> get _optionItems {
     final hideCostPriceAndProfit = AppGlobals.instance.restrictedPermissions
@@ -219,9 +220,10 @@ class _SalesScreenState extends State<SalesScreen>
 
   /// Helper to convert double to Rational for precise calculations
   Rational _toRational(double value) => Rational.parse(value.toString());
-  
+
   /// Helper to convert Rational to double with high precision
-  double _fromRational(Rational value) => value.toDecimal(scaleOnInfinitePrecision: 10).toDouble();
+  double _fromRational(Rational value) =>
+      value.toDecimal(scaleOnInfinitePrecision: 10).toDouble();
 
   /// Subtotal always uses inclusive price (actual sale amount) - calculated with precise Rational
   double get _subtotal {
@@ -232,50 +234,51 @@ class _SalesScreenState extends State<SalesScreen>
     }
     return _fromRational(sum);
   }
-  
+
   /// Calculate line GP with Rational precision: (sellEx - cost) * qty, cost based on taxType
   double _calcLineGp(CartItemVO item) {
     final sellExR = _toRational(item.exPrice);
-    final costR = _toRational(item.taxType == 0
-        ? item.computedCostEx
-        : item.computedCostInc);
+    final costR = _toRational(
+      item.taxType == 0 ? item.computedCostEx : item.computedCostInc,
+    );
     final qtyR = _toRational(item.qty);
     return _fromRational((sellExR - costR) * qtyR);
   }
-  
+
   /// Total GP before discount (sum of line GPs) with Rational precision
   double get _totalGpBeforeDiscount {
     Rational totalGpR = Rational.zero;
     for (final item in _cartItems) {
       final sellExR = _toRational(item.exPrice);
-      final costR = _toRational(item.taxType == 0
-          ? item.computedCostEx
-          : item.computedCostInc);
+      final costR = _toRational(
+        item.taxType == 0 ? item.computedCostEx : item.computedCostInc,
+      );
       final qtyR = _toRational(item.qty);
       totalGpR += (sellExR - costR) * qtyR;
     }
     return _fromRational(totalGpR);
   }
-  
+
   /// Calculate totals with discount distribution using GP ratio
   /// Returns (totalInc, totalEx, totalTax, totalGp) with precise Rational calculation
   /// Ex Tax: Sum(SellEx * qty), Tax: Sum((SellInc - SellEx) * qty), Inc Tax: Sum(SellInc * qty)
-  ({double totalInc, double totalEx, double totalTax, double totalGp}) get _calculatedTotals {
+  ({double totalInc, double totalEx, double totalTax, double totalGp})
+  get _calculatedTotals {
     if (_discount <= 0 || _cartItems.isEmpty) {
       // No discount - simple calculation with Rational precision
       Rational totalExR = Rational.zero;
       Rational totalTaxR = Rational.zero;
       Rational totalIncR = Rational.zero;
       Rational totalGpR = Rational.zero;
-      
+
       for (final item in _cartItems) {
         final qtyR = _toRational(item.qty);
         final sellIncR = _toRational(item.incPrice);
         final sellExR = _toRational(item.exPrice);
-        final costR = _toRational(item.taxType == 0
-            ? item.computedCostEx
-            : item.computedCostInc);
-        
+        final costR = _toRational(
+          item.taxType == 0 ? item.computedCostEx : item.computedCostInc,
+        );
+
         // Ex Tax: Sum += Sell Ex * qty
         totalExR += sellExR * qtyR;
         // Tax Amount: Sum += (Sell Inc - Sell Ex) * qty
@@ -285,7 +288,7 @@ class _SalesScreenState extends State<SalesScreen>
         // eGP: Sum += (Sell Ex - Cost) * qty
         totalGpR += (sellExR - costR) * qtyR;
       }
-      
+
       return (
         totalInc: _fromRational(totalIncR),
         totalEx: _fromRational(totalExR),
@@ -293,57 +296,57 @@ class _SalesScreenState extends State<SalesScreen>
         totalGp: _fromRational(totalGpR),
       );
     }
-    
+
     // Has discount - distribute using GP ratio with Rational precision
     final totalGpBeforeDisc = _totalGpBeforeDiscount;
     final useGpRatio = totalGpBeforeDisc > 0 && totalGpBeforeDisc > _discount;
-    
+
     Rational newTotalExR = Rational.zero;
     Rational newTotalTaxR = Rational.zero;
     Rational newTotalIncR = Rational.zero;
     Rational newTotalGpR = Rational.zero;
-    
+
     for (final item in _cartItems) {
       final orgSellIncR = _toRational(item.incPrice);
       final orgSellExR = _toRational(item.exPrice);
       final qtyR = _toRational(item.qty);
       final lineGp = _calcLineGp(item);
-      
+
       // Ratio = (Line GP OR Line Sell Inc * qty) / Total GP OR SubTotal
       Rational ratioR;
       if (useGpRatio) {
-        ratioR = totalGpBeforeDisc > 0 
-            ? _toRational(lineGp) / _toRational(totalGpBeforeDisc) 
+        ratioR = totalGpBeforeDisc > 0
+            ? _toRational(lineGp) / _toRational(totalGpBeforeDisc)
             : Rational.zero;
       } else {
-        ratioR = _subtotal > 0 
-            ? (orgSellIncR * qtyR) / _toRational(_subtotal) 
+        ratioR = _subtotal > 0
+            ? (orgSellIncR * qtyR) / _toRational(_subtotal)
             : Rational.zero;
       }
-      
+
       // Line Discount = Sale's Discount * Ratio
       final lineDiscountR = _toRational(_discount) * ratioR;
       // New Sell Inc = Org Sell Inc - (Line Discount / qty)
       final newSellIncR = orgSellIncR - (lineDiscountR / qtyR);
       // New Sell Ex = New Sell Inc * (Org Sell Ex / Org Sell Inc)
-      final newSellExR = orgSellIncR > Rational.zero 
-          ? newSellIncR * (orgSellExR / orgSellIncR) 
+      final newSellExR = orgSellIncR > Rational.zero
+          ? newSellIncR * (orgSellExR / orgSellIncR)
           : newSellIncR;
-      
+
       // Ex Tax: Sum += New Sell Ex * qty
       newTotalExR += newSellExR * qtyR;
       // Tax Amount: Sum += (New Sell Inc - New Sell Ex) * qty
       newTotalTaxR += (newSellIncR - newSellExR) * qtyR;
       // Inc Tax: Sum += New Sell Inc * qty
       newTotalIncR += newSellIncR * qtyR;
-      
+
       // eGP: Sum += (New Sell Ex - Cost) * qty
-      final costR = _toRational(item.taxType == 0
-          ? item.computedCostEx
-          : item.computedCostInc);
+      final costR = _toRational(
+        item.taxType == 0 ? item.computedCostEx : item.computedCostInc,
+      );
       newTotalGpR += (newSellExR - costR) * qtyR;
     }
-    
+
     return (
       totalInc: _fromRational(newTotalIncR),
       totalEx: _fromRational(newTotalExR),
@@ -351,7 +354,7 @@ class _SalesScreenState extends State<SalesScreen>
       totalGp: _fromRational(newTotalGpR),
     );
   }
-  
+
   /// Subtotal Ex (before discount) - calculated with precise Rational
   double get _subtotalEx {
     if (_cartItems.isEmpty) return 0.0;
@@ -369,25 +372,26 @@ class _SalesScreenState extends State<SalesScreen>
     final subtotalR = _toRational(_subtotal);
     return _fromRational(subtotalR - totalTaxR);
   }
-  
+
   /// Calculate totals with a specific discount (for live preview in dialogs)
   /// Ex Tax: Sum(SellEx * qty), Tax: Sum((SellInc - SellEx) * qty), Inc Tax: Sum(SellInc * qty)
-  ({double totalInc, double totalEx, double totalTax, double totalGp}) _calcTotalsWithDiscount(double discount) {
+  ({double totalInc, double totalEx, double totalTax, double totalGp})
+  _calcTotalsWithDiscount(double discount) {
     if (discount <= 0 || _cartItems.isEmpty) {
       // No discount - simple calculation with Rational precision
       Rational totalExR = Rational.zero;
       Rational totalTaxR = Rational.zero;
       Rational totalIncR = Rational.zero;
       Rational totalGpR = Rational.zero;
-      
+
       for (final item in _cartItems) {
         final qtyR = _toRational(item.qty);
         final sellIncR = _toRational(item.incPrice);
         final sellExR = _toRational(item.exPrice);
-        final costR = _toRational(item.taxType == 0
-            ? item.computedCostEx
-            : item.computedCostInc);
-        
+        final costR = _toRational(
+          item.taxType == 0 ? item.computedCostEx : item.computedCostInc,
+        );
+
         // Ex Tax: Sum += Sell Ex * qty
         totalExR += sellExR * qtyR;
         // Tax Amount: Sum += (Sell Inc - Sell Ex) * qty
@@ -397,7 +401,7 @@ class _SalesScreenState extends State<SalesScreen>
         // eGP: Sum += (Sell Ex - Cost) * qty
         totalGpR += (sellExR - costR) * qtyR;
       }
-      
+
       return (
         totalInc: _fromRational(totalIncR),
         totalEx: _fromRational(totalExR),
@@ -405,57 +409,57 @@ class _SalesScreenState extends State<SalesScreen>
         totalGp: _fromRational(totalGpR),
       );
     }
-    
+
     // Has discount - distribute using GP ratio with Rational precision
     final totalGpBeforeDisc = _totalGpBeforeDiscount;
     final useGpRatio = totalGpBeforeDisc > 0 && totalGpBeforeDisc > discount;
-    
+
     Rational newTotalExR = Rational.zero;
     Rational newTotalTaxR = Rational.zero;
     Rational newTotalIncR = Rational.zero;
     Rational newTotalGpR = Rational.zero;
-    
+
     for (final item in _cartItems) {
       final orgSellIncR = _toRational(item.incPrice);
       final orgSellExR = _toRational(item.exPrice);
       final qtyR = _toRational(item.qty);
       final lineGp = _calcLineGp(item);
-      
+
       // Ratio = (Line GP OR Line Sell Inc * qty) / Total GP OR SubTotal
       Rational ratioR;
       if (useGpRatio) {
-        ratioR = totalGpBeforeDisc > 0 
-            ? _toRational(lineGp) / _toRational(totalGpBeforeDisc) 
+        ratioR = totalGpBeforeDisc > 0
+            ? _toRational(lineGp) / _toRational(totalGpBeforeDisc)
             : Rational.zero;
       } else {
-        ratioR = _subtotal > 0 
-            ? (orgSellIncR * qtyR) / _toRational(_subtotal) 
+        ratioR = _subtotal > 0
+            ? (orgSellIncR * qtyR) / _toRational(_subtotal)
             : Rational.zero;
       }
-      
+
       // Line Discount = Sale's Discount * Ratio
       final lineDiscountR = _toRational(discount) * ratioR;
       // New Sell Inc = Org Sell Inc - (Line Discount / qty)
       final newSellIncR = orgSellIncR - (lineDiscountR / qtyR);
       // New Sell Ex = New Sell Inc * (Org Sell Ex / Org Sell Inc)
-      final newSellExR = orgSellIncR > Rational.zero 
-          ? newSellIncR * (orgSellExR / orgSellIncR) 
+      final newSellExR = orgSellIncR > Rational.zero
+          ? newSellIncR * (orgSellExR / orgSellIncR)
           : newSellIncR;
-      
+
       // Ex Tax: Sum += New Sell Ex * qty
       newTotalExR += newSellExR * qtyR;
       // Tax Amount: Sum += (New Sell Inc - New Sell Ex) * qty
       newTotalTaxR += (newSellIncR - newSellExR) * qtyR;
       // Inc Tax: Sum += New Sell Inc * qty
       newTotalIncR += newSellIncR * qtyR;
-      
+
       // eGP: Sum += (New Sell Ex - Cost) * qty
-      final costR = _toRational(item.taxType == 0
-          ? item.computedCostEx
-          : item.computedCostInc);
+      final costR = _toRational(
+        item.taxType == 0 ? item.computedCostEx : item.computedCostInc,
+      );
       newTotalGpR += (newSellExR - costR) * qtyR;
     }
-    
+
     return (
       totalInc: _fromRational(newTotalIncR),
       totalEx: _fromRational(newTotalExR),
@@ -463,7 +467,7 @@ class _SalesScreenState extends State<SalesScreen>
       totalGp: _fromRational(newTotalGpR),
     );
   }
-  
+
   /// Display subtotal respects the tax toggle - calculated with precise Rational
   double get _displaySubtotal {
     if (_isIncTax) {
@@ -471,10 +475,10 @@ class _SalesScreenState extends State<SalesScreen>
     }
     return _subtotalEx;
   }
-  
+
   double get _discount => _discountValue;
   double get _rounding => 0.00; // Placeholder
-  
+
   /// Total calculated with precise Rational: subtotal - discount + rounding
   double get _total {
     final subtotalR = _toRational(_subtotal);
@@ -482,25 +486,26 @@ class _SalesScreenState extends State<SalesScreen>
     final roundingR = _toRational(_rounding);
     return _fromRational(subtotalR - discountR + roundingR);
   }
-  
+
   /// Total Ex with discount distribution (display 2dp with cascading rounding)
-  double get _totalEx => double.parse(_calculatedTotals.totalEx.toStringAsFixed(2));
-  
+  double get _totalEx =>
+      double.parse(_calculatedTotals.totalEx.toStringAsFixed(2));
+
   /// Total cost with Rational precision based on sales_tax taxType:
   /// If taxType == 0 -> use ex-taxed cost (computedCostEx)
   /// If taxType != 0 -> use inc-taxed cost (computedCostInc)
   double get _totalCost {
     Rational totalCostR = Rational.zero;
     for (final item in _cartItems) {
-      final costR = _toRational(item.taxType == 0
-          ? item.computedCostEx
-          : item.computedCostInc);
+      final costR = _toRational(
+        item.taxType == 0 ? item.computedCostEx : item.computedCostInc,
+      );
       final qtyR = _toRational(item.qty);
       totalCostR += costR * qtyR;
     }
     return _fromRational(totalCostR);
   }
-  
+
   /// Display total respects the tax toggle - calculated with precise Rational
   double get _displayTotal {
     final displaySubtotalR = _toRational(_displaySubtotal);
@@ -508,7 +513,7 @@ class _SalesScreenState extends State<SalesScreen>
     final roundingR = _toRational(_rounding);
     return _fromRational(displaySubtotalR - discountR + roundingR);
   }
-  
+
   double get _totalPaid =>
       _paymentAmounts.values.fold(0.0, (sum, amount) => sum + amount);
 
@@ -539,7 +544,10 @@ class _SalesScreenState extends State<SalesScreen>
         }
         _scannerAddedItem = false;
       }
-      if (hasEditingItem || _isFinaliseProcessing || _salesPromptDialogOpen || _lowStockDialogOpen) {
+      if (hasEditingItem ||
+          _isFinaliseProcessing ||
+          _salesPromptDialogOpen ||
+          _lowStockDialogOpen) {
         return;
       }
     }
@@ -578,118 +586,32 @@ class _SalesScreenState extends State<SalesScreen>
     final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 80 : 24,
-          ),
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: isTablet ? 450 : double.infinity,
-            ),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor.withOpacity(0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.help_outline,
-                        color: kPrimaryColor,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      "RetailManager Question",
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  "Selling Price should be greater than Cost, continue?",
-                  style: TextStyle(
-                    fontSize: 16,
-                    height: 1.4,
-                    color: isDark ? Colors.white70 : Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(false),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: kPrimaryColor,
-                        side: const BorderSide(color: kPrimaryColor),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        "No",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        "Yes",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+        return StandardDialog(
+          title: "RetailManager Question",
+          colors: colors,
+          isDark: isDark,
+          maxWidth: isTablet ? 450 : double.infinity,
+          onClose: () => Navigator.of(dialogContext).pop(false),
+          content: Text(
+            "Selling Price should be greater than Cost, continue?",
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.4,
+              color: isDark ? Colors.white70 : Colors.black54,
             ),
           ),
+          actions: [
+            DialogTextAction(
+              label: "No",
+              style: DialogActionStyle.outline,
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+            ),
+            DialogTextAction(
+              label: "Yes",
+              style: DialogActionStyle.primary,
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+            ),
+          ],
         );
       },
     );
@@ -810,28 +732,20 @@ class _SalesScreenState extends State<SalesScreen>
     await showDialog<void>(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: isDark ? colors.surface : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: Text(
-            "Reminder",
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black87,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+        return StandardDialog(
+          title: "Reminder",
+          colors: colors,
+          isDark: isDark,
+          onClose: () => Navigator.of(ctx).pop(),
           content: Text(
             reminder,
-            style: TextStyle(
-              color: isDark ? Colors.white70 : Colors.black54,
-            ),
+            style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
           ),
           actions: [
-            TextButton(
+            DialogTextAction(
+              label: "OK",
+              style: DialogActionStyle.primary,
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text("OK"),
             ),
           ],
         );
@@ -849,28 +763,20 @@ class _SalesScreenState extends State<SalesScreen>
     await showDialog<void>(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: isDark ? colors.surface : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: Text(
-            "Sales Prompt",
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black87,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+        return StandardDialog(
+          title: "Sales Prompt",
+          colors: colors,
+          isDark: isDark,
+          onClose: () => Navigator.of(ctx).pop(),
           content: Text(
             message,
-            style: TextStyle(
-              color: isDark ? Colors.white70 : Colors.black54,
-            ),
+            style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
           ),
           actions: [
-            TextButton(
+            DialogTextAction(
+              label: "OK",
+              style: DialogActionStyle.primary,
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text("OK"),
             ),
           ],
         );
@@ -992,11 +898,12 @@ class _SalesScreenState extends State<SalesScreen>
     final totals = _calculatedTotals;
 
     // For Account Sales, use customer's owner_id as staff_id (fallback to logged-in staff if no owner)
-    final int? staffId = widget.title == 'Account Sales' && _selectedCustomer != null
-      ? (_selectedCustomer!.ownerId > 0
-        ? _selectedCustomer!.ownerId
-        : AppGlobals.instance.staffId)
-      : AppGlobals.instance.staffId;
+    final int? staffId =
+        widget.title == 'Account Sales' && _selectedCustomer != null
+        ? (_selectedCustomer!.ownerId > 0
+              ? _selectedCustomer!.ownerId
+              : AppGlobals.instance.staffId)
+        : AppGlobals.instance.staffId;
 
     final params = SaveSessionParams(
       existingSessionId: _currentSessionId,
@@ -1008,8 +915,8 @@ class _SalesScreenState extends State<SalesScreen>
       subtotal: _subtotal,
       discount: _discountValue,
       totalInc: _total,
-      totalEx: totals.totalEx,  // Store raw precision
-      totalGp: totals.totalGp,  // Store raw precision
+      totalEx: totals.totalEx, // Store raw precision
+      totalGp: totals.totalGp, // Store raw precision
       paymentAmounts: _paymentAmounts,
       surveyValue: _surveyValue,
       commentValue: _commentValue,
@@ -1040,9 +947,12 @@ class _SalesScreenState extends State<SalesScreen>
         _autoRemindLowStock = settings.autoRemindLowStock;
         _preventAddIfNoStock = settings.preventAddIfNoStock;
         _preventFinaliseIfOutOfStock = settings.preventFinaliseIfOutOfStock;
-        _displayCustomerMessagesAsPrompt = settings.displayCustomerMessagesAsPrompt;
-        _scanIndividualUnitsForFractional = settings.scanIndividualUnitsForFractional;
-        _promptScanIndividualFractional = settings.promptScanIndividualFractional;
+        _displayCustomerMessagesAsPrompt =
+            settings.displayCustomerMessagesAsPrompt;
+        _scanIndividualUnitsForFractional =
+            settings.scanIndividualUnitsForFractional;
+        _promptScanIndividualFractional =
+            settings.promptScanIndividualFractional;
       });
     }
   }
@@ -1143,7 +1053,11 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   /// Handle fractional item based on settings
-  Future<void> _handleFractionalItem(StockVO stock, AppThemeColors colors, bool isDark) async {
+  Future<void> _handleFractionalItem(
+    StockVO stock,
+    AppThemeColors colors,
+    bool isDark,
+  ) async {
     // If "Scan Individual Units for Fractional Quantities" is ON, auto-add like normal items
     if (_scanIndividualUnitsForFractional) {
       _salesBloc.add(
@@ -1157,7 +1071,7 @@ class _SalesScreenState extends State<SalesScreen>
       );
       return;
     }
-    
+
     // Default: add with expanded edit mode (skipEditMode = false)
     // This allows user to enter the fractional quantity manually
     _salesBloc.add(
@@ -1172,24 +1086,20 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   /// Show prompt dialog for fractional item handling
-  Future<bool?> _showFractionalPromptDialog(AppThemeColors colors, bool isDark) {
+  Future<bool?> _showFractionalPromptDialog(
+    AppThemeColors colors,
+    bool isDark,
+  ) {
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF1E2733) : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(
-            "Fractional Quantity Item",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-          ),
+        return StandardDialog(
+          title: "Fractional Quantity Item",
+          colors: colors,
+          isDark: isDark,
+          showClose: true,
+          onClose: () => Navigator.of(dialogContext).pop(false),
           content: Text(
             "Would you like to Scan Individual Units for Fractional Quantity Items?",
             style: TextStyle(
@@ -1198,29 +1108,15 @@ class _SalesScreenState extends State<SalesScreen>
             ),
           ),
           actions: [
-            TextButton(
+            DialogTextAction(
+              label: "No",
+              style: DialogActionStyle.outline,
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(
-                "No",
-                style: TextStyle(
-                  color: isDark ? Colors.white70 : Colors.black54,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ),
-            ElevatedButton(
+            DialogTextAction(
+              label: "Yes",
+              style: DialogActionStyle.primary,
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                "Yes",
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
             ),
           ],
         );
@@ -1257,7 +1153,8 @@ class _SalesScreenState extends State<SalesScreen>
                 final selected = await Navigator.push<StockVO>(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => StockSelectionScreen(matches: state.matches),
+                    builder: (_) =>
+                        StockSelectionScreen(matches: state.matches),
                   ),
                 );
 
@@ -1369,7 +1266,8 @@ class _SalesScreenState extends State<SalesScreen>
                 final selected = await Navigator.push<CustomerVO>(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => CustomerSelectionScreen(matches: state.matches),
+                    builder: (_) =>
+                        CustomerSelectionScreen(matches: state.matches),
                   ),
                 );
 
@@ -1380,7 +1278,9 @@ class _SalesScreenState extends State<SalesScreen>
                       context: context,
                       text: "This customer is not an account customer",
                       typeInfo: TypeInfo.error,
-                      backgroundColor: isDark ? colors.surface : kSecondaryColor,
+                      backgroundColor: isDark
+                          ? colors.surface
+                          : kSecondaryColor,
                       iconColor: kErrorColor,
                       textColor: kErrorColor,
                       position: MessagePosition.top,
@@ -1444,7 +1344,8 @@ class _SalesScreenState extends State<SalesScreen>
               if (!_postSaleSyncRequested) return;
               if (state is FetchStockProgress) {
                 _postStockSyncing = true;
-              } else if (state is FetchStockSuccess || state is FetchStockError) {
+              } else if (state is FetchStockSuccess ||
+                  state is FetchStockError) {
                 _postStockSyncing = false;
               }
               _updatePostSyncing();
@@ -1455,7 +1356,8 @@ class _SalesScreenState extends State<SalesScreen>
               if (!_postSaleSyncRequested) return;
               if (state is FetchCustomerProgress) {
                 _postCustomerSyncing = true;
-              } else if (state is FetchCustomerSuccess || state is FetchCustomerFailure) {
+              } else if (state is FetchCustomerSuccess ||
+                  state is FetchCustomerFailure) {
                 _postCustomerSyncing = false;
               }
               _updatePostSyncing();
@@ -1486,7 +1388,8 @@ class _SalesScreenState extends State<SalesScreen>
                             onTaxModeChanged: (value) =>
                                 setState(() => _isIncTax = value),
                             staffName:
-                                AppGlobals.instance.staffName ?? "Unknown Staff",
+                                AppGlobals.instance.staffName ??
+                                "Unknown Staff",
                             hasCustomer: _selectedCustomer != null,
                             customerBarcode: _selectedCustomer?.barcode,
                             customerName: _selectedCustomer != null
@@ -1501,7 +1404,8 @@ class _SalesScreenState extends State<SalesScreen>
                               _salesBloc.add(ClearCustomer());
                               setState(() => _selectedCustomer = null);
                             },
-                            onViewCustomerTransactions: _selectedCustomer != null
+                            onViewCustomerTransactions:
+                                _selectedCustomer != null
                                 ? () => _openCustomerTransactions()
                                 : null,
                             viewMode: isTablet ? _cartViewMode : null,
@@ -1512,7 +1416,9 @@ class _SalesScreenState extends State<SalesScreen>
                             onGoToCustomerLookup: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => const CustomerLookupScreen(showBackArrow: true),
+                                  builder: (_) => const CustomerLookupScreen(
+                                    showBackArrow: true,
+                                  ),
                                 ),
                               );
                             },
@@ -1528,7 +1434,9 @@ class _SalesScreenState extends State<SalesScreen>
                             ),
 
                           // Middle Section: Cart Items
-                          Expanded(child: _buildCartArea(colors, isDark, isTablet)),
+                          Expanded(
+                            child: _buildCartArea(colors, isDark, isTablet),
+                          ),
 
                           // Search Bar (moved to bottom)
                           SalesSearchBar(
@@ -1557,7 +1465,9 @@ class _SalesScreenState extends State<SalesScreen>
                             onGoToStockLookup: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => const StockLookupScreen(showBackArrow: true),
+                                  builder: (_) => const StockLookupScreen(
+                                    showBackArrow: true,
+                                  ),
                                 ),
                               );
                             },
@@ -1649,7 +1559,8 @@ class _SalesScreenState extends State<SalesScreen>
                 showTopSnackBar(
                   Overlay.of(context),
                   const CustomSnackBar.error(
-                    message: "You do not have permission to access Sales Settings.",
+                    message:
+                        "You do not have permission to access Sales Settings.",
                   ),
                 );
                 return;
@@ -1755,9 +1666,13 @@ class _SalesScreenState extends State<SalesScreen>
 
     // Use different views based on cart view mode (tablet only)
     // But switch to list view if any item is being edited (edit form needs space)
-    if (isTablet && !hasEditingItem && _cartViewMode == CartViewMode.gridMedium) {
+    if (isTablet &&
+        !hasEditingItem &&
+        _cartViewMode == CartViewMode.gridMedium) {
       return _buildCartGridView(colors, isDark);
-    } else if (isTablet && !hasEditingItem && _cartViewMode == CartViewMode.largeIcons) {
+    } else if (isTablet &&
+        !hasEditingItem &&
+        _cartViewMode == CartViewMode.largeIcons) {
       return _buildCartLargeIconView(colors, isDark);
     }
 
@@ -1771,7 +1686,10 @@ class _SalesScreenState extends State<SalesScreen>
           if (isTablet && !_isCompactView)
             SliverToBoxAdapter(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: isDark ? colors.surface : Colors.grey.shade200,
                   border: Border(
@@ -1792,7 +1710,11 @@ class _SalesScreenState extends State<SalesScreen>
                     ),
                     SizedBox(
                       width: 120,
-                      child: _buildGridHeader("Price", colors, alignRight: true),
+                      child: _buildGridHeader(
+                        "Price",
+                        colors,
+                        alignRight: true,
+                      ),
                     ),
                     SizedBox(
                       width: 140,
@@ -1814,35 +1736,32 @@ class _SalesScreenState extends State<SalesScreen>
               vertical: _isCompactView ? 2 : 6,
             ),
             sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final item = _cartItems[index];
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: index < _cartItems.length - 1
-                          ? (_isCompactView ? 0 : 4)
-                          : 0,
-                    ),
-                    child: AnimationConfiguration.staggeredList(
-                      position: index,
-                      duration: const Duration(milliseconds: 300),
-                      child: SlideAnimation(
-                        verticalOffset: 20.0,
-                        child: FadeInAnimation(
-                          child: _buildCartTileWithEditMode(
-                            item,
-                            index,
-                            colors,
-                            isDark,
-                            isTablet,
-                          ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final item = _cartItems[index];
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index < _cartItems.length - 1
+                        ? (_isCompactView ? 0 : 4)
+                        : 0,
+                  ),
+                  child: AnimationConfiguration.staggeredList(
+                    position: index,
+                    duration: const Duration(milliseconds: 300),
+                    child: SlideAnimation(
+                      verticalOffset: 20.0,
+                      child: FadeInAnimation(
+                        child: _buildCartTileWithEditMode(
+                          item,
+                          index,
+                          colors,
+                          isDark,
+                          isTablet,
                         ),
                       ),
                     ),
-                  );
-                },
-                childCount: _cartItems.length,
-              ),
+                  ),
+                );
+              }, childCount: _cartItems.length),
             ),
           ),
         ],
@@ -1908,9 +1827,7 @@ class _SalesScreenState extends State<SalesScreen>
           height: 32,
           child: CircularProgressIndicator(
             strokeWidth: 3,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              kPrimaryColor,
-            ),
+            valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
           ),
         ),
         if (hasMessage) ...[
@@ -1957,7 +1874,8 @@ class _SalesScreenState extends State<SalesScreen>
   /// Grid view for cart items (2 columns, horizontal tiles)
   Widget _buildCartGridView(AppThemeColors colors, bool isDark) {
     final bool isMediumTablet = context.isMediumTablet;
-    final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final bool isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
     final bool isLargeTablet = !isMediumTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
@@ -2029,8 +1947,12 @@ class _SalesScreenState extends State<SalesScreen>
           child: SingleChildScrollView(
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
-            padding:
-                const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 80),
+            padding: const EdgeInsets.only(
+              left: 12,
+              right: 12,
+              top: 8,
+              bottom: 80,
+            ),
             child: Wrap(
               spacing: spacing,
               runSpacing: spacing,
@@ -2115,15 +2037,14 @@ class _SalesScreenState extends State<SalesScreen>
     double uiScale,
   ) {
     final bool isMediumTablet = context.isMediumTablet;
-    final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final bool isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
     final bool isLargeTablet = !isMediumTablet;
     // Wider thumbnail in landscape, even wider for large tablets
     final double thumbnailSize = isLandscape
         ? (isMediumTablet ? 115 : (isLargeTablet ? 140 : 125))
         : (isMediumTablet ? 95 : (isLargeTablet ? 130 : 105));
-    final double displayPrice = _isIncTax
-        ? item.incPrice
-        : item.exPrice;
+    final double displayPrice = _isIncTax ? item.incPrice : item.exPrice;
     final double displayExt = _isIncTax ? item.extension : item.extensionEx;
 
     return GestureDetector(
@@ -2257,7 +2178,7 @@ class _SalesScreenState extends State<SalesScreen>
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  "×${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
+                                  "├ù${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
                                   style: TextStyle(
                                     fontSize: 11 * uiScale,
                                     fontWeight: FontWeight.bold,
@@ -2319,9 +2240,11 @@ class _SalesScreenState extends State<SalesScreen>
     //     ? item.incPrice
     //     : item.exPrice;
     final double displayExt = _isIncTax ? item.extension : item.extensionEx;
-    
+
     // Flex ratios: large tablets get higher thumbnail ratio to preserve image size with shorter cards
-    final int thumbnailFlex = isLargeTablet ? (isLargeTabletPortrait ? 11 : 13) : 13;
+    final int thumbnailFlex = isLargeTablet
+        ? (isLargeTabletPortrait ? 11 : 13)
+        : 13;
     final int detailsFlex = isLargeTablet ? (isLargeTabletPortrait ? 4 : 5) : 7;
 
     return GestureDetector(
@@ -2417,7 +2340,7 @@ class _SalesScreenState extends State<SalesScreen>
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            "×${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
+                            "├ù${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
                             style: TextStyle(
                               fontSize: 11 * uiScale,
                               fontWeight: FontWeight.bold,
@@ -2554,10 +2477,7 @@ class _SalesScreenState extends State<SalesScreen>
               Container(
                 width: double.infinity,
                 height: thumbnailHeight,
-                margin: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 10,
-                ),
+                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -2599,7 +2519,7 @@ class _SalesScreenState extends State<SalesScreen>
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          "×${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
+                          "├ù${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
                           style: TextStyle(
                             fontSize: 11 * uiScale,
                             fontWeight: FontWeight.bold,
@@ -2646,10 +2566,7 @@ class _SalesScreenState extends State<SalesScreen>
                     const SizedBox(height: 2),
                     // Extension (price)
                     Text(
-                      FormattingUtils.formatCurrencyWithDecimals(
-                        displayExt,
-                        2,
-                      ),
+                      FormattingUtils.formatCurrencyWithDecimals(displayExt, 2),
                       style: TextStyle(
                         fontSize: 13 * uiScale,
                         fontWeight: FontWeight.bold,
@@ -2684,7 +2601,9 @@ class _SalesScreenState extends State<SalesScreen>
         isDark: isDark,
         isTablet: isTablet,
         isIncTax: _isIncTax,
-        allowPriceEdit: AppGlobals.instance.hasPermission("Miscellaneous_LockSellPrice"),
+        allowPriceEdit: AppGlobals.instance.hasPermission(
+          "Miscellaneous_LockSellPrice",
+        ),
         hideSerialButton: widget.title == "Quotes",
         onQtyChanged: (qty) {
           _salesBloc.add(UpdateCartItemQty(index: index, qty: qty));
@@ -2694,7 +2613,13 @@ class _SalesScreenState extends State<SalesScreen>
             _showNegativeSellPriceError();
             return;
           }
-          _salesBloc.add(UpdateCartItemPrice(index: index, price: price, isIncPrice: _isIncTax));
+          _salesBloc.add(
+            UpdateCartItemPrice(
+              index: index,
+              price: price,
+              isIncPrice: _isIncTax,
+            ),
+          );
         },
         onSerialChanged: (serials) {
           _salesBloc.add(
@@ -2707,10 +2632,12 @@ class _SalesScreenState extends State<SalesScreen>
           );
         },
         onSave: () {
-          _salesBloc.add(SaveCartItem(
-            index: index,
-            autoRemindLowStock: _autoRemindLowStock,
-          ));
+          _salesBloc.add(
+            SaveCartItem(
+              index: index,
+              autoRemindLowStock: _autoRemindLowStock,
+            ),
+          );
         },
         onDelete: () {
           _salesBloc.add(RemoveCartItem(index: index));
@@ -2718,15 +2645,11 @@ class _SalesScreenState extends State<SalesScreen>
       );
     }
 
-    // Otherwise show normal tile with slide-to-delete
-    Widget tile;
-    if (_isCompactView) {
-      tile = _buildCompactCartTile(item, index, colors, isDark);
-    } else if (isTablet) {
-      tile = _buildTabletCartTile(item, index, colors, isDark);
-    } else {
-      tile = _buildMobileCartTile(item, index, colors, isDark);
-    }
+    final Widget tile = isTablet
+        ? (_isCompactView
+            ? _buildCompactCartTile(item, index, colors, isDark)
+            : _buildTabletCartTile(item, index, colors, isDark))
+        : _buildMobileCartTile(item, index, colors, isDark);
 
     // Wrap with slide-to-delete and tap to edit
     return DismissibleCartTile(
@@ -2884,7 +2807,9 @@ class _SalesScreenState extends State<SalesScreen>
                                   style: TextStyle(
                                     fontSize: isTablet ? 22 : 18,
                                     letterSpacing: -0.5,
-                                    color: isDark ? Colors.white : colors.onSurface,
+                                    color: isDark
+                                        ? Colors.white
+                                        : colors.onSurface,
                                   ),
                                 ),
                               ),
@@ -2920,40 +2845,40 @@ class _SalesScreenState extends State<SalesScreen>
                                 color: _discount > 0
                                     ? kPrimaryColor
                                     : colors.onSurfaceMuted,
-                              fontSize: isTablet ? 14 : 12.5,
-                              fontWeight: _discount > 0
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: isTablet ? 6 : 8),
-                          Text(
-                            "Rounding: ${FormattingUtils.formatCurrencyWithDecimals(_rounding, 2)}",
-                            style: TextStyle(
-                              color: colors.onSurfaceMuted,
-                              fontSize: isTablet ? 14 : 12.5,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: isTablet ? 14 : 22),
-                          Transform.translate(
-                            offset: Offset(0, isTablet ? 0 : -8),
-                            child: Text(
-                              FormattingUtils.formatCurrencyWithDecimals(
-                                _displayTotal,
-                                2,
-                              ),
-                              style: TextStyle(
-                                fontSize: isTablet ? 22 : 18,
-                                fontWeight: FontWeight.w900,
-                                color: isDark ? Colors.white : Colors.black87,
-                                letterSpacing: -0.5,
+                                fontSize: isTablet ? 14 : 12.5,
+                                fontWeight: _discount > 0
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                            SizedBox(height: isTablet ? 6 : 8),
+                            Text(
+                              "Rounding: ${FormattingUtils.formatCurrencyWithDecimals(_rounding, 2)}",
+                              style: TextStyle(
+                                color: colors.onSurfaceMuted,
+                                fontSize: isTablet ? 14 : 12.5,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: isTablet ? 14 : 22),
+                            Transform.translate(
+                              offset: Offset(0, isTablet ? 0 : -8),
+                              child: Text(
+                                FormattingUtils.formatCurrencyWithDecimals(
+                                  _displayTotal,
+                                  2,
+                                ),
+                                style: TextStyle(
+                                  fontSize: isTablet ? 22 : 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                  letterSpacing: -0.5,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -2990,19 +2915,11 @@ class _SalesScreenState extends State<SalesScreen>
         builder: (ctx) {
           final colors = context.appColors;
           final isDark = colors.isDark;
-          return AlertDialog(
-            backgroundColor: isDark ? colors.surface : Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            title: Text(
-              "RetailManager Question",
-              style: TextStyle(
-                color: isDark ? Colors.white : Colors.black87,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+          return StandardDialog(
+            title: "RetailManager Question",
+            colors: colors,
+            isDark: isDark,
+            onClose: () => Navigator.pop(ctx, false),
             content: Text(
               "You have not selected or entered all required serial numbers\n\nContinue?",
               style: TextStyle(
@@ -3011,22 +2928,15 @@ class _SalesScreenState extends State<SalesScreen>
               ),
             ),
             actions: [
-              TextButton(
+              DialogTextAction(
+                label: "No",
+                style: DialogActionStyle.outline,
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text(
-                  "No",
-                  style: TextStyle(
-                    color: isDark ? Colors.white54 : Colors.black45,
-                  ),
-                ),
               ),
-              ElevatedButton(
+              DialogTextAction(
+                label: "Yes",
+                style: DialogActionStyle.primary,
                 onPressed: () => Navigator.pop(ctx, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text("Yes"),
               ),
             ],
           );
@@ -3045,29 +2955,11 @@ class _SalesScreenState extends State<SalesScreen>
         builder: (ctx) {
           final colors = context.appColors;
           final isDark = colors.isDark;
-          return AlertDialog(
-            backgroundColor: isDark ? colors.surface : Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            title: Row(
-              children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.orange,
-                  size: 28,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  "Selling at Loss",
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black87,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          return StandardDialog(
+            title: "Selling at Loss",
+            colors: colors,
+            isDark: isDark,
+            onClose: () => Navigator.pop(ctx, false),
             content: Text(
               "The item(s) are being sold at a loss, continue?",
               style: TextStyle(
@@ -3076,22 +2968,15 @@ class _SalesScreenState extends State<SalesScreen>
               ),
             ),
             actions: [
-              TextButton(
+              DialogTextAction(
+                label: "Cancel",
+                style: DialogActionStyle.dangerOutline,
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text(
-                  "Cancel",
-                  style: TextStyle(
-                    color: isDark ? Colors.white54 : Colors.black45,
-                  ),
-                ),
               ),
-              ElevatedButton(
+              DialogTextAction(
+                label: "Continue",
+                style: DialogActionStyle.primary,
                 onPressed: () => Navigator.pop(ctx, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text("Continue"),
               ),
             ],
           );
@@ -3165,12 +3050,12 @@ class _SalesScreenState extends State<SalesScreen>
         }
 
         final sent = isSalesOrder
-          ? await _sendSalesOrder(includeEmailAudit: includeEmailAudit)
-          : isQuotes
+            ? await _sendSalesOrder(includeEmailAudit: includeEmailAudit)
+            : isQuotes
             ? await _sendQuote(includeEmailAudit: includeEmailAudit)
             : isLayby
-              ? await _sendLayby(includeEmailAudit: includeEmailAudit)
-              : await _sendAccountInvoice(includeEmailAudit: includeEmailAudit);
+            ? await _sendLayby(includeEmailAudit: includeEmailAudit)
+            : await _sendAccountInvoice(includeEmailAudit: includeEmailAudit);
         if (!sent) {
           return;
         }
@@ -3244,9 +3129,7 @@ class _SalesScreenState extends State<SalesScreen>
       }
 
       _showAccountSalesSuccess(
-        response.message.isNotEmpty
-            ? response.message
-            : "Sales order sent.",
+        response.message.isNotEmpty ? response.message : "Sales order sent.",
       );
       return true;
     } catch (error) {
@@ -3442,9 +3325,11 @@ class _SalesScreenState extends State<SalesScreen>
     }
 
     // For Account Sales, use customer's owner_id (fallback to logged-in staff if no owner)
-    final int? staffId = widget.title == 'Account Sales' &&
-            _selectedCustomer != null
-        ? (_selectedCustomer!.ownerId > 0 ? _selectedCustomer!.ownerId : AppGlobals.instance.staffId)
+    final int? staffId =
+        widget.title == 'Account Sales' && _selectedCustomer != null
+        ? (_selectedCustomer!.ownerId > 0
+              ? _selectedCustomer!.ownerId
+              : AppGlobals.instance.staffId)
         : AppGlobals.instance.staffId;
 
     if (staffId == null || staffId <= 0) {
@@ -3454,7 +3339,8 @@ class _SalesScreenState extends State<SalesScreen>
     final payload = <String, dynamic>{
       'customerId': customerId,
       'staffId': staffId,
-        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+      'transactionDate':
+          _lastSessionUpdatedAt?.toIso8601String() ??
           DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
@@ -3517,7 +3403,8 @@ class _SalesScreenState extends State<SalesScreen>
       'transactionType': 'SO',
       'customerId': customerId,
       'staffId': staffId,
-        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+      'transactionDate':
+          _lastSessionUpdatedAt?.toIso8601String() ??
           DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
@@ -3528,7 +3415,7 @@ class _SalesScreenState extends State<SalesScreen>
       'totalEx': totals.totalEx,
       'totalInc': _total,
       'status': 0,
-        'lines': cartItemsData
+      'lines': cartItemsData
           .map((item) => _buildSalesOrderLine(item, includeSerialNumbers: true))
           .toList(growable: false),
     };
@@ -3576,7 +3463,8 @@ class _SalesScreenState extends State<SalesScreen>
       'transactionType': 'QU',
       'customerId': customerId,
       'staffId': staffId,
-        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+      'transactionDate':
+          _lastSessionUpdatedAt?.toIso8601String() ??
           DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
@@ -3586,8 +3474,10 @@ class _SalesScreenState extends State<SalesScreen>
       'totalEx': totals.totalEx,
       'totalInc': _total,
       'status': 3,
-        'lines': cartItemsData
-          .map((item) => _buildSalesOrderLine(item, includeSerialNumbers: false))
+      'lines': cartItemsData
+          .map(
+            (item) => _buildSalesOrderLine(item, includeSerialNumbers: false),
+          )
           .toList(growable: false),
     };
 
@@ -3646,7 +3536,8 @@ class _SalesScreenState extends State<SalesScreen>
     final payload = <String, dynamic>{
       'customerId': customerId,
       'staffId': staffId,
-        'transactionDate': _lastSessionUpdatedAt?.toIso8601String() ??
+      'transactionDate':
+          _lastSessionUpdatedAt?.toIso8601String() ??
           DateTime.now().toIso8601String(),
       'custom': _surveyValue,
       'comments': _commentValue,
@@ -3806,8 +3697,9 @@ class _SalesScreenState extends State<SalesScreen>
       'sellInc': item.sellInc,
       'rrp': item.rrp ?? item.sellInc,
       'gp': item.gp,
-      'componentLines':
-          components.map(_buildInvoiceComponentLine).toList(growable: false),
+      'componentLines': components
+          .map(_buildInvoiceComponentLine)
+          .toList(growable: false),
     };
 
     final serialNumbers = _serialNumbersPayload(item);
@@ -3873,28 +3765,20 @@ class _SalesScreenState extends State<SalesScreen>
       builder: (ctx) {
         final colors = context.appColors;
         final isDark = colors.isDark;
-        return AlertDialog(
-          backgroundColor: isDark ? colors.surface : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: Text(
-            "RetailManager Error",
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black87,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+        return StandardDialog(
+          title: "RetailManager Error",
+          colors: colors,
+          isDark: isDark,
+          onClose: () => Navigator.pop(ctx),
           content: Text(
             "Sell price cannot be negative.",
-            style: TextStyle(
-              color: isDark ? Colors.white70 : Colors.black54,
-            ),
+            style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
           ),
           actions: [
-            TextButton(
+            DialogTextAction(
+              label: "OK",
+              style: DialogActionStyle.primary,
               onPressed: () => Navigator.pop(ctx),
-              child: const Text("OK"),
             ),
           ],
         );
@@ -3917,7 +3801,9 @@ class _SalesScreenState extends State<SalesScreen>
     }
 
     for (var i = 0; i < message.length; i += chunkSize) {
-      final end = (i + chunkSize < message.length) ? i + chunkSize : message.length;
+      final end = (i + chunkSize < message.length)
+          ? i + chunkSize
+          : message.length;
       // ignore: avoid_print
       print(message.substring(i, end));
     }
@@ -4048,7 +3934,9 @@ class _SalesScreenState extends State<SalesScreen>
                                   final barcodes = capture.barcodes;
                                   if (barcodes.isNotEmpty) {
                                     final code = barcodes.first.rawValue;
-                                    if (code != null && code.isNotEmpty && scannedValue == null) {
+                                    if (code != null &&
+                                        code.isNotEmpty &&
+                                        scannedValue == null) {
                                       setDialogState(() {
                                         scannedValue = code;
                                       });
@@ -4072,7 +3960,9 @@ class _SalesScreenState extends State<SalesScreen>
                                     "Scanned Value:",
                                     style: TextStyle(
                                       fontSize: isTablet ? 14 : 12,
-                                      color: isDark ? Colors.white54 : Colors.black45,
+                                      color: isDark
+                                          ? Colors.white54
+                                          : Colors.black45,
                                     ),
                                   ),
                                   SizedBox(height: isTablet ? 8 : 6),
@@ -4082,7 +3972,9 @@ class _SalesScreenState extends State<SalesScreen>
                                       vertical: isTablet ? 12 : 10,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: isDark ? colors.surface : Colors.grey.shade100,
+                                      color: isDark
+                                          ? colors.surface
+                                          : Colors.grey.shade100,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -4090,7 +3982,9 @@ class _SalesScreenState extends State<SalesScreen>
                                       style: TextStyle(
                                         fontSize: isTablet ? 18 : 16,
                                         fontWeight: FontWeight.w600,
-                                        color: isDark ? Colors.white : Colors.black87,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -4107,7 +4001,9 @@ class _SalesScreenState extends State<SalesScreen>
                                         },
                                         style: OutlinedButton.styleFrom(
                                           foregroundColor: kPrimaryColor,
-                                          side: const BorderSide(color: kPrimaryColor),
+                                          side: const BorderSide(
+                                            color: kPrimaryColor,
+                                          ),
                                           padding: EdgeInsets.symmetric(
                                             horizontal: isTablet ? 20 : 16,
                                             vertical: isTablet ? 12 : 10,
@@ -4115,7 +4011,9 @@ class _SalesScreenState extends State<SalesScreen>
                                         ),
                                         child: Text(
                                           "Rescan",
-                                          style: TextStyle(fontSize: isTablet ? 14 : 12),
+                                          style: TextStyle(
+                                            fontSize: isTablet ? 14 : 12,
+                                          ),
                                         ),
                                       ),
                                       SizedBox(width: isTablet ? 16 : 12),
@@ -4125,7 +4023,8 @@ class _SalesScreenState extends State<SalesScreen>
                                           Navigator.pop(ctx);
                                           setState(() {
                                             _surveyValue = scannedValue!;
-                                            _surveyController.text = scannedValue!;
+                                            _surveyController.text =
+                                                scannedValue!;
                                           });
                                         },
                                         style: ElevatedButton.styleFrom(
@@ -4138,7 +4037,9 @@ class _SalesScreenState extends State<SalesScreen>
                                         ),
                                         child: Text(
                                           "Save",
-                                          style: TextStyle(fontSize: isTablet ? 14 : 12),
+                                          style: TextStyle(
+                                            fontSize: isTablet ? 14 : 12,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -4217,7 +4118,8 @@ class _SalesScreenState extends State<SalesScreen>
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => _showSurveyScannerDialog(context, colors, isDark),
+                      onTap: () =>
+                          _showSurveyScannerDialog(context, colors, isDark),
                       child: Container(
                         padding: EdgeInsets.all(isTablet ? 8 : 6),
                         decoration: BoxDecoration(
@@ -4429,6 +4331,7 @@ class _SalesScreenState extends State<SalesScreen>
     _closeScanner();
     final controller = TextEditingController(text: _commentValue);
     final isTablet = context.isTablet;
+    final actionWidth = isTablet ? 140.0 : 104.0;
 
     showDialog(
       context: context,
@@ -4438,136 +4341,77 @@ class _SalesScreenState extends State<SalesScreen>
         return AnimatedPadding(
           duration: const Duration(milliseconds: 150),
           padding: EdgeInsets.only(bottom: bottomInset),
-          child: Center(
-            child: SingleChildScrollView(
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  width: isTablet
-                      ? 520
-                      : MediaQuery.of(dialogContext).size.width * 0.92,
-                  padding: EdgeInsets.all(isTablet ? 24 : 18),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E2733) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+          child: SingleChildScrollView(
+            child: StandardDialog(
+              title: "Add Comment",
+              colors: colors,
+              isDark: isDark,
+              maxWidth: isTablet ? 520 : double.infinity,
+              onClose: () => Navigator.of(dialogContext).pop(),
+              content: TextField(
+                controller: controller,
+                autofocus: true,
+                maxLines: 4,
+                maxLength: 225,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Enter comment...",
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.white30 : Colors.grey.shade400,
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Add Comment",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          if (_commentValue.isNotEmpty)
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _commentValue = '';
-                                });
-                                Navigator.of(dialogContext).pop();
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  "Remove",
-                                  style: TextStyle(
-                                    color: Colors.redAccent,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: controller,
-                        autofocus: true,
-                        maxLines: 4,
-                        maxLength: 225,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Enter comment...",
-                          hintStyle: TextStyle(
-                            color: isDark ? Colors.white30 : Colors.grey.shade400,
-                          ),
-                          filled: true,
-                          fillColor: isDark ? colors.surface : Colors.grey.shade100,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.all(12),
-                          counterStyle: TextStyle(
-                            color: isDark ? Colors.white54 : Colors.grey.shade600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _commentValue = controller.text.trim();
-                            });
-                            Navigator.of(dialogContext).pop();
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF30B24C), Color(0xFF60D394)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              "Save",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  filled: true,
+                  fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                  counterStyle: TextStyle(
+                    color: isDark ? Colors.white54 : Colors.grey.shade600,
+                    fontSize: 12,
                   ),
                 ),
               ),
+              actions: [
+                if (_commentValue.isNotEmpty)
+                  DialogFixedWidthAction(
+                    width: actionWidth,
+                    action: DialogTextAction(
+                      label: "Remove",
+                      style: DialogActionStyle.dangerOutline,
+                      onPressed: () {
+                        setState(() {
+                          _commentValue = '';
+                        });
+                        Navigator.of(dialogContext).pop();
+                      },
+                    ),
+                  ),
+                DialogFixedWidthAction(
+                  width: actionWidth,
+                  action: DialogTextAction(
+                    label: "Cancel",
+                    style: DialogActionStyle.dangerOutline,
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                  ),
+                ),
+                DialogFixedWidthAction(
+                  width: actionWidth,
+                  action: DialogTextAction(
+                    label: "Save",
+                    style: DialogActionStyle.primary,
+                    onPressed: () {
+                      setState(() {
+                        _commentValue = controller.text.trim();
+                      });
+                      Navigator.of(dialogContext).pop();
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -4583,6 +4427,7 @@ class _SalesScreenState extends State<SalesScreen>
     _closeScanner();
     _surveyController.text = _surveyValue;
     final isTablet = context.isTablet;
+    final actionWidth = isTablet ? 140.0 : 104.0;
 
     showDialog(
       context: context,
@@ -4592,171 +4437,99 @@ class _SalesScreenState extends State<SalesScreen>
         return AnimatedPadding(
           duration: const Duration(milliseconds: 150),
           padding: EdgeInsets.only(bottom: bottomInset),
-          child: Center(
-            child: SingleChildScrollView(
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  width: isTablet
-                      ? 520
-                      : MediaQuery.of(dialogContext).size.width * 0.92,
-                  padding: EdgeInsets.all(isTablet ? 24 : 18),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E2733) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+          child: SingleChildScrollView(
+            child: StandardDialog(
+              title: _surveyLabel,
+              colors: colors,
+              isDark: isDark,
+              maxWidth: isTablet ? 520 : double.infinity,
+              onClose: () => Navigator.of(dialogContext).pop(),
+              content: TextField(
+                controller: _surveyController,
+                autofocus: true,
+                maxLines: 1,
+                maxLength: 20,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Enter value...",
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.white30 : Colors.grey.shade400,
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _surveyLabel,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.of(dialogContext).pop();
-                                  _showSurveyScannerDialog(context, colors, isDark);
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: kPrimaryColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Icon(
-                                    Icons.qr_code_scanner,
-                                    size: 18,
-                                    color: kPrimaryColor,
-                                  ),
-                                ),
-                              ),
-                              if (_surveyValue.isNotEmpty) ...[
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _surveyValue = '';
-                                      _surveyController.clear();
-                                    });
-                                    Navigator.of(dialogContext).pop();
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.redAccent.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text(
-                                      "Remove",
-                                      style: TextStyle(
-                                        color: Colors.redAccent,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _surveyController,
-                        autofocus: true,
-                        maxLines: 1,
-                        maxLength: 20,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Enter value...",
-                          hintStyle: TextStyle(
-                            color: isDark ? Colors.white30 : Colors.grey.shade400,
-                          ),
-                          filled: true,
-                          fillColor: isDark ? colors.surface : Colors.grey.shade100,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 14,
-                          ),
-                          counterStyle: TextStyle(
-                            color: isDark ? Colors.white54 : Colors.grey.shade600,
-                            fontSize: 11,
-                          ),
-                        ),
-                        onSubmitted: (value) {
-                          setState(() {
-                            _surveyValue = value.trim();
-                          });
-                          Navigator.of(dialogContext).pop();
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _surveyValue = _surveyController.text.trim();
-                            });
-                            Navigator.of(dialogContext).pop();
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF30B24C), Color(0xFF60D394)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              "Save",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  filled: true,
+                  fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
+                  counterStyle: TextStyle(
+                    color: isDark ? Colors.white54 : Colors.grey.shade600,
+                    fontSize: 11,
                   ),
                 ),
+                onSubmitted: (value) {
+                  setState(() {
+                    _surveyValue = value.trim();
+                  });
+                  Navigator.of(dialogContext).pop();
+                },
               ),
+              actions: [
+                DialogFixedWidthAction(
+                  width: actionWidth,
+                  action: DialogTextAction(
+                    label: "Scan",
+                    icon: Icons.qr_code_scanner,
+                    style: DialogActionStyle.outline,
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop();
+                      _showSurveyScannerDialog(context, colors, isDark);
+                    },
+                  ),
+                ),
+                if (_surveyValue.isNotEmpty)
+                  DialogFixedWidthAction(
+                    width: actionWidth,
+                    action: DialogTextAction(
+                      label: "Remove",
+                      style: DialogActionStyle.dangerOutline,
+                      onPressed: () {
+                        setState(() {
+                          _surveyValue = '';
+                          _surveyController.clear();
+                        });
+                        Navigator.of(dialogContext).pop();
+                      },
+                    ),
+                  ),
+                DialogFixedWidthAction(
+                  width: actionWidth,
+                  action: DialogTextAction(
+                    label: "Cancel",
+                    style: DialogActionStyle.dangerOutline,
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                  ),
+                ),
+                DialogFixedWidthAction(
+                  width: actionWidth,
+                  action: DialogTextAction(
+                    label: "Save",
+                    style: DialogActionStyle.primary,
+                    onPressed: () {
+                      setState(() {
+                        _surveyValue = _surveyController.text.trim();
+                      });
+                      Navigator.of(dialogContext).pop();
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -4774,7 +4547,7 @@ class _SalesScreenState extends State<SalesScreen>
     if (!_displayCustomerMessagesAsPrompt) return;
     if (customer == null) return;
     if (customer.comments.isEmpty) return;
-    
+
     final colors = context.appColors;
     CustomerCommentsDialog.show(
       context: context,
@@ -4790,13 +4563,12 @@ class _SalesScreenState extends State<SalesScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: kPrimaryColor),
-      ),
+      builder: (_) =>
+          const Center(child: CircularProgressIndicator(color: kPrimaryColor)),
     );
 
-    final isOnline =
-        await InternetConnectionUtils.instance.checkInternetConnection();
+    final isOnline = await InternetConnectionUtils.instance
+        .checkInternetConnection();
     if (!mounted) return;
 
     if (!isOnline) {
@@ -4812,9 +4584,9 @@ class _SalesScreenState extends State<SalesScreen>
     }
 
     try {
-      await context
-          .read<CustomerTransactionsBloc>()
-          .syncCustomerTransactions(_selectedCustomer!.customerId);
+      await context.read<CustomerTransactionsBloc>().syncCustomerTransactions(
+        _selectedCustomer!.customerId,
+      );
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
       Navigator.push(
@@ -4841,9 +4613,7 @@ class _SalesScreenState extends State<SalesScreen>
   Future<void> _openCustomerCreate() async {
     final createdCustomer = await Navigator.of(context).push<CustomerVO>(
       MaterialPageRoute(
-        builder: (_) => const CustomerCreateScreen(
-          returnCreatedCustomer: true,
-        ),
+        builder: (_) => const CustomerCreateScreen(returnCreatedCustomer: true),
       ),
     );
 
@@ -4879,375 +4649,260 @@ class _SalesScreenState extends State<SalesScreen>
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return Dialog(
-              backgroundColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              insetPadding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 80 : 20,
-                vertical: isTablet ? 60 : 40,
-              ),
-              child: Container(
-                width: isTablet ? 600 : double.infinity,
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.85,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E2733) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Header
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor.withOpacity(0.1),
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
+            return StandardDialog(
+              title: 'Sales Settings',
+              subtitle: 'Configure your sales preferences',
+              colors: colors,
+              isDark: isDark,
+              maxWidth: isTablet ? 600 : double.infinity,
+              onClose: () => Navigator.pop(dialogContext),
+              content: Flexible(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.85,
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Tools Section
+                        _buildSettingsGroupHeader(
+                          'Tools',
+                          Icons.build_outlined,
+                          isDark,
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: kPrimaryColor.withOpacity(0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.settings,
-                              color: kPrimaryColor,
-                              size: 24,
-                            ),
+                        _buildSettingsGroupContainer(isDark, colors, [
+                          _buildSettingsSwitch(
+                            'Scan Individual Units',
+                            _scanIndividualUnits,
+                            (v) async {
+                              setDialogState(() => _scanIndividualUnits = v);
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesScanIndividualUnitsKey,
+                                value: v,
+                              );
+
+                              // When turning ON and prompt setting is enabled, show fractional prompt
+                              if (v && _promptScanIndividualFractional) {
+                                final result =
+                                    await _showFractionalPromptDialog(
+                                      colors,
+                                      isDark,
+                                    );
+                                setDialogState(() {
+                                  _scanIndividualUnitsForFractional =
+                                      result == true;
+                                });
+                                setState(() {});
+                                _salesBloc.saveSalesSetting(
+                                  key:
+                                      kSalesScanIndividualUnitsForFractionalKey,
+                                  value: result == true,
+                                );
+                              }
+                            },
+                            isDark,
+                            colors,
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Sales Settings',
-                                  style: TextStyle(
-                                    fontSize: isTablet ? 20 : 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.white : Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Configure your sales preferences',
-                                  style: TextStyle(
-                                    fontSize: isTablet ? 14 : 12,
-                                    color: isDark ? Colors.white70 : Colors.black54,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.pop(dialogContext),
-                            icon: Icon(
-                              Icons.close,
-                              color: isDark ? Colors.white54 : Colors.black45,
-                            ),
-                            tooltip: 'Close',
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Content
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Tools Section
-                            _buildSettingsGroupHeader(
-                              'Tools',
-                              Icons.build_outlined,
-                              isDark,
-                            ),
-                            _buildSettingsGroupContainer(
-                              isDark,
-                              colors,
-                              [
-                                _buildSettingsSwitch(
-                                  'Scan Individual Units',
-                                  _scanIndividualUnits,
-                                  (v) async {
-                                    setDialogState(() => _scanIndividualUnits = v);
-                                    setState(() {});
-                                    _salesBloc.saveSalesSetting(
-                                      key: kSalesScanIndividualUnitsKey,
-                                      value: v,
-                                    );
-                                    
-                                    // When turning ON and prompt setting is enabled, show fractional prompt
-                                    if (v && _promptScanIndividualFractional) {
-                                      final result = await _showFractionalPromptDialog(colors, isDark);
-                                      setDialogState(() {
-                                        _scanIndividualUnitsForFractional = result == true;
-                                      });
-                                      setState(() {});
-                                      _salesBloc.saveSalesSetting(
-                                        key: kSalesScanIndividualUnitsForFractionalKey,
-                                        value: result == true,
-                                      );
-                                    }
-                                  },
-                                  isDark,
-                                  colors,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
+                        ]),
+                        const SizedBox(height: 16),
 
-                            // Skip Fields Section
-                            _buildSettingsGroupHeader(
-                              'Skip Fields',
-                              Icons.skip_next_outlined,
-                              isDark,
-                            ),
-                            _buildSettingsGroupContainer(
-                              isDark,
-                              colors,
-                              [
-                                _buildSettingsSwitch(
-                                  'Skip Sell Price',
-                                  _skipSellPrice,
-                                  (v) {
-                                    setDialogState(() => _skipSellPrice = v);
-                                    setState(() {});
-                                    _salesBloc.saveSalesSetting(
-                                      key: kSalesSkipSellPriceKey,
-                                      value: v,
-                                    );
-                                  },
-                                  isDark,
-                                  colors,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Sales Window Section
-                            _buildSettingsGroupHeader(
-                              'Sales Window',
-                              Icons.storefront_outlined,
-                              isDark,
-                            ),
-                            _buildSettingsGroupContainer(
-                              isDark,
-                              colors,
-                              [
-                                _buildSettingsSwitch(
-                                  'Prompt for Email at Time of Sale',
-                                  _promptForEmailAtSale,
-                                  (v) {
-                                    setDialogState(
-                                      () => _promptForEmailAtSale = v,
-                                    );
-                                    setState(() {});
-                                    _salesBloc.saveSalesSetting(
-                                      key: kSalesPromptForEmailKey,
-                                      value: v,
-                                    );
-                                  },
-                                  isDark,
-                                  colors,
-                                ),
-                                Divider(
-                                  height: 1,
-                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
-                                ),
-                                _buildSettingsSwitch(
-                                  'Scan Individual Units for Fractional Quantities',
-                                  _scanIndividualUnitsForFractional,
-                                  (v) {
-                                    setDialogState(
-                                      () => _scanIndividualUnitsForFractional = v,
-                                    );
-                                    setState(() {});
-                                    _salesBloc.saveSalesSetting(
-                                      key: kSalesScanIndividualUnitsForFractionalKey,
-                                      value: v,
-                                    );
-                                  },
-                                  isDark,
-                                  colors,
-                                ),
-                                Divider(
-                                  height: 1,
-                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
-                                ),
-                                _buildSettingsSwitch(
-                                  'Prevent adding item to any sale transaction if there is no stock on hand',
-                                  _preventAddIfNoStock,
-                                  (v) {
-                                    setDialogState(() => _preventAddIfNoStock = v);
-                                    setState(() {});
-                                    _salesBloc.saveSalesSetting(
-                                      key: kSalesPreventAddIfNoStockKey,
-                                      value: v,
-                                    );
-                                  },
-                                  isDark,
-                                  colors,
-                                ),
-                                Divider(
-                                  height: 1,
-                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
-                                ),
-                                _buildSettingsSwitch(
-                                  'Prevent finalising IV when any item is out of stock - SO, & LB Allowed',
-                                  _preventFinaliseIfOutOfStock,
-                                  (v) {
-                                    setDialogState(
-                                      () => _preventFinaliseIfOutOfStock = v,
-                                    );
-                                    setState(() {});
-                                    _salesBloc.saveSalesSetting(
-                                      key: kSalesPreventFinaliseIfOutOfStockKey,
-                                      value: v,
-                                    );
-                                  },
-                                  isDark,
-                                  colors,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Other Section
-                            _buildSettingsGroupHeader(
-                              'Other',
-                              Icons.more_horiz,
-                              isDark,
-                            ),
-                            _buildSettingsGroupContainer(
-                              isDark,
-                              colors,
-                              [
-                                _buildSettingsSwitch(
-                                  'Auto Remind - Low Stock',
-                                  _autoRemindLowStock,
-                                  (v) {
-                                    setDialogState(() => _autoRemindLowStock = v);
-                                    setState(() {});
-                                    _salesBloc.saveSalesSetting(
-                                      key: kSalesAutoRemindLowStockKey,
-                                      value: v,
-                                    );
-                                  },
-                                  isDark,
-                                  colors,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Alerts Section
-                            _buildSettingsGroupHeader(
-                              'Alerts',
-                              Icons.notifications_outlined,
-                              isDark,
-                            ),
-                            _buildSettingsGroupContainer(
-                              isDark,
-                              colors,
-                              [
-                                _buildSettingsSwitch(
-                                  'Prompt for Scan Individual Units for Fractional Quantities',
-                                  _promptScanIndividualFractional,
-                                  (v) {
-                                    setDialogState(
-                                      () => _promptScanIndividualFractional = v,
-                                    );
-                                    setState(() {});
-                                    _salesBloc.saveSalesSetting(
-                                      key: kSalesPromptScanIndividualFractionalKey,
-                                      value: v,
-                                    );
-                                  },
-                                  isDark,
-                                  colors,
-                                ),
-                                Divider(
-                                  height: 1,
-                                  color: isDark ? Colors.white12 : Colors.grey.shade200,
-                                ),
-                                _buildSettingsSwitch(
-                                  'Display customer messages as a Prompt during sale',
-                                  _displayCustomerMessagesAsPrompt,
-                                  (v) {
-                                    setDialogState(
-                                      () => _displayCustomerMessagesAsPrompt = v,
-                                    );
-                                    setState(() {});
-                                    _salesBloc.saveSalesSetting(
-                                      key: kSalesDisplayCustomerMessagesKey,
-                                      value: v,
-                                    );
-                                  },
-                                  isDark,
-                                  colors,
-                                ),
-                              ],
-                            ),
-                          ],
+                        // Skip Fields Section
+                        _buildSettingsGroupHeader(
+                          'Skip Fields',
+                          Icons.skip_next_outlined,
+                          isDark,
                         ),
-                      ),
-                    ),
-                    // Footer
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          top: BorderSide(
-                            color: isDark ? Colors.white12 : Colors.grey.shade200,
+                        _buildSettingsGroupContainer(isDark, colors, [
+                          _buildSettingsSwitch(
+                            'Skip Sell Price',
+                            _skipSellPrice,
+                            (v) {
+                              setDialogState(() => _skipSellPrice = v);
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesSkipSellPriceKey,
+                                value: v,
+                              );
+                            },
+                            isDark,
+                            colors,
                           ),
+                        ]),
+                        const SizedBox(height: 16),
+
+                        // Sales Window Section
+                        _buildSettingsGroupHeader(
+                          'Sales Window',
+                          Icons.storefront_outlined,
+                          isDark,
                         ),
-                      ),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: kPrimaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: BorderSide(
-                              color: kPrimaryColor,
-                              width: 1.5,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                        _buildSettingsGroupContainer(isDark, colors, [
+                          _buildSettingsSwitch(
+                            'Prompt for Email at Time of Sale',
+                            _promptForEmailAtSale,
+                            (v) {
+                              setDialogState(() => _promptForEmailAtSale = v);
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesPromptForEmailKey,
+                                value: v,
+                              );
+                            },
+                            isDark,
+                            colors,
                           ),
-                          child: const Text(
-                            'Done',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                          Divider(
+                            height: 1,
+                            color: isDark
+                                ? Colors.white12
+                                : Colors.grey.shade200,
                           ),
+                          _buildSettingsSwitch(
+                            'Scan Individual Units for Fractional Quantities',
+                            _scanIndividualUnitsForFractional,
+                            (v) {
+                              setDialogState(
+                                () => _scanIndividualUnitsForFractional = v,
+                              );
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesScanIndividualUnitsForFractionalKey,
+                                value: v,
+                              );
+                            },
+                            isDark,
+                            colors,
+                          ),
+                          Divider(
+                            height: 1,
+                            color: isDark
+                                ? Colors.white12
+                                : Colors.grey.shade200,
+                          ),
+                          _buildSettingsSwitch(
+                            'Prevent adding item to any sale transaction if there is no stock on hand',
+                            _preventAddIfNoStock,
+                            (v) {
+                              setDialogState(() => _preventAddIfNoStock = v);
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesPreventAddIfNoStockKey,
+                                value: v,
+                              );
+                            },
+                            isDark,
+                            colors,
+                          ),
+                          Divider(
+                            height: 1,
+                            color: isDark
+                                ? Colors.white12
+                                : Colors.grey.shade200,
+                          ),
+                          _buildSettingsSwitch(
+                            'Prevent finalising IV when any item is out of stock - SO, & LB Allowed',
+                            _preventFinaliseIfOutOfStock,
+                            (v) {
+                              setDialogState(
+                                () => _preventFinaliseIfOutOfStock = v,
+                              );
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesPreventFinaliseIfOutOfStockKey,
+                                value: v,
+                              );
+                            },
+                            isDark,
+                            colors,
+                          ),
+                        ]),
+                        const SizedBox(height: 16),
+
+                        // Other Section
+                        _buildSettingsGroupHeader(
+                          'Other',
+                          Icons.more_horiz,
+                          isDark,
                         ),
-                      ),
+                        _buildSettingsGroupContainer(isDark, colors, [
+                          _buildSettingsSwitch(
+                            'Auto Remind - Low Stock',
+                            _autoRemindLowStock,
+                            (v) {
+                              setDialogState(() => _autoRemindLowStock = v);
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesAutoRemindLowStockKey,
+                                value: v,
+                              );
+                            },
+                            isDark,
+                            colors,
+                          ),
+                        ]),
+                        const SizedBox(height: 16),
+
+                        // Alerts Section
+                        _buildSettingsGroupHeader(
+                          'Alerts',
+                          Icons.notifications_outlined,
+                          isDark,
+                        ),
+                        _buildSettingsGroupContainer(isDark, colors, [
+                          _buildSettingsSwitch(
+                            'Prompt for Scan Individual Units for Fractional Quantities',
+                            _promptScanIndividualFractional,
+                            (v) {
+                              setDialogState(
+                                () => _promptScanIndividualFractional = v,
+                              );
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesPromptScanIndividualFractionalKey,
+                                value: v,
+                              );
+                            },
+                            isDark,
+                            colors,
+                          ),
+                          Divider(
+                            height: 1,
+                            color: isDark
+                                ? Colors.white12
+                                : Colors.grey.shade200,
+                          ),
+                          _buildSettingsSwitch(
+                            'Display customer messages as a Prompt during sale',
+                            _displayCustomerMessagesAsPrompt,
+                            (v) {
+                              setDialogState(
+                                () => _displayCustomerMessagesAsPrompt = v,
+                              );
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesDisplayCustomerMessagesKey,
+                                value: v,
+                              );
+                            },
+                            isDark,
+                            colors,
+                          ),
+                        ]),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
+              actions: [
+                DialogTextAction(
+                  label: 'Done',
+                  style: DialogActionStyle.primary,
+                  onPressed: () => Navigator.pop(dialogContext),
+                ),
+              ],
             );
           },
         );
@@ -5260,11 +4915,7 @@ class _SalesScreenState extends State<SalesScreen>
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color: kPrimaryColor,
-          ),
+          Icon(icon, size: 18, color: kPrimaryColor),
           const SizedBox(width: 8),
           Text(
             title,
@@ -5293,9 +4944,7 @@ class _SalesScreenState extends State<SalesScreen>
           color: isDark ? Colors.white12 : Colors.grey.shade200,
         ),
       ),
-      child: Column(
-        children: children,
-      ),
+      child: Column(children: children),
     );
   }
 
@@ -5489,7 +5138,7 @@ class _SalesScreenState extends State<SalesScreen>
   double _parseDiscountInput(String input, double subtotal) {
     final trimmed = input.trim();
     if (trimmed.isEmpty) return 0.0;
-    
+
     final subtotalR = _toRational(subtotal);
 
     // Target total format: T200 or t200
@@ -5541,8 +5190,12 @@ class _SalesScreenState extends State<SalesScreen>
           builder: (context, setDialogState) {
             // Calculate profit with temp discount for live preview (using GP ratio distribution)
             final tempTotals = _calcTotalsWithDiscount(tempDiscount);
-            final double totalEx = double.parse(tempTotals.totalEx.toStringAsFixed(4));
-            final double egp = double.parse(tempTotals.totalGp.toStringAsFixed(4));
+            final double totalEx = double.parse(
+              tempTotals.totalEx.toStringAsFixed(4),
+            );
+            final double egp = double.parse(
+              tempTotals.totalGp.toStringAsFixed(4),
+            );
             final double egpPercent = totalEx > 0 ? (egp / totalEx) * 100 : 0;
             final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -5554,7 +5207,9 @@ class _SalesScreenState extends State<SalesScreen>
                   child: Material(
                     color: Colors.transparent,
                     child: Container(
-                      width: isTablet ? 600 : MediaQuery.of(context).size.width * 0.92,
+                      width: isTablet
+                          ? 600
+                          : MediaQuery.of(context).size.width * 0.92,
                       padding: EdgeInsets.all(isTablet ? 28 : 20),
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF1E2733) : Colors.white,
@@ -5575,319 +5230,395 @@ class _SalesScreenState extends State<SalesScreen>
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                          Text(
-                            "Add Discount",
-                            style: TextStyle(
-                              fontSize: isTablet ? 20 : 18,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
+                              Text(
+                                "Add Discount",
+                                style: TextStyle(
+                                  fontSize: isTablet ? 20 : 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => Navigator.of(dialogContext).pop(),
+                                child: Icon(
+                                  Icons.close,
+                                  size: isTablet ? 26 : 24,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54,
+                                ),
+                              ),
+                            ],
                           ),
-                          GestureDetector(
-                            onTap: () => Navigator.of(dialogContext).pop(),
-                            child: Icon(
-                              Icons.close,
-                              size: isTablet ? 26 : 24,
-                              color: isDark ? Colors.white70 : Colors.black54,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: isTablet ? 20 : 16),
+                          SizedBox(height: isTablet ? 20 : 16),
 
-                      // Main content row: Discount input + Profit breakdown
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Discount input section
-                          Expanded(
-                            flex: 3,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Discount Amount",
-                                  style: TextStyle(
-                                    fontSize: isTablet ? 14 : 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
-                                  ),
-                                ),
-                                SizedBox(height: isTablet ? 10 : 8),
-                                TextField(
-                                  controller: discountController,
-                                  autofocus: true,
-                                  style: TextStyle(
-                                    fontSize: isTablet ? 24 : 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.white : Colors.black87,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: "0.00",
-                                    hintStyle: TextStyle(
-                                      color: isDark ? Colors.white30 : Colors.grey.shade400,
-                                      fontSize: isTablet ? 24 : 20,
-                                    ),
-                                    filled: true,
-                                    fillColor: isDark ? colors.surface : Colors.grey.shade100,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: isTablet ? 16 : 14,
-                                      vertical: isTablet ? 16 : 14,
-                                    ),
-                                  ),
-                                  onChanged: (value) {
-                                    setDialogState(() {
-                                      tempDiscount = _parseDiscountInput(value, _subtotal);
-                                    });
-                                  },
-                                  onSubmitted: (value) {
-                                    final discount = _parseDiscountInput(value, _subtotal);
-                                    setState(() {
-                                      _discountValue = discount;
-                                      _discountController.text = discount.toStringAsFixed(2);
-                                    });
-                                    Navigator.of(dialogContext).pop();
-                                  },
-                                ),
-                                SizedBox(height: isTablet ? 12 : 10),
-                                // Current discount display
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: isTablet ? 14 : 12,
-                                    vertical: isTablet ? 10 : 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: kPrimaryColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        "Discount:",
-                                        style: TextStyle(
-                                          fontSize: isTablet ? 15 : 13,
-                                          color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          reverse: true,
-                                          child: Text(
-                                            FormattingUtils.formatCurrencyWithDecimals(
-                                              tempDiscount,
-                                              2,
-                                            ),
-                                            style: TextStyle(
-                                              fontSize: isTablet ? 18 : 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: kPrimaryColor,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(height: isTablet ? 8 : 6),
-                                // New total display
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: isTablet ? 14 : 12,
-                                    vertical: isTablet ? 10 : 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? colors.surface : Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        "New Total:",
-                                        style: TextStyle(
-                                          fontSize: isTablet ? 15 : 13,
-                                          color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          reverse: true,
-                                          child: Text(
-                                            FormattingUtils.formatCurrencyWithDecimals(
-                                              _subtotal - tempDiscount,
-                                              2,
-                                            ),
-                                            style: TextStyle(
-                                              fontSize: isTablet ? 18 : 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: isDark ? Colors.white : Colors.black87,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(width: isTablet ? 24 : 16),
-                          // Profit breakdown section
-                          Expanded(
-                            flex: 2,
-                            child: Padding(
-                              padding: EdgeInsets.only(top: isTablet ? 32 : 24),
-                              child: Container(
-                                padding: EdgeInsets.all(isTablet ? 20 : 16),
-                                decoration: BoxDecoration(
-                                  color: isDark ? colors.surface : Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isDark ? Colors.white12 : Colors.grey.shade300,
-                                  ),
-                                ),
+                          // Main content row: Discount input + Profit breakdown
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Discount input section
+                              Expanded(
+                                flex: 3,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      "Profit Preview",
+                                      "Discount Amount",
                                       style: TextStyle(
-                                        fontSize: isTablet ? 16 : 14,
+                                        fontSize: isTablet ? 14 : 12,
                                         fontWeight: FontWeight.w600,
-                                        color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+                                        color: isDark
+                                            ? Colors.white70
+                                            : Colors.blueGrey.shade700,
                                       ),
                                     ),
-                                    SizedBox(height: isTablet ? 18 : 14),
-                                    _buildProfitRow("Cost:", _totalCost, isDark, isTablet),
-                                    SizedBox(height: isTablet ? 14 : 12),
-                                    _buildProfitRow("eGP:", egp, isDark, isTablet, highlight: true),
-                                    SizedBox(height: isTablet ? 14 : 12),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          "eGP%:",
-                                          style: TextStyle(
-                                            fontSize: isTablet ? 16 : 14,
-                                            color: egp < 0 ? Colors.redAccent : const Color(0xFF30B24C),
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                    SizedBox(height: isTablet ? 10 : 8),
+                                    TextField(
+                                      controller: discountController,
+                                      autofocus: true,
+                                      style: TextStyle(
+                                        fontSize: isTablet ? 24 : 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: "0.00",
+                                        hintStyle: TextStyle(
+                                          color: isDark
+                                              ? Colors.white30
+                                              : Colors.grey.shade400,
+                                          fontSize: isTablet ? 24 : 20,
                                         ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: SingleChildScrollView(
-                                            scrollDirection: Axis.horizontal,
-                                            reverse: true,
-                                            child: Text(
-                                              "${egpPercent.toStringAsFixed(2)}%",
-                                              style: TextStyle(
-                                                fontSize: isTablet ? 16 : 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: egp < 0 ? Colors.redAccent : const Color(0xFF30B24C),
+                                        filled: true,
+                                        fillColor: isDark
+                                            ? colors.surface
+                                            : Colors.grey.shade100,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: isTablet ? 16 : 14,
+                                          vertical: isTablet ? 16 : 14,
+                                        ),
+                                      ),
+                                      onChanged: (value) {
+                                        setDialogState(() {
+                                          tempDiscount = _parseDiscountInput(
+                                            value,
+                                            _subtotal,
+                                          );
+                                        });
+                                      },
+                                      onSubmitted: (value) {
+                                        final discount = _parseDiscountInput(
+                                          value,
+                                          _subtotal,
+                                        );
+                                        setState(() {
+                                          _discountValue = discount;
+                                          _discountController.text = discount
+                                              .toStringAsFixed(2);
+                                        });
+                                        Navigator.of(dialogContext).pop();
+                                      },
+                                    ),
+                                    SizedBox(height: isTablet ? 12 : 10),
+                                    // Current discount display
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isTablet ? 14 : 12,
+                                        vertical: isTablet ? 10 : 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: kPrimaryColor.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            "Discount:",
+                                            style: TextStyle(
+                                              fontSize: isTablet ? 15 : 13,
+                                              color: isDark
+                                                  ? Colors.white70
+                                                  : Colors.blueGrey.shade700,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: SingleChildScrollView(
+                                              scrollDirection: Axis.horizontal,
+                                              reverse: true,
+                                              child: Text(
+                                                FormattingUtils.formatCurrencyWithDecimals(
+                                                  tempDiscount,
+                                                  2,
+                                                ),
+                                                style: TextStyle(
+                                                  fontSize: isTablet ? 18 : 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: kPrimaryColor,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: isTablet ? 8 : 6),
+                                    // New total display
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isTablet ? 14 : 12,
+                                        vertical: isTablet ? 10 : 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? colors.surface
+                                            : Colors.grey.shade100,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            "New Total:",
+                                            style: TextStyle(
+                                              fontSize: isTablet ? 15 : 13,
+                                              color: isDark
+                                                  ? Colors.white70
+                                                  : Colors.blueGrey.shade700,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: SingleChildScrollView(
+                                              scrollDirection: Axis.horizontal,
+                                              reverse: true,
+                                              child: Text(
+                                                FormattingUtils.formatCurrencyWithDecimals(
+                                                  _subtotal - tempDiscount,
+                                                  2,
+                                                ),
+                                                style: TextStyle(
+                                                  fontSize: isTablet ? 18 : 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: isDark
+                                                      ? Colors.white
+                                                      : Colors.black87,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
+                              SizedBox(width: isTablet ? 24 : 16),
+                              // Profit breakdown section
+                              Expanded(
+                                flex: 2,
+                                child: Padding(
+                                  padding: EdgeInsets.only(
+                                    top: isTablet ? 32 : 24,
+                                  ),
+                                  child: Container(
+                                    padding: EdgeInsets.all(isTablet ? 20 : 16),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? colors.surface
+                                          : Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? Colors.white12
+                                            : Colors.grey.shade300,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          "Profit Preview",
+                                          style: TextStyle(
+                                            fontSize: isTablet ? 16 : 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDark
+                                                ? Colors.white70
+                                                : Colors.blueGrey.shade700,
+                                          ),
+                                        ),
+                                        SizedBox(height: isTablet ? 18 : 14),
+                                        _buildProfitRow(
+                                          "Cost:",
+                                          _totalCost,
+                                          isDark,
+                                          isTablet,
+                                        ),
+                                        SizedBox(height: isTablet ? 14 : 12),
+                                        _buildProfitRow(
+                                          "eGP:",
+                                          egp,
+                                          isDark,
+                                          isTablet,
+                                          highlight: true,
+                                        ),
+                                        SizedBox(height: isTablet ? 14 : 12),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              "eGP%:",
+                                              style: TextStyle(
+                                                fontSize: isTablet ? 16 : 14,
+                                                color: egp < 0
+                                                    ? Colors.redAccent
+                                                    : const Color(0xFF30B24C),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: SingleChildScrollView(
+                                                scrollDirection:
+                                                    Axis.horizontal,
+                                                reverse: true,
+                                                child: Text(
+                                                  "${egpPercent.toStringAsFixed(2)}%",
+                                                  style: TextStyle(
+                                                    fontSize: isTablet
+                                                        ? 16
+                                                        : 14,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: egp < 0
+                                                        ? Colors.redAccent
+                                                        : const Color(
+                                                            0xFF30B24C,
+                                                          ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      SizedBox(height: isTablet ? 24 : 20),
+                          SizedBox(height: isTablet ? 24 : 20),
 
-                      // Action buttons
-                      Row(
-                        children: [
-                          if (_discountValue > 0) ...[
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _discountValue = 0.0;
-                                    _discountController.text = "0.00";
-                                  });
-                                  Navigator.of(dialogContext).pop();
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 12),
-                                  side: const BorderSide(color: Colors.redAccent),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                          // Action buttons
+                          Row(
+                            children: [
+                              if (_discountValue > 0) ...[
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _discountValue = 0.0;
+                                        _discountController.text = "0.00";
+                                      });
+                                      Navigator.of(dialogContext).pop();
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: isTablet ? 14 : 12,
+                                      ),
+                                      side: const BorderSide(
+                                        color: Colors.redAccent,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      "Clear Discount",
+                                      style: TextStyle(
+                                        color: Colors.redAccent,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: isTablet ? 15 : 14,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                child: Text(
-                                  "Clear Discount",
-                                  style: TextStyle(
-                                    color: Colors.redAccent,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: isTablet ? 15 : 14,
+                                SizedBox(width: isTablet ? 16 : 12),
+                              ],
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    final discount = _parseDiscountInput(
+                                      discountController.text,
+                                      _subtotal,
+                                    );
+                                    setState(() {
+                                      _discountValue = discount;
+                                      _discountController.text = discount
+                                          .toStringAsFixed(2);
+                                    });
+                                    Navigator.of(dialogContext).pop();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: kPrimaryColor,
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: isTablet ? 14 : 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    "Apply Discount",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: isTablet ? 15 : 14,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            SizedBox(width: isTablet ? 16 : 12),
-                          ],
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                final discount = _parseDiscountInput(
-                                  discountController.text,
-                                  _subtotal,
-                                );
-                                setState(() {
-                                  _discountValue = discount;
-                                  _discountController.text = discount.toStringAsFixed(2);
-                                });
-                                Navigator.of(dialogContext).pop();
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kPrimaryColor,
-                                padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: Text(
-                                "Apply Discount",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: isTablet ? 15 : 14,
-                                ),
-                              ),
-                            ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),);
+            );
           },
         );
       },
     );
   }
 
-  Widget _buildProfitRow(String label, double amount, bool isDark, bool isTablet, {bool highlight = false}) {
+  Widget _buildProfitRow(
+    String label,
+    double amount,
+    bool isDark,
+    bool isTablet, {
+    bool highlight = false,
+  }) {
     final isNegative = amount < 0;
-    final highlightColor = isNegative ? Colors.redAccent : const Color(0xFF30B24C);
+    final highlightColor = isNegative
+        ? Colors.redAccent
+        : const Color(0xFF30B24C);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -5895,7 +5626,9 @@ class _SalesScreenState extends State<SalesScreen>
           label,
           style: TextStyle(
             fontSize: isTablet ? 16 : 14,
-            color: highlight ? highlightColor : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
+            color: highlight
+                ? highlightColor
+                : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
             fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
@@ -5909,7 +5642,9 @@ class _SalesScreenState extends State<SalesScreen>
               style: TextStyle(
                 fontSize: isTablet ? 16 : 14,
                 fontWeight: FontWeight.bold,
-                color: highlight ? highlightColor : (isDark ? Colors.white : Colors.black87),
+                color: highlight
+                    ? highlightColor
+                    : (isDark ? Colors.white : Colors.black87),
               ),
             ),
           ),
@@ -5986,79 +5721,121 @@ class _SalesScreenState extends State<SalesScreen>
                           children: [
                             // Row 1: Sales Customer | Add Discount
                             Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildGridActionTile(
-                                      context, colors, isDark, _surveyLabel,
-                                      isSurvey: true,
-                                      surveyExpanded: surveyExpanded,
-                                      onSurveyExpandChanged: (expanded) {
-                                        setDialogState(() => surveyExpanded = expanded);
-                                      },
-                                    ),
+                              children: [
+                                Expanded(
+                                  child: _buildGridActionTile(
+                                    context,
+                                    colors,
+                                    isDark,
+                                    _surveyLabel,
+                                    isSurvey: true,
+                                    surveyExpanded: surveyExpanded,
+                                    onSurveyExpandChanged: (expanded) {
+                                      setDialogState(
+                                        () => surveyExpanded = expanded,
+                                      );
+                                    },
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: AppGlobals.instance.hasPermission("Miscellaneous_LockDiscount")
-                                        ? _buildGridActionTile(context, colors, isDark, "Add Discount")
-                                        : const SizedBox.shrink(),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child:
+                                      AppGlobals.instance.hasPermission(
+                                        "Miscellaneous_LockDiscount",
+                                      )
+                                      ? _buildGridActionTile(
+                                          context,
+                                          colors,
+                                          isDark,
+                                          "Add Discount",
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            // Row 2: Add Comment | View Tax
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildGridActionTile(
+                                    context,
+                                    colors,
+                                    isDark,
+                                    "Add Comment",
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              // Row 2: Add Comment | View Tax
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildGridActionTile(context, colors, isDark, "Add Comment"),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildGridActionTile(
+                                    context,
+                                    colors,
+                                    isDark,
+                                    "View Tax",
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: _buildGridActionTile(context, colors, isDark, "View Tax"),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            // Row 3: Add Delivery | View Profit
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildGridActionTile(
+                                    context,
+                                    colors,
+                                    isDark,
+                                    "Add Delivery",
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              // Row 3: Add Delivery | View Profit
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildGridActionTile(context, colors, isDark, "Add Delivery"),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child:
+                                      !AppGlobals.instance.restrictedPermissions
+                                          .contains(
+                                            "Miscellaneous_HideCostPriceAndProfit",
+                                          )
+                                      ? _buildGridActionTile(
+                                          context,
+                                          colors,
+                                          isDark,
+                                          "View Profit",
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            // Row 4: Save Session | Clear Session
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildGridActionTile(
+                                    context,
+                                    colors,
+                                    isDark,
+                                    "Save Session",
+                                    tileColor: kPrimaryColor,
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: !AppGlobals.instance.restrictedPermissions.contains("Miscellaneous_HideCostPriceAndProfit")
-                                        ? _buildGridActionTile(context, colors, isDark, "View Profit")
-                                        : const SizedBox.shrink(),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildGridActionTile(
+                                    context,
+                                    colors,
+                                    isDark,
+                                    "Clear Session",
+                                    tileColor: kErrorColor,
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              // Row 4: Save Session | Clear Session
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildGridActionTile(
-                                      context, colors, isDark, "Save Session",
-                                      tileColor: kPrimaryColor,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: _buildGridActionTile(
-                                      context, colors, isDark, "Clear Session",
-                                      tileColor: kErrorColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                
+                ),
               ],
             );
           },
@@ -6238,7 +6015,11 @@ class _SalesScreenState extends State<SalesScreen>
 
     if (isSurvey) {
       return _buildSurveyGridTile(
-        context, colors, isDark, surveyExpanded, onSurveyExpandChanged!,
+        context,
+        colors,
+        isDark,
+        surveyExpanded,
+        onSurveyExpandChanged!,
       );
     }
 
@@ -6494,36 +6275,31 @@ class _SalesScreenState extends State<SalesScreen>
     }
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E2733) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          "Clear Session",
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+      builder: (ctx) => StandardDialog(
+        title: "Clear Session",
+        colors: colors,
+        isDark: isDark,
+        onClose: () => Navigator.pop(ctx),
         content: Text(
           "Are you sure you want to clear this session? This will delete it permanently.",
-          style: TextStyle(
-            color: isDark ? Colors.white70 : Colors.black54,
-          ),
+          style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
         ),
         actions: [
-          TextButton(
+          DialogTextAction(
+            label: "Cancel",
+            style: DialogActionStyle.dangerOutline,
             onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              "Cancel",
-              style: TextStyle(color: isDark ? Colors.white70 : Colors.grey),
-            ),
           ),
-          ElevatedButton(
+          DialogTextAction(
+            label: "Clear",
+            style: DialogActionStyle.primary,
             onPressed: () async {
               Navigator.pop(ctx);
               // Delete session from database
               if (_currentSessionId != null) {
-                await _salesBloc.deleteSaleSession(sessionId: _currentSessionId!);
+                await _salesBloc.deleteSaleSession(
+                  sessionId: _currentSessionId!,
+                );
               }
               // Clear cart and reset all state
               _salesBloc.add(ClearCart());
@@ -6532,10 +6308,15 @@ class _SalesScreenState extends State<SalesScreen>
                 _deliveryInfo = null;
                 _committedDeliveryAddress = null;
                 _emailAuditData = null;
-                _commentValue = "";
-                _surveyValue = "";
-                _discountValue = 0;
                 _currentSessionId = null;
+                _paymentAmounts.clear();
+                _discountValue = 0.00;
+                _discountController.text = "0.00";
+                _searchController.clear();
+                _surveyValue = '';
+                _surveyController.clear();
+                _commentValue = '';
+                _lastSessionUpdatedAt = null;
               });
               if (mounted) {
                 AlertInfo.show(
@@ -6550,11 +6331,6 @@ class _SalesScreenState extends State<SalesScreen>
                 );
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kErrorColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text("Clear"),
           ),
         ],
       ),
@@ -6564,7 +6340,7 @@ class _SalesScreenState extends State<SalesScreen>
   Widget _buildTaxBreakdown(AppThemeColors colors, bool isDark) {
     // Use calculated totals with discount distribution and Rational precision
     final totals = _calculatedTotals;
-    
+
     // Display with 4dp precision (cascade rounding)
     return TaxBreakdownWidget(
       incTotal: double.parse(totals.totalInc.toStringAsFixed(4)),
@@ -6578,7 +6354,7 @@ class _SalesScreenState extends State<SalesScreen>
   Widget _buildProfitBreakdown(AppThemeColors colors, bool isDark) {
     // Use calculated totals with discount distribution and Rational precision
     final totals = _calculatedTotals;
-    
+
     // Display with 4dp precision (cascade rounding)
     return ProfitBreakdownWidget(
       totalEx: double.parse(totals.totalEx.toStringAsFixed(4)),

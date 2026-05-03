@@ -145,14 +145,19 @@ class SyncInfoWidget extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        state.message,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color:  kThirdColor,
+                      Expanded(
+                        child: Text(
+                          state.message,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color:  kThirdColor,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         "${(state.percentage * 100).toStringAsFixed(0)}%",
                         style: TextStyle(
@@ -236,12 +241,17 @@ class SyncInfoWidget extends StatelessWidget {
                     size: 18,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    "Stock Database Updated Successfully",
-                    style: TextStyle(
-                      color:  Colors.green.shade800,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                  Flexible(
+                    child: Text(
+                      "Stock Database Updated Successfully",
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color:  Colors.green.shade800,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],

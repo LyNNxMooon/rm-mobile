@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:rmmobile/features/transactions/presentation/screens/sales_screen.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/responsive_utils.dart';
-import '../screens/sales_screen.dart';
 
 /// Top header widget for sales screen - displays staff, tax toggle, and customer selection
 class SalesTopHeader extends StatefulWidget {

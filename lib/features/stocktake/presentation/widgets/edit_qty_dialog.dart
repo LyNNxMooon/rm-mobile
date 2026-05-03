@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/standard_dialog.dart';
 import 'package:rmmobile/constants/theme_colors.dart';
 import 'package:rmmobile/entities/vos/stock_vo.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.dart';
-import 'package:rmmobile/utils/dialog_size_utils.dart';
 import 'package:rmmobile/utils/ios_done_bar.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/formatting_utils.dart';
@@ -22,21 +22,16 @@ class StockDetailsDialog extends StatelessWidget {
     // Dynamic height constraint (max 85% of screen height)
     final double maxDialogHeight = MediaQuery.of(context).size.height * 0.85;
 
-    return Dialog(
-      insetPadding: dialogInsetPadding(context),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: isDark
-            ? const BorderSide(color: Colors.white30, width: 1)
-            : BorderSide.none,
-      ),
-      backgroundColor: isDark ? colors.surfaceAlt : Colors.white,
-      elevation: 10,
-      child: Container(
+    return StandardDialog(
+      title: "Stock Details",
+      colors: colors,
+      isDark: isDark,
+      showHeader: false,
+      contentPadding: EdgeInsets.zero,
+      content: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxDialogHeight),
         child: BlocBuilder<StockDetailsBloc, StockFetchingStates>(
           builder: (context, state) {
-            // 1. Loading State
             if (state is StockDetailsLoading) {
               return Padding(
                 padding: const EdgeInsets.all(40.0),
@@ -56,7 +51,6 @@ class StockDetailsDialog extends StatelessWidget {
               );
             }
 
-            // 2. Error State
             if (state is StockDetailsError) {
               return Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -97,7 +91,6 @@ class StockDetailsDialog extends StatelessWidget {
               );
             }
 
-            // 3. Loaded State - Show Details & Edit Form
             if (state is StockDetailsLoaded) {
               double sell = 0.00;
               double cost = 0.00;

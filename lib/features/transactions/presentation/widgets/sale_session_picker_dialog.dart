@@ -5,6 +5,7 @@ import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../entities/vos/sale_session_vo.dart';
 import '../../../../utils/responsive_utils.dart';
+import '../../../../constants/standard_dialog.dart';
 
 /// Result from session picker dialog
 enum SessionPickerResult { continueSession, newSale, cancelled }
@@ -21,8 +22,7 @@ class SaleSessionPickerDialog extends StatelessWidget {
   });
 
   /// Shows the dialog and returns the selected session or null for new sale
-  static Future<({SessionPickerResult result, SaleSessionVO? session})?>
-  show({
+  static Future<({SessionPickerResult result, SaleSessionVO? session})?> show({
     required BuildContext context,
     required List<SaleSessionVO> sessions,
     required String sessionType,
@@ -30,10 +30,8 @@ class SaleSessionPickerDialog extends StatelessWidget {
     return showDialog<({SessionPickerResult result, SaleSessionVO? session})>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => SaleSessionPickerDialog(
-        sessions: sessions,
-        sessionType: sessionType,
-      ),
+      builder: (_) =>
+          SaleSessionPickerDialog(sessions: sessions, sessionType: sessionType),
     );
   }
 
@@ -44,161 +42,54 @@ class SaleSessionPickerDialog extends StatelessWidget {
     final isTablet = context.isTablet;
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: isTablet ? 80 : 20,
-        vertical: isTablet ? 60 : 40,
-      ),
-      child: Container(
+    return StandardDialog(
+      title: "Resume $sessionType?",
+      subtitle:
+          "You have ${sessions.length} unsaved ${sessions.length == 1 ? 'session' : 'sessions'}",
+      colors: colors,
+      isDark: isDark,
+      maxWidth: isTablet ? 500 : double.infinity,
+      onClose: () => Navigator.pop(context, (
+        result: SessionPickerResult.cancelled,
+        session: null,
+      )),
+      content: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: isTablet ? 500 : double.infinity,
           maxHeight: MediaQuery.of(context).size.height * 0.7,
         ),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2733) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Scrollable content (Header + Sessions List)
-            Flexible(
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Header
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor.withOpacity(0.1),
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: kPrimaryColor.withOpacity(0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.restore,
-                              color: kPrimaryColor,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Resume $sessionType?",
-                                  style: TextStyle(
-                                    fontSize: isTablet ? 20 : 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.white : Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "You have ${sessions.length} unsaved ${sessions.length == 1 ? 'session' : 'sessions'}",
-                                  style: TextStyle(
-                                    fontSize: isTablet ? 14 : 12,
-                                    color: isDark ? Colors.white70 : Colors.black54,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.pop(context, (
-                              result: SessionPickerResult.cancelled,
-                              session: null,
-                            )),
-                            icon: Icon(
-                              Icons.close,
-                              color: isDark ? Colors.white54 : Colors.black45,
-                            ),
-                            tooltip: 'Cancel',
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Sessions List
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
-                      itemCount: sessions.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final session = sessions[index];
-                        return _buildSessionTile(
-                          context,
-                          session,
-                          colors,
-                          isDark,
-                          isTablet,
-                          dateFormat,
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Actions
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: isDark ? Colors.white12 : Colors.grey.shade200,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => Navigator.pop(context, (
-                        result: SessionPickerResult.newSale,
-                        session: null,
-                      )),
-                      icon: const Icon(Icons.add),
-                      label: Text("New $sessionType"),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: kPrimaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: const BorderSide(color: kPrimaryColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        child: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            itemCount: sessions.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final session = sessions[index];
+              return _buildSessionTile(
+                context,
+                session,
+                colors,
+                isDark,
+                isTablet,
+                dateFormat,
+              );
+            },
+          ),
         ),
       ),
+      actions: [
+        DialogTextAction(
+          label: "New $sessionType",
+          icon: Icons.add,
+          style: DialogActionStyle.outline,
+          onPressed: () => Navigator.pop(context, (
+            result: SessionPickerResult.newSale,
+            session: null,
+          )),
+        ),
+      ],
     );
   }
 
@@ -262,7 +153,9 @@ class SaleSessionPickerDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(9),
                         ),
                         child: Text(
-                          session.itemCount > 99 ? "99+" : "${session.itemCount}",
+                          session.itemCount > 99
+                              ? "99+"
+                              : "${session.itemCount}",
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 9,
@@ -276,7 +169,7 @@ class SaleSessionPickerDialog extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 14),
-              
+
               // Session info
               Expanded(
                 child: Column(
@@ -349,7 +242,7 @@ class SaleSessionPickerDialog extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              
+
               // Arrow
               Icon(
                 Icons.arrow_forward_ios,
@@ -371,6 +264,8 @@ class SaleSessionPickerDialog extends StatelessWidget {
       return "${(quantity / 1000).toStringAsFixed(1)}K";
     }
     final doubleVal = quantity.toDouble();
-    return doubleVal.toStringAsFixed(doubleVal.truncateToDouble() == doubleVal ? 0 : 2);
+    return doubleVal.toStringAsFixed(
+      doubleVal.truncateToDouble() == doubleVal ? 0 : 2,
+    );
   }
 }

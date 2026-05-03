@@ -6,6 +6,7 @@ import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/dependency_injection_utils.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
+import 'package:rmmobile/features/transactions/presentation/screens/sales_screen.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
@@ -16,7 +17,6 @@ import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_states.dart';
-import '../../../transactions/presentation/screens/sales_screen.dart';
 import '../../../transactions/presentation/BLoC/sales_bloc.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_states.dart';

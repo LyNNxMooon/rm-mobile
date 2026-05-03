@@ -13,6 +13,7 @@ import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../entities/vos/serial_number_vo.dart';
 import '../../../../utils/formatting_utils.dart';
 import '../../../../utils/responsive_utils.dart';
+import '../../../../constants/standard_dialog.dart';
 import 'serial_number_dialog.dart';
 import 'breakdown_widgets.dart';
 import '../../../stock_lookup/presentation/widgets/price_calculator_dialog.dart';
@@ -276,19 +277,12 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
 
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              backgroundColor: isDark ? colors.surface : Colors.white,
-              title: Text(
-                "Pricing Grade",
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87,
-                  fontWeight: FontWeight.w700,
-                  fontSize: isTablet ? 18 : 16,
-                ),
-              ),
+            return StandardDialog(
+              title: "Pricing Grade",
+              colors: colors,
+              isDark: isDark,
+              maxWidth: isTablet ? 420 : 320,
+              onClose: () => Navigator.of(context).pop(),
               content: SizedBox(
                 width: isTablet ? 420 : 320,
                 child: Row(
@@ -420,11 +414,14 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                 ),
               ),
               actions: [
-                TextButton(
+                DialogTextAction(
+                  label: "Cancel",
+                  style: DialogActionStyle.dangerOutline,
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Cancel"),
                 ),
-                ElevatedButton(
+                DialogTextAction(
+                  label: "Save",
+                  style: DialogActionStyle.primary,
                   onPressed: () {
                     final parsed = double.tryParse(priceController.text.trim());
                     if (parsed != null) {
@@ -434,7 +431,6 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                     }
                     Navigator.of(context).pop();
                   },
-                  child: const Text("Save"),
                 ),
               ],
             );

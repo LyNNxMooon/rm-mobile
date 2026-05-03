@@ -586,10 +586,8 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(null),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: isDark ? Colors.white70 : Colors.grey.shade700,
-                    side: BorderSide(
-                      color: isDark ? Colors.white24 : Colors.grey.shade400,
-                    ),
+                    foregroundColor: kErrorColor,
+                    side: const BorderSide(color: kErrorColor),
                     padding: EdgeInsets.symmetric(
                       vertical: (isTablet ? 12 : 10) * uiScale,
                     ),

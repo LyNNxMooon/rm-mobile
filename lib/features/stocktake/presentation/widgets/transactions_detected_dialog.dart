@@ -6,6 +6,7 @@ import 'package:rmmobile/features/stocktake/presentation/BLoC/batch_commit_bloc.
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmmobile/features/stocktake/presentation/utils/transaction_type_helper.dart';
 import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/standard_dialog.dart';
 import 'package:rmmobile/constants/theme_colors.dart';
 
 /// Dialog to display detected transactions during stocktake commit.
@@ -106,23 +107,20 @@ class _TransactionsDetectedDialogState
     //final double maxDialogWidth = 600.0;
     final double dialogHeight = screenSize.height * 0.95;
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: isDark
-            ? const BorderSide(color: Colors.white30, width: 1)
-            : BorderSide.none,
-      ),
-      backgroundColor: isDark ? colors.surfaceAlt : colors.surface,
-      titlePadding: EdgeInsets.zero,
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: (screenSize.width - dialogWidth) / 2,
-        vertical: (screenSize.height - dialogHeight),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-      title: _buildHeader(colors, isDark),
-      content: SizedBox(
-        width: dialogWidth,
+    final subtitle = widget.isBatchMode &&
+            widget.currentBatchNumber != null &&
+            widget.totalBatches != null
+        ? "Batch ${widget.currentBatchNumber} of ${widget.totalBatches}"
+        : null;
+
+    return StandardDialog(
+      title: "Transactions Detected",
+      subtitle: subtitle,
+      colors: colors,
+      isDark: isDark,
+      maxWidth: dialogWidth,
+      content: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: dialogHeight),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,13 +137,8 @@ class _TransactionsDetectedDialogState
                 ),
               ),
             ),
-
-            // Select All / Deselect All row
             _buildSelectAllRow(colors, isDark),
-
             const SizedBox(height: 8),
-
-            // Items list
             Flexible(
               child: Container(
                 decoration: BoxDecoration(
@@ -167,113 +160,24 @@ class _TransactionsDetectedDialogState
           ],
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(15, 12, 15, 20),
       actions: [
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _onAdjustAndCommit,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  side: BorderSide(color: kPrimaryColor),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(
-                  _noneSelected
-                      ? "Adjust & Commit"
-                      : "Adjust (${_selectedIndices.length}) & Commit",
-                  style: TextStyle(
-                    color: kPrimaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
+        DialogActionsRow(
+          actions: [
+            DialogTextAction(
+              label: _noneSelected
+                  ? "Adjust & Commit"
+                  : "Adjust (${_selectedIndices.length}) & Commit",
+              style: DialogActionStyle.outline,
+              onPressed: _onAdjustAndCommit,
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _onIgnoreAndCommit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(
-                  "Ignore & Commit",
-                  style: TextStyle(
-                    color: colors.onHero,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
+            DialogTextAction(
+              label: "Ignore & Commit",
+              style: DialogActionStyle.primary,
+              onPressed: _onIgnoreAndCommit,
             ),
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildHeader(AppThemeColors colors, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-      decoration: BoxDecoration(
-        color: isDark ? colors.surfaceAlt : const Color(0xFFFFF4E5),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? Colors.white24 : Colors.orange.withOpacity(0.2),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: Colors.orange,
-            child: Icon(
-              Icons.warning_amber_rounded,
-              color: colors.onHero,
-            ),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Transactions Detected",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF663C00),
-                  ),
-                ),
-                if (widget.isBatchMode &&
-                    widget.currentBatchNumber != null &&
-                    widget.totalBatches != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    "Batch ${widget.currentBatchNumber} of ${widget.totalBatches}",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.white70 : const Color(0xFF996600),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 

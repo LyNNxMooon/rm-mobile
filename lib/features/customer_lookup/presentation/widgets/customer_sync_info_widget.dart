@@ -90,14 +90,19 @@ class CustomerSyncInfoWidget extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        state.message,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: kThirdColor,
+                      Expanded(
+                        child: Text(
+                          state.message,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: kThirdColor,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         '${(percent * 100).toStringAsFixed(0)}%',
                         style: TextStyle(
