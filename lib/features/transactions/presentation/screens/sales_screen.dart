@@ -151,6 +151,7 @@ class _SalesScreenState extends State<SalesScreen>
   // Sales Settings
   bool _scanIndividualUnits = false;
   bool _skipSellPrice = false;
+  bool _oneDisplayLinePerItem = true;
   bool _promptForEmailAtSale = false;
   final bool _skipCustomField = false;
   final bool _skipCustomerField = false;
@@ -943,6 +944,7 @@ class _SalesScreenState extends State<SalesScreen>
       setState(() {
         _scanIndividualUnits = settings.scanIndividualUnits;
         _skipSellPrice = settings.skipSellPrice;
+        _oneDisplayLinePerItem = settings.oneDisplayLinePerItem;
         _promptForEmailAtSale = settings.promptForEmailAtSale;
         _autoRemindLowStock = settings.autoRemindLowStock;
         _preventAddIfNoStock = settings.preventAddIfNoStock;
@@ -1036,6 +1038,7 @@ class _SalesScreenState extends State<SalesScreen>
         skipEditMode: _scanIndividualUnits && _skipSellPrice,
         autoRemindLowStock: _autoRemindLowStock,
         preventAddIfNoStock: _preventAddIfNoStock,
+        oneDisplayLinePerItem: _oneDisplayLinePerItem,
       ),
     );
   }
@@ -1067,6 +1070,7 @@ class _SalesScreenState extends State<SalesScreen>
           skipFractionalCheck: true,
           autoRemindLowStock: _autoRemindLowStock,
           preventAddIfNoStock: _preventAddIfNoStock,
+          oneDisplayLinePerItem: _oneDisplayLinePerItem,
         ),
       );
       return;
@@ -1081,6 +1085,7 @@ class _SalesScreenState extends State<SalesScreen>
         skipFractionalCheck: true,
         autoRemindLowStock: _autoRemindLowStock,
         preventAddIfNoStock: _preventAddIfNoStock,
+        oneDisplayLinePerItem: _oneDisplayLinePerItem,
       ),
     );
   }
@@ -1165,6 +1170,7 @@ class _SalesScreenState extends State<SalesScreen>
                       skipEditMode: _scanIndividualUnits && _skipSellPrice,
                       autoRemindLowStock: _autoRemindLowStock,
                       preventAddIfNoStock: _preventAddIfNoStock,
+                      oneDisplayLinePerItem: _oneDisplayLinePerItem,
                     ),
                   );
                 } else {
@@ -1459,6 +1465,7 @@ class _SalesScreenState extends State<SalesScreen>
                                       _scanIndividualUnits && _skipSellPrice,
                                   autoRemindLowStock: _autoRemindLowStock,
                                   preventAddIfNoStock: _preventAddIfNoStock,
+                                  oneDisplayLinePerItem: _oneDisplayLinePerItem,
                                 ),
                               );
                             },
@@ -2636,6 +2643,7 @@ class _SalesScreenState extends State<SalesScreen>
             SaveCartItem(
               index: index,
               autoRemindLowStock: _autoRemindLowStock,
+              oneDisplayLinePerItem: _oneDisplayLinePerItem,
             ),
           );
         },
@@ -4746,6 +4754,28 @@ class _SalesScreenState extends State<SalesScreen>
                               setState(() {});
                               _salesBloc.saveSalesSetting(
                                 key: kSalesSkipSellPriceKey,
+                                value: v,
+                              );
+                            },
+                            isDark,
+                            colors,
+                          ),
+                          Divider(
+                            height: 1,
+                            color: isDark
+                                ? Colors.white12
+                                : Colors.grey.shade200,
+                          ),
+                          _buildSettingsSwitch(
+                            'One display line per item',
+                            _oneDisplayLinePerItem,
+                            (v) {
+                              setDialogState(
+                                () => _oneDisplayLinePerItem = v,
+                              );
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesOneDisplayLinePerItemKey,
                                 value: v,
                               );
                             },

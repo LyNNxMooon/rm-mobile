@@ -151,6 +151,8 @@ const String kWelcomeSeenKey = "welcome_seen";
 const String kTermsAcceptedKey = "terms_accepted";
 const String kSalesScanIndividualUnitsKey = "sales_scan_individual_units";
 const String kSalesSkipSellPriceKey = "sales_skip_sell_price";
+const String kSalesOneDisplayLinePerItemKey =
+  "sales_one_display_line_per_item";
 const String kSalesPromptForEmailKey = "sales_prompt_for_email";
 const String kSalesAutoRemindLowStockKey = "sales_auto_remind_low_stock";
 const String kSalesPreventAddIfNoStockKey = "sales_prevent_add_if_no_stock";

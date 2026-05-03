@@ -11,11 +11,13 @@ class SearchStock extends SalesEvent {
   final bool skipEditMode;
   final bool autoRemindLowStock;
   final bool preventAddIfNoStock;
+  final bool oneDisplayLinePerItem;
   SearchStock({
     required this.query,
     this.skipEditMode = false,
     this.autoRemindLowStock = false,
     this.preventAddIfNoStock = false,
+    this.oneDisplayLinePerItem = true,
   });
 }
 
@@ -26,12 +28,14 @@ class SelectStock extends SalesEvent {
   final bool autoRemindLowStock;
   final bool preventAddIfNoStock;
   final bool skipFractionalCheck;
+  final bool oneDisplayLinePerItem;
   SelectStock({
     required this.stock,
     this.skipEditMode = false,
     this.autoRemindLowStock = false,
     this.preventAddIfNoStock = false,
     this.skipFractionalCheck = false,
+    this.oneDisplayLinePerItem = true,
   });
 }
 
@@ -42,12 +46,14 @@ class AddToCart extends SalesEvent {
   final bool skipEditMode;
   final bool autoRemindLowStock;
   final bool preventAddIfNoStock;
+  final bool oneDisplayLinePerItem;
   AddToCart({
     required this.stock,
     this.qty = 1.0,
     this.skipEditMode = false,
     this.autoRemindLowStock = false,
     this.preventAddIfNoStock = false,
+    this.oneDisplayLinePerItem = true,
   });
 }
 
@@ -90,7 +96,12 @@ class UpdateCartItemDescription extends SalesEvent {
 class SaveCartItem extends SalesEvent {
   final int index;
   final bool autoRemindLowStock;
-  SaveCartItem({required this.index, this.autoRemindLowStock = false});
+  final bool oneDisplayLinePerItem;
+  SaveCartItem({
+    required this.index,
+    this.autoRemindLowStock = false,
+    this.oneDisplayLinePerItem = true,
+  });
 }
 
 /// Enter edit mode for cart item
