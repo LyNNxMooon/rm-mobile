@@ -4341,78 +4341,89 @@ class _SalesScreenState extends State<SalesScreen>
         return AnimatedPadding(
           duration: const Duration(milliseconds: 150),
           padding: EdgeInsets.only(bottom: bottomInset),
-          child: SingleChildScrollView(
-            child: StandardDialog(
-              title: "Add Comment",
-              colors: colors,
-              isDark: isDark,
-              maxWidth: isTablet ? 520 : double.infinity,
-              onClose: () => Navigator.of(dialogContext).pop(),
-              content: TextField(
-                controller: controller,
-                autofocus: true,
-                maxLines: 4,
-                maxLength: 225,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-                decoration: InputDecoration(
-                  hintText: "Enter comment...",
-                  hintStyle: TextStyle(
-                    color: isDark ? Colors.white30 : Colors.grey.shade400,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
                   ),
-                  filled: true,
-                  fillColor: isDark ? colors.surface : Colors.grey.shade100,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.all(12),
-                  counterStyle: TextStyle(
-                    color: isDark ? Colors.white54 : Colors.grey.shade600,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-              actions: [
-                if (_commentValue.isNotEmpty)
-                  DialogFixedWidthAction(
-                    width: actionWidth,
-                    action: DialogTextAction(
-                      label: "Remove",
-                      style: DialogActionStyle.dangerOutline,
-                      onPressed: () {
-                        setState(() {
-                          _commentValue = '';
-                        });
-                        Navigator.of(dialogContext).pop();
-                      },
+                  child: Center(
+                    child: StandardDialog(
+                      title: "Add Comment",
+                      colors: colors,
+                      isDark: isDark,
+                      maxWidth: isTablet ? 520 : double.infinity,
+                      onClose: () => Navigator.of(dialogContext).pop(),
+                      content: TextField(
+                        controller: controller,
+                        autofocus: true,
+                        maxLines: 4,
+                        maxLength: 225,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: "Enter comment...",
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.white30 : Colors.grey.shade400,
+                          ),
+                          filled: true,
+                          fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.all(12),
+                          counterStyle: TextStyle(
+                            color: isDark ? Colors.white54 : Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      actions: [
+                        if (_commentValue.isNotEmpty)
+                          DialogFixedWidthAction(
+                            width: actionWidth,
+                            action: DialogTextAction(
+                              label: "Remove",
+                              style: DialogActionStyle.dangerOutline,
+                              onPressed: () {
+                                setState(() {
+                                  _commentValue = '';
+                                });
+                                Navigator.of(dialogContext).pop();
+                              },
+                            ),
+                          ),
+                        DialogFixedWidthAction(
+                          width: actionWidth,
+                          action: DialogTextAction(
+                            label: "Cancel",
+                            style: DialogActionStyle.dangerOutline,
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                          ),
+                        ),
+                        DialogFixedWidthAction(
+                          width: actionWidth,
+                          action: DialogTextAction(
+                            label: "Save",
+                            style: DialogActionStyle.primary,
+                            onPressed: () {
+                              setState(() {
+                                _commentValue = controller.text.trim();
+                              });
+                              Navigator.of(dialogContext).pop();
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                DialogFixedWidthAction(
-                  width: actionWidth,
-                  action: DialogTextAction(
-                    label: "Cancel",
-                    style: DialogActionStyle.dangerOutline,
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                  ),
                 ),
-                DialogFixedWidthAction(
-                  width: actionWidth,
-                  action: DialogTextAction(
-                    label: "Save",
-                    style: DialogActionStyle.primary,
-                    onPressed: () {
-                      setState(() {
-                        _commentValue = controller.text.trim();
-                      });
-                      Navigator.of(dialogContext).pop();
-                    },
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         );
       },
@@ -4437,100 +4448,111 @@ class _SalesScreenState extends State<SalesScreen>
         return AnimatedPadding(
           duration: const Duration(milliseconds: 150),
           padding: EdgeInsets.only(bottom: bottomInset),
-          child: SingleChildScrollView(
-            child: StandardDialog(
-              title: _surveyLabel,
-              colors: colors,
-              isDark: isDark,
-              maxWidth: isTablet ? 520 : double.infinity,
-              onClose: () => Navigator.of(dialogContext).pop(),
-              content: TextField(
-                controller: _surveyController,
-                autofocus: true,
-                maxLines: 1,
-                maxLength: 20,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-                decoration: InputDecoration(
-                  hintText: "Enter value...",
-                  hintStyle: TextStyle(
-                    color: isDark ? Colors.white30 : Colors.grey.shade400,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
                   ),
-                  filled: true,
-                  fillColor: isDark ? colors.surface : Colors.grey.shade100,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 14,
-                  ),
-                  counterStyle: TextStyle(
-                    color: isDark ? Colors.white54 : Colors.grey.shade600,
-                    fontSize: 11,
-                  ),
-                ),
-                onSubmitted: (value) {
-                  setState(() {
-                    _surveyValue = value.trim();
-                  });
-                  Navigator.of(dialogContext).pop();
-                },
-              ),
-              actions: [
-                DialogFixedWidthAction(
-                  width: actionWidth,
-                  action: DialogTextAction(
-                    label: "Scan",
-                    icon: Icons.qr_code_scanner,
-                    style: DialogActionStyle.outline,
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                      _showSurveyScannerDialog(context, colors, isDark);
-                    },
-                  ),
-                ),
-                if (_surveyValue.isNotEmpty)
-                  DialogFixedWidthAction(
-                    width: actionWidth,
-                    action: DialogTextAction(
-                      label: "Remove",
-                      style: DialogActionStyle.dangerOutline,
-                      onPressed: () {
-                        setState(() {
-                          _surveyValue = '';
-                          _surveyController.clear();
-                        });
-                        Navigator.of(dialogContext).pop();
-                      },
+                  child: Center(
+                    child: StandardDialog(
+                      title: _surveyLabel,
+                      colors: colors,
+                      isDark: isDark,
+                      maxWidth: isTablet ? 520 : double.infinity,
+                      onClose: () => Navigator.of(dialogContext).pop(),
+                      content: TextField(
+                        controller: _surveyController,
+                        autofocus: true,
+                        maxLines: 1,
+                        maxLength: 20,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: "Enter value...",
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.white30 : Colors.grey.shade400,
+                          ),
+                          filled: true,
+                          fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
+                          counterStyle: TextStyle(
+                            color: isDark ? Colors.white54 : Colors.grey.shade600,
+                            fontSize: 11,
+                          ),
+                        ),
+                        onSubmitted: (value) {
+                          setState(() {
+                            _surveyValue = value.trim();
+                          });
+                          Navigator.of(dialogContext).pop();
+                        },
+                      ),
+                      actions: [
+                        DialogFixedWidthAction(
+                          width: actionWidth,
+                          action: DialogTextAction(
+                            label: "Scan",
+                            icon: Icons.qr_code_scanner,
+                            style: DialogActionStyle.outline,
+                            onPressed: () {
+                              Navigator.of(dialogContext).pop();
+                              _showSurveyScannerDialog(context, colors, isDark);
+                            },
+                          ),
+                        ),
+                        if (_surveyValue.isNotEmpty)
+                          DialogFixedWidthAction(
+                            width: actionWidth,
+                            action: DialogTextAction(
+                              label: "Remove",
+                              style: DialogActionStyle.dangerOutline,
+                              onPressed: () {
+                                setState(() {
+                                  _surveyValue = '';
+                                  _surveyController.clear();
+                                });
+                                Navigator.of(dialogContext).pop();
+                              },
+                            ),
+                          ),
+                        DialogFixedWidthAction(
+                          width: actionWidth,
+                          action: DialogTextAction(
+                            label: "Cancel",
+                            style: DialogActionStyle.dangerOutline,
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                          ),
+                        ),
+                        DialogFixedWidthAction(
+                          width: actionWidth,
+                          action: DialogTextAction(
+                            label: "Save",
+                            style: DialogActionStyle.primary,
+                            onPressed: () {
+                              setState(() {
+                                _surveyValue = _surveyController.text.trim();
+                              });
+                              Navigator.of(dialogContext).pop();
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                DialogFixedWidthAction(
-                  width: actionWidth,
-                  action: DialogTextAction(
-                    label: "Cancel",
-                    style: DialogActionStyle.dangerOutline,
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                  ),
                 ),
-                DialogFixedWidthAction(
-                  width: actionWidth,
-                  action: DialogTextAction(
-                    label: "Save",
-                    style: DialogActionStyle.primary,
-                    onPressed: () {
-                      setState(() {
-                        _surveyValue = _surveyController.text.trim();
-                      });
-                      Navigator.of(dialogContext).pop();
-                    },
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         );
       },
