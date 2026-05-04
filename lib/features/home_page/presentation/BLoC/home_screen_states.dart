@@ -254,6 +254,28 @@ class DatabaseExportError extends SettingsState {
   });
 }
 
+class DatabaseImported extends SettingsState {
+  final int retentionDays;
+  final bool autoBackupEnabled;
+
+  DatabaseImported({
+    required this.retentionDays,
+    required this.autoBackupEnabled,
+  });
+}
+
+class DatabaseImportError extends SettingsState {
+  final String message;
+  final int retentionDays;
+  final bool autoBackupEnabled;
+
+  DatabaseImportError({
+    required this.message,
+    required this.retentionDays,
+    required this.autoBackupEnabled,
+  });
+}
+
 class ForceFullSyncTriggered extends SettingsState {
   final int retentionDays;
   final bool autoBackupEnabled;

@@ -679,6 +679,24 @@ class HomeScreenModels implements HomeRepo {
     final dbPath = await getDatabasesPath();
     return p.join(dbPath, 'rm-mobile.db');
   }
+
+  @override
+  Future<void> closeDatabase() async {
+    try {
+      await LocalDbDAO.instance.closeDatabase();
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+
+  @override
+  Future<void> reopenDatabase() async {
+    try {
+      await LocalDbDAO.instance.reopenDatabase();
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
 }
 
 class _StockRequestJsonBuilder {

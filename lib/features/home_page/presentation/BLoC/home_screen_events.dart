@@ -135,6 +135,11 @@ class SaveCashDrawerIdentifierEvent extends SettingsEvent {
 
 class ExportDatabaseEvent extends SettingsEvent {}
 
+class ImportDatabaseEvent extends SettingsEvent {
+  final String filePath;
+  ImportDatabaseEvent({required this.filePath});
+}
+
 class LoadRmVersionEvent extends SettingsEvent {}
 
 class ForceFullSyncEvent extends SettingsEvent {

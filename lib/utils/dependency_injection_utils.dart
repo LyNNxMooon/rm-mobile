@@ -22,6 +22,7 @@ import 'package:rmmobile/features/home_page/domain/use_cases/get_cash_drawer_ide
   as home_use_cases;
 import 'package:rmmobile/features/home_page/domain/use_cases/save_cash_drawer_identifier.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/export_database_file.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/import_database_file.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/get_rm_version.dart';
 import 'package:rmmobile/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 import 'package:rmmobile/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
@@ -259,6 +260,7 @@ Future<void> init() async {
       getCashDrawerIdentifier: sl(),
       saveCashDrawerIdentifier: sl(),
       exportDatabaseFile: sl(),
+      importDatabaseFile: sl(),
       getRmVersion: sl(),
       clearSyncTimestamps: sl(),
     ),
@@ -414,6 +416,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => home_use_cases.GetCashDrawerIdentifier(sl()));
   sl.registerLazySingleton(() => SaveCashDrawerIdentifier(sl()));
   sl.registerLazySingleton(() => ExportDatabaseFile(sl()));
+  sl.registerLazySingleton(() => ImportDatabaseFile(sl()));
   sl.registerLazySingleton(() => GetRmVersion(sl()));
   sl.registerLazySingleton(
     () => RunAutoBackupIfDue(repository: sl(), backupStocktake: sl()),

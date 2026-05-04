@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'dart:async';
 import 'package:alert_info/alert_info.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/cupertino.dart';
@@ -446,6 +447,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             }
             if (state is DatabaseExportError) {
+              showTopSnackBar(
+                Overlay.of(context),
+                CustomSnackBar.error(message: state.message),
+              );
+            }
+            if (state is DatabaseImported) {
+              AlertInfo.show(
+                context: context,
+                text: "Database imported successfully. Please restart the app.",
+                typeInfo: TypeInfo.success,
+                backgroundColor: colors.surface,
+                iconColor: kPrimaryColor,
+                textColor: colors.onSurface,
+                position: MessagePosition.top,
+                padding: 70,
+              );
+            }
+            if (state is DatabaseImportError) {
               showTopSnackBar(
                 Overlay.of(context),
                 CustomSnackBar.error(message: state.message),
@@ -942,6 +961,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 "Share the raw database file for support",
                                 Colors.orange,
                                 () => _exportAndShareDatabase(context),
+                                titleColor: Colors.white,
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildActionRow(
+                                Icons.download_outlined,
+                                "Import Database",
+                                "Restore a fixed database from support",
+                                Colors.teal,
+                                () => _importDatabase(context),
                                 titleColor: Colors.white,
                               ),
                             ],
@@ -1621,5 +1652,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _exportAndShareDatabase(BuildContext context) async {
     context.read<SettingsBloc>().add(ExportDatabaseEvent());
+  }
+
+  Future<void> _importDatabase(BuildContext context) async {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+
+    // Show confirmation dialog first
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StandardDialog(
+        title: "Import Database",
+        colors: colors,
+        isDark: isDark,
+        onClose: () => Navigator.of(ctx).pop(false),
+        content: Text(
+          "This will replace your current database with the selected file. "
+          "Make sure you have a backup of your current data.\n\n"
+          "After importing, you will need to restart the app.",
+          style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black54,
+          ),
+        ),
+        actions: [
+          DialogTextAction(
+            label: "Cancel",
+            style: DialogActionStyle.dangerOutline,
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          DialogTextAction(
+            label: "Import",
+            style: DialogActionStyle.primary,
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Open file picker to select database file
+    const XTypeGroup typeGroup = XTypeGroup(
+      label: 'Database',
+      extensions: ['db'],
+    );
+
+    final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+    
+    if (file != null) {
+      if (!context.mounted) return;
+      context.read<SettingsBloc>().add(ImportDatabaseEvent(filePath: file.path));
+    }
   }
 }

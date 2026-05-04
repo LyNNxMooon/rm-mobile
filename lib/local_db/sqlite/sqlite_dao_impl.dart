@@ -297,6 +297,31 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<void> closeDatabase() async {
+    try {
+      final db = _database;
+      if (db == null) return;
+      await db.close();
+      _database = null;
+      logger.d('Database closed successfully');
+    } catch (error) {
+      logger.e('Error closing database: $error');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> reopenDatabase() async {
+    try {
+      await initDB();
+      logger.d('Database reopened successfully');
+    } catch (error) {
+      logger.e('Error reopening database: $error');
+      rethrow;
+    }
+  }
+
   Future<void> _addColumnIfMissing({
     required Database db,
     required String table,

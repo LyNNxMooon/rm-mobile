@@ -22,6 +22,7 @@ import 'package:rmmobile/features/home_page/domain/use_cases/update_retention_da
 import 'package:rmmobile/features/home_page/domain/use_cases/get_cash_drawer_identifier.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/save_cash_drawer_identifier.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/export_database_file.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/import_database_file.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/get_rm_version.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
@@ -371,6 +372,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final GetCashDrawerIdentifier getCashDrawerIdentifier;
   final SaveCashDrawerIdentifier saveCashDrawerIdentifier;
   final ExportDatabaseFile exportDatabaseFile;
+  final ImportDatabaseFile importDatabaseFile;
   final GetRmVersion getRmVersion;
   final ClearSyncTimestamps clearSyncTimestamps;
 
@@ -389,6 +391,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     required this.getCashDrawerIdentifier,
     required this.saveCashDrawerIdentifier,
     required this.exportDatabaseFile,
+    required this.importDatabaseFile,
     required this.getRmVersion,
     required this.clearSyncTimestamps,
   }) : super(SettingsInitial()) {
@@ -401,6 +404,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<LoadCashDrawerIdentifierEvent>(_onLoadCashDrawerIdentifier);
     on<SaveCashDrawerIdentifierEvent>(_onSaveCashDrawerIdentifier);
     on<ExportDatabaseEvent>(_onExportDatabase);
+    on<ImportDatabaseEvent>(_onImportDatabase);
     on<LoadRmVersionEvent>(_onLoadRmVersion);
     on<ForceFullSyncEvent>(_onForceFullSync);
   }
@@ -561,6 +565,25 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       ));
     } catch (e) {
       emit(DatabaseExportError(
+        message: e.toString(),
+        retentionDays: _currentRetentionDays,
+        autoBackupEnabled: _autoBackupEnabled,
+      ));
+    }
+  }
+
+  Future<void> _onImportDatabase(
+    ImportDatabaseEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      await importDatabaseFile(event.filePath);
+      emit(DatabaseImported(
+        retentionDays: _currentRetentionDays,
+        autoBackupEnabled: _autoBackupEnabled,
+      ));
+    } catch (e) {
+      emit(DatabaseImportError(
         message: e.toString(),
         retentionDays: _currentRetentionDays,
         autoBackupEnabled: _autoBackupEnabled,

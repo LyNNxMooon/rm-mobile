@@ -125,6 +125,10 @@ abstract class HomeRepo {
 
   Future<String> getDatabasePath();
 
+  Future<void> closeDatabase();
+
+  Future<void> reopenDatabase();
+
   Future<void> clearSyncTimestamps(String shopfrontId);
 
   Future<Map<String, int>> getSaleSessionCounts(String shopfront);

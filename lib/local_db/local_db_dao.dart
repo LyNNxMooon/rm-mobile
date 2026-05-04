@@ -34,6 +34,12 @@ abstract class LocalDbDAO {
   /// Checkpoint WAL to consolidate all data into main db file (useful before export)
   Future<void> checkpointDatabase();
 
+  /// Close the database connection (useful before importing a new database)
+  Future<void> closeDatabase();
+
+  /// Reopen the database connection after import
+  Future<void> reopenDatabase();
+
   //Getter to get data
   Future<Map<String, dynamic>?> getNetworkCredential({required String ip});
   Future<List<Map<String, dynamic>>> getAllNetworkPaths();
