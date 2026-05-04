@@ -337,6 +337,7 @@ abstract class LocalDbDAO {
   Future<void> deleteSaleSession(int id);
   Future<void> deleteAllSaleSessions({String? shopfront, String? sessionType});
   Future<Map<String, int>> getSaleSessionCounts(String shopfront);
+  Future<Map<String, Map<String, dynamic>>> getSaleSessionSummaries(String shopfront);
 
   // Tax Codes
   Future<void> saveTaxCodes(List<TaxCodeVO> taxCodes, String shopfront);

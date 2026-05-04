@@ -128,6 +128,8 @@ abstract class HomeRepo {
   Future<void> clearSyncTimestamps(String shopfrontId);
 
   Future<Map<String, int>> getSaleSessionCounts(String shopfront);
+
+  Future<Map<String, Map<String, dynamic>>> getSaleSessionSummaries(String shopfront);
 }
 
 class SavedConnectionInfo {

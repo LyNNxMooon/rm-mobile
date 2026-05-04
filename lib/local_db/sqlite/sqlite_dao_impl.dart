@@ -4492,6 +4492,70 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<Map<String, Map<String, dynamic>>> getSaleSessionSummaries(String shopfront) async {
+    try {
+      final db = _database!;
+      final result = await db.rawQuery('''
+        SELECT 
+          session_type,
+          COUNT(*) as count,
+          SUM(total_inc) as total_value,
+          MIN(created_at) as oldest_date,
+          COUNT(DISTINCT customer_id) as customer_count
+        FROM SaleSessions 
+        WHERE shopfront = ? 
+        GROUP BY session_type
+      ''', [shopfront]);
+      
+      final summaries = <String, Map<String, dynamic>>{};
+      for (final row in result) {
+        final sessionType = row['session_type'] as String;
+        summaries[sessionType] = {
+          'count': row['count'] as int,
+          'totalValue': (row['total_value'] as num?)?.toDouble() ?? 0.0,
+          'oldestDate': row['oldest_date'] as String?,
+          'customerCount': row['customer_count'] as int? ?? 0,
+        };
+      }
+      
+      // Get item counts separately (from cart_items_json)
+      for (final sessionType in summaries.keys) {
+        final sessions = await db.query(
+          'SaleSessions',
+          columns: ['cart_items_json'],
+          where: 'shopfront = ? AND session_type = ?',
+          whereArgs: [shopfront, sessionType],
+        );
+        
+        int totalItems = 0;
+        for (final session in sessions) {
+          final cartJson = session['cart_items_json'] as String?;
+          if (cartJson != null && cartJson.isNotEmpty) {
+            try {
+              // Count items in cart - look for common patterns
+              // Try multiple patterns to catch different JSON structures
+              final stockCodeMatches = RegExp(r'"stockCode"|"stock_code"|"StockCode"', caseSensitive: false).allMatches(cartJson);
+              if (stockCodeMatches.isNotEmpty) {
+                totalItems += stockCodeMatches.length;
+              } else {
+                // Fallback: count array elements by looking for opening braces after [
+                final arrayMatches = RegExp(r'\{').allMatches(cartJson);
+                totalItems += arrayMatches.length;
+              }
+            } catch (_) {}
+          }
+        }
+        summaries[sessionType]!['itemCount'] = totalItems;
+      }
+      
+      return summaries;
+    } catch (error) {
+      logger.e('Error getting sale session summaries: $error');
+      return {};
+    }
+  }
+
   // ===========================================================================
   // SECTION 13: TAX CODES (Sale Configuration)
   // ===========================================================================

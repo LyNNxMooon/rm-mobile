@@ -152,7 +152,7 @@ class HomeScreenModels implements HomeRepo {
       final raw = await LocalDbDAO.instance.getAppConfig(
         _kDarkModeEnabledKey,
       );
-      if (raw == null || raw.isEmpty) return true; // Default to dark mode
+      if (raw == null || raw.isEmpty) return false; // Default to light mode
       return raw == "1";
     } on Exception catch (error) {
       return Future.error(error);
@@ -222,6 +222,15 @@ class HomeScreenModels implements HomeRepo {
   Future<Map<String, int>> getSaleSessionCounts(String shopfront) async {
     try {
       return await LocalDbDAO.instance.getSaleSessionCounts(shopfront);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<Map<String, Map<String, dynamic>>> getSaleSessionSummaries(String shopfront) async {
+    try {
+      return await LocalDbDAO.instance.getSaleSessionSummaries(shopfront);
     } on Exception catch (error) {
       return Future.error(error);
     }

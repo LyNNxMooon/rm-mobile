@@ -9,7 +9,7 @@ class ThemeCubit extends Cubit<ThemeMode> {
     required UpdateDarkModeEnabled updateDarkModeEnabled,
   })  : _loadDarkModeEnabled = loadDarkModeEnabled,
         _updateDarkModeEnabled = updateDarkModeEnabled,
-        super(ThemeMode.dark) {
+        super(ThemeMode.light) {
     _load();
   }
 
@@ -21,7 +21,7 @@ class ThemeCubit extends Cubit<ThemeMode> {
       final enabled = await _loadDarkModeEnabled();
       emit(enabled ? ThemeMode.dark : ThemeMode.light);
     } catch (_) {
-      emit(ThemeMode.dark);
+      emit(ThemeMode.light);
     }
   }
 

@@ -19,6 +19,7 @@ import 'package:rmmobile/features/stocktake/presentation/BLoC/batch_commit_bloc.
 import 'package:rmmobile/utils/dependency_injection_utils.dart';
 import 'package:rmmobile/utils/log_utils.dart';
 import 'package:rmmobile/utils/responsive_utils.dart';
+import 'package:rmmobile/utils/route_observer.dart';
 
 import 'features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import 'features/loading_splash/presentation/BLoC/loading_splash_events.dart';
@@ -200,6 +201,7 @@ class _MyAppState extends State<MyApp> {
             themeMode: themeMode,
             theme: _buildTheme(Brightness.light),
             darkTheme: _buildTheme(Brightness.dark),
+            navigatorObservers: [routeObserver],
             builder: (context, child) {
               final media = MediaQuery.of(context);
               final double textScale = _tabletTextScaleFor(context);
