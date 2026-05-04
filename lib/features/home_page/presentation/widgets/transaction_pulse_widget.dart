@@ -445,19 +445,22 @@ class TransactionPulseWidget extends StatelessWidget {
               )
             : null,
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Icon with filled background
-            Container(
-              padding: EdgeInsets.all(isTablet ? 10 : 8),
-              decoration: BoxDecoration(
-                color: category.color,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                category.icon,
-                color: Colors.white,
-                size: isTablet ? 22 : 18,
+            Padding(
+              padding: EdgeInsets.only(top: isTablet ? 6 : 4),
+              child: Container(
+                padding: EdgeInsets.all(isTablet ? 9 : 7),
+                decoration: BoxDecoration(
+                  color: category.color,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  category.icon,
+                  color: Colors.white,
+                  size: isTablet ? 30 : 18,
+                ),
               ),
             ),
             SizedBox(width: isTablet ? 12 : 8),
