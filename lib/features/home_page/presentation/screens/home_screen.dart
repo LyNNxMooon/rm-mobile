@@ -370,9 +370,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       margin: const EdgeInsets.only(top: 12),
       decoration: BoxDecoration(
         color: colors.isDark ? colors.surface : const Color(0xFFF6F7F9),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(28),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(isTablet ? 28 : 20),
+          topRight: Radius.circular(isTablet ? 28 : 20),
         ),
         boxShadow: [
           BoxShadow(
@@ -1378,7 +1378,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     },
     {
       "title": "Lay-bys",
-      "subTitle": "Manage lay-bys",
+      "subTitle": "Create lay-bys",
       "icon": Icons.inventory_2_outlined,
       "color": const Color.fromARGB(255, 152, 86, 165),
       "comingSoon": false,
