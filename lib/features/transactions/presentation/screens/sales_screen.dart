@@ -2204,7 +2204,7 @@ class _SalesScreenState extends State<SalesScreen>
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  "├ù${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
+                                  "x ${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
                                   style: TextStyle(
                                     fontSize: 11 * uiScale,
                                     fontWeight: FontWeight.bold,
@@ -2366,7 +2366,7 @@ class _SalesScreenState extends State<SalesScreen>
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            "├ù${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
+                            "x ${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
                             style: TextStyle(
                               fontSize: 11 * uiScale,
                               fontWeight: FontWeight.bold,
@@ -2545,7 +2545,7 @@ class _SalesScreenState extends State<SalesScreen>
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          "├ù${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
+                          "x ${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
                           style: TextStyle(
                             fontSize: 11 * uiScale,
                             fontWeight: FontWeight.bold,
