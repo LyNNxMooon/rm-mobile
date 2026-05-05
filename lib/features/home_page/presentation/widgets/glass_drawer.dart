@@ -636,7 +636,7 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
     },
     {
       "title": "Quotes",
-      "subTitle": "Issue estimates",
+      "subTitle": "Create quotations",
       "icon": Icons.request_quote_outlined,
       "color": Colors.orange.shade500,
       "comingSoon": false,
@@ -644,7 +644,7 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
     },
     {
       "title": "Lay-bys",
-      "subTitle": "Manage lay-bys",
+      "subTitle": "Create lay-bys",
       "icon": Icons.inventory_2_outlined,
       "color": const Color.fromARGB(255, 152, 86, 165),
       "comingSoon": false,

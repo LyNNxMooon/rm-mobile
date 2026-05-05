@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/features/loading_splash/presentation/screens/loading_screen.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
 
 import '../../../home_page/presentation/screens/home_screen.dart';
 import '../BLoC/loading_splash_bloc.dart';
@@ -99,15 +100,23 @@ class _IndexScreenState extends State<IndexScreen> {
             state is CheckingConnection ||
             state is SavedPathFetchingCompleted;
         
-        // Show loading screen if:
-        // 1. Currently in a loading state, OR
-        // 2. Minimum time hasn't elapsed yet (prevents white flash on quick loads)
-        if (isLoadingState || !_minimumTimeElapsed) {
-          return const LoadingScreen();
-        } else {
-          // Navigate to home for all other states (including ConnectionValid, errors, etc.)
-          return const HomeScreen();
-        }
+        // Also wait for dashboard style to be loaded
+        return BlocBuilder<DashboardStyleCubit, String>(
+          builder: (context, dashboardStyle) {
+            final bool isDashboardStyleLoading = dashboardStyle.isEmpty;
+            
+            // Show loading screen if:
+            // 1. Currently in a loading state, OR
+            // 2. Minimum time hasn't elapsed yet, OR
+            // 3. Dashboard style is still loading
+            if (isLoadingState || !_minimumTimeElapsed || isDashboardStyleLoading) {
+              return const LoadingScreen();
+            } else {
+              // Navigate to home for all other states (including ConnectionValid, errors, etc.)
+              return const HomeScreen();
+            }
+          },
+        );
       },
     );
   }

@@ -61,6 +61,12 @@ abstract class HomeRepo {
 
   Future<void> setDarkModeEnabled(bool enabled);
 
+  /// Returns the dashboard style: "pro" (new) or "default" (old glass drawer)
+  Future<String> getDashboardStyle();
+
+  /// Sets the dashboard style: "pro" (new) or "default" (old glass drawer)
+  Future<void> setDashboardStyle(String style);
+
   Future<DateTime?> getLastAutoBackupAt();
 
   Future<void> setLastAutoBackupAt(DateTime timestamp);

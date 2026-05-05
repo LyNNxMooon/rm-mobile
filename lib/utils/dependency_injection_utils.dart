@@ -17,6 +17,8 @@ import 'package:rmmobile/features/home_page/domain/use_cases/load_auto_backup_en
 import 'package:rmmobile/features/home_page/domain/use_cases/sign_out_staff.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_auto_backup_enabled.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_dark_mode_enabled.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/load_dashboard_style.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/update_dashboard_style.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/get_cash_drawer_identifier.dart'
   as home_use_cases;
@@ -143,6 +145,7 @@ import '../features/onboarding/domain/use_cases/set_terms_accepted.dart';
 import '../features/onboarding/presentation/BLoC/onboarding_bloc.dart';
 import '../features/customer_lookup/domain/use_cases/get_customer_transactions_local.dart';
 import '../features/theme/presentation/bloc/theme_cubit.dart';
+import '../features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -269,6 +272,12 @@ Future<void> init() async {
     () => ThemeCubit(
       loadDarkModeEnabled: sl(),
       updateDarkModeEnabled: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => DashboardStyleCubit(
+      loadDashboardStyle: sl(),
+      updateDashboardStyle: sl(),
     ),
   );
   sl.registerFactory(
@@ -410,6 +419,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateAutoBackupEnabled(sl()));
   sl.registerLazySingleton(() => LoadDarkModeEnabled(sl()));
   sl.registerLazySingleton(() => UpdateDarkModeEnabled(sl()));
+  sl.registerLazySingleton(() => LoadDashboardStyle(sl()));
+  sl.registerLazySingleton(() => UpdateDashboardStyle(sl()));
   sl.registerLazySingleton(() => ClearSyncTimestamps(sl()));
   sl.registerLazySingleton(() => GetSaleSessionCounts(sl()));
   sl.registerLazySingleton(() => GetSaleSessionSummaries(sl()));

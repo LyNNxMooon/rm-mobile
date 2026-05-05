@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
 //import 'package:rmmobile/features/loading_splash/presentation/screens/loading_screen.dart';
 import 'package:rmmobile/features/onboarding/presentation/screens/onboarding_gate_screen.dart';
 import 'package:rmmobile/features/onboarding/presentation/BLoC/onboarding_bloc.dart';
@@ -185,6 +186,7 @@ class _MyAppState extends State<MyApp> {
           create: (_) => sl<PendingCustomerUpdatesBloc>(),
         ),
         BlocProvider<ThemeCubit>(create: (_) => sl<ThemeCubit>()),
+        BlocProvider<DashboardStyleCubit>(create: (_) => sl<DashboardStyleCubit>()),
 
         //Local web server changes
         BlocProvider<DiscoverHostBloc>(create: (_) => sl<DiscoverHostBloc>()),

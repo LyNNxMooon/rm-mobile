@@ -31,9 +31,11 @@ import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
 import '../BLoC/home_screen_states.dart';
 import '../BLoC/session_counts_cubit.dart';
+import '../BLoC/dashboard_style_cubit.dart';
 import '../widgets/app_bar_session.dart';
 import '../widgets/network_pc_dialog.dart';
 import '../widgets/transaction_pulse_widget.dart';
+import '../widgets/glass_drawer.dart';
 import 'staff_login_screen.dart';
 import 'settings_screen.dart';
 import 'coming_soon_screen.dart';
@@ -265,10 +267,64 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     context.navigateToNext(const ScannerScreen());
   }
 
+  _DrawerSizes _resolveDrawerSizes(MediaQueryData media) {
+    final bool isTablet = media.size.shortestSide >= Breakpoints.tablet;
+    final bool isPortrait = media.orientation == Orientation.portrait;
+
+    double initialChildSize;
+    double minChildSize;
+    double maxChildSize;
+
+    if (isTablet) {
+      if (isPortrait) {
+        // Tablet portrait: drawer starts at 60% of screen height
+        initialChildSize = 0.60;
+        minChildSize = 0.58;
+        maxChildSize = 0.91;
+      } else {
+        // Tablet landscape: drawer starts at 55% of screen height
+        initialChildSize = 0.55;
+        minChildSize = 0.53;
+        maxChildSize = 0.90;
+      }
+    } else {
+      // Phone - drawer takes 62% of screen from bottom (lowered to give more space for logo)
+      if (isPortrait) {
+        initialChildSize = 0.62;
+        minChildSize = 0.62;
+        maxChildSize = 0.88;
+      } else {
+        initialChildSize = 0.62;
+        minChildSize = 0.60;
+        maxChildSize = 0.86;
+      }
+    }
+
+    return _DrawerSizes(
+      initialChildSize: initialChildSize,
+      minChildSize: minChildSize,
+      maxChildSize: maxChildSize,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isTablet = context.isTablet;
+    final bool isPortrait = context.isPortrait;
     final colors = context.appColors;
+    final media = MediaQuery.of(context);
+    final drawerSizes = _resolveDrawerSizes(media);
+
+    // Calculate available space between AppBarSession end and drawer top edge
+    // SafeArea content height (screen height minus top safe padding)
+    final double safeAreaContentHeight = media.size.height - media.padding.top;
+    // Drawer top position from SafeArea top (drawer takes initialChildSize from bottom)
+    final double drawerTopFromSafeTop =
+        safeAreaContentHeight * (1.0 - drawerSizes.initialChildSize);
+    // AppBarSession height
+    const double appBarSessionHeight = 60.0;
+    // Content area = space between AppBarSession bottom and drawer top edge
+    final double contentAreaHeight = drawerTopFromSafeTop - appBarSessionHeight;
 
     return MultiBlocListener(
       listeners: [
@@ -322,32 +378,139 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       ],
       child: BlocProvider.value(
         value: _sessionCountsCubit,
-        child: Scaffold(
-          extendBody: true,
-          backgroundColor: kPrimaryColor,
-          bottomNavigationBar: _buildBottomNav(context),
-          body: Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(gradient: colors.heroGradient),
-            child: SafeArea(
-              bottom: false,
-              top: true,
-              child: Stack(
-                children: [
-                  Column(
-                    children: [
-                      if (!isTablet) const SizedBox(height: 8),
-                      const AppBarSession(),
-                      Expanded(child: _buildHomeBody(context)),
-                    ],
-                  ),
-                  syncWatcher(),
-                ],
+        child: BlocBuilder<DashboardStyleCubit, String>(
+          builder: (context, dashboardStyle) {
+            final bool isProStyle = dashboardStyle == "pro";
+            
+            return Scaffold(
+              extendBody: true,
+              backgroundColor: kPrimaryColor,
+              bottomNavigationBar: isProStyle ? _buildBottomNav(context) : null,
+              body: Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(gradient: colors.heroGradient),
+                child: SafeArea(
+                  bottom: false,
+                  top: true,
+                  child: isProStyle
+                      ? Stack(
+                          children: [
+                            Column(
+                              children: [
+                                if (!isTablet) const SizedBox(height: 8),
+                                const AppBarSession(),
+                                Expanded(child: _buildHomeBody(context)),
+                              ],
+                            ),
+                            syncWatcher(),
+                          ],
+                        )
+                      : Stack(
+                          children: [
+                            Column(
+                              children: [
+                                // Extra top spacing for mobile only (above app bar)
+                                if (!isTablet) const SizedBox(height: 8),
+                                const AppBarSession(),
+                                SizedBox(
+                                  height: contentAreaHeight,
+                                  child: SingleChildScrollView(
+                                    physics: const ClampingScrollPhysics(),
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        minHeight: contentAreaHeight,
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          // Extra top spacing for mobile only
+                                          if (!isTablet) const SizedBox(height: 12),
+                                          _buildClassicLogo(context),
+                                          SizedBox(
+                                            height: isTablet ? (isPortrait ? 24 : 16) : 22,
+                                          ),
+                                          _buildClassicHeaderTitle(context),
+                                          syncWatcher(),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            GlassDrawer(
+                              initialChildSize: drawerSizes.initialChildSize,
+                              minChildSize: drawerSizes.minChildSize,
+                              maxChildSize: drawerSizes.maxChildSize,
+                              onStocktakeTap: _handleStocktakeTap,
+                            ),
+                          ],
+                        ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
+      ),
+    );
+  }
+
+  /// Builds the logo for Classic style
+  Widget _buildClassicLogo(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = context.isTablet;
+    final bool isLargeTablet = context.isLargeTablet;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final double tabletScale = isTablet
+        ? (media.size.shortestSide / 768).clamp(0.85, 1.3)
+        : 1.0;
+    final double horizontalPad = isTablet ? 40 : 25;
+    final double logoHeight = isLargeTablet
+        ? (112 * tabletScale)
+        : (isTablet ? (98 * tabletScale) : 75);
+    final String logoAsset = isDark
+        ? "assets/images/trademark_dark.png"
+        : "assets/images/trademark.png";
+    return Center(
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: horizontalPad),
+        width: double.infinity,
+        height: logoHeight,
+        child: Image.asset(logoAsset, fit: BoxFit.contain),
+      ),
+    );
+  }
+
+  /// Builds the header title for Classic style
+  Widget _buildClassicHeaderTitle(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final bool isTablet = context.isTablet;
+    final double tabletScale = isTablet
+        ? (media.size.shortestSide / 768).clamp(0.85, 1.3)
+        : 1.0;
+    final double fontSize = isTablet ? (22 * tabletScale) : 22;
+
+    return ShaderMask(
+      shaderCallback: (bounds) {
+        return const LinearGradient(
+          begin: Alignment.bottomLeft,
+          end: Alignment.topRight,
+          colors: [
+            Color(0xC786D0EF),
+            Color(0xFFFFFFFF),
+            Color(0xFFCCC8C8),
+            Color(0xC760C3EE),
+            Color(0xFFFFFFFF),
+            Color(0xC760C3EE),
+          ],
+        ).createShader(bounds);
+      },
+      blendMode: BlendMode.srcIn,
+      child: Text(
+        "Welcome to RM-Mobile",
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize),
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -1480,6 +1643,18 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       child: const SizedBox(),
     );
   }
+}
+
+class _DrawerSizes {
+  const _DrawerSizes({
+    required this.initialChildSize,
+    required this.minChildSize,
+    required this.maxChildSize,
+  });
+
+  final double initialChildSize;
+  final double minChildSize;
+  final double maxChildSize;
 }
 
 /// Carousel widget for Coming Soon items with pagination dots

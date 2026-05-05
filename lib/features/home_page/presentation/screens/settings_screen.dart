@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/entities/vos/network_server_vo.dart';
 import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
@@ -851,18 +852,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         _buildSectionTitle("Appearance"),
                         _buildGlassContainer(
-                          child: BlocBuilder<ThemeCubit, ThemeMode>(
-                            builder: (context, themeMode) {
-                              final bool isDark = themeMode == ThemeMode.dark;
-                              return _buildSwitchRow(
-                                "Dark Mode",
-                                "Use a darker color palette across the app",
-                                isDark,
-                                (val) {
-                                  context.read<ThemeCubit>().setDarkMode(val);
+                          child: Column(
+                            children: [
+                              BlocBuilder<ThemeCubit, ThemeMode>(
+                                builder: (context, themeMode) {
+                                  final bool isDark = themeMode == ThemeMode.dark;
+                                  return _buildSwitchRow(
+                                    "Dark Mode",
+                                    "Use a darker color palette across the app",
+                                    isDark,
+                                    (val) {
+                                      context.read<ThemeCubit>().setDarkMode(val);
+                                    },
+                                  );
                                 },
-                              );
-                            },
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              BlocBuilder<DashboardStyleCubit, String>(
+                                builder: (context, dashboardStyle) {
+                                  return _buildDropdownRow(
+                                    "Dashboard Style",
+                                    "Choose your preferred home screen layout",
+                                    dashboardStyle,
+                                    const ["pro", "default"],
+                                    const ["Pro (Modern)", "Default (Classic)"],
+                                    (val) {
+                                      if (val != null) {
+                                        context.read<DashboardStyleCubit>().setStyle(val);
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
                           ),
                         ),
 
@@ -1559,6 +1584,107 @@ class _SettingsScreenState extends State<SettingsScreen> {
             activeColor: kPrimaryColor,
             inactiveTrackColor: colors.divider,
             onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownRow(
+    String title,
+    String subtitle,
+    String value,
+    List<String> options,
+    List<String> labels,
+    Function(String?) onChanged,
+  ) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white10 : Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark ? Colors.white24 : Colors.white.withOpacity(0.4),
+              ),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: value,
+                isDense: true,
+                dropdownColor: isDark ? const Color(0xFF2A2A2E) : Colors.white,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                icon: const Icon(
+                  Icons.arrow_drop_down,
+                  color: Colors.white,
+                ),
+                selectedItemBuilder: (BuildContext context) {
+                  return labels.map<Widget>((String label) {
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  }).toList();
+                },
+                items: List.generate(options.length, (index) {
+                  return DropdownMenuItem<String>(
+                    value: options[index],
+                    child: Text(
+                      labels[index],
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  );
+                }),
+                onChanged: onChanged,
+              ),
+            ),
           ),
         ],
       ),
