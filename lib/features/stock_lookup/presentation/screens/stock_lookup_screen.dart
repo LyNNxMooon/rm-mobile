@@ -80,8 +80,15 @@ enum StockViewMode {
 
 class StockLookupScreen extends StatefulWidget {
   final bool showBackArrow;
+  final bool selectionMode;
+  final void Function(StockVO)? onStockSelected;
   
-  const StockLookupScreen({super.key, this.showBackArrow = false});
+  const StockLookupScreen({
+    super.key,
+    this.showBackArrow = false,
+    this.selectionMode = false,
+    this.onStockSelected,
+  });
 
   @override
   State<StockLookupScreen> createState() => _StockLookupScreenState();
@@ -981,7 +988,12 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 _showSyncBlockedMessage();
                 return;
               }
-              context.navigateToNext(StockDetailsScreen(stock: stock));
+              if (widget.selectionMode && widget.onStockSelected != null) {
+                widget.onStockSelected!(stock);
+                Navigator.of(context).pop();
+              } else {
+                context.navigateToNext(StockDetailsScreen(stock: stock));
+              }
             },
             child: Container(
               decoration: BoxDecoration(
@@ -1161,7 +1173,12 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           _showSyncBlockedMessage();
           return;
         }
-        context.navigateToNext(StockDetailsScreen(stock: stock));
+        if (widget.selectionMode && widget.onStockSelected != null) {
+          widget.onStockSelected!(stock);
+          Navigator.of(context).pop();
+        } else {
+          context.navigateToNext(StockDetailsScreen(stock: stock));
+        }
       },
       child: Container(
         decoration: BoxDecoration(
@@ -1336,7 +1353,12 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 _showSyncBlockedMessage();
                 return;
               }
-              context.navigateToNext(StockDetailsScreen(stock: stock));
+              if (widget.selectionMode && widget.onStockSelected != null) {
+                widget.onStockSelected!(stock);
+                Navigator.of(context).pop();
+              } else {
+                context.navigateToNext(StockDetailsScreen(stock: stock));
+              }
             },
             child: Container(
               decoration: BoxDecoration(
@@ -1590,7 +1612,12 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                   _showSyncBlockedMessage();
                   return;
                 }
-                context.navigateToNext(StockDetailsScreen(stock: stock));
+                if (widget.selectionMode && widget.onStockSelected != null) {
+                  widget.onStockSelected!(stock);
+                  Navigator.of(context).pop();
+                } else {
+                  context.navigateToNext(StockDetailsScreen(stock: stock));
+                }
               },
               child: Container(
                 decoration: BoxDecoration(
@@ -1781,6 +1808,33 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                         maxLines: 1,
                       ),
                     ),
+                    // Chevron arrow for selection mode - tapping goes to details
+                    if (widget.selectionMode) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          if (_isSyncInProgress()) {
+                            _showSyncBlockedMessage();
+                            return;
+                          }
+                          context.navigateToNext(StockDetailsScreen(stock: stock));
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(isTablet ? 8 : 6),
+                          decoration: BoxDecoration(
+                            color: isDark 
+                                ? Colors.white.withOpacity(0.1) 
+                                : Colors.grey.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
+                          ),
+                          child: Icon(
+                            CupertinoIcons.chevron_right,
+                            color: isDark ? Colors.white54 : Colors.grey[600],
+                            size: isTablet ? 20 : 16,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

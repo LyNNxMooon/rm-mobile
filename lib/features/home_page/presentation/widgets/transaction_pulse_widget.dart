@@ -229,7 +229,7 @@ class TransactionPulseWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "No pending transactions. System running smoothly.",
+                  "No pending transactions.",
                   style: TextStyle(
                     fontSize: isTablet ? 13 : 11,
                     color: colors.isDark
@@ -307,7 +307,7 @@ class TransactionPulseWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  "Transaction Pulse",
+                  "Pending Transaction Activity",
                   style: getSmartTitle(
                     fontSize: isTablet ? 14 : 12,
                     color: colors.isDark ? Colors.white70 : Colors.grey.shade700,

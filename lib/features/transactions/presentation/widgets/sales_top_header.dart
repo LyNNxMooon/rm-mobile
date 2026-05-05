@@ -23,6 +23,7 @@ class SalesTopHeader extends StatefulWidget {
   final VoidCallback? onCustomerFieldFocus;
   final VoidCallback? onGoToCustomerLookup;
   final VoidCallback? onCreateCustomer;
+  final VoidCallback? onCustomerSearchEmpty;
 
   const SalesTopHeader({
     super.key,
@@ -42,6 +43,7 @@ class SalesTopHeader extends StatefulWidget {
     this.onCustomerFieldFocus,
     this.onGoToCustomerLookup,
     this.onCreateCustomer,
+    this.onCustomerSearchEmpty,
   });
 
   @override
@@ -116,6 +118,9 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     if (query.isNotEmpty) {
       widget.onCustomerSearch?.call(query);
       _searchController.clear();
+    } else {
+      // User pressed Enter without typing - focus stock search
+      widget.onCustomerSearchEmpty?.call();
     }
   }
 
@@ -459,13 +464,26 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
                   width: 1,
                 ),
               ),
-              child: Text(
-                _gradeLabel(widget.customerGrade!),
-                style: TextStyle(
-                  fontSize: isTablet ? 13 : 11,
-                  fontWeight: FontWeight.w700,
-                  color: kPrimaryColor,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "\$ ",
+                    style: TextStyle(
+                      fontSize: isTablet ? 14 : 12,
+                      fontWeight: FontWeight.w900,
+                      color: kPrimaryColor,
+                    ),
+                  ),
+                  Text(
+                    _gradeLabel(widget.customerGrade!),
+                    style: TextStyle(
+                      fontSize: isTablet ? 13 : 11,
+                      fontWeight: FontWeight.w700,
+                      color: kPrimaryColor,
+                    ),
+                  ),
+                ],
               ),
             ),
           // View transactions button

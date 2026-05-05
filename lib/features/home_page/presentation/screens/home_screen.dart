@@ -528,7 +528,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 ),
                 _buildStatusPill(
                   context,
-                  label: isSyncing ? "Syncing" : "Sync ready",
+                  label: isSyncing ? "Syncing" : "Sync complete",
                   icon: isSyncing ? Icons.sync : Icons.check_circle_outline,
                   color: isSyncing ? Colors.orange : Colors.green,
                 ),
@@ -671,7 +671,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: BlocBuilder<SessionCountsCubit, SessionCountsState>(
         builder: (context, sessionState) {
-          final sessionCounts = sessionState.counts;
+          //final sessionCounts = sessionState.counts;
           return GridView.builder(
             padding: EdgeInsets.zero,
             shrinkWrap: true,
@@ -685,11 +685,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              final int badgeCount = _badgeCountForAction(
-                item['action'] as String?,
-                sessionCounts,
-              );
-              return _buildActionTile(context, item, badgeCount: badgeCount);
+              return _buildActionTile(context, item, badgeCount: 0);
             },
           );
         },
@@ -1369,7 +1365,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     },
     {
       "title": "Quotes",
-      "subTitle": "Issue estimates",
+      "subTitle": "Create quotations",
       "icon": Icons.request_quote_outlined,
       "color": Colors.orange.shade500,
       "comingSoon": false,

@@ -1319,6 +1319,8 @@ class _SalesScreenState extends State<SalesScreen>
                 } else {
                   setState(() => _selectedCustomer = state.selectedCustomer);
                   _checkAndShowCustomerComments(state.selectedCustomer);
+                  // Focus the stock search field after customer selection
+                  _focusSearchField(force: true);
                 }
               } else if (state is CustomerNotFound) {
                 AlertInfo.show(
@@ -1422,8 +1424,12 @@ class _SalesScreenState extends State<SalesScreen>
                             onGoToCustomerLookup: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => const CustomerLookupScreen(
+                                  builder: (_) => CustomerLookupScreen(
                                     showBackArrow: true,
+                                    selectionMode: true,
+                                    onCustomerSelected: (customer) {
+                                      _salesBloc.add(SelectCustomer(customer: customer));
+                                    },
                                   ),
                                 ),
                               );
@@ -1431,6 +1437,7 @@ class _SalesScreenState extends State<SalesScreen>
                             onCreateCustomer: _selectedCustomer == null
                                 ? _openCustomerCreate
                                 : null,
+                            onCustomerSearchEmpty: () => _focusSearchField(force: true),
                           ),
                           // Scanner Area
                           if (_showScanner)
@@ -1472,8 +1479,20 @@ class _SalesScreenState extends State<SalesScreen>
                             onGoToStockLookup: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => const StockLookupScreen(
+                                  builder: (_) => StockLookupScreen(
                                     showBackArrow: true,
+                                    selectionMode: true,
+                                    onStockSelected: (stock) {
+                                      _salesBloc.add(
+                                        SelectStock(
+                                          stock: stock,
+                                          skipEditMode: _scanIndividualUnits && _skipSellPrice,
+                                          autoRemindLowStock: _autoRemindLowStock,
+                                          preventAddIfNoStock: _preventAddIfNoStock,
+                                          oneDisplayLinePerItem: _oneDisplayLinePerItem,
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
                               );
