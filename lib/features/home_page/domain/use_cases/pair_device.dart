@@ -12,6 +12,7 @@ class PairDevice {
     required String hostName,
     required int port,
     required String pairingCode,
+    bool isTablet = false,
   }) async {
     try {
       if (await InternetConnectionUtils.instance.checkInternetConnection()) {
@@ -20,6 +21,7 @@ class PairDevice {
           hostName: hostName,
           port: port,
           pairingCode: pairingCode,
+          isTablet: isTablet,
         );
       } else {
         return Future.error("Please connect to a network!");

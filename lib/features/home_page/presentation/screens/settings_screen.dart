@@ -509,6 +509,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   hostName: _selectedHostName,
                   port: _selectedPort,
                   pairingCode: _manualCodeController.text.trim(),
+                  isTablet: context.isTablet,
                 ),
               );
             }

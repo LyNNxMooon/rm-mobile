@@ -283,15 +283,19 @@ class HomeScreenModels implements HomeRepo {
     required String hostName,
     required int port,
     required String pairingCode,
+    bool isTablet = false, // Parameter kept for interface but we use native detection
   }) async {
     try {
       final mobileInfo = await DeviceMetaDataUtils.instance
           .getDeviceInformation();
+      
+      // Use native device detection for tablet check
+      final bool isNativeTablet = await DeviceMetaDataUtils.instance.isTablet();
 
       final response = await DataAgentImpl.instance.pairDevice(ip, port, {
         "PairingCode": pairingCode,
         "DeviceName": mobileInfo.name,
-        "DeviceType": "Mobile",
+        "DeviceType": isNativeTablet ? "Tablet" : "Mobile",
       });
 
       if (response.success) {

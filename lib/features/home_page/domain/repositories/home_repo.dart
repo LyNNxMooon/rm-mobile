@@ -80,6 +80,7 @@ abstract class HomeRepo {
     required String hostName,
     required int port,
     required String pairingCode,
+    bool isTablet = false,
   });
 
   Future<ShopfrontResponse> fetchShopfrontsFromApi(

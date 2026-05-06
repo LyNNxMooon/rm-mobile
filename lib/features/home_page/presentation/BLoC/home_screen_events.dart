@@ -172,12 +172,14 @@ class PairDeviceEvent extends PairDeviceEvents {
   final String hostName;
   final int port;
   final String pairingCode;
+  final bool isTablet;
 
   PairDeviceEvent({
     required this.ip,
     required this.hostName,
     required this.port,
     required this.pairingCode,
+    this.isTablet = false,
   });
 }
 

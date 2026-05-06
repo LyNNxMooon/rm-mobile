@@ -681,6 +681,7 @@ class PairDeviceBloc extends Bloc<PairDeviceEvents, PairDeviceStates> {
         hostName: event.hostName,
         port: event.port,
         pairingCode: event.pairingCode,
+        isTablet: event.isTablet,
       );
 
       if (response.success) {
