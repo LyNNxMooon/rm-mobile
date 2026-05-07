@@ -21,6 +21,7 @@ import '../../../transactions/presentation/BLoC/sales_bloc.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_states.dart';
 import '../BLoC/session_counts_cubit.dart';
+import '../BLoC/font_size_cubit.dart';
 import '../screens/coming_soon_screen.dart';
 
 // IMPORTANT: Adjust this import to match your folder structure
@@ -209,10 +210,14 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
         }
         if (width > 900 && !isTabletPortrait) crossAxisCount = 4;
 
+        final bool isLargeFont = context.read<FontSizeCubit>().isLarge;
         double spacing = width > 600 ? 20.0 : 15.0;
-        final double targetHeight = isTabletPortrait
+        // Base height values
+        final double baseHeight = isTabletPortrait
           ? (isLargeTablet ? 155.0 : 130.0)
           : (isLargeTablet ? 135.0 : (isTablet ? 105.0 : 85.0));
+        // Increase height for large font mode
+        final double targetHeight = isLargeFont ? baseHeight * 1.15 : baseHeight;
         final double availableWidth = width - 50 - (spacing * (crossAxisCount - 1));
         final double itemWidth = availableWidth / crossAxisCount;
         final double childAspectRatio = itemWidth / targetHeight;
@@ -520,7 +525,7 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
+                            Flexible(
                               child: Text(
                                 itemData['title'],
                                 style: getSmartTitle(

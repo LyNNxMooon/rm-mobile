@@ -11,6 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/entities/vos/network_server_vo.dart';
 import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/font_size_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
@@ -883,6 +884,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     (val) {
                                       if (val != null) {
                                         context.read<DashboardStyleCubit>().setStyle(val);
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              BlocBuilder<FontSizeCubit, String>(
+                                builder: (context, fontSize) {
+                                  return _buildDropdownRow(
+                                    "Font Size",
+                                    "Adjust text size for better readability",
+                                    fontSize.isEmpty ? "default" : fontSize,
+                                    const ["default", "large"],
+                                    const ["Default", "Large"],
+                                    (val) {
+                                      if (val != null) {
+                                        context.read<FontSizeCubit>().setFontSize(val);
                                       }
                                     },
                                   );

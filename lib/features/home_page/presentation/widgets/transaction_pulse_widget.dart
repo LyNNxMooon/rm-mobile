@@ -69,7 +69,7 @@ class TransactionPulseWidget extends StatelessWidget {
             color: colors.isDark
                 ? colors.surfaceAlt.withOpacity(0.98)
                 : Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: colors.isDark
                   ? Colors.white10
@@ -79,10 +79,10 @@ class TransactionPulseWidget extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: colors.isDark
-                    ? Colors.black.withOpacity(0.10)
-                    : colors.cardShadow.withOpacity(0.14),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
+                    ? Colors.black.withOpacity(0.06)
+                    : colors.cardShadow.withOpacity(0.08),
+                blurRadius: 3,
+                offset: const Offset(0, 1),
               ),
             ],
           ),
@@ -207,7 +207,7 @@ class TransactionPulseWidget extends StatelessWidget {
             padding: EdgeInsets.all(isTablet ? 12 : 10),
             decoration: BoxDecoration(
               color: Colors.green.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               Icons.check_circle_outline_rounded,
@@ -247,7 +247,7 @@ class TransactionPulseWidget extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: Colors.green.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -306,14 +306,17 @@ class TransactionPulseWidget extends StatelessWidget {
                   color: kPrimaryColor,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  "Pending Transaction Activity",
-                  style: getSmartTitle(
-                    fontSize: isTablet ? 14 : 12,
-                    color: colors.isDark ? Colors.white70 : Colors.grey.shade700,
+                Expanded(
+                  child: Text(
+                    "Pending Transaction Activity",
+                    style: getSmartTitle(
+                      fontSize: isTablet ? 14 : 12,
+                      color: colors.isDark ? Colors.white70 : Colors.grey.shade700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: isTablet ? 8 : 6,
@@ -321,7 +324,7 @@ class TransactionPulseWidget extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: kPrimaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     "${_totalPending(activeCategories)} pending",
@@ -428,7 +431,7 @@ class TransactionPulseWidget extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: isTablet ? 12 : 8,
@@ -437,7 +440,7 @@ class TransactionPulseWidget extends StatelessWidget {
         decoration: isCompact
             ? BoxDecoration(
                 color: category.color.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: category.color.withOpacity(0.2),
                   width: 1,
@@ -454,7 +457,7 @@ class TransactionPulseWidget extends StatelessWidget {
                 padding: EdgeInsets.all(isTablet ? 9 : 7),
                 decoration: BoxDecoration(
                   color: category.color,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   category.icon,

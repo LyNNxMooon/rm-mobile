@@ -25,6 +25,7 @@ class HomeScreenModels implements HomeRepo {
   static const String _kLastAutoBackupAtKey = "last_auto_backup_at";
   static const String _kDarkModeEnabledKey = "dark_mode_enabled";
   static const String _kDashboardStyleKey = "dashboard_style";
+  static const String _kFontSizeKey = "font_size";
   static const int _defaultAgentPort = 5000;
 
   @override
@@ -199,6 +200,26 @@ class HomeScreenModels implements HomeRepo {
   Future<void> setDashboardStyle(String style) async {
     try {
       await LocalDbDAO.instance.saveAppConfig(_kDashboardStyleKey, style);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<String> getFontSize() async {
+    try {
+      final raw = await LocalDbDAO.instance.getAppConfig(_kFontSizeKey);
+      if (raw == null || raw.isEmpty) return "default"; // Default to normal font size
+      return raw;
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<void> setFontSize(String size) async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(_kFontSizeKey, size);
     } on Exception catch (error) {
       return Future.error(error);
     }

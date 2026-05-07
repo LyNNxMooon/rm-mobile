@@ -39,6 +39,9 @@ class DialogTextAction extends DialogActionDecorator {
 
   @override
   Widget build(BuildContext context, DialogActionTheme theme) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final horizontalPadding = textScale > 1.0 ? 24.0 : 20.0;
+    
     final Widget child = icon == null
         ? Text(label)
         : Row(
@@ -59,7 +62,7 @@ class DialogTextAction extends DialogActionDecorator {
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimaryColor,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               shape: RoundedRectangleBorder(borderRadius: theme.borderRadius),
             ),
             child: child,
@@ -73,7 +76,7 @@ class DialogTextAction extends DialogActionDecorator {
             style: OutlinedButton.styleFrom(
               foregroundColor: kErrorColor,
               side: const BorderSide(color: kErrorColor),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               shape: RoundedRectangleBorder(borderRadius: theme.borderRadius),
             ),
             child: child,
@@ -87,7 +90,7 @@ class DialogTextAction extends DialogActionDecorator {
             style: OutlinedButton.styleFrom(
               foregroundColor: kPrimaryColor,
               side: const BorderSide(color: kPrimaryColor),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               shape: RoundedRectangleBorder(borderRadius: theme.borderRadius),
             ),
             child: child,
@@ -195,7 +198,9 @@ class StandardDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isTablet = context.isTablet;
     final padding = contentPadding ?? EdgeInsets.all(isTablet ? 24 : 18);
-    final dialogTheme = DialogActionTheme(colors: colors, isDark: isDark);
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final buttonHeight = textScale > 1.0 ? 52.0 : 44.0;
+    final dialogTheme = DialogActionTheme(colors: colors, isDark: isDark, height: buttonHeight);
 
     return Dialog(
       backgroundColor: Colors.transparent,
