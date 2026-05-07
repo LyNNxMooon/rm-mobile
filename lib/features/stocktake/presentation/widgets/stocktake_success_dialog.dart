@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../constants/colors.dart';
+//import '../../../../constants/colors.dart';
+import '../../../../constants/standard_dialog.dart';
 import '../../../../constants/theme_colors.dart';
-import '../../../../utils/dialog_size_utils.dart';
 
 class StocktakeSuccessDialog extends StatelessWidget {
   const StocktakeSuccessDialog({
@@ -17,18 +17,11 @@ class StocktakeSuccessDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    return Dialog(
-      insetPadding: dialogInsetPadding(context),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: isDark
-            ? const BorderSide(color: Colors.white30, width: 1)
-            : BorderSide.none,
-      ),
-      elevation: 10,
-      backgroundColor: isDark ? colors.surfaceAlt : colors.surface,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+    return StandardDialog(
+      title: "Success!",
+      colors: colors,
+      isDark: isDark,
+      content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -49,20 +42,6 @@ class StocktakeSuccessDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Title
-            Text(
-              "Success!",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : colors.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Message Body
             Text(
               message,
               textAlign: TextAlign.center,
@@ -72,43 +51,16 @@ class StocktakeSuccessDialog extends StatelessWidget {
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 24),
-
-            // Okay Button
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: onOkayPressed, // Executes your passed function
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
-                  foregroundColor: colors.onHero,
-                  minimumSize: const Size(double.infinity, 48),
-                  padding: EdgeInsets.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  textStyle: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  "Okay",
-                  textScaler: TextScaler.noScaling,
-                  style: TextStyle(
-                    color: colors.onHero,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
+      actions: [
+        DialogTextAction(
+          label: "Okay",
+          style: DialogActionStyle.primary,
+          onPressed: onOkayPressed,
+        ),
+      ],
     );
   }
 }

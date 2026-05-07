@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:rmmobile/constants/colors.dart';
+import 'package:rmmobile/constants/standard_dialog.dart';
 import 'package:rmmobile/constants/theme_colors.dart';
 import 'package:rmmobile/entities/vos/pricing_grades.dart';
 import 'package:rmmobile/entities/vos/pricing_rules.dart';
-import 'package:rmmobile/utils/dialog_size_utils.dart';
+import 'package:rmmobile/utils/formatting_utils.dart';
 import 'package:rmmobile/utils/responsive_utils.dart';
 
 class PricingDialog extends StatefulWidget {
@@ -98,7 +98,6 @@ class _PricingDialogState extends State<PricingDialog> {
     final Color textColor = isDark ? colors.onSurface : kThirdColor;
     final Color mutedText =
             isDark ? colors.onSurfaceMuted : kThirdColor.withOpacity(0.75);
-    final Color surface = isDark ? colors.surfaceAlt : Colors.white;
     //final Color surfaceAlt = isDark ? colors.surfaceAlt : Colors.grey.shade50;
     final Color divider = isDark ? colors.divider : Colors.grey.shade300;
     final bool isTablet = context.isTablet;
@@ -115,238 +114,184 @@ class _PricingDialogState extends State<PricingDialog> {
     final double inputHeight = isTablet ? 42.0 : 34.0;
     final double rowSpacing = isTablet ? 18.0 : 10.0;
     final double stockColWidth = isTablet ? 0.0 : 84.0;
+    final double maxDialogHeight =
+      MediaQuery.of(context).size.height * (isTablet ? 0.85 : 0.75);
 
-    final EdgeInsets customInsetPadding = isTablet
-        ? dialogInsetPadding(context)
-        : const EdgeInsets.symmetric(horizontal: 12, vertical: 24);
-
-    return Dialog(
-      insetPadding: customInsetPadding,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: isDark
-            ? const BorderSide(color: Colors.white30, width: 1)
-            : BorderSide.none,
-      ),
-      backgroundColor: surface,
-      child: ConstrainedBox(
+    return StandardDialog(
+      title: "Pricing Grades",
+      colors: colors,
+      isDark: isDark,
+      maxWidth: isTablet ? 780 : 680,
+      content: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: isTablet ? 780 : 680, 
-          maxHeight: isTablet ? 720 : 600,
+          maxHeight: maxDialogHeight,
         ),
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.fromLTRB(
-            isTablet ? 24 : 16, 
-            isTablet ? 24 : 16, 
-            isTablet ? 24 : 16, 
-            isTablet ? 20 : 16
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-            Text(
-              "Pricing Grades",
-              style: TextStyle(
-                fontSize: isTablet ? 22 : 18,
-                fontWeight: FontWeight.w700,
-                color: kPrimaryColor,
-              ),
-            ),
-            SizedBox(height: isTablet ? 24 : 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(height: isTablet ? 4 : 2),
             Flexible(
               child: SingleChildScrollView(
-                child: IntrinsicHeight(
-                  child: isTablet
-                      ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Left Column (Grade, Rule, Amount)
-                            Expanded(
-                              flex: 7, 
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // PERFECT ALIGNMENT HEADERS
-                                  Row(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    isTablet
+                        ? IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Left Column (Grade, Rule, Amount)
+                                Expanded(
+                                  flex: 7,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      SizedBox(
-                                        width: gradeColWidth,
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(left: 4.0), // Aligns text with the visual center of the Radio button
-                                          child: Text(
-                                            "Grade",
-                                            style: TextStyle(
-                                              fontSize: headerSize,
-                                              color: textColor,
-                                              fontWeight: FontWeight.w700,
+                                      // PERFECT ALIGNMENT HEADERS
+                                      Row(
+                                        children: [
+                                          SizedBox(
+                                            width: gradeColWidth,
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(left: 4.0),
+                                              child: Text(
+                                                "Grade",
+                                                style: TextStyle(
+                                                  fontSize: headerSize,
+                                                  color: textColor,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Container(
-                                          margin: EdgeInsets.only(right: middleGap),
-                                          padding: EdgeInsets.only(left: isTablet ? 12 : 8), // Mirrors the dropdown's internal padding
-                                          child: Text(
-                                            "Rule",
-                                            style: TextStyle(
-                                              fontSize: headerSize,
-                                              color: textColor,
-                                              fontWeight: FontWeight.w700,
+                                          Expanded(
+                                            child: Container(
+                                              margin: EdgeInsets.only(right: middleGap),
+                                              padding: EdgeInsets.only(left: isTablet ? 12 : 8),
+                                              child: Text(
+                                                "Rule",
+                                                style: TextStyle(
+                                                  fontSize: headerSize,
+                                                  color: textColor,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: amountColWidth,
-                                        child: Padding(
-                                          padding: EdgeInsets.only(left: isTablet ? 12 : 8), // Mirrors the TextField's internal padding
-                                          child: Text(
-                                            "Amount",
-                                            style: TextStyle(
-                                              fontSize: headerSize,
-                                              color: textColor,
-                                              fontWeight: FontWeight.w700,
+                                          SizedBox(
+                                            width: amountColWidth,
+                                            child: Padding(
+                                              padding: EdgeInsets.only(left: isTablet ? 12 : 8),
+                                              child: Text(
+                                                "Amount",
+                                                style: TextStyle(
+                                                  fontSize: headerSize,
+                                                  color: textColor,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
+                                        ],
                                       ),
+                                      SizedBox(height: isTablet ? 16 : 10),
+                                      ..._rows.map((row) => _buildInputRow(
+                                          row,
+                                          textSize,
+                                          inputHeight,
+                                          gradeColWidth,
+                                          amountColWidth,
+                                          middleGap,
+                                          rowSpacing,
+                                          isTablet
+                                      )),
                                     ],
                                   ),
-                                  SizedBox(height: isTablet ? 16 : 10),
-                                  ..._rows.map((row) => _buildInputRow(
-                                      row, 
-                                      textSize, 
-                                      inputHeight, 
-                                      gradeColWidth, 
-                                      amountColWidth, 
-                                      middleGap,
-                                      rowSpacing,
-                                      isTablet
-                                  )),
-                                ],
-                              ),
-                            ),
-                            
-                            // Vertical Divider
-                            Container(
-                              width: 1,
-                              color: divider,
-                              margin: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 12),
-                            ),
-              
-                            // Right Column (Calculated Stock Prices)
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildLevelHeader(headerSize, textColor, isTablet),
-                                  SizedBox(height: isTablet ? 16 : 10),
-                                  ..._rows.map((row) => Container(
-                                        height: inputHeight,
-                                        margin: EdgeInsets.only(bottom: rowSpacing),
-                                        alignment: Alignment.centerLeft,
-                                        child: FittedBox(
-                                          fit: BoxFit.scaleDown,
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            _formatPriceForGrade(row.grade),
-                                            style: TextStyle(
-                                              fontSize: priceSize,
-                                              fontWeight: FontWeight.w700,
-                                              color: kPrimaryColor,
+                                ),
+
+                                // Vertical Divider
+                                Container(
+                                  width: 1,
+                                  color: divider,
+                                  margin: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 12),
+                                ),
+
+                                // Right Column (Calculated Stock Prices)
+                                Expanded(
+                                  flex: 3,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildLevelHeader(headerSize, textColor, isTablet),
+                                      SizedBox(height: isTablet ? 16 : 10),
+                                      ..._rows.map((row) => Container(
+                                            height: inputHeight,
+                                            margin: EdgeInsets.only(bottom: rowSpacing),
+                                            alignment: Alignment.centerLeft,
+                                            child: FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                _formatPriceForGrade(row.grade),
+                                                style: TextStyle(
+                                                  fontSize: priceSize,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: kPrimaryColor,
+                                                ),
+                                              ),
                                             ),
-                                          ),
-                                        ),
-                                      )),
-                                ],
-                              ),
+                                          )),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildLevelHeader(16, textColor, isTablet),
-                            SizedBox(height: isTablet ? 16 : 10),
-                            ..._rows.map((row) => _buildMobileInputRow(
-                                  row,
-                                  textSize,
-                                  inputHeight,
-                                  amountColWidth,
-                                  stockColWidth,
-                                  middleGap,
-                                  rowSpacing,
-                                )),
-                          ],
-                        ),
-                ),
-              ),
-            ),
-            SizedBox(height: isTablet ? 28 : 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: widget.onDelete,
-                    style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: isTablet ? 18 : 14),
-                      side: BorderSide(color: kPrimaryColor.withOpacity(0.7)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      "Delete",
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLevelHeader(16, textColor, isTablet),
+                              SizedBox(height: isTablet ? 16 : 10),
+                              ..._rows.map((row) => _buildMobileInputRow(
+                                    row,
+                                    textSize,
+                                    inputHeight,
+                                    amountColWidth,
+                                    stockColWidth,
+                                    middleGap,
+                                    rowSpacing,
+                                  )),
+                            ],
+                          ),
+                    const SizedBox(height: 12),
+                    Text(
+                      "This is the pricing grades at Stock Level Only! If you need to view other Depts/Cats & Global level pricing rules, please refer to your RetailManager System.",
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: isTablet ? 16 : 14,
-                        color: kPrimaryColor,
-                        fontWeight: FontWeight.w700,
+                        fontSize: isTablet ? 11 : 9.5,
+                        color: mutedText,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
                       ),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _handleUpdate,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: isTablet ? 18 : 14),
-                      backgroundColor: kPrimaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      "Add/Update",
-                      style: TextStyle(
-                        fontSize: isTablet ? 16 : 14,
-                        color: isDark ? colors.onHero : Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              "This is the pricing grades at Stock Level Only! If you need to view other Depts/Cats & Global level pricing rules, please refer to your RetailManager System.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: isTablet ? 11 : 9.5,
-                color: mutedText,
-                fontWeight: FontWeight.w600,
-                height: 1.3,
               ),
             ),
           ],
         ),
-        ),
       ),
+      actions: [
+        DialogTextAction(
+          label: "Delete",
+          style: DialogActionStyle.outline,
+          onPressed: widget.onDelete,
+        ),
+        DialogTextAction(
+          label: "Add/Update",
+          style: DialogActionStyle.primary,
+          onPressed: _handleUpdate,
+        ),
+      ],
     );
   }
 
@@ -690,8 +635,7 @@ class _PricingDialogState extends State<PricingDialog> {
   }
 
   String _formatMoney(double value) {
-    final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
-    return formatter.format(value);
+    return FormattingUtils.formatCurrencyWithDecimals(value, 2);
   }
 
   double _parseValue(String text) {

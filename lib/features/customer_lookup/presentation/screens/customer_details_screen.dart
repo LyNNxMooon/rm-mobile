@@ -14,6 +14,7 @@ import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_loo
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/screens/customer_transactions_screen.dart';
 import 'package:rmmobile/utils/enums.dart';
+import 'package:rmmobile/utils/formatting_utils.dart';
 import 'package:rmmobile/utils/global_var_utils.dart';
 import 'package:rmmobile/utils/internet_connection_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -2419,7 +2420,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "\$${_parseNum(_limitController.text, widget.customer.limit).toStringAsFixed(2)}",
+                      FormattingUtils.formatCurrencyWithDecimals(
+                        _parseNum(
+                          _limitController.text,
+                          widget.customer.limit,
+                        ).toDouble(),
+                        2,
+                      ),
                       style: TextStyle(
                         fontSize: baseSize,
                         fontWeight: FontWeight.w600,

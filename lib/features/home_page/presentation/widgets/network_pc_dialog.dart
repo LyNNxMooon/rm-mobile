@@ -312,6 +312,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                                             hostName: _selectedPc!.hostName ?? "Unknown-Server",
                                             port: _selectedPort,
                                             pairingCode: pairingCode,
+                                            isTablet: context.isTablet,
                                           ),
                                         );
                                       },

@@ -151,6 +151,8 @@ const String kWelcomeSeenKey = "welcome_seen";
 const String kTermsAcceptedKey = "terms_accepted";
 const String kSalesScanIndividualUnitsKey = "sales_scan_individual_units";
 const String kSalesSkipSellPriceKey = "sales_skip_sell_price";
+const String kSalesOneDisplayLinePerItemKey =
+  "sales_one_display_line_per_item";
 const String kSalesPromptForEmailKey = "sales_prompt_for_email";
 const String kSalesAutoRemindLowStockKey = "sales_auto_remind_low_stock";
 const String kSalesPreventAddIfNoStockKey = "sales_prevent_add_if_no_stock";
@@ -481,10 +483,35 @@ const String kSalesCustomKey = "sales_custom";
 
 // Stock Indexes
 const createIdxStocksBarcode = 'CREATE INDEX IF NOT EXISTS idx_stocks_barcode ON Stocks(shopfront, Barcode)';
+const createIdxStocksBarcodeNoCase =
+  'CREATE INDEX IF NOT EXISTS idx_stocks_barcode_nocase ON Stocks(shopfront, Barcode COLLATE NOCASE)';
 const createIdxStocksDesc = 'CREATE INDEX IF NOT EXISTS idx_stocks_desc ON Stocks(shopfront, description)';
+const createIdxStocksDescNoCase =
+  'CREATE INDEX IF NOT EXISTS idx_stocks_desc_nocase ON Stocks(shopfront, description COLLATE NOCASE)';
+const createIdxStocksCustom1 = 'CREATE INDEX IF NOT EXISTS idx_stocks_custom1 ON Stocks(shopfront, custom1)';
+const createIdxStocksCustom2 = 'CREATE INDEX IF NOT EXISTS idx_stocks_custom2 ON Stocks(shopfront, custom2)';
 
 // Customer Indexes
 const createIdxCustBarcode = 'CREATE INDEX IF NOT EXISTS idx_cust_barcode ON Customers(shopfront, barcode)';
+const createIdxCustBarcodeNoCase =
+  'CREATE INDEX IF NOT EXISTS idx_cust_barcode_nocase ON Customers(shopfront, barcode COLLATE NOCASE)';
 const createIdxCustSurname = 'CREATE INDEX IF NOT EXISTS idx_cust_surname ON Customers(shopfront, surname)';
 const createIdxCustGivenNames = 'CREATE INDEX IF NOT EXISTS idx_cust_given_names ON Customers(shopfront, given_names)';
 const createIdxCustCompany = 'CREATE INDEX IF NOT EXISTS idx_cust_company ON Customers(shopfront, company)';
+const createIdxCustPhone = 'CREATE INDEX IF NOT EXISTS idx_cust_phone ON Customers(shopfront, phone)';
+const createIdxCustMobile = 'CREATE INDEX IF NOT EXISTS idx_cust_mobile ON Customers(shopfront, mobile)';
+const createIdxCustFax = 'CREATE INDEX IF NOT EXISTS idx_cust_fax ON Customers(shopfront, fax)';
+const createIdxCustEmail = 'CREATE INDEX IF NOT EXISTS idx_cust_email ON Customers(shopfront, email)';
+const createIdxCustSuburb = 'CREATE INDEX IF NOT EXISTS idx_cust_suburb ON Customers(shopfront, suburb)';
+const createIdxCustState = 'CREATE INDEX IF NOT EXISTS idx_cust_state ON Customers(shopfront, state)';
+const createIdxCustPostcode = 'CREATE INDEX IF NOT EXISTS idx_cust_postcode ON Customers(shopfront, postcode)';
+const createIdxCustCustom1 = 'CREATE INDEX IF NOT EXISTS idx_cust_custom1 ON Customers(shopfront, custom1)';
+const createIdxCustCustom2 = 'CREATE INDEX IF NOT EXISTS idx_cust_custom2 ON Customers(shopfront, custom2)';
+
+// Stocktake Indexes
+const createIdxStocktakeBarcode =
+  'CREATE INDEX IF NOT EXISTS idx_stocktake_barcode ON Stocktake(shopfront, barcode)';
+const createIdxStocktakeDescription =
+  'CREATE INDEX IF NOT EXISTS idx_stocktake_description ON Stocktake(shopfront, description)';
+const createIdxStocktakeDate =
+  'CREATE INDEX IF NOT EXISTS idx_stocktake_date ON Stocktake(shopfront, stocktake_date)';

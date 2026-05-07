@@ -119,34 +119,76 @@ class StockLookupModels implements StockLookupRepo {
       } else {
         yield SyncStatus(0, 1, "Checking for stock updates...");
 
-        final response = await DataAgentImpl.instance.fetchShopfrontStocks(
-          resolvedIp,
-          resolvedPort,
-          resolvedShopfrontId,
-          resolvedApiKey,
-          {"lastSyncTimestamp": lastSyncTimestamp},
-        );
+        int processed = 0;
+        int total = 0;
+        int? afterStockId;
+        bool hasMore = true;
 
-        if (!response.success) {
-          throw Exception(response.message);
+        while (hasMore) {
+          final Map<String, dynamic> body = {
+            "lastSyncTimestamp": lastSyncTimestamp,
+            "pageSize": 10000,
+          };
+          if (afterStockId != null && afterStockId > 0) {
+            body["afterStockId"] = afterStockId;
+          }
+
+          // ignore: avoid_print
+          print("Delta sync payload: $body");
+
+          final response = await DataAgentImpl.instance.fetchShopfrontStocks(
+            resolvedIp,
+            resolvedPort,
+            resolvedShopfrontId,
+            resolvedApiKey,
+            body,
+          );
+
+          if (!response.success) {
+            throw Exception(response.message);
+          }
+
+          AppGlobals.instance.updateCustomLabels(
+            stock1: response.stock1,
+            stock2: response.stock2,
+            customer1: response.customer1,
+            customer2: response.customer2,
+            customer3: response.customer3,
+          );
+
+          latestSyncTimestamp = response.syncTimestamp;
+          if (total == 0) {
+            total = response.totalItems > 0
+                ? response.totalItems
+                : response.itemCount;
+          }
+
+          if (response.items.isNotEmpty) {
+            final stocks = response.items.map(StockVO.fromApiItem).toList();
+            await LocalDbDAO.instance.insertStocks(
+              stocks,
+              resolvedShopfrontName,
+            );
+            processed += stocks.length;
+          }
+
+          if (total > 0) {
+            yield SyncStatus(
+              processed,
+              total,
+              "Applying stock updates... ($processed/$total)",
+            );
+          }
+
+          hasMore = response.hasMore;
+          afterStockId = response.lastStockId;
+
+          if (hasMore && (afterStockId == null || afterStockId <= 0)) {
+            hasMore = false;
+          }
         }
 
-        AppGlobals.instance.updateCustomLabels(
-          stock1: response.stock1,
-          stock2: response.stock2,
-          customer1: response.customer1,
-          customer2: response.customer2,
-          customer3: response.customer3,
-        );
-
-        latestSyncTimestamp = response.syncTimestamp;
-
-        if (response.items.isNotEmpty) {
-          final stocks = response.items.map(StockVO.fromApiItem).toList();
-          await LocalDbDAO.instance.insertStocks(stocks, resolvedShopfrontName);
-        }
-
-        final int deltaCount = response.itemCount;
+        final int deltaCount = processed;
         yield SyncStatus(
           deltaCount,
           deltaCount == 0 ? 1 : deltaCount,

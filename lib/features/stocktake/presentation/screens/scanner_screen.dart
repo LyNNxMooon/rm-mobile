@@ -48,7 +48,6 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> {
-  final Debouncer _debouncer = Debouncer(milliseconds: 500);
   final TextEditingController _bcController = TextEditingController();
   //Common Variables
   bool isTorchOn = false;
@@ -63,6 +62,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   String? _lastAutoBarcode;
   int _autoQty = 0;
+  bool _isSearchLoading = false;
+  Timer? _searchLoadingTimer;
 
   // Helper to handle saving the count
   void _submitCount() {
@@ -182,12 +183,31 @@ class _ScannerScreenState extends State<ScannerScreen> {
   void dispose() {
     qtyFocusNode.removeListener(_onFocusChange);
     txtFieldFocusNode.removeListener(_onFocusChange);
+    _searchLoadingTimer?.cancel();
     scannerController.dispose();
     qtyController.dispose();
     qtyFocusNode.dispose();
     txtFieldFocusNode.dispose();
     _bcController.dispose();
     super.dispose();
+  }
+
+  void _startSearchLoadingDelay() {
+    _searchLoadingTimer?.cancel();
+    _isSearchLoading = false;
+    _searchLoadingTimer = Timer(const Duration(milliseconds: 200), () {
+      if (!mounted) return;
+      if (context.read<ScannerBloc>().state is StockLoading) {
+        setState(() => _isSearchLoading = true);
+      }
+    });
+  }
+
+  void _stopSearchLoading() {
+    _searchLoadingTimer?.cancel();
+    if (_isSearchLoading && mounted) {
+      setState(() => _isSearchLoading = false);
+    }
   }
 
   @override
@@ -207,180 +227,235 @@ class _ScannerScreenState extends State<ScannerScreen> {
       resizeToAvoidBottomInset: true,
       backgroundColor: isDark ? colors.bg : kBgColor,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    physics: const ClampingScrollPhysics(),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: IntrinsicHeight(
-                        child: Column(
-                          children: [
-                            StocktakeAppbarSession(
-                              onTorchToggle: () {
-                                setState(() {
-                                  scannerController.toggleTorch();
-                                  isTorchOn = !isTorchOn;
-                                });
-                              },
-                              isTorchOn: isTorchOn,
-                            ),
+            Column(
+              children: [
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: IntrinsicHeight(
+                            child: Column(
+                              children: [
+                                StocktakeAppbarSession(
+                                  onTorchToggle: () {
+                                    setState(() {
+                                      scannerController.toggleTorch();
+                                      isTorchOn = !isTorchOn;
+                                    });
+                                  },
+                                  isTorchOn: isTorchOn,
+                                ),
 
-                            Padding(
-                              padding: EdgeInsets.only(
-                                left: cardHorizontalPadding,
-                                right: cardHorizontalPadding,
-                                bottom: isTablet ? 15.0 : 10.0,
-                                top: isTablet ? 15.0 : 5.0,
-                              ),
-                              child: ScanModeSelector(
-                                onModeChanged: (newMode) {
-                                  setState(() {
-                                    isManualCount =
-                                        (newMode == ScanMode.manualCount);
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    left: cardHorizontalPadding,
+                                    right: cardHorizontalPadding,
+                                    bottom: isTablet ? 15.0 : 10.0,
+                                    top: isTablet ? 15.0 : 5.0,
+                                  ),
+                                  child: ScanModeSelector(
+                                    onModeChanged: (newMode) {
+                                      setState(() {
+                                        isManualCount =
+                                            (newMode == ScanMode.manualCount);
 
-                                    qtyController.clear();
-                                    _bcController.clear();
-                                    countingStock = null;
-                                    _lastAutoBarcode = null;
-                                    _autoQty = 0;
+                                        qtyController.clear();
+                                        _bcController.clear();
+                                        countingStock = null;
+                                        _lastAutoBarcode = null;
+                                        _autoQty = 0;
+                                        context.read<ScannerBloc>().add(
+                                          ResetStocktakeEvent(ScannerInitial()),
+                                        );
+                                      });
+                                    },
+                                  ),
+                                ),
+
+                                Scanner(
+                                  constraints: constraints,
+                                  controller: scannerController,
+                                  isScan: isScan,
+                                  isManualCount: isManualCount,
+                                  horizontalPadding: cardHorizontalPadding,
+                                  onStartScan: () {
+                                    if (!isScan) {
+                                      _toggleScan();
+                                    }
+                                  },
+                                  onStopScan: () {
+                                    if (isScan) {
+                                      _toggleScan();
+                                    }
+                                  },
+                                  onScan: (String barcode) {
                                     context.read<ScannerBloc>().add(
-                                      ResetStocktakeEvent(ScannerInitial()),
-                                    );
-                                  });
-                                },
-                              ),
-                            ),
-
-                            Scanner(
-                              constraints: constraints,
-                              controller: scannerController,
-                              isScan: isScan,
-                              isManualCount: isManualCount,
-                              horizontalPadding: cardHorizontalPadding,
-                              onStartScan: () {
-                                if (!isScan) {
-                                  _toggleScan();
-                                }
-                              },
-                              onStopScan: () {
-                                if (isScan) {
-                                  _toggleScan();
-                                }
-                              },
-                              onScan: (String barcode) {
-                                context.read<ScannerBloc>().add(
-                                  FetchStockDetails(barcode: barcode),
-                                );
-
-                                if (isManualCount) {
-                                  qtyFocusNode.requestFocus();
-                                  qtyController.selection = TextSelection(
-                                    baseOffset: 0,
-                                    extentOffset: qtyController.text.length,
-                                  );
-                                }
-                              },
-                            ),
-
-                            Expanded(
-                              child: BlocConsumer<ScannerBloc, ScannerStates>(
-                                builder: (context, state) {
-                                  if (state is StockLoaded) {
-                                    return _buildProductDetailsPanel(
-                                      state.stock,
-                                      cardHorizontalPadding, // pass to panel
-                                    );
-                                  } else {
-                                    return _buildProductDetailsPanel(
-                                      null,
-                                      cardHorizontalPadding, // pass to panel
-                                    );
-                                  }
-                                },
-                                listener: (context, state) async {
-                                  if (state is StockDuplicatesFound) {
-                                    countingStock = null;
-
-                                    final selected = await Navigator.push<StockVO>(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => StockSelectionScreen(
-                                          matches: state.matches,
-                                        ),
-                                      ),
+                                      FetchStockDetails(barcode: barcode),
                                     );
 
-                                    if (selected != null && mounted) {
-                                      context.read<ScannerBloc>().add(
-                                        SelectDuplicateStock(
-                                          selected: selected,
-                                        ),
-                                      );
-
+                                    if (isManualCount) {
                                       qtyFocusNode.requestFocus();
                                       qtyController.selection = TextSelection(
                                         baseOffset: 0,
                                         extentOffset: qtyController.text.length,
                                       );
-                                    } else {
-                                      context.read<ScannerBloc>().add(
-                                        ResetStocktakeEvent(ScannerInitial()),
-                                      );
                                     }
-                                  }
-                                  if (state is StockError) {
-                                    countingStock = null;
+                                  },
+                                ),
 
-                                    AlertInfo.show(
-                                      context: context,
-                                      text: 'Not Found!',
-                                      typeInfo: TypeInfo.error,
-                                      backgroundColor:
-                                          isDark ? colors.surface : kSecondaryColor,
-                                      iconColor: kErrorColor,
-                                      textColor: kErrorColor,
-                                      position: MessagePosition.top,
-                                      padding: 70,
-                                    );
-                                  }
-                                  if (state is StockLoaded) {
-                                    countingStock = state.stock;
-                                    if (!isManualCount && isScan) {
-                                      final barcode = state.stock.barcode;
-
-                                      if (_lastAutoBarcode == barcode) {
-                                        ++_autoQty;
+                                Expanded(
+                                  child: BlocConsumer<ScannerBloc, ScannerStates>(
+                                    builder: (context, state) {
+                                      if (state is StockLoaded) {
+                                        return _buildProductDetailsPanel(
+                                          state.stock,
+                                          cardHorizontalPadding, // pass to panel
+                                        );
                                       } else {
-                                        _lastAutoBarcode = barcode;
-                                        _autoQty = 1;
+                                        return _buildProductDetailsPanel(
+                                          null,
+                                          cardHorizontalPadding, // pass to panel
+                                        );
+                                      }
+                                    },
+                                    listener: (context, state) async {
+                                      if (state is StockLoading) {
+                                        _startSearchLoadingDelay();
+                                      } else {
+                                        _stopSearchLoading();
                                       }
 
-                                      qtyController.text = _autoQty.toString();
-                                      _submitAutoCount();
-                                    }
-                                  }
-                                },
-                              ),
-                            ),
+                                      if (state is StockDuplicatesFound) {
+                                        countingStock = null;
 
-                            //Listener for stock count states
-                            _stockCountSaveListener(),
-                          ],
+                                        final selected = await Navigator.push<StockVO>(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => StockSelectionScreen(
+                                              matches: state.matches,
+                                            ),
+                                          ),
+                                        );
+
+                                        if (selected != null && mounted) {
+                                          context.read<ScannerBloc>().add(
+                                            SelectDuplicateStock(
+                                              selected: selected,
+                                            ),
+                                          );
+
+                                          qtyFocusNode.requestFocus();
+                                          qtyController.selection = TextSelection(
+                                            baseOffset: 0,
+                                            extentOffset: qtyController.text.length,
+                                          );
+                                        } else {
+                                          context.read<ScannerBloc>().add(
+                                            ResetStocktakeEvent(ScannerInitial()),
+                                          );
+                                        }
+                                      }
+                                      if (state is StockError) {
+                                        countingStock = null;
+
+                                        AlertInfo.show(
+                                          context: context,
+                                          text: 'Not Found!',
+                                          typeInfo: TypeInfo.error,
+                                          backgroundColor:
+                                              isDark ? colors.surface : kSecondaryColor,
+                                          iconColor: kErrorColor,
+                                          textColor: kErrorColor,
+                                          position: MessagePosition.top,
+                                          padding: 70,
+                                        );
+                                      }
+                                      if (state is StockLoaded) {
+                                        countingStock = state.stock;
+                                        if (!isManualCount && isScan) {
+                                          final barcode = state.stock.barcode;
+
+                                          if (_lastAutoBarcode == barcode) {
+                                            ++_autoQty;
+                                          } else {
+                                            _lastAutoBarcode = barcode;
+                                            _autoQty = 1;
+                                          }
+
+                                          qtyController.text = _autoQty.toString();
+                                          _submitAutoCount();
+                                        }
+                                      }
+                                    },
+                                  ),
+                                ),
+
+                                //Listener for stock count states
+                                _stockCountSaveListener(),
+                              ],
+                            ),
+                          ),
                         ),
+                      );
+                    },
+                  ),
+                ),
+                _iosDoneBar(),
+              ],
+            ),
+            if (_isSearchLoading) _buildLoadingOverlay(isDark, colors),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingOverlay(bool isDark, AppThemeColors colors) {
+    return Positioned.fill(
+      child: AbsorbPointer(
+        child: Container(
+          color: Colors.black45,
+          child: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 260),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark ? colors.surface : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        kPrimaryColor,
                       ),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
-            _iosDoneBar(),
-          ],
+          ),
         ),
       ),
     );
@@ -686,22 +761,18 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         iconSize: 22,
                       ),
                     ),
-                    onSubmitted: (_) {
+                    onSubmitted: (value) {
+                      final trimmed = value.trim();
+                      if (trimmed.isNotEmpty) {
+                        context.read<ScannerBloc>().add(
+                          FetchStockDetails(barcode: trimmed),
+                        );
+                      }
                       qtyFocusNode.requestFocus();
                       qtyController.selection = TextSelection(
                         baseOffset: 0,
                         extentOffset: qtyController.text.length,
                       );
-                    },
-                    onChanged: (value) {
-                      if (value.trim().isEmpty) {
-                        return; // Do nothing
-                      }
-                      _debouncer.run(() {
-                        context.read<ScannerBloc>().add(
-                          FetchStockDetails(barcode: value),
-                        );
-                      });
                     },
                   ),
                 ),

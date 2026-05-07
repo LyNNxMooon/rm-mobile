@@ -24,6 +24,7 @@ class HomeScreenModels implements HomeRepo {
   static const String _kAutoBackupEnabledKey = "auto_backup_enabled";
   static const String _kLastAutoBackupAtKey = "last_auto_backup_at";
   static const String _kDarkModeEnabledKey = "dark_mode_enabled";
+  static const String _kDashboardStyleKey = "dashboard_style";
   static const int _defaultAgentPort = 5000;
 
   @override
@@ -152,7 +153,7 @@ class HomeScreenModels implements HomeRepo {
       final raw = await LocalDbDAO.instance.getAppConfig(
         _kDarkModeEnabledKey,
       );
-      if (raw == null || raw.isEmpty) return true; // Default to dark mode
+      if (raw == null || raw.isEmpty) return false; // Default to light mode
       return raw == "1";
     } on Exception catch (error) {
       return Future.error(error);
@@ -178,6 +179,26 @@ class HomeScreenModels implements HomeRepo {
         _kDarkModeEnabledKey,
         enabled ? "1" : "0",
       );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<String> getDashboardStyle() async {
+    try {
+      final raw = await LocalDbDAO.instance.getAppConfig(_kDashboardStyleKey);
+      if (raw == null || raw.isEmpty) return "pro"; // Default to Pro for new installations
+      return raw;
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<void> setDashboardStyle(String style) async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(_kDashboardStyleKey, style);
     } on Exception catch (error) {
       return Future.error(error);
     }
@@ -228,6 +249,15 @@ class HomeScreenModels implements HomeRepo {
   }
 
   @override
+  Future<Map<String, Map<String, dynamic>>> getSaleSessionSummaries(String shopfront) async {
+    try {
+      return await LocalDbDAO.instance.getSaleSessionSummaries(shopfront);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
   Future<DiscoverResponse> discoverHost(String ip, int port) async {
     try {
       final response = await DataAgentImpl.instance.discoverHost(ip, port);
@@ -253,15 +283,19 @@ class HomeScreenModels implements HomeRepo {
     required String hostName,
     required int port,
     required String pairingCode,
+    bool isTablet = false, // Parameter kept for interface but we use native detection
   }) async {
     try {
       final mobileInfo = await DeviceMetaDataUtils.instance
           .getDeviceInformation();
+      
+      // Use native device detection for tablet check
+      final bool isNativeTablet = await DeviceMetaDataUtils.instance.isTablet();
 
       final response = await DataAgentImpl.instance.pairDevice(ip, port, {
         "PairingCode": pairingCode,
         "DeviceName": mobileInfo.name,
-        "DeviceType": "Mobile",
+        "DeviceType": isNativeTablet ? "Tablet" : "Mobile",
       });
 
       if (response.success) {
@@ -669,6 +703,24 @@ class HomeScreenModels implements HomeRepo {
   Future<String> getDatabasePath() async {
     final dbPath = await getDatabasesPath();
     return p.join(dbPath, 'rm-mobile.db');
+  }
+
+  @override
+  Future<void> closeDatabase() async {
+    try {
+      await LocalDbDAO.instance.closeDatabase();
+    } catch (e) {
+      return Future.error(e);
+    }
+  }
+
+  @override
+  Future<void> reopenDatabase() async {
+    try {
+      await LocalDbDAO.instance.reopenDatabase();
+    } catch (e) {
+      return Future.error(e);
+    }
   }
 }
 

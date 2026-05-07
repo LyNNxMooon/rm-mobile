@@ -40,9 +40,10 @@ class AppBarSession extends StatelessWidget {
     final double networkIconSize = isLargeTablet ? 42 : isTablet ? 32 : 22;
     final double settingsIconSize = isLargeTablet ? 32 : isTablet ? 30 : 22;
     final double glassPadding = isTablet ? 12.0 : 11.0;
+    final double horizontalPadding = isTablet ? 22 : 16;
 
     return Padding(
-      padding: const EdgeInsets.only(right: 24, left: 26),
+      padding: EdgeInsets.only(right: horizontalPadding, left: horizontalPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

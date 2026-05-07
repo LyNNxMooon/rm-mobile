@@ -6,6 +6,7 @@ import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/dependency_injection_utils.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
+import 'package:rmmobile/features/transactions/presentation/screens/sales_screen.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
@@ -16,7 +17,6 @@ import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_states.dart';
-import '../../../transactions/presentation/screens/sales_screen.dart';
 import '../../../transactions/presentation/BLoC/sales_bloc.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_states.dart';
@@ -636,7 +636,7 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
     },
     {
       "title": "Quotes",
-      "subTitle": "Issue estimates",
+      "subTitle": "Create quotations",
       "icon": Icons.request_quote_outlined,
       "color": Colors.orange.shade500,
       "comingSoon": false,
@@ -644,7 +644,7 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
     },
     {
       "title": "Lay-bys",
-      "subTitle": "Manage lay-bys",
+      "subTitle": "Create lay-bys",
       "icon": Icons.inventory_2_outlined,
       "color": const Color.fromARGB(255, 152, 86, 165),
       "comingSoon": false,

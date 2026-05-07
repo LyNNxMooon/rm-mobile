@@ -135,6 +135,11 @@ class SaveCashDrawerIdentifierEvent extends SettingsEvent {
 
 class ExportDatabaseEvent extends SettingsEvent {}
 
+class ImportDatabaseEvent extends SettingsEvent {
+  final String filePath;
+  ImportDatabaseEvent({required this.filePath});
+}
+
 class LoadRmVersionEvent extends SettingsEvent {}
 
 class ForceFullSyncEvent extends SettingsEvent {
@@ -167,12 +172,14 @@ class PairDeviceEvent extends PairDeviceEvents {
   final String hostName;
   final int port;
   final String pairingCode;
+  final bool isTablet;
 
   PairDeviceEvent({
     required this.ip,
     required this.hostName,
     required this.port,
     required this.pairingCode,
+    this.isTablet = false,
   });
 }
 

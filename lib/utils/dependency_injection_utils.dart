@@ -3,6 +3,7 @@ import 'package:rmmobile/features/home_page/domain/repositories/home_repo.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/cleanup_history.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/clear_sync_timestamps.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/get_sale_session_counts.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/get_sale_session_summaries.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/discover_host.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/authenticate_staff.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/load_dark_mode_enabled.dart';
@@ -16,11 +17,14 @@ import 'package:rmmobile/features/home_page/domain/use_cases/load_auto_backup_en
 import 'package:rmmobile/features/home_page/domain/use_cases/sign_out_staff.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_auto_backup_enabled.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_dark_mode_enabled.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/load_dashboard_style.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/update_dashboard_style.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/get_cash_drawer_identifier.dart'
   as home_use_cases;
 import 'package:rmmobile/features/home_page/domain/use_cases/save_cash_drawer_identifier.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/export_database_file.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/import_database_file.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/get_rm_version.dart';
 import 'package:rmmobile/features/loading_splash/domain/repositories/loading_splash_repo.dart';
 import 'package:rmmobile/features/stock_lookup/domain/use_cases/fetch_full_image.dart';
@@ -141,6 +145,7 @@ import '../features/onboarding/domain/use_cases/set_terms_accepted.dart';
 import '../features/onboarding/presentation/BLoC/onboarding_bloc.dart';
 import '../features/customer_lookup/domain/use_cases/get_customer_transactions_local.dart';
 import '../features/theme/presentation/bloc/theme_cubit.dart';
+import '../features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -258,6 +263,7 @@ Future<void> init() async {
       getCashDrawerIdentifier: sl(),
       saveCashDrawerIdentifier: sl(),
       exportDatabaseFile: sl(),
+      importDatabaseFile: sl(),
       getRmVersion: sl(),
       clearSyncTimestamps: sl(),
     ),
@@ -269,7 +275,16 @@ Future<void> init() async {
     ),
   );
   sl.registerFactory(
-    () => SessionCountsCubit(getSaleSessionCounts: sl()),
+    () => DashboardStyleCubit(
+      loadDashboardStyle: sl(),
+      updateDashboardStyle: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => SessionCountsCubit(
+      getSaleSessionCounts: sl(),
+      getSaleSessionSummaries: sl(),
+    ),
   );
   sl.registerFactory(() => DiscoverHostBloc(discoverHost: sl()));
   sl.registerFactory(() => PairCodeBloc(getPairCodes: sl()));
@@ -404,11 +419,15 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateAutoBackupEnabled(sl()));
   sl.registerLazySingleton(() => LoadDarkModeEnabled(sl()));
   sl.registerLazySingleton(() => UpdateDarkModeEnabled(sl()));
+  sl.registerLazySingleton(() => LoadDashboardStyle(sl()));
+  sl.registerLazySingleton(() => UpdateDashboardStyle(sl()));
   sl.registerLazySingleton(() => ClearSyncTimestamps(sl()));
   sl.registerLazySingleton(() => GetSaleSessionCounts(sl()));
+  sl.registerLazySingleton(() => GetSaleSessionSummaries(sl()));
   sl.registerLazySingleton(() => home_use_cases.GetCashDrawerIdentifier(sl()));
   sl.registerLazySingleton(() => SaveCashDrawerIdentifier(sl()));
   sl.registerLazySingleton(() => ExportDatabaseFile(sl()));
+  sl.registerLazySingleton(() => ImportDatabaseFile(sl()));
   sl.registerLazySingleton(() => GetRmVersion(sl()));
   sl.registerLazySingleton(
     () => RunAutoBackupIfDue(repository: sl(), backupStocktake: sl()),

@@ -5,6 +5,7 @@ import '../../../../local_db/sqlite/sqlite_constants.dart';
 class SalesSettingsResult {
   final bool scanIndividualUnits;
   final bool skipSellPrice;
+  final bool oneDisplayLinePerItem;
   final bool promptForEmailAtSale;
   final bool autoRemindLowStock;
   final bool preventAddIfNoStock;
@@ -16,6 +17,7 @@ class SalesSettingsResult {
   SalesSettingsResult({
     required this.scanIndividualUnits,
     required this.skipSellPrice,
+    required this.oneDisplayLinePerItem,
     required this.promptForEmailAtSale,
     required this.autoRemindLowStock,
     required this.preventAddIfNoStock,
@@ -35,6 +37,9 @@ class LoadSalesSettings {
     );
     final skipSellPrice = await LocalDbDAO.instance.getAppConfig(
       kSalesSkipSellPriceKey,
+    );
+    final oneDisplayLinePerItem = await LocalDbDAO.instance.getAppConfig(
+      kSalesOneDisplayLinePerItemKey,
     );
     final promptForEmail = await LocalDbDAO.instance.getAppConfig(
       kSalesPromptForEmailKey,
@@ -58,9 +63,19 @@ class LoadSalesSettings {
       kSalesPromptScanIndividualFractionalKey,
     );
 
+    if (oneDisplayLinePerItem == null) {
+      await LocalDbDAO.instance.saveAppConfig(
+        kSalesOneDisplayLinePerItemKey,
+        'true',
+      );
+    }
+
     return SalesSettingsResult(
       scanIndividualUnits: scanIndividualUnits == 'true',
       skipSellPrice: skipSellPrice == 'true',
+      oneDisplayLinePerItem: oneDisplayLinePerItem == null
+          ? true
+          : oneDisplayLinePerItem == 'true',
       promptForEmailAtSale: promptForEmail == 'true',
       autoRemindLowStock: autoRemindLowStock == 'true',
       preventAddIfNoStock: preventAddIfNoStock == 'true',

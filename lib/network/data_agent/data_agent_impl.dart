@@ -41,7 +41,7 @@ class DataAgentImpl implements DataAgent {
   static final DataAgentImpl _instance = DataAgentImpl._();
   static DataAgentImpl get instance => _instance;
   static const Duration _connectTimeout = Duration(seconds: 6);
-  static const Duration _receiveTimeout = Duration(seconds: 12);
+  static const Duration _receiveTimeout = Duration(seconds: 20);
   static const Duration _sendTimeout = Duration(seconds: 12);
 
   //Error config for fetching

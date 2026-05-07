@@ -135,13 +135,9 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 
       if (result.stock != null) {
         // Calculate what the total qty would be if added
-        final existingIndex = _cartItems.indexWhere(
-          (item) => item.code == result.stock!.barcode,
-        );
         final double qtyToAdd = 1.0;
-        final double totalQty = existingIndex >= 0 
-            ? _cartItems[existingIndex].qty + qtyToAdd 
-            : qtyToAdd;
+        final double totalQty =
+            _cartQtyForCode(result.stock!.barcode) + qtyToAdd;
         
         // Check if adding is permitted (stock availability)
         final availability = checkStockAvailability(
@@ -171,7 +167,11 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         }
         
         // Auto-add to cart when single match found
-        final added = await _addStockToCart(result.stock!, skipEditMode: event.skipEditMode);
+        final added = await _addStockToCart(
+          result.stock!,
+          skipEditMode: event.skipEditMode,
+          oneDisplayLinePerItem: event.oneDisplayLinePerItem,
+        );
         if (added.negativeSellPrice) {
           emit(NegativeSellPriceFound(
             cartItems: List.from(_cartItems),
@@ -217,13 +217,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 
   Future<void> _onSelectStock(SelectStock event, Emitter<SalesState> emit) async {
     // Calculate what the total qty would be if added
-    final existingIndex = _cartItems.indexWhere(
-      (item) => item.code == event.stock.barcode,
-    );
     final double qtyToAdd = 1.0;
-    final double totalQty = existingIndex >= 0 
-        ? _cartItems[existingIndex].qty + qtyToAdd 
-        : qtyToAdd;
+    final double totalQty = _cartQtyForCode(event.stock.barcode) + qtyToAdd;
     
     // Check if adding is permitted (stock availability)
     final availability = checkStockAvailability(
@@ -253,7 +248,11 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       return;
     }
     
-    final added = await _addStockToCart(event.stock, skipEditMode: event.skipEditMode);
+    final added = await _addStockToCart(
+      event.stock,
+      skipEditMode: event.skipEditMode,
+      oneDisplayLinePerItem: event.oneDisplayLinePerItem,
+    );
     if (added.negativeSellPrice) {
       emit(NegativeSellPriceFound(
         cartItems: List.from(_cartItems),
@@ -284,12 +283,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 
   Future<void> _onAddToCart(AddToCart event, Emitter<SalesState> emit) async {
     // Calculate what the total qty would be if added
-    final existingIndex = _cartItems.indexWhere(
-      (item) => item.code == event.stock.barcode,
-    );
-    final double totalQty = existingIndex >= 0 
-        ? _cartItems[existingIndex].qty + event.qty 
-        : event.qty;
+    final double totalQty = _cartQtyForCode(event.stock.barcode) + event.qty;
     
     // Check if adding is permitted (stock availability)
     final availability = checkStockAvailability(
@@ -307,7 +301,12 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       return;
     }
     
-    final result = await _addStockToCart(event.stock, qty: event.qty, skipEditMode: event.skipEditMode);
+    final result = await _addStockToCart(
+      event.stock,
+      qty: event.qty,
+      skipEditMode: event.skipEditMode,
+      oneDisplayLinePerItem: event.oneDisplayLinePerItem,
+    );
     if (result.negativeSellPrice) {
       emit(NegativeSellPriceFound(
         cartItems: List.from(_cartItems),
@@ -345,106 +344,148 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     ));
   }
 
-  /// Adds stock to cart and returns the total quantity in cart for this item
-  Future<_AddToCartResult> _addStockToCart(StockVO stock, {double qty = 1.0, bool skipEditMode = false}) async {
-    // Check if item already exists in cart (by barcode)
-    final existingIndex = _cartItems.indexWhere(
-      (item) => item.code == stock.barcode,
-    );
+  double _cartQtyForCode(String code) {
+    double total = 0.0;
+    for (final item in _cartItems) {
+      if (item.code == code) {
+        total += item.qty;
+      }
+    }
+    return total;
+  }
 
-    double totalQty = qty;
-    bool negativeSellPrice = false;
+  bool _pricesMatch(CartItemVO item, double incPrice) {
+    const double epsilon = 0.0001;
+    return (item.sellPrice - incPrice).abs() <= epsilon;
+  }
+
+  int _findMatchingCartIndex(
+    String code,
+    double incPrice, {
+    int excludeIndex = -1,
+  }) {
+    for (int i = 0; i < _cartItems.length; i++) {
+      if (i == excludeIndex) {
+        continue;
+      }
+      final item = _cartItems[i];
+      if (item.code == code && _pricesMatch(item, incPrice)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /// Adds stock to cart and returns the total quantity in cart for this item
+  Future<_AddToCartResult> _addStockToCart(
+    StockVO stock, {
+    double qty = 1.0,
+    bool skipEditMode = false,
+    bool oneDisplayLinePerItem = true,
+  }) async {
+    // Add new item - determine prices
+    double incPrice;
+    double exPrice;
+    double taxPercentage;
+    int taxType;
+
+    // Get effective sell price based on customer grade
+    final int customerGrade = _selectedCustomer?.grade ?? 0;
+    final effectiveResult = stock.getEffectiveSellPrice(customerGrade);
+    final double effectiveSell = effectiveResult.price;
+
+    // Get tax info for this stock (needed for taxType and percentage)
+    final taxResult = await TaxCalculationUtils.calculateSellTax(
+      sell: stock.sell,
+      salesTax: stock.salesTax,
+    );
+    taxPercentage = taxResult.percentage;
+    taxType = taxResult.taxType;
+
+    if (effectiveResult.isPricingGradeApplied) {
+      // Pricing grade prices are already inc-tax
+      // Calculate ex-tax from inc using precise Rational arithmetic
+      incPrice = effectiveSell;
+      exPrice = taxPercentage > 0
+          ? TaxCalculationUtils.calculateExclusivePrice(
+              effectiveSell,
+              taxPercentage,
+            )
+          : effectiveSell;
+    } else if (stock.sellInc != null && stock.sellEx != null) {
+      // Use pre-calculated values from server (for both normal & package items)
+      incPrice = stock.sellInc!;
+      exPrice = stock.sellEx!;
+    } else {
+      // Fallback: calculate using tax tables (legacy items without pre-calculated values)
+      incPrice = taxResult.incPrice;
+      exPrice = taxResult.exPrice;
+    }
+
+    // Get cost values - use pre-calculated from server when available
+    double computedCostEx;
+    double computedCostInc;
+
+    if (stock.costEx != null && stock.costInc != null) {
+      // Use pre-calculated values from server
+      computedCostEx = stock.costEx!;
+      computedCostInc = stock.costInc!;
+    } else if (stock.costEx != null) {
+      // Only costEx available - calculate costInc with precise arithmetic
+      computedCostEx = stock.costEx!;
+      final costTaxResult = await TaxCalculationUtils.calculateCostTax(
+        cost: stock.cost,
+        goodsTax: stock.goodsTax,
+      );
+      computedCostInc = costTaxResult.percentage > 0
+          ? TaxCalculationUtils.calculateInclusivePrice(
+              computedCostEx,
+              costTaxResult.percentage,
+            )
+          : computedCostEx;
+    } else if (stock.costInc != null) {
+      // Only costInc available - calculate costEx with precise arithmetic
+      computedCostInc = stock.costInc!;
+      final costTaxResult = await TaxCalculationUtils.calculateCostTax(
+        cost: stock.cost,
+        goodsTax: stock.goodsTax,
+      );
+      computedCostEx = costTaxResult.percentage > 0
+          ? TaxCalculationUtils.calculateExclusivePrice(
+              computedCostInc,
+              costTaxResult.percentage,
+            )
+          : computedCostInc;
+    } else if (stock.cost > 0) {
+      // Fallback: calculate using tax tables (legacy items)
+      final costTaxResult = await TaxCalculationUtils.calculateCostTax(
+        cost: stock.cost,
+        goodsTax: stock.goodsTax,
+      );
+      computedCostEx = costTaxResult.exPrice;
+      computedCostInc = costTaxResult.incPrice;
+    } else {
+      computedCostEx = 0.0;
+      computedCostInc = 0.0;
+    }
+
+    final bool negativeSellPrice =
+        effectiveSell < 0 || incPrice < 0 || exPrice < 0;
+
+    int matchingIndex = -1;
+    if (oneDisplayLinePerItem && skipEditMode) {
+      matchingIndex = _findMatchingCartIndex(stock.barcode, incPrice);
+    }
+
     String? salesPrompt;
-    
-    if (existingIndex >= 0) {
-      // Update quantity of existing item
-      totalQty = _cartItems[existingIndex].qty + qty;
-      _cartItems[existingIndex] = _cartItems[existingIndex].copyWith(
-        qty: totalQty,
-        isEditing: skipEditMode ? false : true, // Skip edit mode if auto-adding
+
+    if (matchingIndex >= 0) {
+      final updatedQty = _cartItems[matchingIndex].qty + qty;
+      _cartItems[matchingIndex] = _cartItems[matchingIndex].copyWith(
+        qty: updatedQty,
+        isEditing: skipEditMode ? false : true,
       );
     } else {
-      // Add new item - determine prices
-      double incPrice;
-      double exPrice;
-      double taxPercentage;
-      int taxType;
-      
-      // Get effective sell price based on customer grade
-      final int customerGrade = _selectedCustomer?.grade ?? 0;
-      final effectiveResult = stock.getEffectiveSellPrice(customerGrade);
-      final double effectiveSell = effectiveResult.price;
-      
-      // Get tax info for this stock (needed for taxType and percentage)
-      final taxResult = await TaxCalculationUtils.calculateSellTax(
-        sell: stock.sell,
-        salesTax: stock.salesTax,
-      );
-      taxPercentage = taxResult.percentage;
-      taxType = taxResult.taxType;
-      
-      if (effectiveResult.isPricingGradeApplied) {
-        // Pricing grade prices are already inc-tax
-        // Calculate ex-tax from inc using precise Rational arithmetic
-        incPrice = effectiveSell;
-        exPrice = taxPercentage > 0 
-            ? TaxCalculationUtils.calculateExclusivePrice(effectiveSell, taxPercentage)
-            : effectiveSell;
-      } else if (stock.sellInc != null && stock.sellEx != null) {
-        // Use pre-calculated values from server (for both normal & package items)
-        incPrice = stock.sellInc!;
-        exPrice = stock.sellEx!;
-      } else {
-        // Fallback: calculate using tax tables (legacy items without pre-calculated values)
-        incPrice = taxResult.incPrice;
-        exPrice = taxResult.exPrice;
-      }
-      
-      // Get cost values - use pre-calculated from server when available
-      double computedCostEx;
-      double computedCostInc;
-      
-      if (stock.costEx != null && stock.costInc != null) {
-        // Use pre-calculated values from server
-        computedCostEx = stock.costEx!;
-        computedCostInc = stock.costInc!;
-      } else if (stock.costEx != null) {
-        // Only costEx available - calculate costInc with precise arithmetic
-        computedCostEx = stock.costEx!;
-        final costTaxResult = await TaxCalculationUtils.calculateCostTax(
-          cost: stock.cost,
-          goodsTax: stock.goodsTax,
-        );
-        computedCostInc = costTaxResult.percentage > 0
-            ? TaxCalculationUtils.calculateInclusivePrice(computedCostEx, costTaxResult.percentage)
-            : computedCostEx;
-      } else if (stock.costInc != null) {
-        // Only costInc available - calculate costEx with precise arithmetic
-        computedCostInc = stock.costInc!;
-        final costTaxResult = await TaxCalculationUtils.calculateCostTax(
-          cost: stock.cost,
-          goodsTax: stock.goodsTax,
-        );
-        computedCostEx = costTaxResult.percentage > 0
-            ? TaxCalculationUtils.calculateExclusivePrice(computedCostInc, costTaxResult.percentage)
-            : computedCostInc;
-      } else if (stock.cost > 0) {
-        // Fallback: calculate using tax tables (legacy items)
-        final costTaxResult = await TaxCalculationUtils.calculateCostTax(
-          cost: stock.cost,
-          goodsTax: stock.goodsTax,
-        );
-        computedCostEx = costTaxResult.exPrice;
-        computedCostInc = costTaxResult.incPrice;
-      } else {
-        computedCostEx = 0.0;
-        computedCostInc = 0.0;
-      }
-      
-      if (effectiveSell < 0 || incPrice < 0 || exPrice < 0) {
-        negativeSellPrice = true;
-      }
-
       final newItem = CartItemVO(
         code: stock.barcode,
         description: stock.description,
@@ -461,7 +502,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         computedCostEx: computedCostEx,
         computedCostInc: computedCostInc,
       );
-      
+
       _cartItems.insert(0, newItem);
 
       final prompt = stock.salesPrompt?.trim() ?? '';
@@ -469,9 +510,9 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         salesPrompt = prompt;
       }
     }
-    
+
     return _AddToCartResult(
-      totalQty: totalQty,
+      totalQty: _cartQtyForCode(stock.barcode),
       negativeSellPrice: negativeSellPrice,
       salesPrompt: salesPrompt,
     );
@@ -563,20 +604,44 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       isEditing: false,
       isNewlyAdded: false,
     );
-    
+
+    int savedIndex = event.index;
+    if (event.oneDisplayLinePerItem) {
+      final updatedItem = _cartItems[event.index];
+      final matchingIndex = _findMatchingCartIndex(
+        updatedItem.code,
+        updatedItem.sellPrice,
+        excludeIndex: event.index,
+      );
+
+      if (matchingIndex >= 0 && matchingIndex != event.index) {
+        final mergedQty = _cartItems[matchingIndex].qty + updatedItem.qty;
+        _cartItems[matchingIndex] = _cartItems[matchingIndex].copyWith(
+          qty: mergedQty,
+          isEditing: false,
+          isNewlyAdded: false,
+        );
+        _cartItems.removeAt(event.index);
+        savedIndex = matchingIndex > event.index
+            ? matchingIndex - 1
+            : matchingIndex;
+      }
+    }
+
     // Check for low stock warning if the setting is enabled and stock data is available
     LowStockWarning? warning;
-    if (event.autoRemindLowStock && cartItem.stock != null) {
+    final warningItem = _cartItems[savedIndex];
+    if (event.autoRemindLowStock && warningItem.stock != null) {
       warning = checkLowStockWarning(
-        stock: cartItem.stock!,
-        saleQty: cartItem.qty,
+        stock: warningItem.stock!,
+        saleQty: warningItem.qty,
         autoRemindEnabled: true,
       );
       if (!warning.hasWarning) warning = null;
     }
-    
+
     emit(CartItemSaved(
-      index: event.index,
+      index: savedIndex,
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
       lowStockWarning: warning,

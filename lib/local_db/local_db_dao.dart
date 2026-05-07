@@ -34,6 +34,12 @@ abstract class LocalDbDAO {
   /// Checkpoint WAL to consolidate all data into main db file (useful before export)
   Future<void> checkpointDatabase();
 
+  /// Close the database connection (useful before importing a new database)
+  Future<void> closeDatabase();
+
+  /// Reopen the database connection after import
+  Future<void> reopenDatabase();
+
   //Getter to get data
   Future<Map<String, dynamic>?> getNetworkCredential({required String ip});
   Future<List<Map<String, dynamic>>> getAllNetworkPaths();
@@ -337,6 +343,7 @@ abstract class LocalDbDAO {
   Future<void> deleteSaleSession(int id);
   Future<void> deleteAllSaleSessions({String? shopfront, String? sessionType});
   Future<Map<String, int>> getSaleSessionCounts(String shopfront);
+  Future<Map<String, Map<String, dynamic>>> getSaleSessionSummaries(String shopfront);
 
   // Tax Codes
   Future<void> saveTaxCodes(List<TaxCodeVO> taxCodes, String shopfront);

@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:rmmobile/constants/colors.dart';
 import 'package:rmmobile/constants/theme_colors.dart';
 import 'package:rmmobile/entities/vos/package_component.dart';
+import 'package:rmmobile/utils/formatting_utils.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/responsive_utils.dart';
 
@@ -139,7 +140,10 @@ class PackageComponentsScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '\$${_calculateGrandTotal().toStringAsFixed(2)}',
+                          FormattingUtils.formatCurrencyWithDecimals(
+                            _calculateGrandTotal(),
+                            2,
+                          ),
                           style: TextStyle(
                             color: kPrimaryColor,
                             fontSize: 13,
@@ -311,7 +315,10 @@ class PackageComponentsScreen extends StatelessWidget {
                                 Expanded(
                                   flex: 2,
                                   child: Text(
-                                    '\$${sellInc.toStringAsFixed(2)}',
+                                    FormattingUtils.formatCurrencyWithDecimals(
+                                      sellInc,
+                                      2,
+                                    ),
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       color: isDark
@@ -324,7 +331,10 @@ class PackageComponentsScreen extends StatelessWidget {
                                 Expanded(
                                   flex: 2,
                                   child: Text(
-                                    '\$${total.toStringAsFixed(2)}',
+                                    FormattingUtils.formatCurrencyWithDecimals(
+                                      total,
+                                      2,
+                                    ),
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       color: isDark

@@ -50,8 +50,15 @@ class Debouncer {
 
 class CustomerLookupScreen extends StatefulWidget {
   final bool showBackArrow;
+  final bool selectionMode;
+  final void Function(CustomerVO)? onCustomerSelected;
   
-  const CustomerLookupScreen({super.key, this.showBackArrow = false});
+  const CustomerLookupScreen({
+    super.key,
+    this.showBackArrow = false,
+    this.selectionMode = false,
+    this.onCustomerSelected,
+  });
 
   @override
   State<CustomerLookupScreen> createState() => _CustomerLookupScreenState();
@@ -770,7 +777,14 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                   _showSyncBlockedMessage();
                   return;
                 }
-                context.navigateToNext(CustomerDetailsScreen(customer: customer));
+                if (widget.selectionMode && widget.onCustomerSelected != null) {
+                  // Selection mode: select customer and go back
+                  widget.onCustomerSelected!(customer);
+                  Navigator.of(context).pop();
+                } else {
+                  // Normal mode: go to details
+                  context.navigateToNext(CustomerDetailsScreen(customer: customer));
+                }
               },
               child: Container(
                 decoration: BoxDecoration(
@@ -924,6 +938,33 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                         size: accountIconSize,
                       ),
                     ),
+                    // Chevron arrow for selection mode - tapping goes to details
+                    if (widget.selectionMode) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          if (_isSyncInProgress()) {
+                            _showSyncBlockedMessage();
+                            return;
+                          }
+                          context.navigateToNext(CustomerDetailsScreen(customer: customer));
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(isTablet ? 8 : 6),
+                          decoration: BoxDecoration(
+                            color: isDark 
+                                ? Colors.white.withOpacity(0.1) 
+                                : Colors.grey.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
+                          ),
+                          child: Icon(
+                            CupertinoIcons.chevron_right,
+                            color: isDark ? Colors.white54 : Colors.grey[600],
+                            size: isTablet ? 20 : 16,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

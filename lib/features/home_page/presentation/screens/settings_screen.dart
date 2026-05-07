@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'dart:async';
 import 'package:alert_info/alert_info.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/cupertino.dart';
@@ -9,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/entities/vos/network_server_vo.dart';
 import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
@@ -20,6 +22,7 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/modern_dialog_styles.dart';
+import '../../../../constants/standard_dialog.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/dialog_size_utils.dart';
@@ -450,6 +453,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 CustomSnackBar.error(message: state.message),
               );
             }
+            if (state is DatabaseImported) {
+              AlertInfo.show(
+                context: context,
+                text: "Database imported successfully. Please restart the app.",
+                typeInfo: TypeInfo.success,
+                backgroundColor: colors.surface,
+                iconColor: kPrimaryColor,
+                textColor: colors.onSurface,
+                position: MessagePosition.top,
+                padding: 70,
+              );
+            }
+            if (state is DatabaseImportError) {
+              showTopSnackBar(
+                Overlay.of(context),
+                CustomSnackBar.error(message: state.message),
+              );
+            }
             if (state is ForceFullSyncTriggered) {
               setState(() {
                 _isForceFullSyncInProgress = false;
@@ -488,6 +509,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   hostName: _selectedHostName,
                   port: _selectedPort,
                   pairingCode: _manualCodeController.text.trim(),
+                  isTablet: context.isTablet,
                 ),
               );
             }
@@ -831,18 +853,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         _buildSectionTitle("Appearance"),
                         _buildGlassContainer(
-                          child: BlocBuilder<ThemeCubit, ThemeMode>(
-                            builder: (context, themeMode) {
-                              final bool isDark = themeMode == ThemeMode.dark;
-                              return _buildSwitchRow(
-                                "Dark Mode",
-                                "Use a darker color palette across the app",
-                                isDark,
-                                (val) {
-                                  context.read<ThemeCubit>().setDarkMode(val);
+                          child: Column(
+                            children: [
+                              BlocBuilder<ThemeCubit, ThemeMode>(
+                                builder: (context, themeMode) {
+                                  final bool isDark = themeMode == ThemeMode.dark;
+                                  return _buildSwitchRow(
+                                    "Dark Mode",
+                                    "Use a darker color palette across the app",
+                                    isDark,
+                                    (val) {
+                                      context.read<ThemeCubit>().setDarkMode(val);
+                                    },
+                                  );
                                 },
-                              );
-                            },
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              BlocBuilder<DashboardStyleCubit, String>(
+                                builder: (context, dashboardStyle) {
+                                  return _buildDropdownRow(
+                                    "Dashboard Style",
+                                    "Choose your preferred home screen layout",
+                                    dashboardStyle,
+                                    const ["pro", "default"],
+                                    const ["Pro (Modern)", "Default (Classic)"],
+                                    (val) {
+                                      if (val != null) {
+                                        context.read<DashboardStyleCubit>().setStyle(val);
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
                           ),
                         ),
 
@@ -941,6 +987,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 "Share the raw database file for support",
                                 Colors.orange,
                                 () => _exportAndShareDatabase(context),
+                                titleColor: Colors.white,
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildActionRow(
+                                Icons.download_outlined,
+                                "Import Database",
+                                "Restore a fixed database from support",
+                                Colors.teal,
+                                () => _importDatabase(context),
                                 titleColor: Colors.white,
                               ),
                             ],
@@ -1190,16 +1248,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E2733) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          "Force Full Sync",
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+      builder: (ctx) => StandardDialog(
+        title: "Force Full Sync",
+        colors: colors,
+        isDark: isDark,
+        onClose: () => Navigator.of(ctx).pop(),
         content: Text(
           "This will re-download all stocks and customers from the server. This may take some time depending on the data size.\n\nDo you want to continue?",
           style: TextStyle(
@@ -1207,14 +1260,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         actions: [
-          TextButton(
+          DialogTextAction(
+            label: "Cancel",
+            style: DialogActionStyle.dangerOutline,
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              "Cancel",
-              style: TextStyle(color: isDark ? Colors.white54 : Colors.grey),
-            ),
           ),
-          ElevatedButton(
+          DialogTextAction(
+            label: "Continue",
+            style: DialogActionStyle.primary,
             onPressed: () {
               Navigator.of(ctx).pop();
               setState(() {
@@ -1224,14 +1277,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ForceFullSyncEvent(shopfrontId: _savedShopfrontId),
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kPrimaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text("Continue"),
           ),
         ],
       ),
@@ -1546,6 +1591,107 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildDropdownRow(
+    String title,
+    String subtitle,
+    String value,
+    List<String> options,
+    List<String> labels,
+    Function(String?) onChanged,
+  ) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white10 : Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark ? Colors.white24 : Colors.white.withOpacity(0.4),
+              ),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: value,
+                isDense: true,
+                dropdownColor: isDark ? const Color(0xFF2A2A2E) : Colors.white,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                icon: const Icon(
+                  Icons.arrow_drop_down,
+                  color: Colors.white,
+                ),
+                selectedItemBuilder: (BuildContext context) {
+                  return labels.map<Widget>((String label) {
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  }).toList();
+                },
+                items: List.generate(options.length, (index) {
+                  return DropdownMenuItem<String>(
+                    value: options[index],
+                    child: Text(
+                      labels[index],
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  );
+                }),
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildActionRow(
     IconData icon,
     String title,
@@ -1633,5 +1779,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _exportAndShareDatabase(BuildContext context) async {
     context.read<SettingsBloc>().add(ExportDatabaseEvent());
+  }
+
+  Future<void> _importDatabase(BuildContext context) async {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+
+    // Show confirmation dialog first
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StandardDialog(
+        title: "Import Database",
+        colors: colors,
+        isDark: isDark,
+        onClose: () => Navigator.of(ctx).pop(false),
+        content: Text(
+          "This will replace your current database with the selected file. "
+          "Make sure you have a backup of your current data.\n\n"
+          "After importing, you will need to restart the app.",
+          style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black54,
+          ),
+        ),
+        actions: [
+          DialogTextAction(
+            label: "Cancel",
+            style: DialogActionStyle.dangerOutline,
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          DialogTextAction(
+            label: "Import",
+            style: DialogActionStyle.primary,
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Open file picker to select database file
+    const XTypeGroup typeGroup = XTypeGroup(
+      label: 'Database',
+      extensions: ['db'],
+    );
+
+    final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+    
+    if (file != null) {
+      if (!context.mounted) return;
+      context.read<SettingsBloc>().add(ImportDatabaseEvent(filePath: file.path));
+    }
   }
 }

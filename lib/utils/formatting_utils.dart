@@ -2,6 +2,27 @@ import 'package:decimal/decimal.dart';
 
 /// Utility class for formatting numbers with cascading rounding
 class FormattingUtils {
+  static String _addThousandsSeparators(String number) {
+    if (number.isEmpty) return number;
+
+    String sign = '';
+    String working = number;
+    if (working.startsWith('-')) {
+      sign = '-';
+      working = working.substring(1);
+    }
+
+    final parts = working.split('.');
+    final integerPart = parts.first;
+    final decimalPart = parts.length > 1 ? '.${parts[1]}' : '';
+    final withCommas = integerPart.replaceAll(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      ',',
+    );
+
+    return '$sign$withCommas$decimalPart';
+  }
+
   /// Cascading rounding: rounds from the rightmost digit towards the target precision.
   /// Example: 4990.1148 → 4990.115 → 4990.12 (with decimals=2)
   /// 
@@ -54,12 +75,22 @@ class FormattingUtils {
   
   /// Format a double value as currency string with cascading rounding to 2 decimals
   static String formatCurrency(double value) {
-    return '\$${cascadeRound(value, 2)}';
+    return '\$${_addThousandsSeparators(cascadeRound(value, 2))}';
+  }
+
+  /// Format a double value as currency string with cascading rounding and commas
+  static String formatCurrencyWithDecimals(double value, int decimals) {
+    return '\$${_addThousandsSeparators(cascadeRound(value, decimals))}';
   }
   
   /// Format a double value with cascading rounding to specified decimals
   static String formatFixed(double value, int decimals) {
     return cascadeRound(value, decimals);
+  }
+
+  /// Format a double value with cascading rounding and comma grouping
+  static String formatFixedWithCommas(double value, int decimals) {
+    return _addThousandsSeparators(cascadeRound(value, decimals));
   }
 }
 

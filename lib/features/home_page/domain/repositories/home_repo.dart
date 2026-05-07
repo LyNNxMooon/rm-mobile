@@ -61,6 +61,12 @@ abstract class HomeRepo {
 
   Future<void> setDarkModeEnabled(bool enabled);
 
+  /// Returns the dashboard style: "pro" (new) or "default" (old glass drawer)
+  Future<String> getDashboardStyle();
+
+  /// Sets the dashboard style: "pro" (new) or "default" (old glass drawer)
+  Future<void> setDashboardStyle(String style);
+
   Future<DateTime?> getLastAutoBackupAt();
 
   Future<void> setLastAutoBackupAt(DateTime timestamp);
@@ -74,6 +80,7 @@ abstract class HomeRepo {
     required String hostName,
     required int port,
     required String pairingCode,
+    bool isTablet = false,
   });
 
   Future<ShopfrontResponse> fetchShopfrontsFromApi(
@@ -125,9 +132,15 @@ abstract class HomeRepo {
 
   Future<String> getDatabasePath();
 
+  Future<void> closeDatabase();
+
+  Future<void> reopenDatabase();
+
   Future<void> clearSyncTimestamps(String shopfrontId);
 
   Future<Map<String, int>> getSaleSessionCounts(String shopfront);
+
+  Future<Map<String, Map<String, dynamic>>> getSaleSessionSummaries(String shopfront);
 }
 
 class SavedConnectionInfo {

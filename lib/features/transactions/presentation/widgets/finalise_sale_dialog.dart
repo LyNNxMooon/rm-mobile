@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../utils/formatting_utils.dart';
 import '../../../../entities/vos/customer_vo.dart';
 import '../../../../utils/responsive_utils.dart';
+import '../../../../constants/standard_dialog.dart';
 
 /// Result from finalise sale dialog
 enum FinaliseSaleResult { email, save, cancelled }
@@ -43,11 +45,13 @@ class FinaliseSaleDialog extends StatefulWidget {
   });
 
   /// Shows the dialog and returns the result
-  static Future<({
-    FinaliseSaleResult result,
-    FinaliseSaleEmailData? emailData,
-    FinaliseSalePaymentData? paymentData,
-  })?>
+  static Future<
+    ({
+      FinaliseSaleResult result,
+      FinaliseSaleEmailData? emailData,
+      FinaliseSalePaymentData? paymentData,
+    })?
+  >
   show({
     required BuildContext context,
     CustomerVO? customer,
@@ -57,11 +61,13 @@ class FinaliseSaleDialog extends StatefulWidget {
     bool showPayments = true,
     String title = 'Sale',
   }) {
-    return showDialog<({
-      FinaliseSaleResult result,
-      FinaliseSaleEmailData? emailData,
-      FinaliseSalePaymentData? paymentData,
-    })>(
+    return showDialog<
+      ({
+        FinaliseSaleResult result,
+        FinaliseSaleEmailData? emailData,
+        FinaliseSalePaymentData? paymentData,
+      })
+    >(
       context: context,
       barrierDismissible: false,
       builder: (_) => FinaliseSaleDialog(
@@ -100,141 +106,64 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
   ];
 
   /// Shows confirmation dialog when promptForEmail is false
-  Future<bool> _showCommitConfirmation(AppThemeColors colors, bool isDark) async {
+  Future<bool> _showCommitConfirmation(
+    AppThemeColors colors,
+    bool isDark,
+  ) async {
     final change = _balanceOrChange >= 0 ? _balanceOrChange : 0.0;
     final isTablet = context.isTablet;
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 80 : 24,
+      builder: (ctx) => StandardDialog(
+        title: "RetailManager Question",
+        colors: colors,
+        isDark: isDark,
+        maxWidth: isTablet ? 450 : double.infinity,
+        onClose: () => Navigator.pop(ctx, false),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Commit Transaction?",
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.4,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Cash Change",
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white54 : Colors.black45,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              FormattingUtils.formatCurrencyWithDecimals(change, 2),
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: kPrimaryColor,
+              ),
+            ),
+          ],
         ),
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: isTablet ? 450 : double.infinity,
+        actions: [
+          DialogTextAction(
+            label: "No",
+            style: DialogActionStyle.outline,
+            onPressed: () => Navigator.pop(ctx, false),
           ),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E2733) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
+          DialogTextAction(
+            label: "Yes",
+            style: DialogActionStyle.primary,
+            onPressed: () => Navigator.pop(ctx, true),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor.withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.help_outline,
-                      color: kPrimaryColor,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    "RetailManager Question",
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                "Commit Transaction?",
-                style: TextStyle(
-                  fontSize: 16,
-                  height: 1.4,
-                  color: isDark ? Colors.white70 : Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "Cash Change",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.white54 : Colors.black45,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '\$${change.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: kPrimaryColor,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: kPrimaryColor,
-                      side: const BorderSide(color: kPrimaryColor),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      "No",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(ctx, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kPrimaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      "Yes",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
     return result ?? false;
@@ -247,7 +176,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
       text: widget.customer?.email ?? '',
     );
     _paymentAmounts = Map.from(widget.initialPaymentAmounts);
-    
+
     // Determine starting step
     if (widget.showPayments) {
       // Sales: start at payments step
@@ -262,7 +191,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
       _finalEmailData = null;
       _needsInitialConfirmation = true;
     }
-    
+
     // Show initial confirmation if needed after first frame
     if (_needsInitialConfirmation) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -270,23 +199,25 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
       });
     }
   }
-  
+
   Future<void> _showInitialConfirmation() async {
     if (!mounted || !_needsInitialConfirmation) return;
     _needsInitialConfirmation = false;
-    
+
     final colors = context.appColors;
     final isDark = colors.isDark;
-    
+
     final confirmed = await _showCommitConfirmation(colors, isDark);
     if (!mounted) return;
-    
+
     if (!confirmed) {
       // User cancelled - close the dialog
       Navigator.pop(context, (
         result: FinaliseSaleResult.cancelled,
         emailData: null,
-        paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
+        paymentData: FinaliseSalePaymentData(
+          paymentAmounts: Map.from(_paymentAmounts),
+        ),
       ));
     } else {
       // Show receipt step after confirmation
@@ -325,11 +256,15 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
     return parts.isEmpty ? widget.customer!.barcode : parts.join(' ');
   }
 
-  void _showPaymentAmountDialog(String paymentMethod, AppThemeColors colors, bool isDark) {
+  void _showPaymentAmountDialog(
+    String paymentMethod,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
     final existingAmount = _paymentAmounts[paymentMethod] ?? 0.0;
     // Auto-fill with remaining balance if no existing amount and balance is owed
-    final prefillAmount = existingAmount > 0 
-        ? existingAmount 
+    final prefillAmount = existingAmount > 0
+        ? existingAmount
         : (_balanceOrChange < 0 ? _balanceOrChange.abs() : 0.0);
     final controller = TextEditingController(
       text: prefillAmount > 0 ? prefillAmount.toStringAsFixed(2) : '',
@@ -414,7 +349,9 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
                           decimal: true,
                         ),
                         inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d*'),
+                          ),
                         ],
                         style: TextStyle(
                           fontSize: 18,
@@ -430,10 +367,14 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
                           ),
                           hintText: "0.00",
                           hintStyle: TextStyle(
-                            color: isDark ? Colors.white30 : Colors.grey.shade400,
+                            color: isDark
+                                ? Colors.white30
+                                : Colors.grey.shade400,
                           ),
                           filled: true,
-                          fillColor: isDark ? colors.surface : Colors.grey.shade100,
+                          fillColor: isDark
+                              ? colors.surface
+                              : Colors.grey.shade100,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide.none,
@@ -499,36 +440,205 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
     });
   }
 
+  void _cancelDialog() {
+    Navigator.pop(context, (
+      result: FinaliseSaleResult.cancelled,
+      emailData: null,
+      paymentData: FinaliseSalePaymentData(
+        paymentAmounts: Map.from(_paymentAmounts),
+      ),
+    ));
+  }
+
+  void _finishDialog() {
+    if (_finalResult == null) {
+      _cancelDialog();
+      return;
+    }
+    Navigator.pop(context, (
+      result: _finalResult!,
+      emailData: _finalEmailData,
+      paymentData: FinaliseSalePaymentData(
+        paymentAmounts: Map.from(_paymentAmounts),
+      ),
+    ));
+  }
+
+  void _handleClose() {
+    if (_currentStep == 3) {
+      _finishDialog();
+    } else {
+      _cancelDialog();
+    }
+  }
+
+  String _dialogTitle() {
+    switch (_currentStep) {
+      case 0:
+        return "Payment";
+      case 1:
+        return "Finalise Sale";
+      case 2:
+        return "Email Receipt";
+      case 3:
+        return "${widget.title} Complete";
+      default:
+        return "Finalise Sale";
+    }
+  }
+
+  String? _dialogSubtitle() {
+    switch (_currentStep) {
+      case 0:
+        return "Select payment method(s)";
+      case 1:
+        return "How would you like to complete this sale?";
+      case 2:
+        return "Email will be batched to process in RetailManager.";
+      default:
+        return null;
+    }
+  }
+
+  List<DialogActionDecorator> _dialogActions(
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    switch (_currentStep) {
+      case 0:
+        return [
+          DialogTextAction(
+            label: "Cancel",
+            style: DialogActionStyle.dangerOutline,
+            onPressed: _cancelDialog,
+          ),
+          DialogTextAction(
+            label: widget.promptForEmail ? "Next" : "Commit",
+            style: DialogActionStyle.primary,
+            onPressed: () async {
+              if (widget.promptForEmail) {
+                setState(() => _currentStep = 1);
+                return;
+              }
+
+              final confirmed = await _showCommitConfirmation(colors, isDark);
+              if (confirmed) {
+                setState(() {
+                  _finalResult = FinaliseSaleResult.save;
+                  _finalEmailData = null;
+                  _currentStep = 3;
+                });
+              }
+            },
+          ),
+        ];
+      case 1:
+        return [
+          if (widget.showPayments)
+            DialogTextAction(
+              label: "Back",
+              style: DialogActionStyle.text,
+              onPressed: () => setState(() => _currentStep = 0),
+            ),
+          DialogTextAction(
+            label: "Cancel",
+            style: DialogActionStyle.dangerOutline,
+            onPressed: _cancelDialog,
+          ),
+          DialogTextAction(
+            label: "Commit",
+            style: DialogActionStyle.outline,
+            onPressed: () {
+              setState(() {
+                _finalResult = FinaliseSaleResult.save;
+                _finalEmailData = null;
+                _currentStep = 3;
+              });
+            },
+          ),
+          DialogTextAction(
+            label: "Email & Commit",
+            style: DialogActionStyle.primary,
+            onPressed: () {
+              setState(() => _currentStep = 2);
+            },
+          ),
+        ];
+      case 2:
+        return [
+          DialogTextAction(
+            label: "Back",
+            style: DialogActionStyle.outline,
+            onPressed: () => setState(() => _currentStep = 1),
+          ),
+          DialogTextAction(
+            label: "Cancel",
+            style: DialogActionStyle.dangerOutline,
+            onPressed: _cancelDialog,
+          ),
+          DialogTextAction(
+            label: "Done",
+            style: DialogActionStyle.primary,
+            onPressed: () {
+              final email = _emailController.text.trim();
+              setState(() {
+                _finalResult = FinaliseSaleResult.email;
+                _finalEmailData = FinaliseSaleEmailData(email: email);
+                _currentStep = 3;
+              });
+            },
+          ),
+        ];
+      case 3:
+        return [
+          DialogTextAction(
+            label: "OK",
+            style: DialogActionStyle.primary,
+            onPressed: _finishDialog,
+          ),
+        ];
+      default:
+        return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
 
-    return Dialog(
-      backgroundColor: _currentStep == 4 
-          ? Colors.transparent
-          : (isDark ? colors.surface : Colors.white),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: isTablet ? 40 : 20,
-        vertical: isTablet ? 24 : 16,
+    if (_currentStep == 4) {
+      return Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 40 : 20,
+          vertical: isTablet ? 24 : 16,
+        ),
+        child: const SizedBox.shrink(),
+      );
+    }
+
+    return StandardDialog(
+      title: _dialogTitle(),
+      subtitle: _dialogSubtitle(),
+      showClose: true,
+      onClose: _handleClose,
+      colors: colors,
+      isDark: isDark,
+      maxWidth: isTablet ? 500 : MediaQuery.of(context).size.width * 0.95,
+      actions: _dialogActions(colors, isDark),
+      content: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        child: _currentStep == 0
+            ? _buildPaymentsStep(colors, isDark, isTablet)
+            : _currentStep == 1
+            ? _buildCommitOptions(colors, isDark, isTablet)
+            : _currentStep == 2
+            ? _buildEmailForm(colors, isDark, isTablet)
+            : _buildReceiptStep(colors, isDark, isTablet),
       ),
-      child: _currentStep == 4
-          ? const SizedBox.shrink() // Minimal widget while showing confirmation
-          : AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              width: isTablet ? 500 : MediaQuery.of(context).size.width * 0.95,
-              padding: EdgeInsets.all(isTablet ? 24 : 16),
-              child: _currentStep == 0
-                  ? _buildPaymentsStep(colors, isDark, isTablet)
-                  : _currentStep == 1
-                      ? _buildCommitOptions(colors, isDark, isTablet)
-                      : _currentStep == 2
-                          ? _buildEmailForm(colors, isDark, isTablet)
-                          : _buildReceiptStep(colors, isDark, isTablet),
-            ),
     );
   }
 
@@ -537,40 +647,6 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: kPrimaryColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.payment,
-              color: kPrimaryColor,
-              size: 32,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            "Payment",
-            style: TextStyle(
-              fontSize: isTablet ? 20 : 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Select payment method(s)",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: isTablet ? 14 : 13,
-              color: colors.onSurfaceMuted,
-            ),
-          ),
-          const SizedBox(height: 20),
-
           // Total, Balance/Change display
           Container(
             padding: const EdgeInsets.all(12),
@@ -580,142 +656,106 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
               border: Border.all(
                 color: isDark ? Colors.white12 : Colors.grey.shade300,
               ),
+            ),
+            child: Column(
+              children: [
+                _buildAmountRow("Total", widget.total, isDark, isLarge: true),
+                const SizedBox(height: 8),
+                Divider(
+                  color: isDark ? Colors.white12 : Colors.grey.shade300,
+                  height: 1,
+                ),
+                const SizedBox(height: 8),
+                _buildAmountRow(
+                  _balanceOrChange >= 0 ? "Change" : "Balance",
+                  _balanceOrChange.abs(),
+                  isDark,
+                  isNegative: _balanceOrChange < 0,
+                  isPositive: _balanceOrChange > 0,
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            children: [
-              _buildAmountRow("Total", widget.total, isDark, isLarge: true),
-              const SizedBox(height: 8),
-              Divider(
-                color: isDark ? Colors.white12 : Colors.grey.shade300,
-                height: 1,
-              ),
-              const SizedBox(height: 8),
-              _buildAmountRow(
-                _balanceOrChange >= 0 ? "Change" : "Balance",
-                _balanceOrChange.abs(),
-                isDark,
-                isNegative: _balanceOrChange < 0,
-                isPositive: _balanceOrChange > 0,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // Payment Methods Grid
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _paymentMethods.map((method) {
-            final hasAmount = _paymentAmounts.containsKey(method) && _paymentAmounts[method]! > 0;
-            final amount = _paymentAmounts[method] ?? 0;
-            return GestureDetector(
-              onTap: () => _showPaymentAmountDialog(method, colors, isDark),
-              onLongPress: hasAmount
-                  ? () {
-                      setState(() {
-                        _paymentAmounts.remove(method);
-                      });
-                    }
-                  : null,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: hasAmount
-                      ? kPrimaryColor
-                      : (isDark ? colors.surfaceAlt : Colors.grey.shade100),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
+          // Payment Methods Grid
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _paymentMethods.map((method) {
+              final hasAmount =
+                  _paymentAmounts.containsKey(method) &&
+                  _paymentAmounts[method]! > 0;
+              final amount = _paymentAmounts[method] ?? 0;
+              return GestureDetector(
+                onTap: () => _showPaymentAmountDialog(method, colors, isDark),
+                onLongPress: hasAmount
+                    ? () {
+                        setState(() {
+                          _paymentAmounts.remove(method);
+                        });
+                      }
+                    : null,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
                     color: hasAmount
                         ? kPrimaryColor
-                        : (isDark ? Colors.white24 : Colors.grey.shade300),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      method,
-                      style: TextStyle(
-                        color: hasAmount
-                            ? Colors.white
-                            : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
-                        fontWeight: hasAmount ? FontWeight.bold : FontWeight.w500,
-                        fontSize: 13,
-                      ),
+                        : (isDark ? colors.surfaceAlt : Colors.grey.shade100),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: hasAmount
+                          ? kPrimaryColor
+                          : (isDark ? Colors.white24 : Colors.grey.shade300),
                     ),
-                    if (hasAmount) ...[
-                      const SizedBox(width: 6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       Text(
-                        "\$${amount.toStringAsFixed(0)}",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                        method,
+                        style: TextStyle(
+                          color: hasAmount
+                              ? Colors.white
+                              : (isDark
+                                    ? Colors.white70
+                                    : Colors.blueGrey.shade700),
+                          fontWeight: hasAmount
+                              ? FontWeight.bold
+                              : FontWeight.w500,
+                          fontSize: 13,
                         ),
                       ),
+                      if (hasAmount) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          FormattingUtils.formatCurrencyWithDecimals(amount, 0),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 24),
-
-        // Next/Commit Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () async {
-              if (widget.promptForEmail) {
-                setState(() => _currentStep = 1);
-              } else {
-                // Show confirmation dialog before proceeding
-                final confirmed = await _showCommitConfirmation(colors, isDark);
-                if (confirmed) {
-                  // Skip email step, go to receipt
-                  setState(() {
-                    _finalResult = FinaliseSaleResult.save;
-                    _finalEmailData = null;
-                    _currentStep = 3;
-                  });
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kPrimaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: Text(
-              widget.promptForEmail ? "Next" : "Commit",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+              );
+            }).toList(),
           ),
-        ),
-        const SizedBox(height: 12),
-
-        // Cancel
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context, (
-              result: FinaliseSaleResult.cancelled,
-              emailData: null,
-              paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
-            ));
-          },
-          child: Text("Cancel", style: TextStyle(color: colors.onSurfaceMuted)),
-        ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildAmountRow(String label, double amount, bool isDark, {
+  Widget _buildAmountRow(
+    String label,
+    double amount,
+    bool isDark, {
     bool isLarge = false,
     bool isNegative = false,
     bool isPositive = false,
@@ -741,7 +781,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           ),
         ),
         Text(
-          "\$${amount.toStringAsFixed(2)}",
+          FormattingUtils.formatCurrencyWithDecimals(amount, 2),
           style: TextStyle(
             fontSize: isLarge ? 18 : 15,
             fontWeight: FontWeight.bold,
@@ -752,115 +792,14 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
     );
   }
 
-  Widget _buildCommitOptions(AppThemeColors colors, bool isDark, bool isTablet) {
+  Widget _buildCommitOptions(
+    AppThemeColors colors,
+    bool isDark,
+    bool isTablet,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Header
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: kPrimaryColor.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.check_circle_outline,
-            color: kPrimaryColor,
-            size: 32,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          "Finalise Sale",
-          style: TextStyle(
-            fontSize: isTablet ? 20 : 18,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "How would you like to complete this sale?",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: isTablet ? 14 : 13,
-            color: colors.onSurfaceMuted,
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Email Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              setState(() => _currentStep = 2);
-            },
-            icon: const Icon(Icons.email_outlined),
-            label: const Text("Email & Commit"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kPrimaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Save Button
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              setState(() {
-                _finalResult = FinaliseSaleResult.save;
-                _finalEmailData = null;
-                _currentStep = 3;
-              });
-            },
-            icon: const Icon(Icons.save_outlined),
-            label: const Text("Commit"),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: isDark ? Colors.white : Colors.black87,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              side: BorderSide(
-                color: isDark ? Colors.white24 : Colors.grey.shade300,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Back and Cancel
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (widget.showPayments) ...[
-              TextButton(
-                onPressed: () => setState(() => _currentStep = 0),
-                child: Text("Back", style: TextStyle(color: colors.onSurfaceMuted)),
-              ),
-              const SizedBox(width: 16),
-            ],
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context, (
-                  result: FinaliseSaleResult.cancelled,
-                  emailData: null,
-                  paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
-                ));
-              },
-              child: Text("Cancel", style: TextStyle(color: colors.onSurfaceMuted)),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -870,42 +809,6 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Back button and Header
-        Row(
-          children: [
-            IconButton(
-              onPressed: () => setState(() => _currentStep = 1),
-              icon: Icon(
-                Icons.arrow_back,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                "Email Receipt",
-                style: TextStyle(
-                  fontSize: isTablet ? 20 : 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "Email will be batched to process in RetailManager.",
-          style: TextStyle(
-            fontSize: isTablet ? 13 : 12,
-            color: isDark ? Colors.white60 : Colors.black54,
-            fontStyle: FontStyle.italic,
-          ),
-        ),
-        const SizedBox(height: 16),
-
         // Customer Info
         Container(
           padding: const EdgeInsets.all(12),
@@ -1006,88 +909,17 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           ),
         ),
         const SizedBox(height: 24),
-
-        // Done Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              final email = _emailController.text.trim();
-              setState(() {
-                _finalResult = FinaliseSaleResult.email;
-                _finalEmailData = FinaliseSaleEmailData(email: email);
-                _currentStep = 3;
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kPrimaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text(
-              "Done",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Cancel
-        SizedBox(
-          width: double.infinity,
-          child: TextButton(
-            onPressed: () {
-              Navigator.pop(context, (
-                result: FinaliseSaleResult.cancelled,
-                emailData: null,
-                paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
-              ));
-            },
-            child: Text(
-              "Cancel",
-              style: TextStyle(color: colors.onSurfaceMuted),
-            ),
-          ),
-        ),
       ],
     );
   }
 
   Widget _buildReceiptStep(AppThemeColors colors, bool isDark, bool isTablet) {
     final change = _totalPaid - widget.total;
-    
+
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: kPrimaryColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.check_circle,
-              color: kPrimaryColor,
-              size: 32,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            "${widget.title} Complete",
-            style: TextStyle(
-              fontSize: isTablet ? 20 : 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 24),
-
           // Receipt summary
           Container(
             padding: const EdgeInsets.all(16),
@@ -1132,7 +964,10 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "\$${(change > 0 ? change : 0.0).toStringAsFixed(2)}",
+                  FormattingUtils.formatCurrencyWithDecimals(
+                    change > 0 ? change : 0.0,
+                    2,
+                  ),
                   style: TextStyle(
                     fontSize: isTablet ? 36 : 32,
                     fontWeight: FontWeight.bold,
@@ -1143,38 +978,15 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
             ),
           ),
           const SizedBox(height: 24),
-
-          // OK Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, (
-                  result: _finalResult!,
-                  emailData: _finalEmailData,
-                  paymentData: FinaliseSalePaymentData(paymentAmounts: Map.from(_paymentAmounts)),
-                ));
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text(
-                "OK",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildReceiptRow(String label, double amount, bool isDark, {
+  Widget _buildReceiptRow(
+    String label,
+    double amount,
+    bool isDark, {
     bool isLarge = false,
     bool isHighlighted = false,
   }) {
@@ -1190,11 +1002,13 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           ),
         ),
         Text(
-          "\$${amount.toStringAsFixed(2)}",
+          FormattingUtils.formatCurrencyWithDecimals(amount, 2),
           style: TextStyle(
             fontSize: isLarge ? 18 : 15,
             fontWeight: FontWeight.bold,
-            color: isHighlighted ? kPrimaryColor : (isDark ? Colors.white : Colors.black87),
+            color: isHighlighted
+                ? kPrimaryColor
+                : (isDark ? Colors.white : Colors.black87),
           ),
         ),
       ],

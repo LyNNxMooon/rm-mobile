@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
 //import 'package:rmmobile/features/loading_splash/presentation/screens/loading_screen.dart';
 import 'package:rmmobile/features/onboarding/presentation/screens/onboarding_gate_screen.dart';
 import 'package:rmmobile/features/onboarding/presentation/BLoC/onboarding_bloc.dart';
@@ -19,6 +20,7 @@ import 'package:rmmobile/features/stocktake/presentation/BLoC/batch_commit_bloc.
 import 'package:rmmobile/utils/dependency_injection_utils.dart';
 import 'package:rmmobile/utils/log_utils.dart';
 import 'package:rmmobile/utils/responsive_utils.dart';
+import 'package:rmmobile/utils/route_observer.dart';
 
 import 'features/loading_splash/presentation/BLoC/loading_splash_bloc.dart';
 import 'features/loading_splash/presentation/BLoC/loading_splash_events.dart';
@@ -184,6 +186,7 @@ class _MyAppState extends State<MyApp> {
           create: (_) => sl<PendingCustomerUpdatesBloc>(),
         ),
         BlocProvider<ThemeCubit>(create: (_) => sl<ThemeCubit>()),
+        BlocProvider<DashboardStyleCubit>(create: (_) => sl<DashboardStyleCubit>()),
 
         //Local web server changes
         BlocProvider<DiscoverHostBloc>(create: (_) => sl<DiscoverHostBloc>()),
@@ -200,6 +203,7 @@ class _MyAppState extends State<MyApp> {
             themeMode: themeMode,
             theme: _buildTheme(Brightness.light),
             darkTheme: _buildTheme(Brightness.dark),
+            navigatorObservers: [routeObserver],
             builder: (context, child) {
               final media = MediaQuery.of(context);
               final double textScale = _tabletTextScaleFor(context);
