@@ -229,7 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     showDialog(
       context: context,
-      builder: (_) => Dialog(
+      builder: (dialogContext) => Dialog(
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ModernDialogStyles.dialogRadius),
@@ -242,10 +242,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Modern header
-              const ModernDialogHeader(
+              ModernDialogHeader(
                 title: "Manual Connection",
                 icon: Icons.link_rounded,
                 subtitle: "Enter server details to connect",
+                trailing: IconButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  icon: Icon(
+                    Icons.close,
+                    color: isDark ? Colors.white70 : kPrimaryColor,
+                  ),
+                  tooltip: "Close",
+                ),
               ),
               // Content
               Flexible(
@@ -797,16 +805,164 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ],
                                 ),
                               ),
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 15,
+                                  right: 15,
+                                  bottom: 10,
+                                ),
+                                child: Row(
+                                  children: [
+                                    // Spacer to align with shopfront text (icon container width + spacing)
+                                    const SizedBox(width: 51),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.refresh,
+                                                size: 14,
+                                                color: context.appColors.isDark
+                                                    ? Colors.white54
+                                                    : context.appColors.onHero
+                                                        .withOpacity(0.6),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                "-",
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: context.appColors.isDark
+                                                      ? Colors.white54
+                                                      : context.appColors.onHero
+                                                          .withOpacity(0.6),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Expanded(
+                                                child: Text(
+                                                  "Get shopfront latest changes",
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: context
+                                                            .appColors.isDark
+                                                        ? Colors.white54
+                                                        : context
+                                                            .appColors.onHero
+                                                            .withOpacity(0.6),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.settings,
+                                                size: 14,
+                                                color: context.appColors.isDark
+                                                    ? Colors.white54
+                                                    : context.appColors.onHero
+                                                        .withOpacity(0.6),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                "-",
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: context.appColors.isDark
+                                                      ? Colors.white54
+                                                      : context.appColors.onHero
+                                                          .withOpacity(0.6),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Expanded(
+                                                child: Text(
+                                                  "Select and sign-in to a RetailManager shopfront",
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: context
+                                                            .appColors.isDark
+                                                        ? Colors.white54
+                                                        : context
+                                                            .appColors.onHero
+                                                            .withOpacity(0.6),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
                                 child: Divider(height: 1, thickness: 0.5),
                               ),
                               _buildCashDrawerDropdown(),
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 15,
+                                  right: 15,
+                                  bottom: 10,
+                                ),
+                                child: Row(
+                                  children: [
+                                    // Spacer to align with cash drawer text (icon container width + spacing)
+                                    const SizedBox(width: 51),
+                                    Expanded(
+                                      child: Text(
+                                        "All transactions posted from this device will be assigned this cash drawer identifier.",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: context.appColors.isDark
+                                              ? Colors.white54
+                                              : context.appColors.onHero
+                                                  .withOpacity(0.6),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
                                 child: Divider(height: 1, thickness: 0.5),
                               ),
                               _buildForceFullSyncTile(),
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 15,
+                                  right: 15,
+                                  bottom: 10,
+                                ),
+                                child: Row(
+                                  children: [
+                                    // Spacer to align with force sync text (icon container width + spacing)
+                                    const SizedBox(width: 51),
+                                    Expanded(
+                                      child: Text(
+                                        "This will re-download all stocks and customers from the server. This may take some time depending on the data size.",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: context.appColors.isDark
+                                              ? Colors.white54
+                                              : context.appColors.onHero
+                                                  .withOpacity(0.6),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -925,7 +1081,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 child: Divider(height: 1, thickness: 0.5),
                               ),
                               _buildSwitchRow(
-                                "Auto Backup Stocktake",
+                                "Auto Backup Stocktake To Server",
                                 "Automatically save current stocktake backup every 24 hours",
                                 backupToLan,
                                 (val) {
@@ -968,8 +1124,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               _buildActionRow(
                                 Icons.restore_page_outlined,
-                                "Restore Data",
-                                "Recover deleted stocktake from server",
+                                "Restore Stocktake",
+                                "Recover backed up stocktake from server",
                                 const Color.fromARGB(255, 40, 248, 255),
                                 () {
                                   if (_blockIfSyncing(context)) return;
@@ -990,7 +1146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               _buildActionRow(
                                 Icons.delete_forever_outlined,
                                 "Delete All Current Stocktake",
-                                "Clear all currently counted stocktake list permanently on this device.",
+                                "Clears all stocktake records in the current list on this device",
                                 kErrorColor,
                                 () {
                                   if (_blockIfSyncing(context)) return;
@@ -1196,7 +1352,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool isTablet = context.isTablet;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+      padding: const EdgeInsets.only(left: 15, right: 15, top: 16, bottom: 3),
       child: Row(
         children: [
           Container(
@@ -1283,7 +1439,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           DialogTextAction(
             label: "Cancel",
-            style: DialogActionStyle.dangerOutline,
+            style: DialogActionStyle.cancelOutline,
             onPressed: () => Navigator.of(ctx).pop(),
           ),
           DialogTextAction(
@@ -1330,7 +1486,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _showForceFullSyncConfirmation(context);
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+                padding: const EdgeInsets.only(left: 15, right: 15, top: 16, bottom: 3),
                 child: Row(
                   children: [
                     Container(
@@ -1486,7 +1642,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "Keep Backup Days",
+                      "Keep Committed Stocktake History",
                       style: TextStyle(
                         color: isDark ? Colors.white : colors.onHero,
                         fontWeight: FontWeight.w600,
@@ -1825,7 +1981,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           DialogTextAction(
             label: "Cancel",
-            style: DialogActionStyle.dangerOutline,
+            style: DialogActionStyle.cancelOutline,
             onPressed: () => Navigator.of(ctx).pop(false),
           ),
           DialogTextAction(

@@ -509,7 +509,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
         return [
           DialogTextAction(
             label: "Cancel",
-            style: DialogActionStyle.dangerOutline,
+            style: DialogActionStyle.cancelOutline,
             onPressed: _cancelDialog,
           ),
           DialogTextAction(
@@ -542,7 +542,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
             ),
           DialogTextAction(
             label: "Cancel",
-            style: DialogActionStyle.dangerOutline,
+            style: DialogActionStyle.cancelOutline,
             onPressed: _cancelDialog,
           ),
           DialogTextAction(
@@ -573,7 +573,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           ),
           DialogTextAction(
             label: "Cancel",
-            style: DialogActionStyle.dangerOutline,
+            style: DialogActionStyle.cancelOutline,
             onPressed: _cancelDialog,
           ),
           DialogTextAction(

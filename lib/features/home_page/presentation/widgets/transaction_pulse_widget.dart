@@ -69,7 +69,7 @@ class TransactionPulseWidget extends StatelessWidget {
             color: colors.isDark
                 ? colors.surfaceAlt.withOpacity(0.98)
                 : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: colors.isDark
                   ? Colors.white10
@@ -107,7 +107,7 @@ class TransactionPulseWidget extends StatelessWidget {
       TransactionCategory(
         key: 'Account Sales',
         label: 'Invoices',
-        pendingLabel: 'Pending Invoices',
+        pendingLabel: 'Invoices',
         icon: Icons.receipt_long_outlined,
         color: const Color.fromARGB(255, 238, 130, 166), // Pink - matches grid card
         count: counts['Account Sales'] ?? 0,
@@ -117,7 +117,7 @@ class TransactionPulseWidget extends StatelessWidget {
       TransactionCategory(
         key: 'Sales Order',
         label: 'Sales Orders',
-        pendingLabel: 'Pending Orders',
+        pendingLabel: 'Sales Orders',
         icon: Icons.shopping_cart_outlined,
         color: const Color.fromARGB(255, 44, 133, 211), // Blue - matches grid card
         count: counts['Sales Order'] ?? 0,
@@ -127,7 +127,7 @@ class TransactionPulseWidget extends StatelessWidget {
       TransactionCategory(
         key: 'Quotes',
         label: 'Quotes',
-        pendingLabel: 'Active Quotes',
+        pendingLabel: 'Quotes',
         icon: Icons.request_quote_outlined,
         color: Colors.orange.shade500, // Orange - matches grid card
         count: counts['Quotes'] ?? 0,
@@ -136,8 +136,8 @@ class TransactionPulseWidget extends StatelessWidget {
       ),
       TransactionCategory(
         key: 'Lay-bys',
-        label: 'Laybys',
-        pendingLabel: 'Active Laybys',
+        label: 'Lay-bys',
+        pendingLabel: 'Lay-bys',
         icon: Icons.inventory_2_outlined, // Matches grid card icon
         color: const Color.fromARGB(255, 152, 86, 165), // Purple - matches grid card
         count: counts['Lay-bys'] ?? 0,
@@ -282,6 +282,7 @@ class TransactionPulseWidget extends StatelessWidget {
     List<TransactionCategory> activeCategories,
   ) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final double subtitleFontSize = isTablet ? 11 : (screenWidth < 360 ? 8 : 9);
     
     // Determine layout based on screen width and category count
     final bool useCompactLayout = screenWidth < 400 || 
@@ -307,13 +308,84 @@ class TransactionPulseWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(
-                    "Pending Transaction Activity",
-                    style: getSmartTitle(
-                      fontSize: isTablet ? 14 : 12,
-                      color: colors.isDark ? Colors.white70 : Colors.grey.shade700,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final bool showInlineSubtitle =
+                          isTablet && constraints.maxWidth >= 320;
+                      if (showInlineSubtitle) {
+                        return Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                "Pending Transaction Activity",
+                                style: getSmartTitle(
+                                  fontSize: isTablet ? 14 : 12,
+                                  color: colors.isDark
+                                      ? Colors.white70
+                                      : Colors.grey.shade700,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "-",
+                              style: TextStyle(
+                                fontSize: subtitleFontSize,
+                                fontWeight: FontWeight.w500,
+                                color: colors.isDark
+                                    ? Colors.white70
+                                    : Colors.blueGrey.shade600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                "Transactions not synched to your shopfront",
+                                style: TextStyle(
+                                  fontSize: subtitleFontSize,
+                                  fontWeight: FontWeight.w500,
+                                  color: colors.isDark
+                                      ? Colors.white70
+                                      : Colors.blueGrey.shade600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Pending Transaction Activity",
+                            style: getSmartTitle(
+                              fontSize: isTablet ? 14 : 12,
+                              color: colors.isDark
+                                  ? Colors.white70
+                                  : Colors.grey.shade700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "Transactions not synched to your shopfront",
+                            style: TextStyle(
+                              fontSize: subtitleFontSize,
+                              fontWeight: FontWeight.w500,
+                              color: colors.isDark
+                                  ? Colors.white70
+                                  : Colors.blueGrey.shade600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -327,7 +399,7 @@ class TransactionPulseWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    "${_totalPending(activeCategories)} pending",
+                    "Pending: ${_totalPending(activeCategories)}",
                     style: TextStyle(
                       fontSize: isTablet ? 11 : 9,
                       fontWeight: FontWeight.w600,

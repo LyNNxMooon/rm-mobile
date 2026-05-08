@@ -63,7 +63,7 @@ class CustomerCommentsDialog extends StatelessWidget {
       actions: [
         DialogTextAction(
           label: 'Cancel',
-          style: DialogActionStyle.dangerOutline,
+          style: DialogActionStyle.cancelOutline,
           onPressed: () => Navigator.pop(context),
         ),
         DialogTextAction(

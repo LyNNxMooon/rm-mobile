@@ -416,7 +416,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
               actions: [
                 DialogTextAction(
                   label: "Cancel",
-                  style: DialogActionStyle.dangerOutline,
+                  style: DialogActionStyle.cancelOutline,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 DialogTextAction(

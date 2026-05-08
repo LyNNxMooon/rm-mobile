@@ -41,6 +41,12 @@ class SaleSessionPickerDialog extends StatelessWidget {
     final colors = AppThemeColors(context);
     final isTablet = context.isTablet;
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+    final media = MediaQuery.of(context);
+    final double maxDialogHeight = (media.size.height -
+        media.viewInsets.vertical -
+        (isTablet ? 120 : 88))
+      .clamp(280.0, media.size.height * 0.92)
+      .toDouble();
 
     return StandardDialog(
       title: "Resume $sessionType?",
@@ -49,34 +55,41 @@ class SaleSessionPickerDialog extends StatelessWidget {
       colors: colors,
       isDark: isDark,
       maxWidth: isTablet ? 500 : double.infinity,
+      maxHeight: maxDialogHeight,
+      contentPadding: EdgeInsets.fromLTRB(
+        isTablet ? 12 : 8,
+        isTablet ? 20 : 16,
+        isTablet ? 12 : 8,
+        isTablet ? 18 : 14,
+      ),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 40 : 12,
+      ),
       onClose: () => Navigator.pop(context, (
         result: SessionPickerResult.cancelled,
         session: null,
       )),
-      content: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.7,
-        ),
-        child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            itemCount: sessions.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final session = sessions[index];
-              return _buildSessionTile(
-                context,
-                session,
-                colors,
-                isDark,
-                isTablet,
-                dateFormat,
-              );
-            },
+      content: Flexible(
+        child: ListView.separated(
+          padding: EdgeInsets.fromLTRB(
+            isTablet ? 8 : 6,
+            12,
+            isTablet ? 8 : 6,
+            12,
           ),
+          itemCount: sessions.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 10),
+          itemBuilder: (context, index) {
+            final session = sessions[index];
+            return _buildSessionTile(
+              context,
+              session,
+              colors,
+              isDark,
+              isTablet,
+              dateFormat,
+            );
+          },
         ),
       ),
       actions: [

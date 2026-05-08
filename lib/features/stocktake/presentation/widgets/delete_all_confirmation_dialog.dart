@@ -9,8 +9,8 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
   const StocktakeDeleteConfirmationDialog({
     super.key,
     required this.onConfirm,
-    this.title = "Are you really sure?",
-    this.message = "This will permanently remove all counted stock items and they have not been committed to RM!",
+    this.title = "You are about to remove all counted stocktake records!",
+    this.message = "This will permanently remove all counted stock records from this device that have not been synchronised to your shopfront.",
   });
 
   final VoidCallback onConfirm;
@@ -41,13 +41,13 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: kErrorColor.withOpacity(0.1),
+                        color: Colors.amber.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Center(
                         child: Icon(
                           Icons.warning,
-                          color: kErrorColor,
+                          color: Colors.amber,
                           size: 72,
                         ),
                       ),
@@ -56,10 +56,10 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
                     Text(
                       title,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 24,
+                      style: TextStyle(
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: kErrorColor,
+                        color: isDark ? Colors.white : Colors.grey.shade800,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -67,7 +67,7 @@ class StocktakeDeleteConfirmationDialog extends StatelessWidget {
                       message,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         color: isDark ? Colors.white70 : colors.onSurface,
                         height: 1.5,
                       ),
