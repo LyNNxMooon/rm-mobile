@@ -54,7 +54,7 @@ class StocktakeCommitErrorDialog extends StatelessWidget {
       ),
       actions: [
         DialogTextAction(
-          label: "Okay, Got it",
+          label: "OK, Got it",
           style: DialogActionStyle.primary,
           onPressed: () => context.navigateBack(),
         ),

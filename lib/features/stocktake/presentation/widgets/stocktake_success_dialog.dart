@@ -77,7 +77,7 @@ class StocktakeSuccessDialog extends StatelessWidget {
       ),
       actions: [
         DialogTextAction(
-          label: "Okay",
+          label: "OK",
           style: DialogActionStyle.primary,
           onPressed: onOkayPressed,
         ),

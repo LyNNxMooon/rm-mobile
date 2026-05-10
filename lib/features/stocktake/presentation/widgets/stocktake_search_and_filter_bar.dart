@@ -31,22 +31,13 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Container(
+            child: SizedBox(
               height: actionSize,
-              decoration: BoxDecoration(
-                color: isDark ? colors.surfaceAlt : colors.surface,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: colors.cardShadow,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
               child: TextField(
                 onChanged: onChanged,
                 textAlignVertical: TextAlignVertical.center,
+                expands: true,
+                maxLines: null,
                 decoration: InputDecoration(
                   hintText:
                       "Search barcode or description...", // Shortened hint
@@ -62,8 +53,6 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
                   filled: true,
                   fillColor: isDark ? colors.surfaceAlt : colors.surface,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  isDense: true,
-                  isCollapsed: true,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
@@ -85,28 +74,33 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
           ),
 
           const SizedBox(width: 8),
-          Material(
-            color: isDark ? colors.surfaceAlt : colors.surface,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: () {
-                context.navigateToNext(const StocktakeHistoryScreen());
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                height: actionSize,
-                width: actionSize,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDark ? Colors.white38 : colors.divider,
-                    width: 1,
-                  ),
+          SizedBox(
+            height: actionSize,
+            width: actionSize,
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? colors.surfaceAlt : colors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? Colors.white38 : colors.divider,
+                  width: 1,
                 ),
-                child: Icon(
-                  Icons.history,
-                  color: isDark ? Colors.white70 : colors.onSurface,
-                  size: 20,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () {
+                    context.navigateToNext(const StocktakeHistoryScreen());
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Center(
+                    child: Icon(
+                      Icons.history,
+                      color: isDark ? Colors.white70 : colors.onSurface,
+                      size: 20,
+                    ),
+                  ),
                 ),
               ),
             ),

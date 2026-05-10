@@ -611,7 +611,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
           ),
         ),
         Text(
-          'Your customers are not ready yet...',
+          'Customer list is empty.',
           style: TextStyle(
             fontSize: 14,
             color: kPrimaryColor,

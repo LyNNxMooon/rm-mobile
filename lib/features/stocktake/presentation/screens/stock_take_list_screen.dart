@@ -389,7 +389,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             EmptyStockState(
-              message: "Your stocktake list is empty",
+              message: "Stocktake list is empty.",
               onRetry: () {},
             ),
           ],

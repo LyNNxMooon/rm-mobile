@@ -790,9 +790,9 @@ class _PricingDialogState extends State<PricingDialog> {
   Widget _buildLevelHeader(double fontSize, Color textColor, bool isTablet) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final double iconSize = isTablet ? 14.0 : 12.0;
-    final double buttonHeight = isTablet ? 20.0 : 16.0;
-    final double buttonWidth = isTablet ? 22.0 : 18.0;
+    final double iconSize = isTablet ? 18.0 : 16.0;
+    final double buttonHeight = isTablet ? 28.0 : 24.0;
+    final double buttonWidth = isTablet ? 30.0 : 26.0;
     final Color buttonBg = isDark 
         ? colors.surface 
         : Colors.grey.shade100;
