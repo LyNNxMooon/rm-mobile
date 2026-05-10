@@ -26,7 +26,7 @@ abstract class DialogActionDecorator {
 
 class DialogTextAction extends DialogActionDecorator {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final DialogActionStyle style;
   final IconData? icon;
 

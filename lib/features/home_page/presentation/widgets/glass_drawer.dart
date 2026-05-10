@@ -373,7 +373,7 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
           create: (_) => sl<SalesBloc>(),
           child: const SalesScreen(
             title: "Account Sales",
-            themeColor: Color.fromARGB(255, 238, 130, 166),
+            themeColor: Color.fromARGB(255, 210, 148, 172),
             icon: Icons.receipt_long_outlined,
           ),
         ),
@@ -625,15 +625,15 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
   final List<Map<String, dynamic>> _transactionItems = [
     {
       "title": "Account Sales",
-      "subTitle": "Invoice customers",
+      "subTitle": "Create account sale",
       "icon": Icons.receipt_long_outlined,
-      "color": const Color.fromARGB(255, 238, 130, 166),
+      "color": const Color.fromARGB(255, 210, 148, 172),
       "comingSoon": false,
       "action": "account_sales"
     },
     {
       "title": "Sales Order",
-      "subTitle": "Create orders",
+      "subTitle": "Create sales order",
       "icon": Icons.shopping_cart_outlined,
       "color": const Color.fromARGB(255, 44, 133, 211),
       "comingSoon": false,
@@ -641,7 +641,7 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
     },
     {
       "title": "Quotes",
-      "subTitle": "Create quotations",
+      "subTitle": "Create quotation",
       "icon": Icons.request_quote_outlined,
       "color": Colors.orange.shade500,
       "comingSoon": false,
@@ -649,7 +649,7 @@ class _GlassDrawerState extends State<GlassDrawer> with RouteAware {
     },
     {
       "title": "Lay-bys",
-      "subTitle": "Create lay-bys",
+      "subTitle": "Create lay-by",
       "icon": Icons.inventory_2_outlined,
       "color": const Color.fromARGB(255, 152, 86, 165),
       "comingSoon": false,

@@ -488,7 +488,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         Row(
                           children: [
                             Expanded(
-                              flex: 5,
+                              flex: 11,
                               child: _buildFieldRow(
                                 "State",
                                 _stateController,
@@ -499,25 +499,13 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              flex: 4,
-                              child: Row(
-                                children: [
-                                  Text(
-                                    "Post Code ",
-                                    style: TextStyle(
-                                      color: colors.onSurfaceMuted,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: _buildTextField(
-                                      controller: _postcodeController,
-                                      hint: "",
-                                      isDark: isDark,
-                                      colors: colors,
-                                    ),
-                                  ),
-                                ],
+                              flex: 7,
+                              child: _buildFieldRow(
+                                "Post\nCode",
+                                _postcodeController,
+                                isDark,
+                                colors,
+                                labelWidth: isTablet ? 45.0 : 35.0,
                               ),
                             ),
                           ],
@@ -529,7 +517,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         Row(
                           children: [
                             Expanded(
-                              flex: 5,
+                              flex: 11,
                               child: _buildFieldRow(
                                 "Phone",
                                 _phoneController,
@@ -540,25 +528,13 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              flex: 4,
-                              child: Row(
-                                children: [
-                                  Text(
-                                    "Country ",
-                                    style: TextStyle(
-                                      color: colors.onSurfaceMuted,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: _buildTextField(
-                                      controller: _countryController,
-                                      hint: "",
-                                      isDark: isDark,
-                                      colors: colors,
-                                    ),
-                                  ),
-                                ],
+                              flex: 7,
+                              child: _buildFieldRow(
+                                "Country",
+                                _countryController,
+                                isDark,
+                                colors,
+                                labelWidth: isTablet ? 45.0 : 35.0,
                               ),
                             ),
                           ],
@@ -573,37 +549,53 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         // Date & Time Row
                         Row(
                           children: [
-                            SizedBox(
-                              width: isTablet ? 120 : 80,
-                              child: Text(
-                                "Delivery Date",
-                                style: TextStyle(
-                                  color: colors.onSurfaceMuted,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
                             Expanded(
-                              child: _buildDateTimePicker(
-                                isDate: true,
-                                isDark: isDark,
-                                colors: colors,
+                              flex: 11,
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: isTablet ? 120.0 : 80.0,
+                                    child: Text(
+                                      "Delivery Date",
+                                      style: TextStyle(
+                                        color: colors.onSurfaceMuted,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _buildDateTimePicker(
+                                      isDate: true,
+                                      isDark: isDark,
+                                      colors: colors,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(width: 12),
-                            Text(
-                              "Time",
-                              style: TextStyle(
-                                color: colors.onSurfaceMuted,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
                             Expanded(
-                              child: _buildDateTimePicker(
-                                isDate: false,
-                                isDark: isDark,
-                                colors: colors,
+                              flex: 7,
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: isTablet ? 45.0 : 35.0,
+                                    child: Text(
+                                      "Time",
+                                      style: TextStyle(
+                                        color: colors.onSurfaceMuted,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _buildDateTimePicker(
+                                      isDate: false,
+                                      isDark: isDark,
+                                      colors: colors,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -890,20 +882,21 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
     bool isDark,
     AppThemeColors colors, {
     bool isTablet = false,
+    double? labelWidth,
   }) {
-    final labelWidth = isTablet ? 120.0 : 80.0;
+    final effectiveLabelWidth = labelWidth ?? (isTablet ? 120.0 : 80.0);
     return Row(
       children: [
         if (label.isNotEmpty)
           SizedBox(
-            width: labelWidth,
+            width: effectiveLabelWidth,
             child: Text(
               label,
               style: TextStyle(color: colors.onSurfaceMuted, fontSize: 13),
             ),
           )
         else
-          SizedBox(width: labelWidth),
+          SizedBox(width: effectiveLabelWidth),
         Expanded(
           child: _buildTextField(
             controller: controller,

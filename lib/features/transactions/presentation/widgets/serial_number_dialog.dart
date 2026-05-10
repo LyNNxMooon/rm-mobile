@@ -433,7 +433,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                                     width: (isTablet ? 70 : 50) * uiScale,
                                     child: Text(
                                       row.entry.ageInDays != null
-                                          ? "${row.entry.ageInDays}d"
+                                          ? "${row.entry.ageInDays}"
                                           : "-",
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
@@ -586,8 +586,8 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(null),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: kErrorColor,
-                    side: const BorderSide(color: kErrorColor),
+                    foregroundColor: isDark ? Colors.white70 : Colors.grey.shade700,
+                    side: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade400),
                     padding: EdgeInsets.symmetric(
                       vertical: (isTablet ? 12 : 10) * uiScale,
                     ),

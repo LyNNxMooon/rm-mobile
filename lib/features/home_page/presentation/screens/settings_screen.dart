@@ -224,12 +224,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _manualIpController.text = "";
     _manualCodeController.text = "";
     _manualPortController.text = _defaultAgentPort.toString();
-    final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.55)
-        .clamp(380.0, 540.0);
 
     showDialog(
       context: context,
-      builder: (dialogContext) => Dialog(
+      builder: (dialogContext) {
+        final keyboardHeight = MediaQuery.of(dialogContext).viewInsets.bottom;
+        final screenHeight = MediaQuery.of(dialogContext).size.height;
+        final availableHeight = screenHeight - keyboardHeight - 48; // 48 for safe padding
+        final double maxDialogHeight = (availableHeight * 0.85).clamp(380.0, 620.0);
+        
+        return Dialog(
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ModernDialogStyles.dialogRadius),
@@ -262,6 +266,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     children: [
                       // Host IP input
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Host IP Address",
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : colors.onSurface,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       TextField(
                         controller: _manualIpController,
                         style: TextStyle(
@@ -284,12 +300,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                         decoration: ModernDialogStyles.inputDecoration(
                           context,
-                          hintText: "Host IP Address",
+                          hintText: "Eg: 192.168.1.10",
                           prefixIcon: Icons.computer_outlined,
                         ),
                       ),
                       const SizedBox(height: 16),
                       // Pairing code input
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Pairing Code",
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : colors.onSurface,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       TextField(
                         controller: _manualCodeController,
                         style: TextStyle(
@@ -313,12 +341,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                         decoration: ModernDialogStyles.inputDecoration(
                           context,
-                          hintText: "Pairing Code",
+                          hintText: "Eg: 123456",
                           prefixIcon: Icons.key_outlined,
                         ),
                       ),
                       const SizedBox(height: 16),
                       // Port input (optional)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Port",
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : colors.onSurface,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       TextField(
                         controller: _manualPortController,
                         keyboardType: TextInputType.number,
@@ -346,7 +386,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                         decoration: ModernDialogStyles.inputDecoration(
                           context,
-                          hintText: "Port (default: 5000)",
+                          hintText: "Eg: 5000",
                           prefixIcon: Icons.numbers_rounded,
                         ),
                       ),
@@ -411,7 +451,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
-      ),
+      );
+      },
     );
   }
 
@@ -1154,14 +1195,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 },
                                 titleColor: Colors.white,
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 25),
+
+                        _buildSectionTitle("Support", lightOverrideColor: Colors.white),
+                        _buildGlassContainer(
+                          child: Column(
+                            children: [
                               _buildActionRow(
                                 Icons.storage_outlined,
                                 "Export Database",
-                                "Share the raw database file for support",
+                                "Share the database file for support",
                                 Colors.orange,
                                 () => _exportAndShareDatabase(context),
                                 titleColor: Colors.white,

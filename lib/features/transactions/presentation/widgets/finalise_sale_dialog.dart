@@ -93,6 +93,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
   FinaliseSaleResult? _finalResult;
   FinaliseSaleEmailData? _finalEmailData;
   bool _needsInitialConfirmation = false;
+  String? _emailError;
 
   final List<String> _paymentMethods = [
     "Cash",
@@ -175,6 +176,11 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
     _emailController = TextEditingController(
       text: widget.customer?.email ?? '',
     );
+    _emailController.addListener(_validateEmail);
+    // Validate initial email if pre-filled
+    if (_emailController.text.isNotEmpty) {
+      _validateEmailInitial();
+    }
     _paymentAmounts = Map.from(widget.initialPaymentAmounts);
 
     // Determine starting step
@@ -229,8 +235,36 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
 
   @override
   void dispose() {
+    _emailController.removeListener(_validateEmail);
     _emailController.dispose();
     super.dispose();
+  }
+
+  void _validateEmail() {
+    final email = _emailController.text.trim();
+    String? error;
+    if (email.isEmpty) {
+      error = 'Email address is required';
+    } else if (!_isValidEmail(email)) {
+      error = 'Please enter a valid email address';
+    }
+    if (error != _emailError) {
+      setState(() => _emailError = error);
+    }
+  }
+
+  void _validateEmailInitial() {
+    final email = _emailController.text.trim();
+    if (email.isNotEmpty && !_isValidEmail(email)) {
+      _emailError = 'Please enter a valid email address';
+    }
+  }
+
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
   }
 
   double get _totalPaid =>
@@ -579,14 +613,16 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           DialogTextAction(
             label: "Done",
             style: DialogActionStyle.primary,
-            onPressed: () {
-              final email = _emailController.text.trim();
-              setState(() {
-                _finalResult = FinaliseSaleResult.email;
-                _finalEmailData = FinaliseSaleEmailData(email: email);
-                _currentStep = 3;
-              });
-            },
+            onPressed: _emailError == null && _emailController.text.trim().isNotEmpty
+                ? () {
+                    final email = _emailController.text.trim();
+                    setState(() {
+                      _finalResult = FinaliseSaleResult.email;
+                      _finalEmailData = FinaliseSaleEmailData(email: email);
+                      _currentStep = 3;
+                    });
+                  }
+                : null,
           ),
         ];
       case 3:
@@ -887,9 +923,11 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           decoration: InputDecoration(
             hintText: "Enter email address",
             hintStyle: TextStyle(color: colors.onSurfaceMuted),
+            errorText: _emailError,
+            errorStyle: const TextStyle(fontSize: 12),
             prefixIcon: Icon(
               Icons.email_outlined,
-              color: colors.onSurfaceMuted,
+              color: _emailError != null ? kErrorColor : colors.onSurfaceMuted,
               size: 20,
             ),
             filled: true,
@@ -900,7 +938,18 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: kPrimaryColor, width: 2),
+              borderSide: BorderSide(
+                color: _emailError != null ? kErrorColor : kPrimaryColor,
+                width: 2,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: kErrorColor, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: kErrorColor, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,

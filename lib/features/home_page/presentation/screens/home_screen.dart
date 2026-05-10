@@ -623,7 +623,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                       Text(
                         shopName,
                         style: getSmartTitle(
-                          fontSize: isTablet ? 24 : 18,
+                          fontSize: isTablet ? 22 : 20,
                           color: colors.isDark
                               ? Colors.white
                               : colors.onSurface,
@@ -721,7 +721,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       ),
       decoration: BoxDecoration(
         color: colors.isDark ? colors.surfaceAlt : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: colors.isDark ? Colors.white12 : Colors.grey.shade200,
         ),
@@ -910,7 +910,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               Text(
                 "More Actions",
                 style: getSmartTitle(
-                  fontSize: isTablet ? 14 : 12,
+                  fontSize: isTablet 
+                      ? (14 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(14.0, 18.0)
+                      : 12.0,
                   color: colors.isDark ? Colors.white70 : Colors.grey.shade700,
                 ),
               ),
@@ -927,7 +929,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 child: Text(
                   "Coming Soon",
                   style: TextStyle(
-                    fontSize: isTablet ? 9 : 8,
+                    fontSize: isTablet 
+                        ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
+                        : 10.0,
                     fontWeight: FontWeight.w600,
                     color: colors.isDark
                         ? Colors.white54
@@ -939,7 +943,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               Text(
                 isTablet ? "Under construction" : "In dev",
                 style: TextStyle(
-                  fontSize: isTablet ? 11 : 10,
+                  fontSize: isTablet 
+                      ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
+                      : 10.0,
                   fontWeight: FontWeight.w600,
                   color: kPrimaryColor,
                 ),
@@ -971,10 +977,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     final double scale = isTablet
         ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)
         : 1.0;
-    final double titleSize = isTablet ? (15 * scale).clamp(15.0, 19.0) : 13.0;
+    final double titleSize = isTablet ? (14 * scale).clamp(14.0, 18.0) : 12.0;
     final double subTitleSize = isTablet
         ? (12 * scale).clamp(12.0, 14.0)
-        : 11.0;
+        : 10.0;
     final double iconSize = isTablet ? 34.0 : 22.0;
 
     final bool isComingSoon = item['comingSoon'] ?? false;
@@ -1406,7 +1412,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               create: (_) => di.sl<SalesBloc>(),
               child: const SalesScreen(
                 title: "Account Sales",
-                themeColor: Color.fromARGB(255, 238, 130, 166),
+                themeColor: Color.fromARGB(255, 210, 148, 172),
                 icon: Icons.receipt_long_outlined,
               ),
             ),
@@ -1498,7 +1504,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       "title": "Account Sales",
       "subTitle": "Create account sale",
       "icon": Icons.receipt_long_outlined,
-      "color": const Color.fromARGB(255, 238, 130, 166),
+      "color": const Color.fromARGB(255, 210, 148, 172),
       "comingSoon": false,
       "action": "account_sales",
       "category": "sales",

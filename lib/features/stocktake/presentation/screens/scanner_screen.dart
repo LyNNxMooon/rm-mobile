@@ -876,13 +876,18 @@ class _ScannerScreenState extends State<ScannerScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: CustomStocktakeBtn(
-                    function: () {
-                      context.navigateToNext(const StockTakeListScreen());
+                  child: BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
+                    builder: (context, state) {
+                      final count = state is StocktakeListLoaded ? state.totalCount : 0;
+                      return CustomStocktakeBtn(
+                        function: () {
+                          context.navigateToNext(const StockTakeListScreen());
+                        },
+                        icon: Icons.list,
+                        bgColor: kPrimaryColor,
+                        name: count > 0 ? "LIST ($count)" : "LIST",
+                      );
                     },
-                    icon: Icons.list,
-                    bgColor: kPrimaryColor,
-                    name: "LIST",
                   ),
                 ),
                 SizedBox(width: isTablet ? 20 : 12),
@@ -977,6 +982,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
         }
 
         if (state is StockTaken) {
+          // Refresh the stocktake list count
+          context.read<FetchingStocktakeListBloc>().add(FetchStocktakeListEvent());
+          
           if (isManualCount) {
             AlertInfo.show(
               context: context,

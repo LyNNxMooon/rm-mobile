@@ -109,7 +109,7 @@ class TransactionPulseWidget extends StatelessWidget {
         label: 'Invoices',
         pendingLabel: 'Invoices',
         icon: Icons.receipt_long_outlined,
-        color: const Color.fromARGB(255, 238, 130, 166), // Pink - matches grid card
+        color: const Color.fromARGB(255, 210, 148, 172), // Pink - matches grid card
         count: counts['Account Sales'] ?? 0,
         analysisLine1: _formatTotalValue(invoiceSummary?.totalValue),
         analysisLine2: _formatSummaryDetails(invoiceSummary, 'invoice'),
@@ -284,6 +284,12 @@ class TransactionPulseWidget extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final double subtitleFontSize = isTablet ? 11 : (screenWidth < 360 ? 8 : 9);
     
+    // Scale factor for responsive font sizes (matching action grid cards)
+    final double scale = isTablet
+        ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)
+        : 1.0;
+    final double titleSize = isTablet ? (14 * scale).clamp(14.0, 18.0) : 12.0;
+    
     // Determine layout based on screen width and category count
     final bool useCompactLayout = screenWidth < 400 || 
         (activeCategories.length >= 3 && screenWidth < 600);
@@ -319,7 +325,7 @@ class TransactionPulseWidget extends StatelessWidget {
                               child: Text(
                                 "Pending Transaction Activity",
                                 style: getSmartTitle(
-                                  fontSize: isTablet ? 14 : 12,
+                                  fontSize: titleSize,
                                   color: colors.isDark
                                       ? Colors.white70
                                       : Colors.grey.shade700,
@@ -363,7 +369,7 @@ class TransactionPulseWidget extends StatelessWidget {
                           Text(
                             "Pending Transaction Activity",
                             style: getSmartTitle(
-                              fontSize: isTablet ? 14 : 12,
+                              fontSize: titleSize,
                               color: colors.isDark
                                   ? Colors.white70
                                   : Colors.grey.shade700,
@@ -401,7 +407,9 @@ class TransactionPulseWidget extends StatelessWidget {
                   child: Text(
                     "Pending: ${_totalPending(activeCategories)}",
                     style: TextStyle(
-                      fontSize: isTablet ? 11 : 9,
+                      fontSize: isTablet 
+                          ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
+                          : 10.0,
                       fontWeight: FontWeight.w600,
                       color: kPrimaryColor,
                     ),
@@ -549,7 +557,9 @@ class TransactionPulseWidget extends StatelessWidget {
                   Text(
                     category.pendingLabel,
                     style: TextStyle(
-                      fontSize: isTablet ? 11 : 9,
+                      fontSize: isTablet 
+                          ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
+                          : 10.0,
                       fontWeight: FontWeight.w600,
                       color: colors.isDark ? Colors.white : colors.onSurface,
                     ),

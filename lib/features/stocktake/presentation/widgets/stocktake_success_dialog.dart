@@ -17,6 +17,12 @@ class StocktakeSuccessDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    
+    // Split message into title (first paragraph) and body (rest)
+    final parts = message.split('\n\n');
+    final titleText = parts.isNotEmpty ? parts[0] : message;
+    final bodyText = parts.length > 1 ? parts.sublist(1).join('\n\n') : null;
+    
     return StandardDialog(
       title: "Success!",
       colors: colors,
@@ -43,14 +49,29 @@ class StocktakeSuccessDialog extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              message,
+              titleText,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
+                fontWeight: FontWeight.w600,
                 color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                 height: 1.5,
               ),
             ),
+            if (bodyText != null) ...[
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 16),
+              Text(
+                bodyText,
+                textAlign: TextAlign.start,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                  height: 1.5,
+                ),
+              ),
+            ],
           ],
         ),
       ),
