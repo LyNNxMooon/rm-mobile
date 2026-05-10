@@ -204,12 +204,12 @@ class _SalesScreenState extends State<SalesScreen>
         .contains("Miscellaneous_HideCostPriceAndProfit");
     final items = <String>[
       _surveyLabel,
-      "Add Comment",
+      "Comment",
       if (AppGlobals.instance.hasPermission("Miscellaneous_LockDiscount"))
-        "Add Discount",
-      "Add Delivery",
-      "View Tax",
-      if (!hideCostPriceAndProfit) "View Profit",
+        "Discount",
+      "Delivery",
+      "Tax",
+      if (!hideCostPriceAndProfit) "Profit",
       "Save Session",
       "Clear Session",
     ];
@@ -1134,6 +1134,8 @@ class _SalesScreenState extends State<SalesScreen>
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return BlocProvider.value(
       value: _salesBloc,
@@ -1446,7 +1448,7 @@ class _SalesScreenState extends State<SalesScreen>
                               onBarcodeScanned: _onBarcodeScanned,
                             ),
 
-                          // Middle Section: Cart Items
+                          // Middle Section: Cart Items - Expanded takes remaining space
                           Expanded(
                             child: _buildCartArea(colors, isDark, isTablet),
                           ),
@@ -1500,7 +1502,9 @@ class _SalesScreenState extends State<SalesScreen>
                           ),
 
                           // Bottom Section: Summary, Payment & Commit
-                          _buildBottomSummary(colors, isDark, isTablet),
+                          // Hide on tablet landscape when keyboard is visible to prevent overflow
+                          if (!(isTablet && isLandscape && isKeyboardVisible))
+                            _buildBottomSummary(colors, isDark, isTablet),
                         ],
                       ),
                     ),
@@ -2672,11 +2676,11 @@ class _SalesScreenState extends State<SalesScreen>
       );
     }
 
-    final Widget tile = isTablet
-        ? (_isCompactView
-            ? _buildCompactCartTile(item, index, colors, isDark)
-            : _buildTabletCartTile(item, index, colors, isDark))
-        : _buildMobileCartTile(item, index, colors, isDark);
+    final Widget tile = _isCompactView
+        ? _buildCompactCartTile(item, index, colors, isDark)
+        : (isTablet
+            ? _buildTabletCartTile(item, index, colors, isDark)
+            : _buildMobileCartTile(item, index, colors, isDark));
 
     // Wrap with slide-to-delete and tap to edit
     return DismissibleCartTile(
@@ -2867,7 +2871,7 @@ class _SalesScreenState extends State<SalesScreen>
                             ),
                             SizedBox(height: isTablet ? 6 : 8),
                             Text(
-                              "Discount: ${FormattingUtils.formatCurrencyWithDecimals(_discount, 2)}",
+                              "${isTablet ? 'Discount' : 'Dis'}: ${FormattingUtils.formatCurrencyWithDecimals(_discount, 2)}",
                               style: TextStyle(
                                 color: _discount > 0
                                     ? kPrimaryColor
@@ -2997,7 +3001,7 @@ class _SalesScreenState extends State<SalesScreen>
             actions: [
               DialogTextAction(
                 label: "Cancel",
-                style: DialogActionStyle.dangerOutline,
+                style: DialogActionStyle.cancelOutline,
                 onPressed: () => Navigator.pop(ctx, false),
               ),
               DialogTextAction(
@@ -4358,7 +4362,6 @@ class _SalesScreenState extends State<SalesScreen>
     _closeScanner();
     final controller = TextEditingController(text: _commentValue);
     final isTablet = context.isTablet;
-    final actionWidth = isTablet ? 140.0 : 104.0;
 
     showDialog(
       context: context,
@@ -4368,21 +4371,53 @@ class _SalesScreenState extends State<SalesScreen>
         return AnimatedPadding(
           duration: const Duration(milliseconds: 150),
           padding: EdgeInsets.only(bottom: bottomInset),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
+          child: Center(
+            child: SingleChildScrollView(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: isTablet ? 520 : MediaQuery.of(context).size.width * 0.92,
+                  padding: EdgeInsets.all(isTablet ? 24 : 18),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                  child: Center(
-                    child: StandardDialog(
-                      title: "Add Comment",
-                      colors: colors,
-                      isDark: isDark,
-                      maxWidth: isTablet ? 520 : double.infinity,
-                      onClose: () => Navigator.of(dialogContext).pop(),
-                      content: TextField(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Comment",
+                            style: TextStyle(
+                              fontSize: isTablet ? 18 : 16,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.of(dialogContext).pop(),
+                            child: Icon(
+                              Icons.close,
+                              size: isTablet ? 24 : 22,
+                              color: isDark ? Colors.white70 : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Content
+                      TextField(
                         controller: controller,
                         autofocus: true,
                         maxLines: 4,
@@ -4409,48 +4444,65 @@ class _SalesScreenState extends State<SalesScreen>
                           ),
                         ),
                       ),
-                      actions: [
-                        if (_commentValue.isNotEmpty)
-                          DialogFixedWidthAction(
-                            width: actionWidth,
-                            action: DialogTextAction(
-                              label: "Remove",
-                              style: DialogActionStyle.dangerOutline,
+                      const SizedBox(height: 20),
+                      // Actions
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (_commentValue.isNotEmpty) ...[
+                            OutlinedButton(
                               onPressed: () {
                                 setState(() {
                                   _commentValue = '';
                                 });
                                 Navigator.of(dialogContext).pop();
                               },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.red),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text("Remove"),
                             ),
-                          ),
-                        DialogFixedWidthAction(
-                          width: actionWidth,
-                          action: DialogTextAction(
-                            label: "Cancel",
-                            style: DialogActionStyle.dangerOutline,
+                            const SizedBox(width: 12),
+                          ],
+                          OutlinedButton(
                             onPressed: () => Navigator.of(dialogContext).pop(),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                              side: BorderSide(color: isDark ? Colors.white38 : Colors.black38),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text("Cancel"),
                           ),
-                        ),
-                        DialogFixedWidthAction(
-                          width: actionWidth,
-                          action: DialogTextAction(
-                            label: "Save",
-                            style: DialogActionStyle.primary,
+                          const SizedBox(width: 12),
+                          ElevatedButton(
                             onPressed: () {
                               setState(() {
                                 _commentValue = controller.text.trim();
                               });
                               Navigator.of(dialogContext).pop();
                             },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kPrimaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text("Save"),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
+              ),
+            ),
           ),
         );
       },
@@ -4465,7 +4517,6 @@ class _SalesScreenState extends State<SalesScreen>
     _closeScanner();
     _surveyController.text = _surveyValue;
     final isTablet = context.isTablet;
-    final actionWidth = isTablet ? 140.0 : 104.0;
 
     showDialog(
       context: context,
@@ -4475,21 +4526,53 @@ class _SalesScreenState extends State<SalesScreen>
         return AnimatedPadding(
           duration: const Duration(milliseconds: 150),
           padding: EdgeInsets.only(bottom: bottomInset),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
+          child: Center(
+            child: SingleChildScrollView(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: isTablet ? 520 : MediaQuery.of(context).size.width * 0.92,
+                  padding: EdgeInsets.all(isTablet ? 24 : 18),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                  child: Center(
-                    child: StandardDialog(
-                      title: _surveyLabel,
-                      colors: colors,
-                      isDark: isDark,
-                      maxWidth: isTablet ? 520 : double.infinity,
-                      onClose: () => Navigator.of(dialogContext).pop(),
-                      content: TextField(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _surveyLabel,
+                            style: TextStyle(
+                              fontSize: isTablet ? 18 : 16,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.of(dialogContext).pop(),
+                            child: Icon(
+                              Icons.close,
+                              size: isTablet ? 24 : 22,
+                              color: isDark ? Colors.white70 : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Content
+                      TextField(
                         controller: _surveyController,
                         autofocus: true,
                         maxLines: 1,
@@ -4525,25 +4608,29 @@ class _SalesScreenState extends State<SalesScreen>
                           Navigator.of(dialogContext).pop();
                         },
                       ),
-                      actions: [
-                        DialogFixedWidthAction(
-                          width: actionWidth,
-                          action: DialogTextAction(
-                            label: "Scan",
-                            icon: Icons.qr_code_scanner,
-                            style: DialogActionStyle.outline,
+                      const SizedBox(height: 20),
+                      // Actions
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          OutlinedButton.icon(
                             onPressed: () {
                               Navigator.of(dialogContext).pop();
                               _showSurveyScannerDialog(context, colors, isDark);
                             },
+                            icon: const Icon(Icons.qr_code_scanner, size: 18),
+                            label: const Text("Scan"),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: kPrimaryColor,
+                              side: BorderSide(color: kPrimaryColor),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
                           ),
-                        ),
-                        if (_surveyValue.isNotEmpty)
-                          DialogFixedWidthAction(
-                            width: actionWidth,
-                            action: DialogTextAction(
-                              label: "Remove",
-                              style: DialogActionStyle.dangerOutline,
+                          const SizedBox(width: 12),
+                          if (_surveyValue.isNotEmpty) ...[
+                            OutlinedButton(
                               onPressed: () {
                                 setState(() {
                                   _surveyValue = '';
@@ -4551,35 +4638,52 @@ class _SalesScreenState extends State<SalesScreen>
                                 });
                                 Navigator.of(dialogContext).pop();
                               },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.red),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text("Remove"),
                             ),
-                          ),
-                        DialogFixedWidthAction(
-                          width: actionWidth,
-                          action: DialogTextAction(
-                            label: "Cancel",
-                            style: DialogActionStyle.dangerOutline,
+                            const SizedBox(width: 12),
+                          ],
+                          OutlinedButton(
                             onPressed: () => Navigator.of(dialogContext).pop(),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                              side: BorderSide(color: isDark ? Colors.white38 : Colors.black38),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text("Cancel"),
                           ),
-                        ),
-                        DialogFixedWidthAction(
-                          width: actionWidth,
-                          action: DialogTextAction(
-                            label: "Save",
-                            style: DialogActionStyle.primary,
+                          const SizedBox(width: 12),
+                          ElevatedButton(
                             onPressed: () {
                               setState(() {
                                 _surveyValue = _surveyController.text.trim();
                               });
                               Navigator.of(dialogContext).pop();
                             },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kPrimaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text("Save"),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
+              ),
+            ),
           ),
         );
       },
@@ -5302,7 +5406,7 @@ class _SalesScreenState extends State<SalesScreen>
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                "Add Discount",
+                                "Discount",
                                 style: TextStyle(
                                   fontSize: isTablet ? 20 : 18,
                                   fontWeight: FontWeight.bold,
@@ -5818,14 +5922,14 @@ class _SalesScreenState extends State<SalesScreen>
                                           context,
                                           colors,
                                           isDark,
-                                          "Add Discount",
+                                          "Discount",
                                         )
                                       : const SizedBox.shrink(),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 10),
-                            // Row 2: Add Comment | View Tax
+                            // Row 2: Comment | Tax
                             Row(
                               children: [
                                 Expanded(
@@ -5833,7 +5937,7 @@ class _SalesScreenState extends State<SalesScreen>
                                     context,
                                     colors,
                                     isDark,
-                                    "Add Comment",
+                                    "Comment",
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -5842,13 +5946,13 @@ class _SalesScreenState extends State<SalesScreen>
                                     context,
                                     colors,
                                     isDark,
-                                    "View Tax",
+                                    "Tax",
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 10),
-                            // Row 3: Add Delivery | View Profit
+                            // Row 3: Delivery | Profit
                             Row(
                               children: [
                                 Expanded(
@@ -5856,7 +5960,7 @@ class _SalesScreenState extends State<SalesScreen>
                                     context,
                                     colors,
                                     isDark,
-                                    "Add Delivery",
+                                    "Delivery",
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -5870,7 +5974,7 @@ class _SalesScreenState extends State<SalesScreen>
                                           context,
                                           colors,
                                           isDark,
-                                          "View Profit",
+                                          "Profit",
                                         )
                                       : const SizedBox.shrink(),
                                 ),
@@ -6046,15 +6150,15 @@ class _SalesScreenState extends State<SalesScreen>
       return Icons.poll_outlined;
     }
     switch (action) {
-      case "Add Comment":
+      case "Comment":
         return Icons.comment_outlined;
-      case "Add Discount":
+      case "Discount":
         return Icons.discount_outlined;
-      case "Add Delivery":
+      case "Delivery":
         return Icons.local_shipping_outlined;
-      case "View Tax":
+      case "Tax":
         return Icons.receipt_long_outlined;
-      case "View Profit":
+      case "Profit":
         return Icons.trending_up_outlined;
       case "Save Session":
         return Icons.save_outlined;
@@ -6136,7 +6240,7 @@ class _SalesScreenState extends State<SalesScreen>
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (item == "Add Discount" && _discountValue > 0)
+                  if (item == "Discount" && _discountValue > 0)
                     Text(
                       FormattingUtils.formatCurrencyWithDecimals(
                         _discountValue,
@@ -6151,7 +6255,7 @@ class _SalesScreenState extends State<SalesScreen>
                 ],
               ),
             ),
-            if (item == "Add Comment" && _commentValue.isNotEmpty)
+            if (item == "Comment" && _commentValue.isNotEmpty)
               Icon(
                 Icons.check_circle,
                 size: isTablet ? 18 : 16,
@@ -6263,15 +6367,15 @@ class _SalesScreenState extends State<SalesScreen>
       _actionsAnimationController.reverse();
     });
 
-    if (item == "Add Comment") {
+    if (item == "Comment") {
       Future.microtask(() {
         if (mounted) {
           _showCommentDialog(this.context, colors, isDark);
         }
       });
-    } else if (item == "Add Discount") {
+    } else if (item == "Discount") {
       _showDiscountDialog(this.context, colors, isDark);
-    } else if (item == "Add Delivery") {
+    } else if (item == "Delivery") {
       if (_selectedCustomer == null) {
         Future.microtask(() {
           if (mounted) {
@@ -6313,9 +6417,9 @@ class _SalesScreenState extends State<SalesScreen>
           }
         }
       });
-    } else if (item == "View Tax") {
+    } else if (item == "Tax") {
       _showTaxDialog(this.context, colors, isDark);
-    } else if (item == "View Profit") {
+    } else if (item == "Profit") {
       _showProfitDialog(this.context, colors, isDark);
     } else if (item == "Save Session") {
       _saveAndShowConfirmation();
@@ -6358,12 +6462,12 @@ class _SalesScreenState extends State<SalesScreen>
         actions: [
           DialogTextAction(
             label: "Cancel",
-            style: DialogActionStyle.dangerOutline,
+            style: DialogActionStyle.cancelOutline,
             onPressed: () => Navigator.pop(ctx),
           ),
           DialogTextAction(
             label: "Clear",
-            style: DialogActionStyle.primary,
+            style: DialogActionStyle.danger,
             onPressed: () async {
               Navigator.pop(ctx);
               // Delete session from database

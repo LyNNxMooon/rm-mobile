@@ -194,10 +194,17 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const ModernDialogHeader(
-                title: "Choose Shopfront",
+              ModernDialogHeader(
+                title: "Select your shopfront",
                 icon: Icons.storefront_rounded,
-                subtitle: "Select your store location",
+                trailing: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(
+                    Icons.close,
+                    color: colors.isDark ? Colors.white70 : kPrimaryColor,
+                  ),
+                  tooltip: "Close",
+                ),
               ),
               Flexible(
                 child: BlocBuilder<ShopfrontBloc, ShopFrontStates>(

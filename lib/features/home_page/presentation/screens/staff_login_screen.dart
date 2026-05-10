@@ -197,20 +197,10 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Staff Sign In",
+                                  "Sign-in to continue",
                                   style: getSmartTitle(
                                     color: isDark ? Colors.white : colors.onHero,
                                     fontSize: 21,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "Authenticate to continue to stock operations",
-                                  style: TextStyle(
-                                    color: isDark
-                                        ? Colors.white70
-                                        : colors.onHero.withOpacity(0.8),
-                                    fontSize: 12,
                                   ),
                                 ),
                                 const SizedBox(height: 10),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/constants/colors.dart';
-import 'package:rmmobile/constants/standard_dialog.dart';
 import 'package:rmmobile/constants/theme_colors.dart';
 import 'package:rmmobile/entities/vos/stock_vo.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
@@ -19,111 +18,127 @@ class StockDetailsDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    // Dynamic height constraint (max 85% of screen height)
-    final double maxDialogHeight = MediaQuery.of(context).size.height * 0.85;
+    final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final double availableHeight = MediaQuery.of(context).size.height - keyboardHeight;
 
-    return StandardDialog(
-      title: "Stock Details",
-      colors: colors,
-      isDark: isDark,
-      showHeader: false,
-      contentPadding: EdgeInsets.zero,
-      content: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxDialogHeight),
-        child: BlocBuilder<StockDetailsBloc, StockFetchingStates>(
-          builder: (context, state) {
-            if (state is StockDetailsLoading) {
-              return Padding(
-                padding: const EdgeInsets.all(40.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CupertinoActivityIndicator(radius: 15),
-                    const SizedBox(height: 15),
-                    Text(
-                      "Fetching details...",
-                      style: TextStyle(
-                        color: isDark ? Colors.white70 : kGreyColor,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            if (state is StockDetailsError) {
-              return Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: kErrorColor,
-                      size: 40,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      state.message,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: isDark ? Colors.white70 : kGreyColor,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Text(
-                        "Close",
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: keyboardHeight > 0 ? 16 : 24,
+      ),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: availableHeight - 48,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E2733) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BlocBuilder<StockDetailsBloc, StockFetchingStates>(
+            builder: (context, state) {
+              if (state is StockDetailsLoading) {
+                return Padding(
+                  padding: const EdgeInsets.all(40.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CupertinoActivityIndicator(radius: 15),
+                      const SizedBox(height: 15),
+                      Text(
+                        "Fetching details...",
                         style: TextStyle(
-                          color: isDark ? colors.onHero : Colors.white,
+                          color: isDark ? Colors.white70 : kGreyColor,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            if (state is StockDetailsLoaded) {
-              double sell = 0.00;
-              double cost = 0.00;
-
-              if ((state.stock.goodsTax ?? "") == "GST") {
-                cost = state.stock.cost * 1.1;
-              } else {
-                cost = state.stock.cost;
+                    ],
+                  ),
+                );
               }
 
-              if ((state.stock.salesTax ?? "") == "GST") {
-                sell = state.stock.sell * 1.1;
-              } else {
-                sell = state.stock.sell;
+              if (state is StockDetailsError) {
+                return Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: kErrorColor,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        state.message,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: isDark ? Colors.white70 : kGreyColor,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: Text(
+                          "Close",
+                          style: TextStyle(
+                            color: isDark ? colors.onHero : Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
               }
 
-              return _EditQuantityForm(
-                inStock: state.stock.quantity,
-                sell: sell,
-                cost: cost,
-                stock: state.stock,
-                currentQty: state.qty,
-                onUpdate: (newQty) {
-                  Navigator.of(context).pop();
-                  context.read<StocktakeBloc>().add(
-                    Stocktake(stock: state.stock, qty: newQty.toString()),
-                  );
-                },
-              );
-            }
+              if (state is StockDetailsLoaded) {
+                double sell = 0.00;
+                double cost = 0.00;
 
-            return const SizedBox.shrink();
-          },
+                if ((state.stock.goodsTax ?? "") == "GST") {
+                  cost = state.stock.cost * 1.1;
+                } else {
+                  cost = state.stock.cost;
+                }
+
+                if ((state.stock.salesTax ?? "") == "GST") {
+                  sell = state.stock.sell * 1.1;
+                } else {
+                  sell = state.stock.sell;
+                }
+
+                return _EditQuantityForm(
+                  inStock: state.stock.quantity,
+                  sell: sell,
+                  cost: cost,
+                  stock: state.stock,
+                  currentQty: state.qty,
+                  onUpdate: (newQty) {
+                    Navigator.of(context).pop();
+                    context.read<StocktakeBloc>().add(
+                      Stocktake(stock: state.stock, qty: newQty.toString()),
+                    );
+                  },
+                );
+              }
+
+              return const SizedBox.shrink();
+            },
+          ),
         ),
       ),
     );

@@ -19,6 +19,8 @@ import 'package:rmmobile/features/home_page/domain/use_cases/update_auto_backup_
 import 'package:rmmobile/features/home_page/domain/use_cases/update_dark_mode_enabled.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/load_dashboard_style.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_dashboard_style.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/load_font_size.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/update_font_size.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_retention_days.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/get_cash_drawer_identifier.dart'
   as home_use_cases;
@@ -146,6 +148,7 @@ import '../features/onboarding/presentation/BLoC/onboarding_bloc.dart';
 import '../features/customer_lookup/domain/use_cases/get_customer_transactions_local.dart';
 import '../features/theme/presentation/bloc/theme_cubit.dart';
 import '../features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
+import '../features/home_page/presentation/BLoC/font_size_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -278,6 +281,12 @@ Future<void> init() async {
     () => DashboardStyleCubit(
       loadDashboardStyle: sl(),
       updateDashboardStyle: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => FontSizeCubit(
+      loadFontSize: sl(),
+      updateFontSize: sl(),
     ),
   );
   sl.registerFactory(
@@ -421,6 +430,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateDarkModeEnabled(sl()));
   sl.registerLazySingleton(() => LoadDashboardStyle(sl()));
   sl.registerLazySingleton(() => UpdateDashboardStyle(sl()));
+  sl.registerLazySingleton(() => LoadFontSize(sl()));
+  sl.registerLazySingleton(() => UpdateFontSize(sl()));
   sl.registerLazySingleton(() => ClearSyncTimestamps(sl()));
   sl.registerLazySingleton(() => GetSaleSessionCounts(sl()));
   sl.registerLazySingleton(() => GetSaleSessionSummaries(sl()));

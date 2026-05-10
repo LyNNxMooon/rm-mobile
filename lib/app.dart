@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/font_size_cubit.dart';
 //import 'package:rmmobile/features/loading_splash/presentation/screens/loading_screen.dart';
 import 'package:rmmobile/features/onboarding/presentation/screens/onboarding_gate_screen.dart';
 import 'package:rmmobile/features/onboarding/presentation/BLoC/onboarding_bloc.dart';
@@ -187,6 +188,7 @@ class _MyAppState extends State<MyApp> {
         ),
         BlocProvider<ThemeCubit>(create: (_) => sl<ThemeCubit>()),
         BlocProvider<DashboardStyleCubit>(create: (_) => sl<DashboardStyleCubit>()),
+        BlocProvider<FontSizeCubit>(create: (_) => sl<FontSizeCubit>()),
 
         //Local web server changes
         BlocProvider<DiscoverHostBloc>(create: (_) => sl<DiscoverHostBloc>()),
@@ -197,18 +199,25 @@ class _MyAppState extends State<MyApp> {
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
-          return MaterialApp(
-            title: 'RM-Mobile',
-            debugShowCheckedModeBanner: false,
-            themeMode: themeMode,
-            theme: _buildTheme(Brightness.light),
-            darkTheme: _buildTheme(Brightness.dark),
-            navigatorObservers: [routeObserver],
-            builder: (context, child) {
-              final media = MediaQuery.of(context);
-              final double textScale = _tabletTextScaleFor(context);
-              final double uiScale = _tabletUiScaleFor(context);
-              final ThemeData baseTheme = Theme.of(context);
+          return BlocBuilder<FontSizeCubit, String>(
+            builder: (context, fontSizeSetting) {
+              // Calculate font size multiplier: default = 1.0, large = 1.2
+              final double fontSizeMultiplier = fontSizeSetting == "large" ? 1.2 : 1.0;
+              
+              return MaterialApp(
+                title: 'RM-Mobile',
+                debugShowCheckedModeBanner: false,
+                themeMode: themeMode,
+                theme: _buildTheme(Brightness.light),
+                darkTheme: _buildTheme(Brightness.dark),
+                navigatorObservers: [routeObserver],
+                builder: (context, child) {
+                  final media = MediaQuery.of(context);
+                  // Apply both tablet scale and font size setting
+                  final double baseTextScale = _tabletTextScaleFor(context);
+                  final double textScale = (baseTextScale * fontSizeMultiplier).clamp(1.0, 1.5);
+                  final double uiScale = _tabletUiScaleFor(context);
+                  final ThemeData baseTheme = Theme.of(context);
               final double densityAdjust =
                   ((uiScale - 1.0) * 3.2).clamp(0.0, 1.35);
               final ThemeData scaledTheme = baseTheme.copyWith(
@@ -277,6 +286,8 @@ class _MyAppState extends State<MyApp> {
             },
             home: const OnboardingGateScreen(),
             //home: const LoadingScreen(),
+          );
+            },
           );
         },
       ),

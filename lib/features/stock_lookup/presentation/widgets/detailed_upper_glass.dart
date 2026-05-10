@@ -72,94 +72,130 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
     final double rowGap = (isTablet ? 10 : 8) * uiScale;
     final double descFieldHeight = (isTablet ? 40 : 35) * uiScale;
     final double customFieldHeight = (isTablet ? 36 : 32) * uiScale;
+    final qtyPair = _splitLabelValue(widget.qty, 'Qty');
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          // Margin handled by parent padding in main screen for better control
-          padding: EdgeInsets.symmetric(
-            vertical: containerVertical,
-            horizontal: containerHorizontal,
-          ),
-          decoration: BoxDecoration(
-            color: isDark ? colors.glassFill : kSecondaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isDark
-                  ? colors.glassBorder
-                  : kSecondaryColor.withOpacity(0.2),
-            ),
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 20,
-                color: isDark
-                    ? colors.cardShadow
-                    : kThirdColor.withOpacity(.1),
-              ),
-            ],
-          ),
+    return Column(
+      children: [
+        _buildGlassPanel(
+          colors: colors,
+          isDark: isDark,
+          verticalPadding: containerVertical,
+          horizontalPadding: containerHorizontal,
           child: Column(
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    // Responsive Text
                     child: Text(
                       widget.barcode,
                       style: getSmartTitle(
                         color: onGlass,
-                        fontSize: 18,
-                      ), // Increased readability
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                        fontSize: isTablet ? 18 : 16,
+                      ),
+                      maxLines: 4,
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark
-                        ? Colors.grey.withOpacity(0.35)
-                        : kSecondaryColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 25,
-                          height: 25,
-                          child: Image.asset(
-                            "assets/images/qty.png",
-                            fit: BoxFit.fill,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          widget.qty,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: onGlass,
-                          ),
-                        ),
-                      ],
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.grey.withOpacity(0.35)
+                            : kSecondaryColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: isTablet
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildQtyRow(
+                                  iconPath: 'assets/images/qty.png',
+                                  label: qtyPair.key,
+                                  value: qtyPair.value,
+                                  color: onGlass,
+                                  isTablet: true,
+                                ),
+                                _buildQtyDivider(isDark, isTablet: true),
+                                _buildQtyRow(
+                                  iconPath: 'assets/images/layby.png',
+                                  label: 'Lay-By Qty',
+                                  value: widget.layByQty,
+                                  color: onGlass,
+                                  isTablet: true,
+                                ),
+                                _buildQtyDivider(isDark, isTablet: true),
+                                _buildQtyRow(
+                                  iconPath: 'assets/images/so.png',
+                                  label: 'SO Qty',
+                                  value: widget.soQty,
+                                  color: onGlass,
+                                  isTablet: true,
+                                ),
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildQtyRow(
+                                  iconPath: 'assets/images/qty.png',
+                                  label: 'On-Hand',
+                                  value: qtyPair.value,
+                                  color: onGlass,
+                                  isTablet: false,
+                                ),
+                                const SizedBox(height: 6),
+                                _buildQtyRow(
+                                  iconPath: 'assets/images/layby.png',
+                                  label: 'LB Qty',
+                                  value: widget.layByQty,
+                                  color: onGlass,
+                                  isTablet: false,
+                                ),
+                                const SizedBox(height: 6),
+                                _buildQtyRow(
+                                  iconPath: 'assets/images/so.png',
+                                  label: 'SO Qty',
+                                  value: widget.soQty,
+                                  color: onGlass,
+                                  isTablet: false,
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: sectionGap),
-
-              // Description Field
+              SizedBox(height: rowGap),
+              StockInfoRow(
+                image: 'assets/images/so.png',
+                icon: Icons.event,
+                iconBgColor: Colors.teal,
+                label: 'Last Sale',
+                value: widget.lastSaleDate,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: sectionGap),
+        _buildGlassPanel(
+          colors: colors,
+          isDark: isDark,
+          verticalPadding: containerVertical,
+          horizontalPadding: containerHorizontal,
+          child: Column(
+            children: [
               Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.center, // Align center vertically
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Label & Icon Group
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -173,38 +209,33 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           width: 18,
                           height: 18,
                           child: Image.asset(
-                            "assets/images/desc.png",
+                            'assets/images/desc.png',
                             fit: BoxFit.fill,
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        "Description",
+                        'Description',
                         style: TextStyle(
                           fontSize: 14,
                           color: onGlass,
-                        ), // Readability
+                        ),
                       ),
                     ],
                   ),
-
                   SizedBox(width: (isTablet ? 12 : 10) * uiScale),
-
-                  // Responsive TextField
                   Expanded(
                     child: SizedBox(
-                      height: descFieldHeight, // Slightly taller for better touch target
+                      height: descFieldHeight,
                       child: LanguageToolTextField(
                         controller: widget.descController,
                         style: TextStyle(
-                          fontSize: 14, // Increased font size
+                          fontSize: 14,
                           color: onGlass,
                         ),
-
                         decoration: InputDecoration(
-                          //enabled: false,
-                          hintText: "Description",
+                          hintText: 'Description',
                           hintStyle: TextStyle(
                             color: onGlassMuted,
                             fontSize: 14,
@@ -235,10 +266,9 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                   ),
                 ],
               ),
-
               SizedBox(height: rowGap),
               StockInfoRow(
-                image: "assets/images/dept.png",
+                image: 'assets/images/dept.png',
                 icon: Icons.category_outlined,
                 label: 'Department',
                 iconBgColor: Colors.grey,
@@ -246,14 +276,23 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               ),
               SizedBox(height: rowGap),
               StockInfoRow(
-                image: "assets/images/cat.png",
+                image: 'assets/images/cat.png',
                 icon: Icons.category_outlined,
                 label: 'Categories',
                 iconBgColor: Colors.orangeAccent,
                 value: widget.cats,
               ),
-              SizedBox(height: rowGap),
-              // Custom1 Editable Field
+            ],
+          ),
+        ),
+        SizedBox(height: sectionGap),
+        _buildGlassPanel(
+          colors: colors,
+          isDark: isDark,
+          verticalPadding: containerVertical,
+          horizontalPadding: containerHorizontal,
+          child: Column(
+            children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -269,7 +308,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           width: 18,
                           height: 18,
                           child: Image.asset(
-                            "assets/images/cus1.png",
+                            'assets/images/cus1.png',
                             fit: BoxFit.fill,
                           ),
                         ),
@@ -302,11 +341,15 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                                   color: onGlass,
                                 ),
                                 onEditingComplete: () {
-                                  final trimmedValue = widget.custom1Controller.text.trim();
+                                  final trimmedValue =
+                                      widget.custom1Controller.text.trim();
                                   if (widget.custom1Controller.text != trimmedValue) {
-                                    widget.custom1Controller.value = widget.custom1Controller.value.copyWith(
+                                    widget.custom1Controller.value =
+                                        widget.custom1Controller.value.copyWith(
                                       text: trimmedValue,
-                                      selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                      selection: TextSelection.collapsed(
+                                        offset: trimmedValue.length,
+                                      ),
                                     );
                                   }
                                 },
@@ -357,11 +400,15 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                                     color: onGlass,
                                   ),
                                   onEditingComplete: () {
-                                    final trimmedValue = widget.custom1Controller.text.trim();
+                                    final trimmedValue =
+                                        widget.custom1Controller.text.trim();
                                     if (widget.custom1Controller.text != trimmedValue) {
-                                      widget.custom1Controller.value = widget.custom1Controller.value.copyWith(
+                                      widget.custom1Controller.value =
+                                          widget.custom1Controller.value.copyWith(
                                         text: trimmedValue,
-                                        selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                        selection: TextSelection.collapsed(
+                                          offset: trimmedValue.length,
+                                        ),
                                       );
                                     }
                                   },
@@ -399,7 +446,6 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                 ],
               ),
               SizedBox(height: rowGap),
-              // Custom2 Editable Field
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -415,7 +461,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                           width: 18,
                           height: 18,
                           child: Image.asset(
-                            "assets/images/cus2.png",
+                            'assets/images/cus2.png',
                             fit: BoxFit.fill,
                           ),
                         ),
@@ -448,11 +494,15 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                                   color: onGlass,
                                 ),
                                 onEditingComplete: () {
-                                  final trimmedValue = widget.custom2Controller.text.trim();
+                                  final trimmedValue =
+                                      widget.custom2Controller.text.trim();
                                   if (widget.custom2Controller.text != trimmedValue) {
-                                    widget.custom2Controller.value = widget.custom2Controller.value.copyWith(
+                                    widget.custom2Controller.value =
+                                        widget.custom2Controller.value.copyWith(
                                       text: trimmedValue,
-                                      selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                      selection: TextSelection.collapsed(
+                                        offset: trimmedValue.length,
+                                      ),
                                     );
                                   }
                                 },
@@ -503,11 +553,15 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                                     color: onGlass,
                                   ),
                                   onEditingComplete: () {
-                                    final trimmedValue = widget.custom2Controller.text.trim();
+                                    final trimmedValue =
+                                        widget.custom2Controller.text.trim();
                                     if (widget.custom2Controller.text != trimmedValue) {
-                                      widget.custom2Controller.value = widget.custom2Controller.value.copyWith(
+                                      widget.custom2Controller.value =
+                                          widget.custom2Controller.value.copyWith(
                                         text: trimmedValue,
-                                        selection: TextSelection.collapsed(offset: trimmedValue.length),
+                                        selection: TextSelection.collapsed(
+                                          offset: trimmedValue.length,
+                                        ),
                                       );
                                     }
                                   },
@@ -544,61 +598,131 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                         ),
                 ],
               ),
-              SizedBox(height: rowGap),
-              StockInfoRow(
-                image: "assets/images/layby.png",
-                icon: Icons.numbers,
-                iconBgColor: Colors.purple,
-                label: "Lay-By Qty",
-                value: widget.layByQty,
-              ),
-              SizedBox(height: rowGap),
-              StockInfoRow(
-                image: "assets/images/so.png",
-                icon: Icons.history,
-                iconBgColor: Colors.yellow,
-                label: "SO Qty",
-                value: widget.soQty,
-              ),
-              SizedBox(height: rowGap),
-              if (widget.showCostPrices) ...[
-                StockInfoRow(
-                  image: "assets/images/cost_white.png",
-                  icon: Icons.percent,
-                  iconBgColor: Colors.deepPurpleAccent,
-                  label: "Cost / Sell Tax",
-                  value: "${widget.costTaxLabel} / ${widget.sellTaxLabel}",
-                ),
-                SizedBox(height: rowGap),
-                StockInfoRow(
-                  image: "assets/images/cost_white.png",
-                  icon: Icons.monetization_on_outlined,
-                  iconBgColor: Colors.pinkAccent,
-                  label: "Ex Cost",
-                  value: widget.exCost.toStringAsFixed(4),
-                ),
-                SizedBox(height: rowGap),
-                StockInfoRow(
-                  image: "assets/images/cost_white.png",
-                  icon: Icons.monetization_on_outlined,
-                  iconBgColor: Colors.lightBlue,
-                  label: "Inc Cost",
-                  value: widget.cost.toStringAsFixed(4),
-                ),
-                SizedBox(height: rowGap),
-              ],
-              StockInfoRow(
-                image: "assets/images/so.png",
-                icon: Icons.event,
-                iconBgColor: Colors.teal,
-                label: "Last Sale",
-                value: widget.lastSaleDate,
-              ),
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildGlassPanel({
+    required AppThemeColors colors,
+    required bool isDark,
+    required double verticalPadding,
+    required double horizontalPadding,
+    required Widget child,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            vertical: verticalPadding,
+            horizontal: horizontalPadding,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? colors.glassFill : kSecondaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isDark
+                  ? colors.glassBorder
+                  : kSecondaryColor.withOpacity(0.2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 20,
+                color: isDark
+                    ? colors.cardShadow
+                    : kThirdColor.withOpacity(.1),
+              ),
+            ],
+          ),
+          child: child,
+        ),
       ),
     );
+  }
+
+  Widget _buildQtyRow({
+    required String iconPath,
+    required String label,
+    required String value,
+    required Color color,
+    required bool isTablet,
+  }) {
+    final content = Row(
+      mainAxisSize: isTablet ? MainAxisSize.min : MainAxisSize.max,
+      children: [
+        SizedBox(
+          width: 20,
+          height: 20,
+          child: Image.asset(
+            iconPath,
+            fit: BoxFit.fill,
+          ),
+        ),
+        const SizedBox(width: 6),
+        isTablet
+            ? Text(
+                '$label:',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: color,
+                ),
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.visible,
+              )
+            : Expanded(
+                child: Text(
+                  '$label:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: color,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+        const SizedBox(width: 6),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.right,
+        ),
+      ],
+    );
+
+    if (isTablet) {
+      return IntrinsicWidth(child: content);
+    }
+
+    return SizedBox(width: 140, child: content);
+  }
+
+  Widget _buildQtyDivider(bool isDark, {required bool isTablet}) {
+    return Container(
+      width: 1,
+      height: isTablet ? 26 : 18,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      color: isDark
+          ? (isTablet ? Colors.white54 : Colors.white24)
+          : (isTablet ? Colors.black38 : Colors.black12),
+    );
+  }
+
+  MapEntry<String, String> _splitLabelValue(String text, String fallbackLabel) {
+    final idx = text.indexOf(':');
+    if (idx == -1) {
+      return MapEntry(fallbackLabel, text);
+    }
+    final label = text.substring(0, idx).trim();
+    final value = text.substring(idx + 1).trim();
+    return MapEntry(label.isEmpty ? fallbackLabel : label, value);
   }
 }
 
@@ -626,13 +750,12 @@ class StockInfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
         vertical: 6.0,
-      ), // Increased padding for touchability
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Left Side: Icon and Label
           Row(
-            mainAxisSize: MainAxisSize.min, // Shrink wrap
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 padding: const EdgeInsets.all(5),
@@ -652,13 +775,11 @@ class StockInfoRow extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   color: onGlass,
-                ), // Increased font size
+                ),
               ),
             ],
           ),
-
-          const SizedBox(width: 15), // Gap
-          // Flexible Value Text (Right Aligned)
+          const SizedBox(width: 15),
           Expanded(
             child: Text(
               value,
@@ -666,7 +787,7 @@ class StockInfoRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
               style: TextStyle(
-                fontSize: 14, // Increased font size for readability
+                fontSize: 14,
                 color: onGlass,
                 fontWeight: FontWeight.w500,
               ),

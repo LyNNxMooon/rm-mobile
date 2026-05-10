@@ -114,27 +114,69 @@ class _PricingDialogState extends State<PricingDialog> {
     final double inputHeight = isTablet ? 42.0 : 34.0;
     final double rowSpacing = isTablet ? 18.0 : 10.0;
     final double stockColWidth = isTablet ? 0.0 : 84.0;
-    final double maxDialogHeight =
-      MediaQuery.of(context).size.height * (isTablet ? 0.85 : 0.75);
+    final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final double availableHeight = MediaQuery.of(context).size.height - keyboardHeight;
+    final dialogTheme = DialogActionTheme(colors: colors, isDark: isDark);
 
-    return StandardDialog(
-      title: "Pricing Grades",
-      colors: colors,
-      isDark: isDark,
-      maxWidth: isTablet ? 780 : 680,
-      content: ConstrainedBox(
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 80 : 24,
+        vertical: keyboardHeight > 0 ? 16 : 24,
+      ),
+      child: Container(
         constraints: BoxConstraints(
-          maxHeight: maxDialogHeight,
+          maxWidth: isTablet ? 780 : 680,
+          maxHeight: availableHeight - 48,
+        ),
+        padding: EdgeInsets.all(isTablet ? 24 : 18),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E2733) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: isTablet ? 4 : 2),
+            // Header
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    "Pricing Grades",
+                    style: TextStyle(
+                      fontSize: isTablet ? 18 : 16,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(
+                    Icons.close,
+                    size: isTablet ? 24 : 22,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Scrollable content
             Flexible(
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    SizedBox(height: isTablet ? 4 : 2),
                     isTablet
                         ? IntrinsicHeight(
                             child: Row(
@@ -227,17 +269,14 @@ class _PricingDialogState extends State<PricingDialog> {
                                             height: inputHeight,
                                             margin: EdgeInsets.only(bottom: rowSpacing),
                                             alignment: Alignment.centerLeft,
-                                            child: FittedBox(
-                                              fit: BoxFit.scaleDown,
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                _formatPriceForGrade(row.grade),
-                                                style: TextStyle(
-                                                  fontSize: priceSize,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: kPrimaryColor,
-                                                ),
+                                            child: Text(
+                                              _formatPriceForGrade(row.grade),
+                                              style: TextStyle(
+                                                fontSize: priceSize,
+                                                fontWeight: FontWeight.w700,
+                                                color: kPrimaryColor,
                                               ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           )),
                                     ],
@@ -277,21 +316,30 @@ class _PricingDialogState extends State<PricingDialog> {
                 ),
               ),
             ),
+            // Actions
+            const SizedBox(height: 20),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  DialogTextAction(
+                    label: "Delete",
+                    style: DialogActionStyle.outline,
+                    onPressed: widget.onDelete,
+                  ).build(context, dialogTheme),
+                  DialogTextAction(
+                    label: "Add/Update",
+                    style: DialogActionStyle.primary,
+                    onPressed: _handleUpdate,
+                  ).build(context, dialogTheme),
+                ],
+              ),
+            ),
           ],
         ),
       ),
-      actions: [
-        DialogTextAction(
-          label: "Delete",
-          style: DialogActionStyle.outline,
-          onPressed: widget.onDelete,
-        ),
-        DialogTextAction(
-          label: "Add/Update",
-          style: DialogActionStyle.primary,
-          onPressed: _handleUpdate,
-        ),
-      ],
     );
   }
 
@@ -574,17 +622,14 @@ class _PricingDialogState extends State<PricingDialog> {
                 height: inputHeight,
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      _formatPriceForGrade(row.grade),
-                      style: TextStyle(
-                        fontSize: textSize,
-                        fontWeight: FontWeight.w700,
-                        color: kPrimaryColor,
-                      ),
+                  child: Text(
+                    _formatPriceForGrade(row.grade),
+                    style: TextStyle(
+                      fontSize: textSize,
+                      fontWeight: FontWeight.w700,
+                      color: kPrimaryColor,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -745,9 +790,9 @@ class _PricingDialogState extends State<PricingDialog> {
   Widget _buildLevelHeader(double fontSize, Color textColor, bool isTablet) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final double iconSize = isTablet ? 14.0 : 12.0;
-    final double buttonHeight = isTablet ? 20.0 : 16.0;
-    final double buttonWidth = isTablet ? 22.0 : 18.0;
+    final double iconSize = isTablet ? 18.0 : 16.0;
+    final double buttonHeight = isTablet ? 28.0 : 24.0;
+    final double buttonWidth = isTablet ? 30.0 : 26.0;
     final Color buttonBg = isDark 
         ? colors.surface 
         : Colors.grey.shade100;

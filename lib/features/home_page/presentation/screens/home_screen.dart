@@ -32,6 +32,7 @@ import '../BLoC/home_screen_events.dart';
 import '../BLoC/home_screen_states.dart';
 import '../BLoC/session_counts_cubit.dart';
 import '../BLoC/dashboard_style_cubit.dart';
+import '../BLoC/font_size_cubit.dart';
 import '../widgets/app_bar_session.dart';
 import '../widgets/network_pc_dialog.dart';
 import '../widgets/transaction_pulse_widget.dart';
@@ -540,8 +541,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         boxShadow: [
           BoxShadow(
             color: colors.cardShadow,
-            blurRadius: 18,
-            offset: const Offset(0, -6),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
           ),
         ],
       ),
@@ -586,7 +587,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   Widget _buildGreetingHeader(BuildContext context) {
     final colors = context.appColors;
     final bool isTablet = context.isTablet;
-    final String greeting = _getGreeting();
     final String shopfront = (AppGlobals.instance.shopfront ?? "").trim();
     final String shopName = shopfront.isEmpty
         ? "Your shopfront"
@@ -621,18 +621,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        greeting,
-                        style: TextStyle(
-                          color: colors.onSurfaceMuted,
-                          fontSize: isTablet ? 16 : 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
                         shopName,
                         style: getSmartTitle(
-                          fontSize: isTablet ? 24 : 18,
+                          fontSize: isTablet ? 22 : 20,
                           color: colors.isDark
                               ? Colors.white
                               : colors.onSurface,
@@ -737,8 +728,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         boxShadow: [
           if (!colors.isDark)
             BoxShadow(
-              color: colors.cardShadow.withOpacity(0.18),
-              blurRadius: 3,
+              color: colors.cardShadow.withOpacity(0.10),
+              blurRadius: 2,
               offset: const Offset(0, 1),
             ),
         ],
@@ -816,17 +807,20 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }) {
     final bool isTablet = context.isTablet;
     final double width = MediaQuery.of(context).size.width;
+    final bool isLargeFont = context.read<FontSizeCubit>().isLarge;
     int crossAxisCount = isTablet ? 3 : 2;
     if (width > 900) crossAxisCount = 4;
     if (width < 360) crossAxisCount = 1;
 
-    final double spacing = isTablet ? 24 : 12;
-    final double mainSpacing = compact ? 0 : spacing;
+    final double spacing = isTablet ? 16 : 10;
+    final double mainSpacing = compact ? 0 : (isTablet ? 12 : 8);
     final double horizontalPadding = isTablet ? 22 : 16;
     final double availableWidth =
         width - (horizontalPadding * 2) - (spacing * (crossAxisCount - 1));
     final double itemWidth = availableWidth / crossAxisCount;
-    final double targetHeight = isTablet ? 150 : 100;
+    // Increase height for large font mode to prevent overflow
+    final double baseHeight = isTablet ? 130 : 90;
+    final double targetHeight = isLargeFont ? baseHeight * 1.15 : baseHeight;
     final double childAspectRatio = itemWidth / targetHeight;
 
     return Padding(
@@ -884,7 +878,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         color: colors.isDark
             ? colors.surfaceAlt.withOpacity(0.98)
             : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: colors.isDark
               ? Colors.white10
@@ -894,10 +888,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         boxShadow: [
           BoxShadow(
             color: colors.isDark
-                ? Colors.black.withOpacity(0.10)
-                : colors.cardShadow.withOpacity(0.14),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
+                ? Colors.black.withOpacity(0.06)
+                : colors.cardShadow.withOpacity(0.08),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -916,7 +910,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               Text(
                 "More Actions",
                 style: getSmartTitle(
-                  fontSize: isTablet ? 14 : 12,
+                  fontSize: isTablet 
+                      ? (14 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(14.0, 18.0)
+                      : 12.0,
                   color: colors.isDark ? Colors.white70 : Colors.grey.shade700,
                 ),
               ),
@@ -928,12 +924,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 ),
                 decoration: BoxDecoration(
                   color: colors.isDark ? Colors.white10 : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   "Coming Soon",
                   style: TextStyle(
-                    fontSize: isTablet ? 9 : 8,
+                    fontSize: isTablet 
+                        ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
+                        : 10.0,
                     fontWeight: FontWeight.w600,
                     color: colors.isDark
                         ? Colors.white54
@@ -943,9 +941,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               ),
               const Spacer(),
               Text(
-                isTablet ? "Under development" : "In dev",
+                isTablet ? "Under construction" : "In dev",
                 style: TextStyle(
-                  fontSize: isTablet ? 11 : 10,
+                  fontSize: isTablet 
+                      ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
+                      : 10.0,
                   fontWeight: FontWeight.w600,
                   color: kPrimaryColor,
                 ),
@@ -977,11 +977,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     final double scale = isTablet
         ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)
         : 1.0;
-    final double titleSize = isTablet ? (15 * scale).clamp(15.0, 19.0) : 13.0;
+    final double titleSize = isTablet ? (14 * scale).clamp(14.0, 18.0) : 12.0;
     final double subTitleSize = isTablet
         ? (12 * scale).clamp(12.0, 14.0)
-        : 11.0;
-    final double iconSize = isTablet ? (30 * scale).clamp(26.0, 38.0) : 18.0;
+        : 10.0;
+    final double iconSize = isTablet ? 34.0 : 22.0;
 
     final bool isComingSoon = item['comingSoon'] ?? false;
     final Color itemColor = item['color'] ?? kPrimaryColor;
@@ -1000,13 +1000,13 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
     return InkWell(
       onTap: () => _handleActionTap(item['action'] as String?),
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(10),
       child: Stack(
         children: [
           Container(
             decoration: BoxDecoration(
               color: background,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isComingSoon
                     ? Colors.transparent
@@ -1020,19 +1020,19 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   : [
                       BoxShadow(
                         color: colors.isDark
-                            ? Colors.black.withOpacity(0.04)
-                            : colors.cardShadow.withOpacity(0.08),
-                        blurRadius: 2,
+                            ? Colors.black.withOpacity(0.02)
+                            : colors.cardShadow.withOpacity(0.04),
+                        blurRadius: 1,
                         offset: const Offset(0, 1),
                       ),
                     ],
             ),
             child: Padding(
               padding: EdgeInsets.fromLTRB(
-                isTablet ? 16 : 12,
-                isTablet ? 14 : 10,
-                isTablet ? 14 : 10,
-                isTablet ? 14 : 10,
+                isTablet ? 12 : 10,
+                isTablet ? 16 : 10,
+                isTablet ? 10 : 8,
+                isTablet ? 16 : 10,
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1040,14 +1040,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   Expanded(
                     child: Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: isTablet ? 10 : 8,
-                        vertical: isTablet ? 8 : 6,
+                        horizontal: isTablet ? 8 : 6,
+                        vertical: isTablet ? 0 : 0,
                       ),
                       decoration: BoxDecoration(
                         color: colors.isDark
                             ? Colors.white10
                             : Colors.white.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(isTablet ? 12 : 10),
+                        borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
                         border: Border.all(
                           color: colors.isDark
                               ? Colors.white10
@@ -1056,9 +1056,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                         boxShadow: [
                           BoxShadow(
                             color: colors.isDark
-                                ? Colors.black.withOpacity(0.08)
-                                : colors.cardShadow.withOpacity(0.12),
-                            blurRadius: 4,
+                                ? Colors.black.withOpacity(0.04)
+                                : colors.cardShadow.withOpacity(0.06),
+                            blurRadius: 2,
                             offset: const Offset(0, 1),
                           ),
                         ],
@@ -1067,16 +1067,18 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            item['title'],
-                            style: getSmartTitle(
-                              fontSize: titleSize,
-                              color: titleColor,
+                          Flexible(
+                            child: Text(
+                              item['title'],
+                              style: getSmartTitle(
+                                fontSize: titleSize,
+                                color: titleColor,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: isTablet ? 6 : 4),
+                          SizedBox(height: isTablet ? 4 : 2),
                           Text(
                             item['subTitle'],
                             style: TextStyle(
@@ -1093,20 +1095,17 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   ),
                   SizedBox(width: isTablet ? 10 : 6),
                   Container(
-                    width: isTablet ? 44 : 32,
-                    height: isTablet ? 44 : 32,
+                    padding: EdgeInsets.all(isTablet ? 6 : 4),
                     decoration: BoxDecoration(
                       color: colors.isDark
                           ? Colors.black.withOpacity(0.18)
                           : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(isTablet ? 14 : 12),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Center(
-                      child: Icon(
-                        item['icon'],
-                        size: iconSize,
-                        color: iconColor,
-                      ),
+                    child: Icon(
+                      item['icon'],
+                      size: iconSize,
+                      color: iconColor,
                     ),
                   ),
                 ],
@@ -1143,9 +1142,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.red.withOpacity(0.4),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+                      color: Colors.red.withOpacity(0.25),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
                     ),
                   ],
                 ),
@@ -1194,13 +1193,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     );
   }
 
-  String _getGreeting() {
-    final int hour = DateTime.now().hour;
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
-  }
-
   String _tabTitleForIndex(int index) {
     switch (index) {
       case 1:
@@ -1212,7 +1204,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       case 4:
         return "More";
       default:
-        return "All actions";
+        return "Actions";
     }
   }
 
@@ -1420,7 +1412,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               create: (_) => di.sl<SalesBloc>(),
               child: const SalesScreen(
                 title: "Account Sales",
-                themeColor: Color.fromARGB(255, 238, 130, 166),
+                themeColor: Color.fromARGB(255, 210, 148, 172),
                 icon: Icons.receipt_long_outlined,
               ),
             ),
@@ -1510,16 +1502,16 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   final List<Map<String, dynamic>> _actionItems = [
     {
       "title": "Account Sales",
-      "subTitle": "Invoice customers",
+      "subTitle": "Create account sale",
       "icon": Icons.receipt_long_outlined,
-      "color": const Color.fromARGB(255, 238, 130, 166),
+      "color": const Color.fromARGB(255, 210, 148, 172),
       "comingSoon": false,
       "action": "account_sales",
       "category": "sales",
     },
     {
       "title": "Sales Order",
-      "subTitle": "Create orders",
+      "subTitle": "Create sales order",
       "icon": Icons.shopping_cart_outlined,
       "color": const Color.fromARGB(255, 44, 133, 211),
       "comingSoon": false,
@@ -1528,7 +1520,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     },
     {
       "title": "Quotes",
-      "subTitle": "Create quotations",
+      "subTitle": "Create quotation",
       "icon": Icons.request_quote_outlined,
       "color": Colors.orange.shade500,
       "comingSoon": false,
@@ -1537,7 +1529,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     },
     {
       "title": "Lay-bys",
-      "subTitle": "Create lay-bys",
+      "subTitle": "Create lay-by",
       "icon": Icons.inventory_2_outlined,
       "color": const Color.fromARGB(255, 152, 86, 165),
       "comingSoon": false,

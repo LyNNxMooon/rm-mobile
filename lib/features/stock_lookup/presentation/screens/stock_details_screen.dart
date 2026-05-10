@@ -847,6 +847,15 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           exSell: exSell,
                           incCost: cost,
                           exCost: exCost,
+                          costTaxLabel: _formatTaxLabel(
+                            widget.stock.goodsTax,
+                            costTaxPercentage,
+                          ),
+                          sellTaxLabel: _formatTaxLabel(
+                            widget.stock.salesTax,
+                            sellTaxPercentage,
+                          ),
+                          showCostPrices: !hideCostPrice,
                           taxPercentage: sellTaxPercentage,
                           taxType: sellTaxType,
                           canUpdateSellPrice: !lockSellPrice && !isPackage,

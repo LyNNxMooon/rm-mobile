@@ -294,7 +294,7 @@ class _ReadOnlyDetailsViewState extends State<_ReadOnlyDetailsView> {
                 elevation: 0,
               ),
                 child: Text(
-                "Okay",
+                "OK",
                 style: TextStyle(
                   color: colors.onHero, fontWeight: FontWeight.bold),
               ),

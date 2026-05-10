@@ -1515,7 +1515,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
       children: [
         const BreathingStockLoader(),
         const Text(
-          "Your stock(s) are not ready yet...",
+          "Stock list is empty.",
           style: TextStyle(
             fontSize: 14,
             color: kPrimaryColor,

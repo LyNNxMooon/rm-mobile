@@ -136,7 +136,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                                     const SizedBox(height: 24),
 
                                     Text(
-                                      "No stocktake history found!",
+                                      "No stocktake history found.",
                                       style: TextStyle(
                                         color: colors.onSurfaceMuted,
                                         fontSize: 16,

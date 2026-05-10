@@ -67,6 +67,12 @@ abstract class HomeRepo {
   /// Sets the dashboard style: "pro" (new) or "default" (old glass drawer)
   Future<void> setDashboardStyle(String style);
 
+  /// Returns the font size setting: "default" (normal) or "large" (accessibility)
+  Future<String> getFontSize();
+
+  /// Sets the font size setting: "default" (normal) or "large" (accessibility)
+  Future<void> setFontSize(String size);
+
   Future<DateTime?> getLastAutoBackupAt();
 
   Future<void> setLastAutoBackupAt(DateTime timestamp);

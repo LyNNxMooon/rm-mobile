@@ -747,14 +747,33 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         vertical: 12,
                       ),
                       suffixIcon: IconButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
+                        onPressed: () async {
+                          StockVO? selectedStock;
+                          await Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => const StockLookupScreen(
+                              builder: (_) => StockLookupScreen(
                                 showBackArrow: true,
+                                selectionMode: true,
+                                onStockSelected: (stock) {
+                                  selectedStock = stock;
+                                },
                               ),
                             ),
                           );
+                          if (selectedStock != null && mounted) {
+                            setState(() {
+                              countingStock = selectedStock;
+                              _bcController.text = selectedStock!.barcode;
+                            });
+                            context.read<ScannerBloc>().add(
+                              SelectDuplicateStock(selected: selectedStock!),
+                            );
+                            qtyFocusNode.requestFocus();
+                            qtyController.selection = TextSelection(
+                              baseOffset: 0,
+                              extentOffset: qtyController.text.length,
+                            );
+                          }
                         },
                         icon: const Icon(Icons.double_arrow_rounded),
                         color: kPrimaryColor,
@@ -857,13 +876,18 @@ class _ScannerScreenState extends State<ScannerScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: CustomStocktakeBtn(
-                    function: () {
-                      context.navigateToNext(const StockTakeListScreen());
+                  child: BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
+                    builder: (context, state) {
+                      final count = state is StocktakeListLoaded ? state.totalCount : 0;
+                      return CustomStocktakeBtn(
+                        function: () {
+                          context.navigateToNext(const StockTakeListScreen());
+                        },
+                        icon: Icons.list,
+                        bgColor: kPrimaryColor,
+                        name: count > 0 ? "LIST ($count)" : "LIST",
+                      );
                     },
-                    icon: Icons.list,
-                    bgColor: kPrimaryColor,
-                    name: "LIST",
                   ),
                 ),
                 SizedBox(width: isTablet ? 20 : 12),
@@ -958,6 +982,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
         }
 
         if (state is StockTaken) {
+          // Refresh the stocktake list count
+          context.read<FetchingStocktakeListBloc>().add(FetchStocktakeListEvent());
+          
           if (isManualCount) {
             AlertInfo.show(
               context: context,

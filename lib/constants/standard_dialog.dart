@@ -4,7 +4,7 @@ import '../constants/colors.dart';
 import '../constants/theme_colors.dart';
 import '../utils/responsive_utils.dart';
 
-enum DialogActionStyle { primary, outline, dangerOutline, text }
+enum DialogActionStyle { primary, danger, outline, dangerOutline, cancelOutline, text }
 
 class DialogActionTheme {
   final AppThemeColors colors;
@@ -26,7 +26,7 @@ abstract class DialogActionDecorator {
 
 class DialogTextAction extends DialogActionDecorator {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final DialogActionStyle style;
   final IconData? icon;
 
@@ -39,6 +39,9 @@ class DialogTextAction extends DialogActionDecorator {
 
   @override
   Widget build(BuildContext context, DialogActionTheme theme) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final horizontalPadding = textScale > 1.0 ? 24.0 : 20.0;
+    
     final Widget child = icon == null
         ? Text(label)
         : Row(
@@ -59,7 +62,21 @@ class DialogTextAction extends DialogActionDecorator {
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimaryColor,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              shape: RoundedRectangleBorder(borderRadius: theme.borderRadius),
+            ),
+            child: child,
+          ),
+        );
+      case DialogActionStyle.danger:
+        return SizedBox(
+          height: theme.height,
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kErrorColor,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               shape: RoundedRectangleBorder(borderRadius: theme.borderRadius),
             ),
             child: child,
@@ -73,7 +90,27 @@ class DialogTextAction extends DialogActionDecorator {
             style: OutlinedButton.styleFrom(
               foregroundColor: kErrorColor,
               side: const BorderSide(color: kErrorColor),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              shape: RoundedRectangleBorder(borderRadius: theme.borderRadius),
+            ),
+            child: child,
+          ),
+        );
+      case DialogActionStyle.cancelOutline:
+        final Color neutralColor = theme.isDark
+            ? Colors.white70
+            : Colors.black87;
+        final Color neutralBorder = theme.isDark
+            ? Colors.white38
+            : Colors.black38;
+        return SizedBox(
+          height: theme.height,
+          child: OutlinedButton(
+            onPressed: onPressed,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: neutralColor,
+              side: BorderSide(color: neutralBorder),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               shape: RoundedRectangleBorder(borderRadius: theme.borderRadius),
             ),
             child: child,
@@ -87,7 +124,7 @@ class DialogTextAction extends DialogActionDecorator {
             style: OutlinedButton.styleFrom(
               foregroundColor: kPrimaryColor,
               side: const BorderSide(color: kPrimaryColor),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               shape: RoundedRectangleBorder(borderRadius: theme.borderRadius),
             ),
             child: child,
@@ -171,6 +208,8 @@ class StandardDialog extends StatelessWidget {
   final AppThemeColors colors;
   final bool isDark;
   final double? maxWidth;
+  final double? maxHeight;
+  final EdgeInsets? insetPadding;
   final EdgeInsetsGeometry? contentPadding;
   final bool showClose;
   final VoidCallback? onClose;
@@ -185,6 +224,8 @@ class StandardDialog extends StatelessWidget {
     this.subtitle,
     this.actions = const [],
     this.maxWidth,
+    this.maxHeight,
+    this.insetPadding,
     this.contentPadding,
     this.showClose = true,
     this.onClose,
@@ -195,14 +236,18 @@ class StandardDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isTablet = context.isTablet;
     final padding = contentPadding ?? EdgeInsets.all(isTablet ? 24 : 18);
-    final dialogTheme = DialogActionTheme(colors: colors, isDark: isDark);
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final buttonHeight = textScale > 1.0 ? 52.0 : 44.0;
+    final dialogTheme = DialogActionTheme(colors: colors, isDark: isDark, height: buttonHeight);
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.symmetric(horizontal: isTablet ? 80 : 24),
+      insetPadding:
+          insetPadding ?? EdgeInsets.symmetric(horizontal: isTablet ? 80 : 24),
       child: Container(
         constraints: BoxConstraints(
           maxWidth: maxWidth ?? (isTablet ? 520 : double.infinity),
+          maxHeight: maxHeight ?? double.infinity,
         ),
         padding: padding,
         decoration: BoxDecoration(
