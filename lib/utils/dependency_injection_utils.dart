@@ -86,6 +86,7 @@ import '../features/stock_lookup/presentation/BLoC/package_component_bloc.dart';
 import '../features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
 import '../features/customer_lookup/domain/use_cases/fetch_customer_data.dart';
 import '../features/customer_lookup/domain/use_cases/fetch_customer_transactions.dart';
+import '../features/customer_lookup/domain/use_cases/fetch_customer_transactions_by_type.dart';
 import '../features/customer_lookup/domain/use_cases/get_customer_filter_options.dart';
 import '../features/customer_lookup/domain/use_cases/get_host_ip_address.dart';
 import '../features/customer_lookup/domain/use_cases/get_next_customer_address_id.dart';
@@ -224,6 +225,7 @@ Future<void> init() async {
     () => CustomerTransactionsBloc(
       getCustomerTransactionsLocal: sl(),
       fetchCustomerTransactions: sl(),
+      fetchCustomerTransactionsByType: sl(),
     ),
   );
   sl.registerFactory(
@@ -399,6 +401,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetPaginatedStock(sl()));
   sl.registerLazySingleton(() => FetchCustomerData(sl()));
   sl.registerLazySingleton(() => FetchCustomerTransactions(sl()));
+  sl.registerLazySingleton(() => FetchCustomerTransactionsByType(sl()));
   sl.registerLazySingleton(() => GetCustomerTransactionsLocal(sl()));
   sl.registerLazySingleton(() => CreateCustomer(sl()));
   sl.registerLazySingleton(() => GetPaginatedCustomers(sl()));

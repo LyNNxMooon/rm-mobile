@@ -157,58 +157,76 @@ abstract class LocalDbDAO {
     required List<Map<String, dynamic>> soPay,
   });
 
+  /// Replaces a single transaction type for a customer
+  /// [transactionType] must be one of: purchase, credit, invoice, ivpay, layby, lbpay, cso, soquote, sopay
+  Future<void> replaceCustomerTransactionsByType({
+    required String shopfront,
+    required int customerId,
+    required String transactionType,
+    required List<Map<String, dynamic>> transactions,
+  });
+
+  /// Appends transactions to existing records for a customer (used for pagination)
+  /// [transactionType] must be one of: purchase, credit, invoice, ivpay, layby, lbpay, cso, soquote, sopay
+  Future<void> appendCustomerTransactionsByType({
+    required String shopfront,
+    required int customerId,
+    required String transactionType,
+    required List<Map<String, dynamic>> transactions,
+  });
+
   Future<List<Map<String, dynamic>>> getCustomerPurchases({
     required String shopfront,
     required int customerId,
-    int limit,
+    int? limit,
   });
 
   Future<List<Map<String, dynamic>>> getCustomerCredit({
     required String shopfront,
     required int customerId,
-    int limit,
+    int? limit,
   });
 
   Future<List<Map<String, dynamic>>> getCustomerInvoices({
     required String shopfront,
     required int customerId,
-    int limit,
+    int? limit,
   });
 
   Future<List<Map<String, dynamic>>> getCustomerIvPay({
     required String shopfront,
     required int customerId,
-    int limit,
+    int? limit,
   });
 
   Future<List<Map<String, dynamic>>> getCustomerLaybys({
     required String shopfront,
     required int customerId,
-    int limit,
+    int? limit,
   });
 
   Future<List<Map<String, dynamic>>> getCustomerLbPay({
     required String shopfront,
     required int customerId,
-    int limit,
+    int? limit,
   });
 
   Future<List<Map<String, dynamic>>> getCustomerCso({
     required String shopfront,
     required int customerId,
-    int limit,
+    int? limit,
   });
 
   Future<List<Map<String, dynamic>>> getCustomerSoQuote({
     required String shopfront,
     required int customerId,
-    int limit,
+    int? limit,
   });
 
   Future<List<Map<String, dynamic>>> getCustomerSoPay({
     required String shopfront,
     required int customerId,
-    int limit,
+    int? limit,
   });
 
   // Setters to save data

@@ -206,6 +206,7 @@ abstract class ApiService {
     @Path(kPathParamForShopfrontId) String shopfrontId,
     @Path(kPathParamForCustomerId) int customerId,
     @Header("x-api-key") String apiKey,
+    @Body() Map<String, dynamic> body,
   );
 
   @POST(kEndPointForInvoice)

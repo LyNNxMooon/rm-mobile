@@ -38,6 +38,18 @@ abstract class CustomerLookupRepo {
 
   Future<void> fetchAndSaveCustomerTransactions({required int customerId});
 
+  /// Fetches and saves a single transaction type for a customer
+  /// [transactionType] must be one of: purchase, invoice, credit, ivpay, layby, lbpay, cso, soquote, sopay
+  /// [pageSize] controls how many records to fetch (default 500)
+  /// [cursor] is the pagination cursor for fetching next page
+  /// Returns a record with hasMore and nextCursor for pagination
+  Future<({bool hasMore, int? nextCursor})> fetchAndSaveCustomerTransactionsByType({
+    required int customerId,
+    required String transactionType,
+    int pageSize = 500,
+    int? cursor,
+  });
+
   Future<CustomerTransactionsLocalData> getCustomerTransactionsLocal({
     required int customerId,
   });

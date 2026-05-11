@@ -2038,35 +2038,81 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ],
 
           // Quick Action Buttons Row
-          Wrap(
-            alignment: WrapAlignment.spaceEvenly,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildActionButton(Icons.phone_outlined, "Call", () {
-                final String resolvedNumber =
-                    widget.customer.phone.trim().isNotEmpty
-                    ? widget.customer.phone
-                    : widget.customer.mobile;
-                _dialNumber(resolvedNumber);
-              }),
-              _buildActionButton(Icons.email_outlined, "Email", () {
-                _emailTo(widget.customer.email);
-              }),
-              _buildActionButton(
-                isEditing ? Icons.save_rounded : Icons.edit,
-                isEditing ? "Save" : "Edit",
-                () => _toggleEditSection(CustomerEditSection.header),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildLongActionButton(
-            label: "View Recent Transactions",
-            onTap: () {
-              _openCustomerTransactions();
-            },
-          ),
+          if (isTablet)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildActionButton(Icons.phone_outlined, "Call", () {
+                      final String resolvedNumber =
+                          widget.customer.phone.trim().isNotEmpty
+                          ? widget.customer.phone
+                          : widget.customer.mobile;
+                      _dialNumber(resolvedNumber);
+                    }),
+                    _buildActionButton(Icons.email_outlined, "Email", () {
+                      _emailTo(widget.customer.email);
+                    }),
+                    _buildActionButton(
+                      isEditing ? Icons.save_rounded : Icons.edit,
+                      isEditing ? "Save" : "Edit",
+                      () => _toggleEditSection(CustomerEditSection.header),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: () => _openCustomerTransactions(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    "View Transactions",
+                    maxLines: 1,
+                    style: TextStyle(fontSize: baseSize, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            )
+          else ...[
+            Wrap(
+              alignment: WrapAlignment.spaceEvenly,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildActionButton(Icons.phone_outlined, "Call", () {
+                  final String resolvedNumber =
+                      widget.customer.phone.trim().isNotEmpty
+                      ? widget.customer.phone
+                      : widget.customer.mobile;
+                  _dialNumber(resolvedNumber);
+                }),
+                _buildActionButton(Icons.email_outlined, "Email", () {
+                  _emailTo(widget.customer.email);
+                }),
+                _buildActionButton(
+                  isEditing ? Icons.save_rounded : Icons.edit,
+                  isEditing ? "Save" : "Edit",
+                  () => _toggleEditSection(CustomerEditSection.header),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildLongActionButton(
+              label: "View Transactions",
+              onTap: () {
+                _openCustomerTransactions();
+              },
+            ),
+          ],
         ],
       ),
     );

@@ -735,6 +735,7 @@ class _ApiService implements ApiService {
     String shopfrontId,
     int customerId,
     String apiKey,
+    Map<String, dynamic> body,
   ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -744,7 +745,8 @@ class _ApiService implements ApiService {
       r'x-api-key': apiKey,
     };
     _headers.removeWhere((k, v) => v == null);
-    const Map<String, dynamic>? _data = null;
+    final _data = <String, dynamic>{};
+    _data.addAll(body);
     final _options = _setStreamType<CustomerTransactionsResponse>(Options(
       method: 'POST',
       headers: _headers,
