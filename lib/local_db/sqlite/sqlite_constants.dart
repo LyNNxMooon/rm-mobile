@@ -486,6 +486,9 @@ const taxCodesTableCreationQuery = '''
 ''';
 
 const String kSalesCustomKey = "sales_custom";
+const String kAutoChargeSaleKey = "auto_charge_sale";
+const String kAutoChargeSaleStockKey = "auto_charge_sale_stock";
+const String kAutoChargeSalePercentKey = "auto_charge_sale_percent";
 
 
 // ---------------------------------------------------------------------------

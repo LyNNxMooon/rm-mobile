@@ -12,6 +12,9 @@ class ConnectShopfrontResponse {
   final String? salesCustom;
   final String? reminder;
   final List<TaxCodeVO>? taxCodes;
+  final bool? autoChargeSale;
+  final int? autoChargeSaleStock;
+  final int? autoChargeSalePercent;
 
   ConnectShopfrontResponse({
     required this.success,
@@ -22,6 +25,9 @@ class ConnectShopfrontResponse {
     this.salesCustom,
     this.reminder,
     this.taxCodes,
+    this.autoChargeSale,
+    this.autoChargeSaleStock,
+    this.autoChargeSalePercent,
   });
 
   factory ConnectShopfrontResponse.fromJson(Map<String, dynamic> json) =>
