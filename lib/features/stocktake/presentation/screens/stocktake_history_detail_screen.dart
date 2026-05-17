@@ -18,6 +18,7 @@ import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.d
 import 'package:rmmobile/features/stocktake/presentation/widgets/empty_stock_state_widget.dart';
 import 'package:rmmobile/features/stocktake/presentation/widgets/stock_details_readonly_dialog.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 
 import 'package:excel/excel.dart' hide Border;
 import 'package:share_plus/share_plus.dart';
@@ -150,6 +151,15 @@ class _StocktakeHistoryDetailsScreenState
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+
+    // Desktop sizing
+    final double titleFontSize = useDesktopNav ? 14.0 : 16.0;
+    final double backIconSize = useDesktopNav ? 16.0 : 18.0;
+    final double topPadding = useDesktopNav ? 12.0 : 15.0;
+    final double listPadding = useDesktopNav ? 12.0 : 15.0;
+    final double itemSpacing = useDesktopNav ? 5.0 : 7.0;
+
     return WillPopScope(
       onWillPop: () async {
         if (mounted) {
@@ -163,7 +173,7 @@ class _StocktakeHistoryDetailsScreenState
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(15, 15, 15, 10),
+                padding: EdgeInsets.fromLTRB(topPadding, topPadding, topPadding, useDesktopNav ? 8 : 10),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -182,15 +192,15 @@ class _StocktakeHistoryDetailsScreenState
                           icon: Icon(
                             Icons.arrow_back_ios,
                             color: isDark ? Colors.white : kPrimaryColor,
-                            size: 18,
+                            size: backIconSize,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: useDesktopNav ? 8 : 12),
                         Text(
                           "History Details",
                           style: getSmartTitle(
                             color: isDark ? Colors.white : colors.onSurface,
-                            fontSize: 16,
+                            fontSize: titleFontSize,
                           ),
                         ),
                       ],
@@ -204,7 +214,7 @@ class _StocktakeHistoryDetailsScreenState
                             state.items.isNotEmpty;
 
                         return Padding(
-                          padding: const EdgeInsets.only(right: 12),
+                          padding: EdgeInsets.only(right: useDesktopNav ? 8 : 12),
                           child: IconButton(
                             onPressed: canExport
                                 ? () async {
@@ -245,8 +255,8 @@ class _StocktakeHistoryDetailsScreenState
                                   }
                                 : null,
                             icon: SizedBox(
-                              width: 28,
-                              height: 30,
+                              width: useDesktopNav ? 24 : 28,
+                              height: useDesktopNav ? 26 : 30,
                               child: Image.asset(
                                 "assets/images/excel.png",
                                 fit: BoxFit.fill,
@@ -272,7 +282,7 @@ class _StocktakeHistoryDetailsScreenState
                           state.message,
                           style: getSmartTitle(
                             color: kErrorColor,
-                            fontSize: 14,
+                            fontSize: useDesktopNav ? 12 : 14,
                           ),
                         ),
                       );
@@ -286,11 +296,16 @@ class _StocktakeHistoryDetailsScreenState
                         );
                       }
 
-                      return ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(15, 5, 15, 15),
-                        separatorBuilder: (_, _) => const SizedBox(height: 7),
-                        itemCount: state.items.length,
-                        itemBuilder: (_, i) => _itemTile(state.items[i]),
+                      return Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: useDesktopNav ? 800 : double.infinity),
+                          child: ListView.separated(
+                            padding: EdgeInsets.fromLTRB(listPadding, 5, listPadding, listPadding),
+                            separatorBuilder: (_, _) => SizedBox(height: itemSpacing),
+                            itemCount: state.items.length,
+                            itemBuilder: (_, i) => _itemTile(state.items[i], useDesktopNav),
+                          ),
+                        ),
                       );
                     }
                     return const SizedBox.shrink();
@@ -304,9 +319,19 @@ class _StocktakeHistoryDetailsScreenState
     );
   }
 
-  Widget _itemTile(CountedStockVO stock) {
+  Widget _itemTile(CountedStockVO stock, bool useDesktopNav) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+
+    // Desktop sizing
+    final double tilePaddingH = useDesktopNav ? 12.0 : 16.0;
+    final double tilePaddingV = useDesktopNav ? 8.0 : 10.0;
+    final double titleFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double barcodeFontSize = useDesktopNav ? 11.0 : 12.0;
+    final double qtyFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double iconSize = useDesktopNav ? 16.0 : 18.0;
+    final double borderRadius = useDesktopNav ? 8.0 : 10.0;
+
     return InkWell(
       onTap: () {
         context.read<StockDetailsBloc>().add(
@@ -320,10 +345,10 @@ class _StocktakeHistoryDetailsScreenState
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: tilePaddingH, vertical: tilePaddingV),
         decoration: BoxDecoration(
           color: isDark ? colors.surfaceAlt : colors.surface,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(borderRadius),
           border: isDark
               ? Border.all(color: Colors.white30, width: 1)
               : null,
@@ -337,12 +362,12 @@ class _StocktakeHistoryDetailsScreenState
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.cloud_done_outlined,
-              size: 18,
+              size: iconSize,
               color: Colors.green,
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: useDesktopNav ? 10 : 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,14 +378,14 @@ class _StocktakeHistoryDetailsScreenState
                     overflow: TextOverflow.ellipsis,
                     style: getSmartTitle(
                       color: isDark ? Colors.white : colors.onSurface,
-                      fontSize: 14,
+                      fontSize: titleFontSize,
                     ),
                   ),
                   Text(
                     stock.barcode,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'monospace',
-                      fontSize: 12,
+                      fontSize: barcodeFontSize,
                       fontWeight: FontWeight.w600,
                       color: kPrimaryColor,
                     ),
@@ -368,17 +393,20 @@ class _StocktakeHistoryDetailsScreenState
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: useDesktopNav ? 8 : 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: EdgeInsets.symmetric(
+                horizontal: useDesktopNav ? 8 : 10,
+                vertical: useDesktopNav ? 3 : 4,
+              ),
               decoration: BoxDecoration(
                 color: kPrimaryColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
               ),
               child: Text(
                 stock.quantity.toString(),
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: qtyFontSize,
                   fontWeight: FontWeight.w900,
                   color: kPrimaryColor,
                 ),

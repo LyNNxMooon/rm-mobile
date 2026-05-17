@@ -221,6 +221,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showManualConnectionDialog(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double labelFontSize = useDesktopNav ? 11.0 : 13.0;
+    final double inputFontSize = useDesktopNav ? 13.0 : 15.0;
+    final double buttonFontSize = useDesktopNav ? 13.0 : 15.0;
+    final double iconSize = useDesktopNav ? 18.0 : 20.0;
     _manualIpController.text = "";
     _manualCodeController.text = "";
     _manualPortController.text = _defaultAgentPort.toString();
@@ -242,6 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: Colors.transparent,
         child: ModernDialogContainer(
           maxHeight: maxDialogHeight,
+          maxWidth: context.useDesktopNav ? 520 : null,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -262,7 +268,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Content
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(useDesktopNav ? 20 : 24),
                   child: Column(
                     children: [
                       // Host IP input
@@ -272,7 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           "Host IP Address",
                           style: TextStyle(
                             color: isDark ? Colors.white70 : colors.onSurface,
-                            fontSize: 13,
+                            fontSize: labelFontSize,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -282,7 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         controller: _manualIpController,
                         style: TextStyle(
                           color: isDark ? Colors.white : colors.onSurface,
-                          fontSize: 15,
+                          fontSize: inputFontSize,
                           fontWeight: FontWeight.w500,
                         ),
                         onEditingComplete: () {
@@ -312,7 +318,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           "Pairing Code",
                           style: TextStyle(
                             color: isDark ? Colors.white70 : colors.onSurface,
-                            fontSize: 13,
+                            fontSize: labelFontSize,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -322,7 +328,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         controller: _manualCodeController,
                         style: TextStyle(
                           color: isDark ? Colors.white : colors.onSurface,
-                          fontSize: 15,
+                          fontSize: inputFontSize,
                           fontWeight: FontWeight.w500,
                         ),
                         onEditingComplete: () {
@@ -353,7 +359,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           "Port",
                           style: TextStyle(
                             color: isDark ? Colors.white70 : colors.onSurface,
-                            fontSize: 13,
+                            fontSize: labelFontSize,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -367,7 +373,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ],
                         style: TextStyle(
                           color: isDark ? Colors.white : colors.onSurface,
-                          fontSize: 15,
+                          fontSize: inputFontSize,
                           fontWeight: FontWeight.w500,
                         ),
                         onEditingComplete: () {
@@ -416,23 +422,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ModernDialogStyles.buttonRadius,
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
+                                padding: EdgeInsets.symmetric(
+                                  vertical: useDesktopNav ? 12 : 16,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.wifi_tethering_rounded,
                                       color: Colors.white,
-                                      size: 20,
+                                      size: iconSize,
                                     ),
                                     const SizedBox(width: 10),
-                                    const Text(
+                                    Text(
                                       "Connect",
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 15,
+                                        fontSize: buttonFontSize,
                                         fontWeight: FontWeight.w600,
                                         letterSpacing: 0.2,
                                       ),
@@ -698,15 +704,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: context.useDesktopNav ? 50 : 20,
                       vertical: 10,
                     ),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 10),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: context.useDesktopNav ? 1000 : double.infinity,
+                        ),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 10),
 
-                        _buildSectionTitle("Shopfront"),
+                            _buildSectionTitle("Shopfront"),
                         _buildGlassContainer(
                           child: Column(
                             children: [
@@ -752,7 +763,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           Text(
                                             _getShopfrontLabel(),
                                             style: getSmartTitle(
-                                              fontSize: 16,
+                                              fontSize: 14,
                                               color: context.appColors.isDark
                                                   ? Colors.white
                                                   : context.appColors.onHero,
@@ -1241,6 +1252,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 20),
                       ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -1255,8 +1268,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAppBar(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double horizontalPadding = useDesktopNav ? 50 : 15;
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -1279,7 +1295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Text(
             "Settings",
             style: getSmartTitle(
-              fontSize: 22,
+              fontSize: 18,
               color: isDark ? Colors.white : colors.onHero,
             ),
           ),
@@ -1377,7 +1393,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     value,
                     style: getSmartTitle(
-                      fontSize: 16,
+                      fontSize: 14,
                       color: isDark ? Colors.white : colors.onHero,
                     ),
                     maxLines: 1,
@@ -1434,7 +1450,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   "Drawer $_cashDrawerIdentifier",
                   style: getSmartTitle(
-                    fontSize: 16,
+                    fontSize: 14,
                     color: isDark ? Colors.white : colors.onHero,
                   ),
                   maxLines: 1,
@@ -1458,7 +1474,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: Text(
               _cashDrawerIdentifier,
-              style: getSmartTitle(fontSize: 18, color: kPrimaryColor),
+              style: getSmartTitle(fontSize: 14, color: kPrimaryColor),
             ),
           ),
         ],
@@ -1566,7 +1582,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Text(
                             "Re-sync all stocks and customers",
                             style: getSmartTitle(
-                              fontSize: 16,
+                              fontSize: 14,
                               color: isDark ? Colors.white : colors.onHero,
                             ),
                             maxLines: 1,
@@ -1604,37 +1620,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isOffline = (AppGlobals.instance.hostName ?? "").trim().isEmpty;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-      child: SizedBox(
-        width: double.infinity,
-        child: OutlinedButton(
-          onPressed: () {
-            if (isOffline) {
-              _showError(context, "Connect to the network to sign off.");
-              return;
-            }
-            if (_blockIfSyncing(context)) return;
-            context.read<StaffAuthBloc>().add(SignOutStaffEvent());
-          },
-          style: OutlinedButton.styleFrom(
-            backgroundColor: kErrorColor.withOpacity(0.2),
-            side: BorderSide(color: kErrorColor),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-          ),
-          child: Text(
-            "Sign Off",
-            style: TextStyle(
-              fontSize: 16,
-              color: isDark ? Colors.white : colors.onHero,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+    final bool isDesktopOrTablet = context.isTablet || context.useDesktopNav;
+    
+    final button = OutlinedButton(
+      onPressed: () {
+        if (isOffline) {
+          _showError(context, "Connect to the network to sign off.");
+          return;
+        }
+        if (_blockIfSyncing(context)) return;
+        context.read<StaffAuthBloc>().add(SignOutStaffEvent());
+      },
+      style: OutlinedButton.styleFrom(
+        backgroundColor: kErrorColor.withOpacity(0.2),
+        side: BorderSide(color: kErrorColor),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 32),
+      ),
+      child: Text(
+        "Sign Off",
+        style: TextStyle(
+          fontSize: 14,
+          color: isDark ? Colors.white : colors.onHero,
+          fontWeight: FontWeight.bold,
         ),
       ),
+    );
+    
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+      child: isDesktopOrTablet
+          ? Align(
+              alignment: Alignment.centerRight,
+              child: button,
+            )
+          : SizedBox(
+              width: double.infinity,
+              child: button,
+            ),
     );
   }
 
@@ -1693,7 +1718,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyle(
                         color: isDark ? Colors.white : colors.onHero,
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: 14,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1783,7 +1808,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     color: isDark ? Colors.white : colors.onHero,
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: 14,
                   ),
                   maxLines: 2, // Prevent overflow
                   overflow: TextOverflow.ellipsis,
@@ -1795,7 +1820,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: isDark
                         ? Colors.white70
                         : colors.onHero.withOpacity(0.8),
-                    fontSize: 12,
+                    fontSize: 11,
                   ),
                   maxLines: 3, // Prevent overflow
                   overflow: TextOverflow.ellipsis,
@@ -1839,7 +1864,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: 14,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -1953,7 +1978,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: 14,
                       color: isDark ? Colors.white : (titleColor ?? color),
                     ),
                     maxLines: 1, // Prevent overflow
@@ -1966,7 +1991,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: isDark
                           ? Colors.white70
                           : colors.onHero.withOpacity(0.8),
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                     maxLines: 2, // Prevent overflow
                     overflow: TextOverflow.ellipsis,

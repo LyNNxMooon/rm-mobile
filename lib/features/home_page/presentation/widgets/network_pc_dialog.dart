@@ -80,6 +80,10 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     if (_selectedPc == null) return;
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double inputFontSize = useDesktopNav ? 13.0 : 15.0;
+    final double buttonFontSize = useDesktopNav ? 13.0 : 15.0;
+    final double iconSize = useDesktopNav ? 18.0 : 20.0;
     final double maxDialogHeight =
         (MediaQuery.of(context).size.height * 0.50).clamp(320.0, 480.0);
 
@@ -92,6 +96,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
         backgroundColor: Colors.transparent,
         child: ModernDialogContainer(
           maxHeight: maxDialogHeight,
+          maxWidth: context.useDesktopNav ? 520 : null,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -113,7 +118,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                         ],
                         style: TextStyle(
                           color: isDark ? Colors.white : colors.onSurface,
-                          fontSize: 15,
+                          fontSize: inputFontSize,
                           fontWeight: FontWeight.w500,
                         ),
                         onEditingComplete: () {
@@ -171,22 +176,22 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                               },
                               borderRadius: BorderRadius.circular(
                                   ModernDialogStyles.buttonRadius),
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: useDesktopNav ? 12 : 16),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
                                       Icons.send_rounded,
                                       color: Colors.white,
-                                      size: 20,
+                                      size: iconSize,
                                     ),
-                                    SizedBox(width: 10),
+                                    const SizedBox(width: 10),
                                     Text(
                                       "Try Port",
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 15,
+                                        fontSize: buttonFontSize,
                                         fontWeight: FontWeight.w600,
                                         letterSpacing: 0.2,
                                       ),
@@ -214,11 +219,16 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double inputFontSize = useDesktopNav ? 13.0 : 15.0;
+    final double buttonFontSize = useDesktopNav ? 13.0 : 15.0;
+    final double iconSize = useDesktopNav ? 18.0 : 20.0;
+    final double hintFontSize = useDesktopNav ? 13.0 : 15.0;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double fieldHeight = (isTablet ? 52 : 48) * uiScale;
+    final double fieldHeight = (isTablet ? 52 : (useDesktopNav ? 40 : 48)) * uiScale;
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.56)
         .clamp(340.0, 520.0);
 
@@ -231,6 +241,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
         backgroundColor: Colors.transparent,
         child: ModernDialogContainer(
           maxHeight: maxDialogHeight,
+          maxWidth: context.useDesktopNav ? 520 : null,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -251,7 +262,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                           "The code is displayed on the AAAPOS RMMobile Service Hub Server.\nEnter that code below to continue.",
                           style: Theme.of(context).inputDecorationTheme.hintStyle ??
                               TextStyle(
-                                fontSize: 15,
+                                fontSize: hintFontSize,
                                 color: colors.onSurfaceMuted,
                               ),
                         ),
@@ -264,7 +275,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                         controller: _connectCodeController,
                         style: TextStyle(
                           color: isDark ? Colors.white : colors.onSurface,
-                          fontSize: 15,
+                          fontSize: inputFontSize,
                           fontWeight: FontWeight.w500,
                         ),
                         decoration: ModernDialogStyles.inputDecoration(
@@ -318,14 +329,14 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                                       },
                                 borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: EdgeInsets.symmetric(vertical: useDesktopNav ? 12 : 16),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: isLoading
                                         ? [
                                             SizedBox(
-                                              height: 20,
-                                              width: 20,
+                                              height: iconSize,
+                                              width: iconSize,
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2.5,
                                                 valueColor: AlwaysStoppedAnimation<Color>(
@@ -335,17 +346,17 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                                             ),
                                           ]
                                         : [
-                                            const Icon(
+                                            Icon(
                                               Icons.link_rounded,
                                               color: Colors.white,
-                                              size: 20,
+                                              size: iconSize,
                                             ),
                                             const SizedBox(width: 10),
-                                            const Text(
+                                            Text(
                                               "Connect",
                                               style: TextStyle(
                                                 color: Colors.white,
-                                                fontSize: 15,
+                                                fontSize: buttonFontSize,
                                                 fontWeight: FontWeight.w600,
                                                 letterSpacing: 0.2,
                                               ),
@@ -472,16 +483,23 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                 ),
               );
 
-              AlertInfo.show(
-                context: navigator.context,
-                text: state.response.message,
-                typeInfo: TypeInfo.success,
-                backgroundColor: colors.surface,
-                iconColor: kPrimaryColor,
-                textColor: colors.onSurface,
-                padding: 70,
-                position: MessagePosition.top,
-              );
+              // Show success message after dialog is opened
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                final overlay = Overlay.maybeOf(navigator.context);
+                if (overlay != null) {
+                  AlertInfo.show(
+                    context: navigator.context,
+                    text: state.response.message,
+                    typeInfo: TypeInfo.success,
+                    backgroundColor: colors.surface,
+                    iconColor: kPrimaryColor,
+                    textColor: colors.onSurface,
+                    padding: 70,
+                    position: MessagePosition.top,
+                  );
+                }
+              });
             }
 
             if (state is PairDeviceError) {
@@ -497,13 +515,22 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
         backgroundColor: Colors.transparent,
         child: ModernDialogContainer(
           maxHeight: safeMaxHeight,
+          maxWidth: context.useDesktopNav ? 520 : null,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const ModernDialogHeader(
+              ModernDialogHeader(
                 title: "Network Servers",
                 icon: Icons.dns_rounded,
                 subtitle: "Select a server to connect",
+                trailing: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(
+                    Icons.close,
+                    color: colors.isDark ? Colors.white70 : kPrimaryColor,
+                  ),
+                  tooltip: "Close",
+                ),
               ),
               Flexible(
                 child: BlocBuilder<FetchingNetworkServerBloc, FetchingNetworkServerStates>(
@@ -558,6 +585,9 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
   Widget _buildServerTile(NetworkServerVO pc, BuildContext ctx) {
     final bool isTablet = ctx.isTablet;
+    final bool useDesktopNav = ctx.useDesktopNav;
+    final double titleFontSize = useDesktopNav ? 13.0 : 15.0;
+    final double subtitleFontSize = useDesktopNav ? 11.0 : 12.0;
     final double textScale = MediaQuery.textScalerOf(ctx).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
@@ -620,7 +650,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                         pc.hostName ?? "Unknown-Server",
                         style: TextStyle(
                           color: isDark ? Colors.white : colors.onSurface,
-                          fontSize: 15,
+                          fontSize: titleFontSize,
                           fontWeight: FontWeight.w600,
                         ),
                         maxLines: 1,
@@ -631,7 +661,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                         pc.ipAddress,
                         style: TextStyle(
                           color: colors.onSurfaceMuted,
-                          fontSize: 12,
+                          fontSize: subtitleFontSize,
                         ),
                       ),
                     ],

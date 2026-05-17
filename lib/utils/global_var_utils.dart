@@ -10,6 +10,9 @@ class AppGlobals {
   String? shopfront;
   String? salesCustom;
   String? shopfrontReminder;
+  bool autoChargeSale = false;
+  int? autoChargeSaleStock;
+  int? autoChargeSalePercent;
   String? _hostName;
   final ValueNotifier<String?> hostNameNotifier = ValueNotifier<String?>(null);
   Map<String, String> pairedShopfrontIdsByName = {};

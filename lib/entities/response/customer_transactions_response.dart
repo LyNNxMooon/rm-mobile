@@ -9,7 +9,11 @@ class CustomerTransactionsResponse {
   final String shopfrontId;
   final String shopfrontName;
   final int customerId;
+  final String? transactionType;
   final String syncTimestamp;
+  final int? count;
+  final bool? hasMore;
+  final int? nextCursor;
   final CustomerTransactionsData data;
 
   CustomerTransactionsResponse({
@@ -18,7 +22,11 @@ class CustomerTransactionsResponse {
     required this.shopfrontId,
     required this.shopfrontName,
     required this.customerId,
+    this.transactionType,
     required this.syncTimestamp,
+    this.count,
+    this.hasMore,
+    this.nextCursor,
     required this.data,
   });
 
@@ -28,26 +36,26 @@ class CustomerTransactionsResponse {
 
 @JsonSerializable()
 class CustomerTransactionsData {
-  final List<CustomerPurchaseItem> purchases;
-  final List<CustomerCreditItem> credit;
-  final List<CustomerInvoiceItem> invoices;
-  final List<CustomerIvPayItem> ivPay;
-  final List<CustomerLaybyItem> laybys;
-  final List<CustomerLbPayItem> lbPay;
-  final List<CustomerCsoItem> cso;
-  final List<CustomerSoQuoteItem> soQuote;
-  final List<CustomerSoPayItem> soPay;
+  final List<CustomerPurchaseItem>? purchases;
+  final List<CustomerCreditItem>? credit;
+  final List<CustomerInvoiceItem>? invoices;
+  final List<CustomerIvPayItem>? ivPay;
+  final List<CustomerLaybyItem>? laybys;
+  final List<CustomerLbPayItem>? lbPay;
+  final List<CustomerCsoItem>? cso;
+  final List<CustomerSoQuoteItem>? soQuote;
+  final List<CustomerSoPayItem>? soPay;
 
   CustomerTransactionsData({
-    required this.purchases,
-    required this.credit,
-    required this.invoices,
-    required this.ivPay,
-    required this.laybys,
-    required this.lbPay,
-    required this.cso,
-    required this.soQuote,
-    required this.soPay,
+    this.purchases,
+    this.credit,
+    this.invoices,
+    this.ivPay,
+    this.laybys,
+    this.lbPay,
+    this.cso,
+    this.soQuote,
+    this.soPay,
   });
 
   factory CustomerTransactionsData.fromJson(Map<String, dynamic> json) =>
@@ -56,6 +64,8 @@ class CustomerTransactionsData {
 
 @JsonSerializable()
 class CustomerPurchaseItem {
+  final int id; // Remote transaction ID
+  final int docketId;
   final String date;
   final String product;
   final num qty;
@@ -65,6 +75,8 @@ class CustomerPurchaseItem {
   final String? goodsTax; // Nullable - can be null for items without tax code
 
   CustomerPurchaseItem({
+    required this.id,
+    required this.docketId,
     required this.date,
     required this.product,
     required this.qty,
@@ -80,6 +92,7 @@ class CustomerPurchaseItem {
 
 @JsonSerializable()
 class CustomerCreditItem {
+  final int id;
   final String date;
   final int creditId;
   final int source;
@@ -87,6 +100,7 @@ class CustomerCreditItem {
   final num amount;
 
   CustomerCreditItem({
+    required this.id,
     required this.date,
     required this.creditId,
     required this.source,
@@ -100,12 +114,14 @@ class CustomerCreditItem {
 
 @JsonSerializable()
 class CustomerInvoiceItem {
+  final int id;
   final String date;
   final int invoiceNo;
   final num invTotal;
   final num amountOwing;
 
   CustomerInvoiceItem({
+    required this.id,
     required this.date,
     required this.invoiceNo,
     required this.invTotal,
@@ -118,6 +134,7 @@ class CustomerInvoiceItem {
 
 @JsonSerializable()
 class CustomerIvPayItem {
+  final int id;
   final String date;
   final int invoiceNo;
   final int paymentNo;
@@ -126,6 +143,7 @@ class CustomerIvPayItem {
   final num amountPaid;
 
   CustomerIvPayItem({
+    required this.id,
     required this.date,
     required this.invoiceNo,
     required this.paymentNo,
@@ -140,6 +158,7 @@ class CustomerIvPayItem {
 
 @JsonSerializable()
 class CustomerLaybyItem {
+  final int id;
   final String date;
   final int laybyNo;
   final String? lastPayment;
@@ -147,6 +166,7 @@ class CustomerLaybyItem {
   final num amountOwing;
 
   CustomerLaybyItem({
+    required this.id,
     required this.date,
     required this.laybyNo,
     required this.lastPayment,
@@ -160,6 +180,7 @@ class CustomerLaybyItem {
 
 @JsonSerializable()
 class CustomerLbPayItem {
+  final int id;
   final String date;
   final int laybyNo;
   final int paymentNo;
@@ -167,6 +188,7 @@ class CustomerLbPayItem {
   final String paymentType;
 
   CustomerLbPayItem({
+    required this.id,
     required this.date,
     required this.laybyNo,
     required this.paymentNo,
@@ -180,18 +202,22 @@ class CustomerLbPayItem {
 
 @JsonSerializable()
 class CustomerCsoItem {
+  final int id;
   final String date;
   final String product;
   final num sell;
   final num qty;
   final String status;
+  final int? stockId;
 
   CustomerCsoItem({
+    required this.id,
     required this.date,
     required this.product,
     required this.sell,
     required this.qty,
     required this.status,
+    this.stockId,
   });
 
   factory CustomerCsoItem.fromJson(Map<String, dynamic> json) =>
@@ -200,16 +226,18 @@ class CustomerCsoItem {
 
 @JsonSerializable()
 class CustomerSoQuoteItem {
+  final int id;
   final String date;
-  final int salesOrderNo;
+  final int salesorderNo; // API uses salesorder_no
   final String type;
   final String status;
   final num total;
   final num owing;
 
   CustomerSoQuoteItem({
+    required this.id,
     required this.date,
-    required this.salesOrderNo,
+    required this.salesorderNo,
     required this.type,
     required this.status,
     required this.total,
@@ -222,15 +250,17 @@ class CustomerSoQuoteItem {
 
 @JsonSerializable()
 class CustomerSoPayItem {
+  final int id;
   final String date;
-  final int salesOrderNo;
+  final int salesorderNo; // API uses salesorder_no
   final int paymentNo;
   final num amountPaid;
   final String paymentType;
 
   CustomerSoPayItem({
+    required this.id,
     required this.date,
-    required this.salesOrderNo,
+    required this.salesorderNo,
     required this.paymentNo,
     required this.amountPaid,
     required this.paymentType,

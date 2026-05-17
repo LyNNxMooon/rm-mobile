@@ -5,6 +5,7 @@ import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_events.d
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.dart';
 
 import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
@@ -24,11 +25,21 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool useDesktopNav = context.useDesktopNav;
+
+    // Desktop sizing
+    final double topPadding = useDesktopNav ? 10.0 : 15.0;
+    final double backIconSize = useDesktopNav ? 16.0 : 18.0;
+    final double titleFontSize = useDesktopNav ? 14.0 : 16.0;
+    final double subtitleFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double paginationFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double arrowSize = useDesktopNav ? 12.0 : 14.0;
+
     return Column(
       children: [
-        const SizedBox(height: 15),
+        SizedBox(height: topPadding),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5), // Added padding
+          padding: EdgeInsets.symmetric(horizontal: useDesktopNav ? 3 : 5),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -41,7 +52,7 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                       icon: Icon(
                         Icons.arrow_back_ios,
                         color: isDark ? Colors.white : kPrimaryColor,
-                        size: 18,
+                        size: backIconSize,
                       ),
                     ),
                     Expanded(
@@ -55,7 +66,7 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                                 .last,
                             style: getSmartTitle(
                               color: isDark ? Colors.white : kThirdColor,
-                              fontSize: 16,
+                              fontSize: titleFontSize,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -63,7 +74,7 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                           Text(
                             "Stocktake List",
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: subtitleFontSize,
                               color: isDark ? Colors.white70 : kGreyColor,
                             ),
                           ),
@@ -94,12 +105,12 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                     children: [
                       Text(
                         "$start-$end of ${total.toString()}",
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: kPrimaryColor,
-                          fontSize: 14,
+                          fontSize: paginationFontSize,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: useDesktopNav ? 8 : 10),
 
                       InkWell(
                         onTap: hasPrev
@@ -109,14 +120,14 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                             : null,
                         child: Icon(
                           Icons.arrow_back_ios_new,
-                          size: 14,
+                          size: arrowSize,
                           color: hasPrev
                               ? kPrimaryColor
                               : (isDark ? colors.onSurfaceMuted : kGreyColor),
                         ),
                       ),
 
-                      const SizedBox(width: 15),
+                      SizedBox(width: useDesktopNav ? 12 : 15),
 
                       InkWell(
                         onTap: hasNext
@@ -126,14 +137,14 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
                             : null,
                         child: Icon(
                           Icons.arrow_forward_ios,
-                          size: 14,
+                          size: arrowSize,
                           color: hasNext
                               ? kPrimaryColor
                               : (isDark ? colors.onSurfaceMuted : kGreyColor),
                         ),
                       ),
 
-                      const SizedBox(width: 10),
+                      SizedBox(width: useDesktopNav ? 8 : 10),
                     ],
                   );
                 },
@@ -141,10 +152,10 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
             ],
           ),
         ),
-        const SizedBox(height: 5),
+        SizedBox(height: useDesktopNav ? 3 : 5),
         Divider(
-          indent: 15,
-          endIndent: 15,
+          indent: useDesktopNav ? 12 : 15,
+          endIndent: useDesktopNav ? 12 : 15,
           thickness: 0.5,
           color: isDark ? Colors.white : kGreyColor,
         ),

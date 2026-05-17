@@ -1,3 +1,3 @@
 {
-    "cmake.sourceDirectory": "C:/flutter/rm-mobile/windows/runner"
+    "cmake.sourceDirectory": "${workspaceFolder}/windows"
 }

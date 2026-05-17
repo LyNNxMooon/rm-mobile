@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
+import '../../../../utils/responsive_utils.dart';
 
 class CustomerFilterChipRow extends StatelessWidget {
   final ValueChanged<String> onFilterChanged;
@@ -30,10 +31,16 @@ class CustomerFilterChipRow extends StatelessWidget {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
+    final double chipFontSize = useDesktopNav ? 11 : 13;
+    final double chipPaddingH = useDesktopNav ? 8 : (isTablet ? 10 : 7) * uiScale;
+    final double chipPaddingV = useDesktopNav ? 4 : (isTablet ? 8 : 5) * uiScale;
+    final double chipBorderRadius = useDesktopNav ? 16 : (isTablet ? 24 : 20);
+    final double sortIconSize = useDesktopNav ? 12 : (isTablet ? 16 : 14) * uiScale;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -47,14 +54,14 @@ class CustomerFilterChipRow extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: EdgeInsets.symmetric(
-                  horizontal: (isTablet ? 10 : 7) * uiScale,
-                  vertical: (isTablet ? 8 : 5) * uiScale,
+                  horizontal: chipPaddingH,
+                  vertical: chipPaddingV,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? kPrimaryColor
                       : (isDark ? colors.surface : kSecondaryColor),
-                  borderRadius: BorderRadius.circular(isTablet ? 24 : 20),
+                  borderRadius: BorderRadius.circular(chipBorderRadius),
                   border: Border.all(
                     color: isSelected
                         ? kPrimaryColor
@@ -73,17 +80,17 @@ class CustomerFilterChipRow extends StatelessWidget {
                             : (isDark
                                 ? Colors.white70
                                 : Colors.blueGrey[700]),
-                        fontSize: 13,
+                        fontSize: chipFontSize,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     if (isSelected) ...[
-                      SizedBox(width: isTablet ? 6 : 4),
+                      SizedBox(width: useDesktopNav ? 4 : (isTablet ? 6 : 4)),
                       Icon(
                         isAscending
                             ? CupertinoIcons.sort_up
                             : CupertinoIcons.sort_down,
-                        size: (isTablet ? 16 : 14) * uiScale,
+                        size: sortIconSize,
                         color: colors.onHero,
                       ),
                     ],

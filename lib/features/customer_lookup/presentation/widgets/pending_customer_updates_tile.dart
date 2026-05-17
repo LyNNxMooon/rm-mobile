@@ -18,6 +18,7 @@ import 'package:rmmobile/utils/log_utils.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/dialog_size_utils.dart';
+import '../../../../utils/responsive_utils.dart';
 
 class PendingCustomerUpdatesTile extends StatefulWidget {
   const PendingCustomerUpdatesTile({super.key});
@@ -61,41 +62,47 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
         }
         if (_count <= 0) return const SizedBox.shrink();
 
+        final bool useDesktopNav = context.useDesktopNav;
+        final double horizontalPadding = useDesktopNav ? 10 : 15;
+        final double fontSize = useDesktopNav ? 11 : 13;
+        final double iconSize = useDesktopNav ? 14 : 18;
+        final double borderRadius = useDesktopNav ? 6 : 8;
+
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: InkWell(
             onTap: () {
               context.navigateToNext(
                 const PendingCustomerQueueScreen(showSendButton: false),
               );
             },
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(borderRadius),
             child: Container(
-              margin: const EdgeInsets.only(top: 5, bottom: 8),
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              margin: EdgeInsets.only(top: useDesktopNav ? 3 : 5, bottom: useDesktopNav ? 5 : 8),
+              padding: EdgeInsets.symmetric(vertical: useDesktopNav ? 6 : 8, horizontal: useDesktopNav ? 10 : 12),
               decoration: BoxDecoration(
                 color: Colors.orange.shade800.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(borderRadius),
                 border: Border.all(color: Colors.orange.shade400),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.sync_problem, color: Colors.orange.shade800, size: 18),
+                  Icon(Icons.sync_problem, color: Colors.orange.shade800, size: iconSize),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       "$_count pending customer item(s) not sent",
                       style: TextStyle(
                         color: Colors.orange.shade800,
-                        fontSize: 13,
+                        fontSize: fontSize,
                         fontWeight: FontWeight.w600,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Icon(Icons.chevron_right, color: Colors.orange.shade800, size: 18),
+                  Icon(Icons.chevron_right, color: Colors.orange.shade800, size: iconSize),
                 ],
               ),
             ),
@@ -107,24 +114,31 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
 
   Widget _buildLoadingTile() {
     final colors = context.appColors;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double horizontalPadding = useDesktopNav ? 10 : 15;
+    final double fontSize = useDesktopNav ? 11 : 13;
+    final double borderRadius = useDesktopNav ? 6 : 8;
+    final double indicatorSize = useDesktopNav ? 14 : 18;
+    final double indicatorRadius = useDesktopNav ? 8 : 10;
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Container(
-        margin: const EdgeInsets.only(top: 5, bottom: 8),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        margin: EdgeInsets.only(top: useDesktopNav ? 3 : 5, bottom: useDesktopNav ? 5 : 8),
+        padding: EdgeInsets.symmetric(vertical: useDesktopNav ? 8 : 10, horizontal: useDesktopNav ? 10 : 12),
         decoration: BoxDecoration(
           color: colors.surface,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(borderRadius),
           border: Border.all(color: colors.divider),
         ),
         child: Row(
           children: [
-            const SizedBox(
-              width: 18,
-              height: 18,
+            SizedBox(
+              width: indicatorSize,
+              height: indicatorSize,
               child: CupertinoActivityIndicator(
                 color: kPrimaryColor,
-                radius: 10,
+                radius: indicatorRadius,
               ),
             ),
             const SizedBox(width: 10),
@@ -133,7 +147,7 @@ class _PendingCustomerUpdatesTileState extends State<PendingCustomerUpdatesTile>
                 "Processing pending customer updates...",
                 style: TextStyle(
                   color: colors.onSurface,
-                  fontSize: 13,
+                  fontSize: fontSize,
                   fontWeight: FontWeight.w600,
                 ),
               ),

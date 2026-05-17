@@ -4105,10 +4105,100 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
+  Future<void> replaceCustomerTransactionsByType({
+    required String shopfront,
+    required int customerId,
+    required String transactionType,
+    required List<Map<String, dynamic>> transactions,
+  }) async {
+    try {
+      final db = _database!;
+      final batch = db.batch();
+      final whereArgs = [shopfront, customerId];
+
+      // Map transaction type to table name
+      final tableMap = {
+        'purchase': 'CustomerPurchases',
+        'credit': 'CustomerCredit',
+        'invoice': 'CustomerInvoices',
+        'ivpay': 'CustomerIvPay',
+        'layby': 'CustomerLaybys',
+        'lbpay': 'CustomerLbPay',
+        'cso': 'CustomerCso',
+        'soquote': 'CustomerSoQuote',
+        'sopay': 'CustomerSoPay',
+      };
+
+      final tableName = tableMap[transactionType.toLowerCase()];
+      if (tableName == null) {
+        throw Exception('Invalid transaction type: $transactionType');
+      }
+
+      // Delete existing records for this customer and shopfront
+      batch.delete(
+        tableName,
+        where: 'shopfront = ? AND customer_id = ?',
+        whereArgs: whereArgs,
+      );
+
+      // Insert new records
+      for (final item in transactions) {
+        batch.insert(tableName, item);
+      }
+
+      await batch.commit(noResult: true);
+    } catch (error) {
+      logger.e('Error replacing customer $transactionType transactions: $error');
+      return Future.error("Error replacing customer $transactionType transactions: $error");
+    }
+  }
+
+  @override
+  Future<void> appendCustomerTransactionsByType({
+    required String shopfront,
+    required int customerId,
+    required String transactionType,
+    required List<Map<String, dynamic>> transactions,
+  }) async {
+    try {
+      final db = _database!;
+      final batch = db.batch();
+
+      // Map transaction type to table name
+      final tableMap = {
+        'purchase': 'CustomerPurchases',
+        'credit': 'CustomerCredit',
+        'invoice': 'CustomerInvoices',
+        'ivpay': 'CustomerIvPay',
+        'layby': 'CustomerLaybys',
+        'lbpay': 'CustomerLbPay',
+        'cso': 'CustomerCso',
+        'soquote': 'CustomerSoQuote',
+        'sopay': 'CustomerSoPay',
+      };
+
+      final tableName = tableMap[transactionType.toLowerCase()];
+      if (tableName == null) {
+        throw Exception('Invalid transaction type: $transactionType');
+      }
+
+      // Insert records (append without deleting)
+      for (final item in transactions) {
+        batch.insert(tableName, item);
+      }
+
+      await batch.commit(noResult: true);
+    } catch (error) {
+      logger.e('Error appending customer $transactionType transactions: $error');
+      return Future.error("Error appending customer $transactionType transactions: $error");
+    }
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getCustomerPurchases({
     required String shopfront,
     required int customerId,
-    int limit = 20,
+    int? limit,
   }) async {
     try {
       final db = _database!;
@@ -4129,7 +4219,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
   Future<List<Map<String, dynamic>>> getCustomerCredit({
     required String shopfront,
     required int customerId,
-    int limit = 10,
+    int? limit,
   }) async {
     try {
       final db = _database!;
@@ -4150,7 +4240,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
   Future<List<Map<String, dynamic>>> getCustomerInvoices({
     required String shopfront,
     required int customerId,
-    int limit = 10,
+    int? limit,
   }) async {
     try {
       final db = _database!;
@@ -4171,7 +4261,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
   Future<List<Map<String, dynamic>>> getCustomerIvPay({
     required String shopfront,
     required int customerId,
-    int limit = 10,
+    int? limit,
   }) async {
     try {
       final db = _database!;
@@ -4192,7 +4282,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
   Future<List<Map<String, dynamic>>> getCustomerLaybys({
     required String shopfront,
     required int customerId,
-    int limit = 10,
+    int? limit,
   }) async {
     try {
       final db = _database!;
@@ -4213,7 +4303,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
   Future<List<Map<String, dynamic>>> getCustomerLbPay({
     required String shopfront,
     required int customerId,
-    int limit = 10,
+    int? limit,
   }) async {
     try {
       final db = _database!;
@@ -4234,7 +4324,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
   Future<List<Map<String, dynamic>>> getCustomerCso({
     required String shopfront,
     required int customerId,
-    int limit = 10,
+    int? limit,
   }) async {
     try {
       final db = _database!;
@@ -4255,7 +4345,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
   Future<List<Map<String, dynamic>>> getCustomerSoQuote({
     required String shopfront,
     required int customerId,
-    int limit = 10,
+    int? limit,
   }) async {
     try {
       final db = _database!;
@@ -4276,7 +4366,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
   Future<List<Map<String, dynamic>>> getCustomerSoPay({
     required String shopfront,
     required int customerId,
-    int limit = 10,
+    int? limit,
   }) async {
     try {
       final db = _database!;

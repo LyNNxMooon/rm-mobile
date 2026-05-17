@@ -29,6 +29,7 @@ import '../../../../entities/vos/stock_vo.dart';
 import '../../../../utils/navigation_extension.dart';
 import '../../../../entities/vos/cart_item_vo.dart';
 import '../../../../local_db/sqlite/sqlite_constants.dart';
+import '../../../../local_db/local_db_dao.dart';
 import '../../../../utils/formatting_utils.dart';
 import '../../domain/use_cases/save_sale_session.dart';
 import '../BLoC/sales_bloc.dart';
@@ -2929,6 +2930,85 @@ class _SalesScreenState extends State<SalesScreen>
     final isQuotes = widget.title == "Quotes";
     final isLayby = widget.title == "Lay-bys";
     final isSales = widget.title == "Sales";
+
+    // Auto-charge sale check - only for Account Sales
+    if (isAccountSales && AppGlobals.instance.autoChargeSale) {
+      final autoChargeStockId = AppGlobals.instance.autoChargeSaleStock;
+      final autoChargePercent = AppGlobals.instance.autoChargeSalePercent ?? 0;
+
+      if (autoChargeStockId != null && autoChargePercent > 0) {
+        // Check if auto-charge item is already in cart (by stock_id)
+        final alreadyInCart = _cartItems.any(
+          (item) => item.stock?.stockID.toInt() == autoChargeStockId,
+        );
+
+        if (!alreadyInCart) {
+          // Fetch the auto-charge stock item
+          final shopfront = AppGlobals.instance.shopfront ?? '';
+          final autoChargeStock = await LocalDbDAO.instance.getStockById(
+            autoChargeStockId,
+            shopfront,
+          );
+
+          if (autoChargeStock != null) {
+            // Calculate price as percentage of current total
+            final currentTotal = _total;
+            final chargePrice = (currentTotal * autoChargePercent) / 100;
+
+            // Show warning dialog
+            final colors = context.appColors;
+            final isDark = colors.isDark;
+            await showDialog<void>(
+              context: context,
+              builder: (ctx) {
+                return StandardDialog(
+                  title: "RetailManager Warning",
+                  colors: colors,
+                  isDark: isDark,
+                  onClose: () => Navigator.pop(ctx),
+                  content: Text(
+                    "Automatic charge item added to sale!\n\n${autoChargeStock.description}\n\nSale needs to be recalculated.",
+                    style: TextStyle(
+                      color: isDark ? Colors.white70 : Colors.black54,
+                      fontSize: 15,
+                    ),
+                  ),
+                  actions: [
+                    DialogTextAction(
+                      label: "OK",
+                      style: DialogActionStyle.primary,
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                );
+              },
+            );
+
+            // Add the auto-charge item to cart with calculated price
+            final cartItem = CartItemVO(
+              code: autoChargeStock.barcode,
+              description: autoChargeStock.description,
+              qty: 1.0,
+              sellPrice: chargePrice,
+              costPrice: autoChargeStock.cost,
+              stock: autoChargeStock,
+              isEditing: false,
+              isNewlyAdded: false,
+              isPriceOverridden: true,
+              taxPercentage: 0.0,
+              taxType: 0,
+              incPrice: chargePrice,
+              exPrice: chargePrice,
+            );
+
+            _salesBloc.add(AddCartItemDirect(cartItem: cartItem));
+
+            // Return - user must click Finalise again after recalculation
+            return;
+          }
+        }
+      }
+    }
 
     final hasIncompleteSerials = _cartItems.any((item) {
       if (!item.trackSerial) return false;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../constants/colors.dart';
 import '../constants/theme_colors.dart';
+import '../utils/dialog_size_utils.dart';
 import '../utils/responsive_utils.dart';
 
 enum DialogActionStyle { primary, danger, outline, dangerOutline, cancelOutline, text }
@@ -235,18 +236,18 @@ class StandardDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isTablet = context.isTablet;
-    final padding = contentPadding ?? EdgeInsets.all(isTablet ? 24 : 18);
+    final bool useDesktopNav = context.useDesktopNav;
+    final padding = contentPadding ?? EdgeInsets.all(isTablet || useDesktopNav ? 24 : 18);
     final textScale = MediaQuery.textScalerOf(context).scale(1.0);
     final buttonHeight = textScale > 1.0 ? 52.0 : 44.0;
     final dialogTheme = DialogActionTheme(colors: colors, isDark: isDark, height: buttonHeight);
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding:
-          insetPadding ?? EdgeInsets.symmetric(horizontal: isTablet ? 80 : 24),
+      insetPadding: insetPadding ?? dialogInsetPadding(context),
       child: Container(
         constraints: BoxConstraints(
-          maxWidth: maxWidth ?? (isTablet ? 520 : double.infinity),
+          maxWidth: maxWidth ?? (isTablet || useDesktopNav ? 520 : double.infinity),
           maxHeight: maxHeight ?? double.infinity,
         ),
         padding: padding,
@@ -308,7 +309,7 @@ class StandardDialog extends StatelessWidget {
               ),
               const SizedBox(height: 16),
             ],
-            content,
+            Flexible(child: content),
             if (actions.isNotEmpty) ...[
               const SizedBox(height: 20),
               Align(

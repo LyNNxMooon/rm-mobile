@@ -126,6 +126,7 @@ abstract class DataAgent {
     String shopfrontId,
     int customerId,
     String apiKey,
+    Map<String, dynamic> body,
   );
 
   Future<InvoiceResponse> createInvoice(

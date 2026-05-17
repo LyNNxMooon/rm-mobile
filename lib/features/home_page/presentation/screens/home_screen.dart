@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/dependency_injection_utils.dart' as di;
+import 'package:rmmobile/utils/adaptive_scaffold.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
@@ -310,23 +311,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    final bool isTablet = context.isTablet;
-    final bool isPortrait = context.isPortrait;
-    final colors = context.appColors;
-    final media = MediaQuery.of(context);
-    final drawerSizes = _resolveDrawerSizes(media);
-
-    // Calculate available space between AppBarSession end and drawer top edge
-    // SafeArea content height (screen height minus top safe padding)
-    final double safeAreaContentHeight = media.size.height - media.padding.top;
-    // Drawer top position from SafeArea top (drawer takes initialChildSize from bottom)
-    final double drawerTopFromSafeTop =
-        safeAreaContentHeight * (1.0 - drawerSizes.initialChildSize);
-    // AppBarSession height
-    const double appBarSessionHeight = 60.0;
-    // Content area = space between AppBarSession bottom and drawer top edge
-    final double contentAreaHeight = drawerTopFromSafeTop - appBarSessionHeight;
-
     return MultiBlocListener(
       listeners: [
         BlocListener<NetworkSavedPathValidationBloc, LoadingSplashStates>(
@@ -383,75 +367,337 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           builder: (context, dashboardStyle) {
             final bool isProStyle = dashboardStyle == "pro";
             
-            return Scaffold(
-              extendBody: true,
-              backgroundColor: kPrimaryColor,
-              bottomNavigationBar: isProStyle ? _buildBottomNav(context) : null,
-              body: Container(
-                width: double.infinity,
-                height: double.infinity,
-                decoration: BoxDecoration(gradient: colors.heroGradient),
-                child: SafeArea(
-                  bottom: false,
-                  top: true,
-                  child: isProStyle
-                      ? Stack(
-                          children: [
-                            Column(
-                              children: [
-                                if (!isTablet) const SizedBox(height: 8),
-                                const AppBarSession(),
-                                Expanded(child: _buildHomeBody(context)),
-                              ],
-                            ),
-                            syncWatcher(),
-                          ],
-                        )
-                      : Stack(
-                          children: [
-                            Column(
-                              children: [
-                                // Extra top spacing for mobile only (above app bar)
-                                if (!isTablet) const SizedBox(height: 8),
-                                const AppBarSession(),
-                                SizedBox(
-                                  height: contentAreaHeight,
-                                  child: SingleChildScrollView(
-                                    physics: const ClampingScrollPhysics(),
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        minHeight: contentAreaHeight,
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          // Extra top spacing for mobile only
-                                          if (!isTablet) const SizedBox(height: 12),
-                                          _buildClassicLogo(context),
-                                          SizedBox(
-                                            height: isTablet ? (isPortrait ? 24 : 16) : 22,
-                                          ),
-                                          _buildClassicHeaderTitle(context),
-                                          syncWatcher(),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            GlassDrawer(
-                              initialChildSize: drawerSizes.initialChildSize,
-                              minChildSize: drawerSizes.minChildSize,
-                              maxChildSize: drawerSizes.maxChildSize,
-                              onStocktakeTap: _handleStocktakeTap,
-                            ),
-                          ],
-                        ),
-                ),
-              ),
+            // Use LayoutBuilder to determine if we should use desktop navigation
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final bool useDesktopNav = context.useDesktopNav;
+                
+                if (isProStyle) {
+                  // Pro style: use adaptive navigation (bottom nav on mobile, rail on desktop)
+                  return _buildProStyleLayout(context, useDesktopNav);
+                } else {
+                  // Classic style: always use the GlassDrawer
+                  return _buildClassicStyleLayout(context);
+                }
+              },
             );
           },
+        ),
+      ),
+    );
+  }
+
+  /// Navigation items for the adaptive scaffold (main navigation tabs)
+  static const List<AdaptiveNavItem> _navigationItems = [
+    AdaptiveNavItem(icon: Icons.home_rounded, label: "Home"),
+    AdaptiveNavItem(icon: Icons.point_of_sale_outlined, label: "Transaction"),
+    AdaptiveNavItem(icon: Icons.inventory_2_outlined, label: "Stock"),
+    AdaptiveNavItem(icon: Icons.people_outline, label: "Customers"),
+    AdaptiveNavItem(icon: Icons.more_horiz, label: "More"),
+  ];
+
+  /// Desktop-specific navigation items (includes Connect to server and Settings)
+  static const List<AdaptiveNavItem> _desktopNavigationItems = [
+    AdaptiveNavItem(icon: Icons.home_rounded, label: "Home"),
+    AdaptiveNavItem(icon: Icons.point_of_sale_outlined, label: "Transaction"),
+    AdaptiveNavItem(icon: Icons.inventory_2_outlined, label: "Stock"),
+    AdaptiveNavItem(icon: Icons.people_outline, label: "Customers"),
+    AdaptiveNavItem(icon: Icons.more_horiz, label: "More"),
+  ];
+
+  /// Builds the Pro style layout with adaptive navigation
+  Widget _buildProStyleLayout(BuildContext context, bool useDesktopNav) {
+    final colors = context.appColors;
+    final bool isTablet = context.isTablet;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Desktop layout: NavigationRail on left + content
+    if (useDesktopNav) {
+      return Scaffold(
+        backgroundColor: kPrimaryColor,
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(gradient: colors.heroGradient),
+          child: Row(
+            children: [
+              // Navigation Rail with extended labels
+              _buildNavigationRail(context, colors, isDark),
+              // Main content area with 50px padding around white container
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(50.0),
+                  child: Stack(
+                    children: [
+                      _buildHomeBody(context, useDesktopNav: true),
+                      syncWatcher(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Mobile layout: content + BottomNavigationBar
+    return Scaffold(
+      extendBody: true,
+      backgroundColor: kPrimaryColor,
+      bottomNavigationBar: _buildBottomNav(context),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(gradient: colors.heroGradient),
+        child: SafeArea(
+          bottom: false,
+          top: true,
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  if (!isTablet) const SizedBox(height: 8),
+                  const AppBarSession(),
+                  Expanded(child: _buildHomeBody(context, useDesktopNav: false)),
+                ],
+              ),
+              syncWatcher(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the NavigationRail for desktop layout
+  Widget _buildNavigationRail(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    return ValueListenableBuilder<String?>(
+      valueListenable: AppGlobals.instance.hostNameNotifier,
+      builder: (context, hostName, _) {
+        final String serverName = (hostName ?? "").isEmpty 
+            ? "Not connected" 
+            : hostName!;
+        
+        return Container(
+          color: isDark ? colors.surface : Colors.white,
+          child: Column(
+            children: [
+              // Server status header - top padding aligns with shopfront name in main content
+              Container(
+                width: 220,
+                padding: const EdgeInsets.fromLTRB(16, 72, 16, 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Icon(
+                        (hostName ?? "").isEmpty ? Icons.cloud_off : Icons.cloud_done,
+                        size: 20,
+                        color: (hostName ?? "").isEmpty ? Colors.orange : kPrimaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            serverName,
+                            style: getSmartTitle(
+                              fontSize: 13,
+                              color: isDark ? Colors.white : colors.onSurface,
+                            ),
+                            maxLines: 2,
+                          ),
+                          Text(
+                            (hostName ?? "").isEmpty ? "Offline" : "Connected",
+                            style: TextStyle(fontSize: 11, color: colors.onSurfaceMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // Navigation items
+              Expanded(
+                child: NavigationRail(
+                  selectedIndex: _selectedTabIndex,
+                  onDestinationSelected: (index) => setState(() => _selectedTabIndex = index),
+                  extended: true,
+                  minExtendedWidth: 220,
+                  backgroundColor: Colors.transparent,
+                  selectedIconTheme: const IconThemeData(color: kPrimaryColor, size: 22),
+                  unselectedIconTheme: IconThemeData(color: colors.onSurfaceMuted, size: 22),
+                  selectedLabelTextStyle: const TextStyle(
+                    color: kPrimaryColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  unselectedLabelTextStyle: TextStyle(
+                    color: colors.onSurfaceMuted,
+                    fontSize: 14,
+                  ),
+                  indicatorColor: kPrimaryColor.withOpacity(0.12),
+                  destinations: _desktopNavigationItems
+                      .map(
+                        (item) => NavigationRailDestination(
+                          icon: Icon(item.icon),
+                          selectedIcon: Icon(item.icon),
+                          label: Text(item.label),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+              // Bottom actions
+              const Divider(height: 1),
+              _buildRailAction(
+                context,
+                icon: Icons.laptop_mac_sharp,
+                label: "Connect Server",
+                colors: colors,
+                isDark: isDark,
+                onTap: () {
+                  if (_isSyncInProgress(context)) {
+                    showTopSnackBar(
+                      Overlay.of(context),
+                      const CustomSnackBar.info(message: "Sync in progress. Please wait."),
+                    );
+                    return;
+                  }
+                  context.read<FetchingNetworkServerBloc>().add(FetchNetworkServerEvent());
+                  showDialog(
+                    context: context,
+                    builder: (context) => const NetworkPcDialog(),
+                  );
+                },
+              ),
+              _buildRailAction(
+                context,
+                icon: Icons.settings_outlined,
+                label: "Settings",
+                colors: colors,
+                isDark: isDark,
+                onTap: () => context.navigateToNext(const SettingsScreen()),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Builds a custom action button for the NavigationRail trailing area
+  Widget _buildRailAction(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required AppThemeColors colors,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      width: 220,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Icon(icon, size: 22, color: colors.onSurfaceMuted),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white70 : colors.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the Classic style layout with GlassDrawer (mobile only pattern)
+  Widget _buildClassicStyleLayout(BuildContext context) {
+    final colors = context.appColors;
+    final bool isTablet = context.isTablet;
+    final bool isPortrait = context.isPortrait;
+    final media = MediaQuery.of(context);
+    final drawerSizes = _resolveDrawerSizes(media);
+
+    // Calculate available space between AppBarSession end and drawer top edge
+    final double safeAreaContentHeight = media.size.height - media.padding.top;
+    final double drawerTopFromSafeTop =
+        safeAreaContentHeight * (1.0 - drawerSizes.initialChildSize);
+    const double appBarSessionHeight = 60.0;
+    final double contentAreaHeight = drawerTopFromSafeTop - appBarSessionHeight;
+
+    return Scaffold(
+      extendBody: true,
+      backgroundColor: kPrimaryColor,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(gradient: colors.heroGradient),
+        child: SafeArea(
+          bottom: false,
+          top: true,
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  if (!isTablet) const SizedBox(height: 8),
+                  const AppBarSession(),
+                  SizedBox(
+                    height: contentAreaHeight,
+                    child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: contentAreaHeight,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (!isTablet) const SizedBox(height: 12),
+                            _buildClassicLogo(context),
+                            SizedBox(
+                              height: isTablet ? (isPortrait ? 24 : 16) : 22,
+                            ),
+                            _buildClassicHeaderTitle(context),
+                            syncWatcher(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              GlassDrawer(
+                initialChildSize: drawerSizes.initialChildSize,
+                minChildSize: drawerSizes.minChildSize,
+                maxChildSize: drawerSizes.maxChildSize,
+                onStocktakeTap: _handleStocktakeTap,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -516,7 +762,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     );
   }
 
-  Widget _buildHomeBody(BuildContext context) {
+  Widget _buildHomeBody(BuildContext context, {bool useDesktopNav = false}) {
     final colors = context.appColors;
     final bool isTablet = context.isTablet;
     final items = _filteredItemsForTab();
@@ -530,14 +776,22 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         ? items.where((item) => item['comingSoon'] == true).toList()
         : <Map<String, dynamic>>[];
 
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
+    // Build the main content
+    Widget content = Container(
+      width: double.infinity,
+      height: double.infinity,
+      margin: useDesktopNav 
+          ? EdgeInsets.zero  // Padding handles the gap on desktop
+          : const EdgeInsets.only(top: 12),
       decoration: BoxDecoration(
         color: colors.isDark ? colors.surface : const Color(0xFFF6F7F9),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(isTablet ? 28 : 20),
-          topRight: Radius.circular(isTablet ? 28 : 20),
-        ),
+        // On desktop: rounded corners on all sides; on mobile: only top
+        borderRadius: useDesktopNav
+            ? BorderRadius.circular(10)
+            : BorderRadius.only(
+                topLeft: Radius.circular(isTablet ? 28 : 20),
+                topRight: Radius.circular(isTablet ? 28 : 20),
+              ),
         boxShadow: [
           BoxShadow(
             color: colors.cardShadow,
@@ -546,14 +800,22 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           ),
         ],
       ),
-      child: SingleChildScrollView(
-        padding: EdgeInsets.only(
-          bottom: 80 + MediaQuery.of(context).padding.bottom,
-        ),
-        physics: const ClampingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: ClipRRect(
+        borderRadius: useDesktopNav
+            ? BorderRadius.circular(10)
+            : BorderRadius.only(
+                topLeft: Radius.circular(isTablet ? 28 : 20),
+                topRight: Radius.circular(isTablet ? 28 : 20),
+              ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            // Less bottom padding on desktop (no bottom nav)
+            bottom: useDesktopNav ? 24 : 80 + MediaQuery.of(context).padding.bottom,
+          ),
+          physics: const ClampingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             _buildGreetingHeader(context),
             if (isHomeTab)
               TransactionPulseWidget(
@@ -573,6 +835,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 context,
                 regularItems,
                 key: ValueKey(_selectedTabIndex),
+                useDesktopNav: useDesktopNav,
               ),
             ),
             if (isHomeTab && comingSoonItems.isNotEmpty)
@@ -581,7 +844,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           ],
         ),
       ),
+      ),
     );
+
+    return content;
   }
 
   Widget _buildGreetingHeader(BuildContext context) {
@@ -804,22 +1070,42 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     List<Map<String, dynamic>> items, {
     Key? key,
     bool compact = false,
+    bool useDesktopNav = false,
   }) {
     final bool isTablet = context.isTablet;
-    final double width = MediaQuery.of(context).size.width;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    // On desktop, use constrained max width for calculations
+    final double effectiveWidth = useDesktopNav
+        ? screenWidth.clamp(0, Breakpoints.maxContentWidth)
+        : screenWidth;
     final bool isLargeFont = context.read<FontSizeCubit>().isLarge;
-    int crossAxisCount = isTablet ? 3 : 2;
-    if (width > 900) crossAxisCount = 4;
-    if (width < 360) crossAxisCount = 1;
+    
+    // Adjust grid columns based on effective width
+    int crossAxisCount;
+    if (useDesktopNav) {
+      // Desktop: more columns for wider screens
+      if (effectiveWidth > 1000) {
+        crossAxisCount = 4;
+      } else if (effectiveWidth > 700) {
+        crossAxisCount = 3;
+      } else {
+        crossAxisCount = 2;
+      }
+    } else {
+      // Mobile/Tablet
+      crossAxisCount = isTablet ? 3 : 2;
+      if (screenWidth > 900) crossAxisCount = 4;
+      if (screenWidth < 360) crossAxisCount = 1;
+    }
 
-    final double spacing = isTablet ? 16 : 10;
-    final double mainSpacing = compact ? 0 : (isTablet ? 12 : 8);
-    final double horizontalPadding = isTablet ? 22 : 16;
+    final double spacing = isTablet || useDesktopNav ? 16 : 10;
+    final double mainSpacing = compact ? 0 : (isTablet || useDesktopNav ? 12 : 8);
+    final double horizontalPadding = isTablet || useDesktopNav ? 22 : 16;
     final double availableWidth =
-        width - (horizontalPadding * 2) - (spacing * (crossAxisCount - 1));
+        effectiveWidth - (horizontalPadding * 2) - (spacing * (crossAxisCount - 1));
     final double itemWidth = availableWidth / crossAxisCount;
     // Increase height for large font mode to prevent overflow
-    final double baseHeight = isTablet ? 130 : 90;
+    final double baseHeight = isTablet || useDesktopNav ? 130 : 90;
     final double targetHeight = isLargeFont ? baseHeight * 1.15 : baseHeight;
     final double childAspectRatio = itemWidth / targetHeight;
 

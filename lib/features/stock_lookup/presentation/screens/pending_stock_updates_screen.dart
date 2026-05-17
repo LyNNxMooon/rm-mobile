@@ -93,20 +93,31 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    // Desktop-specific sizing
+    final double horizontalPadding = useDesktopNav ? 14.0 : 18.0;
+    final double titleFontSize = useDesktopNav ? 13.0 : 16.0;
+    final double subtitleFontSize = useDesktopNav ? 11.0 : 12.5;
+    final double buttonFontSize = useDesktopNav ? 11.0 : 14.0;
+    final double buttonVerticalPadding = useDesktopNav ? 8.0 : 12.0;
+    final double buttonRadius = useDesktopNav ? 8.0 : 10.0;
+    final double itemSpacing = useDesktopNav ? 6.0 : 8.0;
 
     return Scaffold(
       backgroundColor: isDark ? colors.bg : kBgColor,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, size: useDesktopNav ? 20 : 24),
           onPressed: () => Navigator.of(context).pop(),
         ),
         titleSpacing: 0,
+        toolbarHeight: useDesktopNav ? 48 : kToolbarHeight,
         title: Text(
           'Pending Stock Updates',
           style: getSmartTitle(
             color: isDark ? Colors.white : colors.onSurface,
-            fontSize: 16,
+            fontSize: titleFontSize,
           ),
         ),
         backgroundColor: isDark ? colors.bg : kBgColor,
@@ -130,36 +141,39 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       "${_updates.length} item(s) are saved locally and not sent yet.",
                       textAlign: TextAlign.left,
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: subtitleFontSize,
                         color: colors.onSurfaceMuted,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: useDesktopNav ? 8 : 10),
                 Expanded(
                   child: _updates.isEmpty
                       ? Center(
                           child: Text(
                             "No pending stock updates found.",
-                            style: TextStyle(color: colors.onSurfaceMuted),
+                            style: TextStyle(
+                              color: colors.onSurfaceMuted,
+                              fontSize: useDesktopNav ? 12 : 14,
+                            ),
                           ),
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 8,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding,
+                            vertical: useDesktopNav ? 6 : 8,
                           ),
                           itemCount: _updates.length,
                           separatorBuilder: (context, index) =>
-                              const SizedBox(height: 8),
+                              SizedBox(height: itemSpacing),
                           itemBuilder: (context, index) {
                             final update = _updates[index];
                             final stock = _stockFromPendingPayload(update);
@@ -214,7 +228,7 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
                         ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
+                  padding: EdgeInsets.fromLTRB(horizontalPadding, useDesktopNav ? 4 : 6, horizontalPadding, useDesktopNav ? 12 : 18),
                   child: Row(
                     children: [
                       Expanded(
@@ -234,20 +248,24 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
                                   Navigator.of(context).pop();
                                 },
                           style: OutlinedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: buttonVerticalPadding),
                             side: BorderSide(
                               color: kErrorColor.withOpacity(0.6),
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(buttonRadius),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             "Delete All",
-                            style: TextStyle(color: kErrorColor),
+                            style: TextStyle(
+                              color: kErrorColor,
+                              fontSize: buttonFontSize,
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: useDesktopNav ? 8 : 10),
                       Expanded(
                         child: widget.showSendButton
                             ? ElevatedButton(
@@ -275,25 +293,33 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: kPrimaryColor,
                                   foregroundColor: colors.onHero,
+                                  padding: EdgeInsets.symmetric(vertical: buttonVerticalPadding),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(buttonRadius),
                                   ),
                                 ),
-                                child: const Text("Send"),
+                                child: Text(
+                                  "Send",
+                                  style: TextStyle(fontSize: buttonFontSize),
+                                ),
                               )
                             : OutlinedButton(
                                 onPressed: () => Navigator.of(context).pop(),
                                 style: OutlinedButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(vertical: buttonVerticalPadding),
                                   side: BorderSide(
                                     color: kPrimaryColor.withOpacity(0.4),
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(buttonRadius),
                                   ),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   "Close",
-                                  style: TextStyle(color: kPrimaryColor),
+                                  style: TextStyle(
+                                    color: kPrimaryColor,
+                                    fontSize: buttonFontSize,
+                                  ),
                                 ),
                               ),
                       ),
@@ -310,33 +336,38 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
 
   Widget _buildLoadingTile(BuildContext context) {
     final colors = context.appColors;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double horizontalPadding = useDesktopNav ? 14.0 : 18.0;
+    final double fontSize = useDesktopNav ? 11.0 : 13.0;
+    final double indicatorRadius = useDesktopNav ? 8.0 : 10.0;
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Container(
-        margin: const EdgeInsets.only(top: 12, bottom: 8),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        margin: EdgeInsets.only(top: useDesktopNav ? 10 : 12, bottom: useDesktopNav ? 6 : 8),
+        padding: EdgeInsets.symmetric(vertical: useDesktopNav ? 8 : 10, horizontal: useDesktopNav ? 10 : 12),
         decoration: BoxDecoration(
           color: colors.surface,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
           border: Border.all(color: colors.divider),
         ),
         child: Row(
           children: [
-            const SizedBox(
-              width: 18,
-              height: 18,
+            SizedBox(
+              width: useDesktopNav ? 14 : 18,
+              height: useDesktopNav ? 14 : 18,
               child: CupertinoActivityIndicator(
                 color: kPrimaryColor,
-                radius: 10,
+                radius: indicatorRadius,
               ),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: useDesktopNav ? 8 : 10),
             Expanded(
               child: Text(
                 "Processing pending stock updates...",
                 style: TextStyle(
                   color: colors.onSurface,
-                  fontSize: 13,
+                  fontSize: fontSize,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -364,11 +395,22 @@ class _PendingStockTile extends StatelessWidget {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
+    
+    // Desktop-specific sizing
+    final double thumbnailSize = useDesktopNav ? 32 : ((isTablet ? 44 : 36) * uiScale);
+    final double titleFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double barcodeFontSize = useDesktopNav ? 11.0 : 13.0;
+    final double conflictFontSize = useDesktopNav ? 10.0 : 11.5;
+    final double errorFontSize = useDesktopNav ? 10.0 : 12.0;
+    final double horizontalPadding = useDesktopNav ? 10.0 : 12.0;
+    final double verticalPadding = useDesktopNav ? 8.0 : 10.0;
+    final double borderRadius = useDesktopNav ? 8.0 : 10.0;
+    final double iconSize = useDesktopNav ? 16.0 : 20.0;
 
     final String title = stock?.description ?? 'Stock #${update.stockId}';
     final String barcode = stock?.barcode ?? 'Pending update';
@@ -379,7 +421,7 @@ class _PendingStockTile extends StatelessWidget {
         color: isDark
             ? Color.lerp(colors.surface, Colors.white, 0.06)
             : colors.surface,
-        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
         border: isDark
             ? Border.all(color: Colors.white.withOpacity(0.18))
             : null,
@@ -388,23 +430,23 @@ class _PendingStockTile extends StatelessWidget {
             color: isDark
                 ? Colors.black.withOpacity(0.35)
                 : colors.cardShadow,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: useDesktopNav ? 6 : 10,
+            offset: Offset(0, useDesktopNav ? 2 : 4),
             spreadRadius: 0,
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
       child: Row(
         children: [
           Container(
             width: thumbnailSize,
             height: thumbnailSize,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+              borderRadius: BorderRadius.circular(useDesktopNav ? 5 : (isTablet ? 8 : 6)),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+              borderRadius: BorderRadius.circular(useDesktopNav ? 5 : (isTablet ? 8 : 6)),
               child: stock == null
                   ? Container(
                       color: kPrimaryColor.withOpacity(0.1),
@@ -412,7 +454,7 @@ class _PendingStockTile extends StatelessWidget {
                       child: Icon(
                         Icons.inventory_2_outlined,
                         color: kPrimaryColor.withOpacity(0.8),
-                        size: 18,
+                        size: useDesktopNav ? 14 : 18,
                       ),
                     )
                   : Hero(
@@ -421,7 +463,7 @@ class _PendingStockTile extends StatelessWidget {
                     ),
             ),
           ),
-          SizedBox(width: (isTablet ? 17 : 15) * uiScale),
+          SizedBox(width: useDesktopNav ? 10 : ((isTablet ? 17 : 15) * uiScale)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -429,28 +471,28 @@ class _PendingStockTile extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: titleFontSize,
                     fontWeight: FontWeight.w600,
                     color: colors.onSurface,
                   ),
                 ),
-                const SizedBox(height: 3),
+                SizedBox(height: useDesktopNav ? 2 : 3),
                 Text(
                   barcode,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'monospace',
-                    fontSize: 13,
+                    fontSize: barcodeFontSize,
                     color: kPrimaryColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (update.hasConflict)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: EdgeInsets.only(top: useDesktopNav ? 3 : 4),
                     child: Text(
                       "This record has been modified in RetailManager, please review and decide whether you still want to update it.",
                       style: TextStyle(
-                        fontSize: 11.5,
+                        fontSize: conflictFontSize,
                         color: Colors.orange.shade700,
                         fontWeight: FontWeight.w500,
                       ),
@@ -459,11 +501,11 @@ class _PendingStockTile extends StatelessWidget {
                 if (update.errorMessage != null &&
                     update.errorMessage!.trim().isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: EdgeInsets.only(top: useDesktopNav ? 3 : 4),
                     child: Text(
                       update.errorMessage!,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: errorFontSize,
                         color: Colors.red.shade600,
                         fontWeight: FontWeight.w600,
                       ),
@@ -473,7 +515,7 @@ class _PendingStockTile extends StatelessWidget {
             ),
           ),
           if (canNavigate)
-            Icon(Icons.chevron_right, color: colors.onSurfaceMuted, size: 20),
+            Icon(Icons.chevron_right, color: colors.onSurfaceMuted, size: iconSize),
         ],
       ),
     );
@@ -482,7 +524,7 @@ class _PendingStockTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(borderRadius),
       child: tile,
     );
   }

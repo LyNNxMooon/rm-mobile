@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:rmmobile/constants/colors.dart';
 import 'package:rmmobile/constants/theme_colors.dart';
@@ -54,25 +55,34 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final orientation = media.orientation;
     final isTablet = context.isTablet;
     final isLargeTablet = context.isLargeTablet;
-    final scale = (shortestSide / 375).clamp(1.0, 1.25);
-    final horizontalPadding = (isLargeTablet ? 64.0 : isTablet ? 48.0 : 24.0) * scale;
-    final verticalPadding = (isLargeTablet ? 48.0 : 32.0) * scale;
-    final logoWidth = (isTablet ? 140.0 : 100.0) * scale;
-    final logoHeight = (isTablet ? 60.0 : 45.0) * scale;
-    final headlineFontSize = (isLargeTablet ? 50.0 : isTablet ? 40.0 : 42.0) * scale;
-    final bodyFontSize = (isLargeTablet ? 18.0 : 16.0) * scale;
-    const buttonHeight = 56.0;
-    const buttonFontSize = 18.0;
-    final contentMaxWidth = isTablet ? 520.0 * scale : double.infinity;
+    // Use image instead of video for desktop platforms (Windows/Linux/macOS) or tablets
+    final bool isDesktopPlatform = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+    final bool useImage = isTablet || isDesktopPlatform;
+    // Desktop: no scaling to keep fonts reasonable; mobile/tablet: scale as before
+    final scale = isDesktopPlatform ? 1.0 : (shortestSide / 375).clamp(1.0, 1.25);
+    final horizontalPadding = isDesktopPlatform ? 50.0 : (isLargeTablet ? 64.0 : isTablet ? 48.0 : 24.0) * scale;
+    final verticalPadding = isDesktopPlatform ? 50.0 : (isLargeTablet ? 48.0 : 32.0) * scale;
+    final logoWidth = isDesktopPlatform ? 120.0 : (isTablet ? 140.0 : 100.0) * scale;
+    final logoHeight = isDesktopPlatform ? 50.0 : (isTablet ? 60.0 : 45.0) * scale;
+    // Desktop: smaller fonts (36 headline, 15 body)
+    final headlineFontSize = isDesktopPlatform ? 36.0 : (isLargeTablet ? 50.0 : isTablet ? 40.0 : 42.0) * scale;
+    final bodyFontSize = isDesktopPlatform ? 15.0 : (isLargeTablet ? 18.0 : 16.0) * scale;
+    final buttonHeight = isDesktopPlatform ? 48.0 : 56.0;
+    final buttonFontSize = isDesktopPlatform ? 15.0 : 18.0;
+    // Use constrained content width on desktop for comfortable reading
+    final contentMaxWidth = isDesktopPlatform 
+        ? 480.0 
+        : (isTablet ? 520.0 * scale : double.infinity);
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          if (isTablet)
+          // Use image for tablets AND desktop platforms
+          if (useImage)
             Image.asset(
-              orientation == Orientation.landscape
+              orientation == Orientation.landscape || isDesktopPlatform
                   ? 'assets/images/landscape.jpg'
                   : 'assets/images/portrait.jpg',
               fit: BoxFit.cover,
@@ -162,10 +172,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: kPrimaryColor,
                                       foregroundColor: colors.onHero,
-                                      minimumSize: const Size(double.infinity, buttonHeight),
+                                      minimumSize: Size(double.infinity, buttonHeight),
                                       padding: EdgeInsets.zero,
                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      textStyle: const TextStyle(
+                                      textStyle: TextStyle(
                                         fontSize: buttonFontSize,
                                         fontWeight: FontWeight.w700,
                                       ),

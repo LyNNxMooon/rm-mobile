@@ -454,13 +454,14 @@ class DataAgentImpl implements DataAgent {
     String shopfrontId,
     int customerId,
     String apiKey,
+    Map<String, dynamic> body,
   ) async {
     try {
       final apiService = _createApiService(ip, port);
       return await _callWithReconnect(
         ip,
         () => apiService
-            .fetchCustomerTransactions(shopfrontId, customerId, apiKey)
+            .fetchCustomerTransactions(shopfrontId, customerId, apiKey, body)
             .asStream()
             .map((event) => event)
             .first,

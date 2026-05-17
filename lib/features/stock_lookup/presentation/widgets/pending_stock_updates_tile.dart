@@ -30,6 +30,15 @@ class _PendingStockUpdatesTileState extends State<PendingStockUpdatesTile> {
 
   @override
   Widget build(BuildContext context) {
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    // Desktop-specific sizing
+    final double horizontalPadding = useDesktopNav ? 10.0 : 15.0;
+    final double verticalPadding = useDesktopNav ? 6.0 : 8.0;
+    final double fontSize = useDesktopNav ? 11.0 : 13.0;
+    final double iconSize = useDesktopNav ? 14.0 : 18.0;
+    final double borderRadius = useDesktopNav ? 6.0 : 8.0;
+    
     return BlocConsumer<PendingStockUpdatesBloc, PendingStockUpdatesState>(
       listener: (context, state) async {
         if (state is PendingStockUpdatesCountLoaded) {
@@ -50,40 +59,40 @@ class _PendingStockUpdatesTileState extends State<PendingStockUpdatesTile> {
         if (_count <= 0) return const SizedBox.shrink();
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: InkWell(
             onTap: () {
               context.navigateToNext(
                 const PendingStockUpdatesScreen(showSendButton: false),
               );
             },
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(borderRadius),
             child: Container(
-              margin: const EdgeInsets.only(top: 5, bottom: 8),
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              margin: EdgeInsets.only(top: useDesktopNav ? 3 : 5, bottom: useDesktopNav ? 5 : 8),
+              padding: EdgeInsets.symmetric(vertical: verticalPadding, horizontal: useDesktopNav ? 10 : 12),
               decoration: BoxDecoration(
                 color: Colors.orange.shade800.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(borderRadius),
                 border: Border.all(color: Colors.orange.shade400),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.sync_problem, color: Colors.orange.shade800, size: 18),
-                  const SizedBox(width: 8),
+                  Icon(Icons.sync_problem, color: Colors.orange.shade800, size: iconSize),
+                  SizedBox(width: useDesktopNav ? 6 : 8),
                   Expanded(
                     child: Text(
                       "$_count stock update(s) not sent to RetailManager",
                       style: TextStyle(
                         color: Colors.orange.shade800,
-                        fontSize: 13,
+                        fontSize: fontSize,
                         fontWeight: FontWeight.w600,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  Icon(Icons.chevron_right, color: Colors.orange.shade800, size: 18),
+                  SizedBox(width: useDesktopNav ? 4 : 6),
+                  Icon(Icons.chevron_right, color: Colors.orange.shade800, size: iconSize),
                 ],
               ),
             ),
@@ -95,33 +104,39 @@ class _PendingStockUpdatesTileState extends State<PendingStockUpdatesTile> {
 
   Widget _buildLoadingTile() {
     final colors = context.appColors;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double horizontalPadding = useDesktopNav ? 10.0 : 15.0;
+    final double fontSize = useDesktopNav ? 11.0 : 13.0;
+    final double indicatorRadius = useDesktopNav ? 8.0 : 10.0;
+    final double borderRadius = useDesktopNav ? 6.0 : 8.0;
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Container(
-        margin: const EdgeInsets.only(top: 5, bottom: 8),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        margin: EdgeInsets.only(top: useDesktopNav ? 3 : 5, bottom: useDesktopNav ? 5 : 8),
+        padding: EdgeInsets.symmetric(vertical: useDesktopNav ? 8 : 10, horizontal: useDesktopNav ? 10 : 12),
         decoration: BoxDecoration(
           color: colors.surface,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(borderRadius),
           border: Border.all(color: colors.divider),
         ),
         child: Row(
           children: [
-            const SizedBox(
-              width: 18,
-              height: 18,
+            SizedBox(
+              width: useDesktopNav ? 14 : 18,
+              height: useDesktopNav ? 14 : 18,
               child: CupertinoActivityIndicator(
                 color: kPrimaryColor,
-                radius: 10,
+                radius: indicatorRadius,
               ),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: useDesktopNav ? 8 : 10),
             Expanded(
               child: Text(
                 "Processing pending stock updates...",
                 style: TextStyle(
                   color: colors.onSurface,
-                  fontSize: 13,
+                  fontSize: fontSize,
                   fontWeight: FontWeight.w600,
                 ),
               ),

@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -218,13 +219,26 @@ class _MyAppState extends State<MyApp> {
                   final double textScale = (baseTextScale * fontSizeMultiplier).clamp(1.0, 1.5);
                   final double uiScale = _tabletUiScaleFor(context);
                   final ThemeData baseTheme = Theme.of(context);
-              final double densityAdjust =
-                  ((uiScale - 1.0) * 3.2).clamp(0.0, 1.35);
-              final ThemeData scaledTheme = baseTheme.copyWith(
-                visualDensity: VisualDensity(
+                  
+              // On desktop platforms, use adaptive density (compact for mouse/keyboard)
+              // On mobile/tablet, scale based on UI scale factor
+              final bool isDesktopPlatform =
+                  Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+              
+              final VisualDensity visualDensity;
+              if (isDesktopPlatform) {
+                visualDensity = VisualDensity.adaptivePlatformDensity;
+              } else {
+                final double densityAdjust =
+                    ((uiScale - 1.0) * 3.2).clamp(0.0, 1.35);
+                visualDensity = VisualDensity(
                   horizontal: densityAdjust,
                   vertical: densityAdjust,
-                ),
+                );
+              }
+              
+              final ThemeData scaledTheme = baseTheme.copyWith(
+                visualDensity: visualDensity,
                 listTileTheme: baseTheme.listTileTheme.copyWith(
                   minVerticalPadding: (4 * uiScale).clamp(4.0, 10.0),
                   contentPadding: EdgeInsets.symmetric(

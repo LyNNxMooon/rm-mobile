@@ -17,6 +17,13 @@ class Breakpoints {
 
   /// Large tablet detection via longestSide
   static const double longSideXLarge = 1366;
+
+  /// Desktop navigation breakpoint: width >= 1280
+  /// When window is this wide, use NavigationRail instead of BottomNav
+  static const double desktopNav = 1280;
+
+  /// Maximum content width for comfortable reading on large screens
+  static const double maxContentWidth = 1200;
 }
 
 /// Device type classification.
@@ -123,6 +130,10 @@ extension ResponsiveContext on BuildContext {
   bool get isLandscape => responsive.isLandscape;
   bool get isMobilePlatform => responsive.isMobilePlatform;
   bool get isDesktopPlatform => responsive.isDesktopPlatform;
+
+  /// Whether to use desktop navigation (NavigationRail)
+  /// Only activates on desktop OS platforms (Windows, macOS, Linux)
+  bool get useDesktopNav => isDesktopPlatform;
 
   /// Screen width
   double get screenWidth => MediaQuery.of(this).size.width;

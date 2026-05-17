@@ -507,143 +507,267 @@ class CustomerLookupModels implements CustomerLookupRepo {
         );
       }
 
+      // Fetch purchases by default (first tab) with 500 records
       final response = await DataAgentImpl.instance.fetchCustomerTransactions(
         resolvedIp,
         resolvedPort,
         resolvedShopfrontId,
         customerId,
         resolvedApiKey,
+        {"transaction_type": "purchase", "page_size": 500},
       );
 
-      logger.d('Fetched transactions for customer $customerId: success=${response.success}, purchases=${response.data.purchases.length}');
+      logger.d('Fetched transactions for customer $customerId: success=${response.success}, purchases=${response.data.purchases?.length ?? 0}');
 
       if (!response.success) {
         return Future.error(response.message);
       }
 
-      await LocalDbDAO.instance.replaceCustomerTransactions(
+      // Only save purchases since that's what we fetched
+      await LocalDbDAO.instance.replaceCustomerTransactionsByType(
         shopfront: resolvedShopfrontName,
         customerId: customerId,
-        purchases: response.data.purchases
+        transactionType: 'purchase',
+        transactions: (response.data.purchases ?? [])
             .map(
               (item) => {
+                "remote_id": item.id,
+                "docket_id": item.docketId,
                 "customer_id": customerId,
                 "shopfront": resolvedShopfrontName,
                 "date": item.date,
                 "product": item.product,
                 "qty": item.qty,
                 "price": item.price,
-                "price_inc": item.priceInc ?? item.price, // Fallback to price if not provided
+                "price_inc": item.priceInc ?? item.price,
                 "stock_id": item.stockId,
                 "goods_tax": item.goodsTax,
               },
             )
             .toList(),
-        credit: response.data.credit
-            .map(
-              (item) => {
-                "customer_id": customerId,
-                "shopfront": resolvedShopfrontName,
-                "date": item.date,
-                "credit_id": item.creditId,
-                "source": item.source,
-                "credit_type": item.creditType,
-                "amount": item.amount,
-              },
-            )
-            .toList(),
-        invoices: response.data.invoices
-            .map(
-              (item) => {
-                "customer_id": customerId,
-                "shopfront": resolvedShopfrontName,
-                "date": item.date,
-                "invoice_no": item.invoiceNo,
-                "inv_total": item.invTotal,
-                "amount_owing": item.amountOwing,
-              },
-            )
-            .toList(),
-        ivPay: response.data.ivPay
-            .map(
-              (item) => {
-                "customer_id": customerId,
-                "shopfront": resolvedShopfrontName,
-                "date": item.date,
-                "invoice_no": item.invoiceNo,
-                "payment_no": item.paymentNo,
-                "trn": item.trn,
-                "discount": item.discount,
-                "amount_paid": item.amountPaid,
-              },
-            )
-            .toList(),
-        laybys: response.data.laybys
-            .map(
-              (item) => {
-                "customer_id": customerId,
-                "shopfront": resolvedShopfrontName,
-                "date": item.date,
-                "layby_no": item.laybyNo,
-                "last_payment": item.lastPayment,
-                "total": item.total,
-                "amount_owing": item.amountOwing,
-              },
-            )
-            .toList(),
-        lbPay: response.data.lbPay
-            .map(
-              (item) => {
-                "customer_id": customerId,
-                "shopfront": resolvedShopfrontName,
-                "date": item.date,
-                "layby_no": item.laybyNo,
-                "payment_no": item.paymentNo,
-                "amount_paid": item.amountPaid,
-                "payment_type": item.paymentType,
-              },
-            )
-            .toList(),
-        cso: response.data.cso
-            .map(
-              (item) => {
-                "customer_id": customerId,
-                "shopfront": resolvedShopfrontName,
-                "date": item.date,
-                "product": item.product,
-                "sell": item.sell,
-                "qty": item.qty,
-                "status": item.status,
-              },
-            )
-            .toList(),
-        soQuote: response.data.soQuote
-            .map(
-              (item) => {
-                "customer_id": customerId,
-                "shopfront": resolvedShopfrontName,
-                "date": item.date,
-                "sales_order_no": item.salesOrderNo,
-                "type": item.type,
-                "status": item.status,
-                "total": item.total,
-                "owing": item.owing,
-              },
-            )
-            .toList(),
-        soPay: response.data.soPay
-            .map(
-              (item) => {
-                "customer_id": customerId,
-                "shopfront": resolvedShopfrontName,
-                "date": item.date,
-                "sales_order_no": item.salesOrderNo,
-                "payment_no": item.paymentNo,
-                "amount_paid": item.amountPaid,
-                "payment_type": item.paymentType,
-              },
-            )
-            .toList(),
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<({bool hasMore, int? nextCursor})> fetchAndSaveCustomerTransactionsByType({
+    required int customerId,
+    required String transactionType,
+    int pageSize = 500,
+    int? cursor,
+  }) async {
+    try {
+      if (customerId <= 0) {
+        return Future.error("Invalid customer id: $customerId");
+      }
+
+      final String resolvedIp =
+          (await LocalDbDAO.instance.getHostIpAddress() ?? "").trim();
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+      final String resolvedShopfrontName =
+          (await LocalDbDAO.instance.getShopfrontName() ?? "").trim();
+
+      if (resolvedIp.isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty ||
+          resolvedShopfrontName.isEmpty) {
+        throw Exception(
+          "Missing host/shopfront setup. Please reconnect to a host and shopfront.",
+        );
+      }
+
+      // Build request body with optional cursor
+      final body = <String, dynamic>{
+        "transaction_type": transactionType,
+        "page_size": pageSize,
+      };
+      if (cursor != null) {
+        body["cursor"] = cursor;
+      }
+
+      final response = await DataAgentImpl.instance.fetchCustomerTransactions(
+        resolvedIp,
+        resolvedPort,
+        resolvedShopfrontId,
+        customerId,
+        resolvedApiKey,
+        body,
+      );
+
+      logger.d('Fetched $transactionType for customer $customerId: success=${response.success}, hasMore=${response.hasMore}');
+
+      if (!response.success) {
+        return Future.error(response.message);
+      }
+
+      // Map API response to local DB format based on transaction type
+      List<Map<String, dynamic>> transactions = [];
+      
+      switch (transactionType.toLowerCase()) {
+        case 'purchase':
+          transactions = (response.data.purchases ?? [])
+              .map((item) => {
+                    "remote_id": item.id,
+                    "docket_id": item.docketId,
+                    "customer_id": customerId,
+                    "shopfront": resolvedShopfrontName,
+                    "date": item.date,
+                    "product": item.product,
+                    "qty": item.qty,
+                    "price": item.price,
+                    "price_inc": item.priceInc ?? item.price,
+                    "stock_id": item.stockId,
+                    "goods_tax": item.goodsTax,
+                  })
+              .toList();
+          break;
+        case 'credit':
+          transactions = (response.data.credit ?? [])
+              .map((item) => {
+                    "remote_id": item.id,
+                    "customer_id": customerId,
+                    "shopfront": resolvedShopfrontName,
+                    "date": item.date,
+                    "credit_id": item.creditId,
+                    "source": item.source,
+                    "credit_type": item.creditType,
+                    "amount": item.amount,
+                  })
+              .toList();
+          break;
+        case 'invoice':
+          transactions = (response.data.invoices ?? [])
+              .map((item) => {
+                    "remote_id": item.id,
+                    "customer_id": customerId,
+                    "shopfront": resolvedShopfrontName,
+                    "date": item.date,
+                    "invoice_no": item.invoiceNo,
+                    "inv_total": item.invTotal,
+                    "amount_owing": item.amountOwing,
+                  })
+              .toList();
+          break;
+        case 'ivpay':
+          transactions = (response.data.ivPay ?? [])
+              .map((item) => {
+                    "remote_id": item.id,
+                    "customer_id": customerId,
+                    "shopfront": resolvedShopfrontName,
+                    "date": item.date,
+                    "invoice_no": item.invoiceNo,
+                    "payment_no": item.paymentNo,
+                    "trn": item.trn,
+                    "discount": item.discount,
+                    "amount_paid": item.amountPaid,
+                  })
+              .toList();
+          break;
+        case 'layby':
+          transactions = (response.data.laybys ?? [])
+              .map((item) => {
+                    "remote_id": item.id,
+                    "customer_id": customerId,
+                    "shopfront": resolvedShopfrontName,
+                    "date": item.date,
+                    "layby_no": item.laybyNo,
+                    "last_payment": item.lastPayment,
+                    "total": item.total,
+                    "amount_owing": item.amountOwing,
+                  })
+              .toList();
+          break;
+        case 'lbpay':
+          transactions = (response.data.lbPay ?? [])
+              .map((item) => {
+                    "remote_id": item.id,
+                    "customer_id": customerId,
+                    "shopfront": resolvedShopfrontName,
+                    "date": item.date,
+                    "layby_no": item.laybyNo,
+                    "payment_no": item.paymentNo,
+                    "amount_paid": item.amountPaid,
+                    "payment_type": item.paymentType,
+                  })
+              .toList();
+          break;
+        case 'cso':
+          transactions = (response.data.cso ?? [])
+              .map((item) => {
+                    "remote_id": item.id,
+                    "customer_id": customerId,
+                    "shopfront": resolvedShopfrontName,
+                    "date": item.date,
+                    "product": item.product,
+                    "sell": item.sell,
+                    "qty": item.qty,
+                    "status": item.status,
+                    "stock_id": item.stockId,
+                  })
+              .toList();
+          break;
+        case 'soquote':
+          transactions = (response.data.soQuote ?? [])
+              .map((item) => {
+                    "remote_id": item.id,
+                    "customer_id": customerId,
+                    "shopfront": resolvedShopfrontName,
+                    "date": item.date,
+                    "salesorder_no": item.salesorderNo,
+                    "type": item.type,
+                    "status": item.status,
+                    "total": item.total,
+                    "owing": item.owing,
+                  })
+              .toList();
+          break;
+        case 'sopay':
+          transactions = (response.data.soPay ?? [])
+              .map((item) => {
+                    "remote_id": item.id,
+                    "customer_id": customerId,
+                    "shopfront": resolvedShopfrontName,
+                    "date": item.date,
+                    "salesorder_no": item.salesorderNo,
+                    "payment_no": item.paymentNo,
+                    "amount_paid": item.amountPaid,
+                    "payment_type": item.paymentType,
+                  })
+              .toList();
+          break;
+        default:
+          throw Exception('Unknown transaction type: $transactionType');
+      }
+
+      // If cursor is provided, append to existing data; otherwise replace
+      if (cursor != null) {
+        await LocalDbDAO.instance.appendCustomerTransactionsByType(
+          shopfront: resolvedShopfrontName,
+          customerId: customerId,
+          transactionType: transactionType,
+          transactions: transactions,
+        );
+      } else {
+        await LocalDbDAO.instance.replaceCustomerTransactionsByType(
+          shopfront: resolvedShopfrontName,
+          customerId: customerId,
+          transactionType: transactionType,
+          transactions: transactions,
+        );
+      }
+
+      // Return pagination info
+      return (
+        hasMore: response.hasMore ?? false,
+        nextCursor: response.nextCursor,
       );
     } on Exception catch (error) {
       return Future.error(error);
@@ -671,47 +795,38 @@ class CustomerLookupModels implements CustomerLookupRepo {
       LocalDbDAO.instance.getCustomerPurchases(
         shopfront: resolvedShopfront,
         customerId: customerId,
-        limit: 20,
       ),
       LocalDbDAO.instance.getCustomerCredit(
         shopfront: resolvedShopfront,
         customerId: customerId,
-        limit: 10,
       ),
       LocalDbDAO.instance.getCustomerInvoices(
         shopfront: resolvedShopfront,
         customerId: customerId,
-        limit: 10,
       ),
       LocalDbDAO.instance.getCustomerIvPay(
         shopfront: resolvedShopfront,
         customerId: customerId,
-        limit: 10,
       ),
       LocalDbDAO.instance.getCustomerLaybys(
         shopfront: resolvedShopfront,
         customerId: customerId,
-        limit: 10,
       ),
       LocalDbDAO.instance.getCustomerLbPay(
         shopfront: resolvedShopfront,
         customerId: customerId,
-        limit: 10,
       ),
       LocalDbDAO.instance.getCustomerCso(
         shopfront: resolvedShopfront,
         customerId: customerId,
-        limit: 10,
       ),
       LocalDbDAO.instance.getCustomerSoQuote(
         shopfront: resolvedShopfront,
         customerId: customerId,
-        limit: 10,
       ),
       LocalDbDAO.instance.getCustomerSoPay(
         shopfront: resolvedShopfront,
         customerId: customerId,
-        limit: 10,
       ),
     ]);
 
@@ -725,6 +840,7 @@ class CustomerLookupModels implements CustomerLookupRepo {
       cso: results[6],
       soQuote: results[7],
       soPay: results[8],
+      pagination: const {},
     );
   }
 

@@ -232,6 +232,8 @@ const customerAddressesTableCreationQuery = '''
 const customerPurchasesTableCreationQuery = '''
   CREATE TABLE CustomerPurchases (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    remote_id INTEGER,
+    docket_id INTEGER,
     customer_id INTEGER NOT NULL,
     shopfront TEXT NOT NULL,
     date TEXT,
@@ -247,6 +249,7 @@ const customerPurchasesTableCreationQuery = '''
 const customerCreditTableCreationQuery = '''
   CREATE TABLE CustomerCredit (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    remote_id INTEGER,
     customer_id INTEGER NOT NULL,
     shopfront TEXT NOT NULL,
     date TEXT,
@@ -260,6 +263,7 @@ const customerCreditTableCreationQuery = '''
 const customerInvoicesTableCreationQuery = '''
   CREATE TABLE CustomerInvoices (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    remote_id INTEGER,
     customer_id INTEGER NOT NULL,
     shopfront TEXT NOT NULL,
     date TEXT,
@@ -272,6 +276,7 @@ const customerInvoicesTableCreationQuery = '''
 const customerIvPayTableCreationQuery = '''
   CREATE TABLE CustomerIvPay (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    remote_id INTEGER,
     customer_id INTEGER NOT NULL,
     shopfront TEXT NOT NULL,
     date TEXT,
@@ -286,6 +291,7 @@ const customerIvPayTableCreationQuery = '''
 const customerLaybysTableCreationQuery = '''
   CREATE TABLE CustomerLaybys (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    remote_id INTEGER,
     customer_id INTEGER NOT NULL,
     shopfront TEXT NOT NULL,
     date TEXT,
@@ -299,6 +305,7 @@ const customerLaybysTableCreationQuery = '''
 const customerLbPayTableCreationQuery = '''
   CREATE TABLE CustomerLbPay (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    remote_id INTEGER,
     customer_id INTEGER NOT NULL,
     shopfront TEXT NOT NULL,
     date TEXT,
@@ -312,23 +319,26 @@ const customerLbPayTableCreationQuery = '''
 const customerCsoTableCreationQuery = '''
   CREATE TABLE CustomerCso (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    remote_id INTEGER,
     customer_id INTEGER NOT NULL,
     shopfront TEXT NOT NULL,
     date TEXT,
     product TEXT,
     sell REAL,
     qty REAL,
-    status TEXT
+    status TEXT,
+    stock_id INTEGER
   )
 ''';
 
 const customerSoQuoteTableCreationQuery = '''
   CREATE TABLE CustomerSoQuote (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    remote_id INTEGER,
     customer_id INTEGER NOT NULL,
     shopfront TEXT NOT NULL,
     date TEXT,
-    sales_order_no INTEGER,
+    salesorder_no INTEGER,
     type TEXT,
     status TEXT,
     total REAL,
@@ -339,10 +349,11 @@ const customerSoQuoteTableCreationQuery = '''
 const customerSoPayTableCreationQuery = '''
   CREATE TABLE CustomerSoPay (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    remote_id INTEGER,
     customer_id INTEGER NOT NULL,
     shopfront TEXT NOT NULL,
     date TEXT,
-    sales_order_no INTEGER,
+    salesorder_no INTEGER,
     payment_no INTEGER,
     amount_paid REAL,
     payment_type TEXT
@@ -475,6 +486,9 @@ const taxCodesTableCreationQuery = '''
 ''';
 
 const String kSalesCustomKey = "sales_custom";
+const String kAutoChargeSaleKey = "auto_charge_sale";
+const String kAutoChargeSaleStockKey = "auto_charge_sale_stock";
+const String kAutoChargeSalePercentKey = "auto_charge_sale_percent";
 
 
 // ---------------------------------------------------------------------------

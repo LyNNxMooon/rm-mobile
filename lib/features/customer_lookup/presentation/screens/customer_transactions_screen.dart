@@ -21,14 +21,112 @@ class CustomerTransactionsScreen extends StatefulWidget {
 }
 
 class _CustomerTransactionsScreenState
-    extends State<CustomerTransactionsScreen> {
+    extends State<CustomerTransactionsScreen> with SingleTickerProviderStateMixin {
   bool _showIncTax = false;
+  late TabController _tabController;
+  int _selectedPageSize = 500;
+  final List<int> _pageSizeOptions = [500, 1000, 3000, 5000];
+  
+  // Track which tabs have been loaded
+  final Set<int> _loadedTabs = {0}; // Tab 0 (Purchases) is loaded on init
+  
+  // Pagination: current page per transaction type
+  final Map<String, int> _currentPage = {
+    'purchase': 1,
+    'credit': 1,
+    'invoice': 1,
+    'ivpay': 1,
+    'layby': 1,
+    'lbpay': 1,
+    'cso': 1,
+    'soquote': 1,
+    'sopay': 1,
+  };
+  
+  // Map tab index to transaction type
+  static const List<String> _transactionTypes = [
+    'purchase',
+    'credit',
+    'invoice',
+    'ivpay',
+    'layby',
+    'lbpay',
+    'cso',
+    'soquote',
+    'sopay',
+  ];
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 9, vsync: this);
+    _tabController.addListener(_onTabChanged);
     context.read<CustomerTransactionsBloc>().add(
           LoadCustomerTransactionsEvent(customerId: widget.customer.customerId),
         );
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    
+    final tabIndex = _tabController.index;
+    
+    // Only fetch if this tab hasn't been loaded yet
+    if (!_loadedTabs.contains(tabIndex)) {
+      _loadedTabs.add(tabIndex);
+      context.read<CustomerTransactionsBloc>().add(
+        LoadTransactionTypeEvent(
+          customerId: widget.customer.customerId,
+          transactionType: _transactionTypes[tabIndex],
+          pageSize: _selectedPageSize,
+        ),
+      );
+    }
+  }
+
+  void _onPageSizeChanged(int? newPageSize) {
+    if (newPageSize == null || newPageSize == _selectedPageSize) return;
+    
+    setState(() {
+      _selectedPageSize = newPageSize;
+      // Reset all pages when page size changes
+      _currentPage.updateAll((key, value) => 1);
+    });
+    
+    // Refresh current tab with new page size
+    final currentTabIndex = _tabController.index;
+    context.read<CustomerTransactionsBloc>().add(
+      UpdatePageSizeEvent(
+        customerId: widget.customer.customerId,
+        transactionType: _transactionTypes[currentTabIndex],
+        pageSize: newPageSize,
+      ),
+    );
+  }
+
+  void _goToNextPage(String transactionType, int? cursor) {
+    if (cursor == null) return;
+    
+    setState(() {
+      _currentPage[transactionType] = _currentPage[transactionType]! + 1;
+    });
+    
+    // Fetch next page from API using cursor
+    context.read<CustomerTransactionsBloc>().add(
+      LoadNextPageEvent(
+        customerId: widget.customer.customerId,
+        transactionType: transactionType,
+        pageSize: _selectedPageSize,
+        cursor: cursor,
+      ),
+    );
   }
 
   @override
@@ -48,138 +146,254 @@ class _CustomerTransactionsScreenState
       "SO Pay"
     ];
 
-    return DefaultTabController(
-      length: tabs.length,
-      child: Scaffold(
-        backgroundColor: isDark ? colors.bg : const Color(0xFFEFEFF4),
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(120.0), // Custom height for Appbar + Tabbar
-          child: AppBar(
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                gradient: isDark ? colors.heroGradient : kGColor,
-              ),
-            ),
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new,
-                color: isDark ? Colors.white : Colors.white,
-                size: 18,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Transactions',
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  widget.customer.displayName,
-                  style: TextStyle(
-                    color: (isDark ? Colors.white : Colors.white)
-                        .withOpacity(0.8),
-                    fontSize: 13,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-            bottom: TabBar(
-              isScrollable: true,
-              indicatorColor: isDark ? Colors.white : Colors.white,
-              indicatorWeight: 3,
-              labelColor: isDark ? Colors.white : Colors.white,
-              unselectedLabelColor: (isDark ? Colors.white : Colors.white)
-                  .withOpacity(0.6),
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
-              tabs: tabs.map((String name) => Tab(text: name)).toList(),
+    return Scaffold(
+      backgroundColor: isDark ? colors.bg : const Color(0xFFEFEFF4),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(120.0), // Custom height for Appbar + Tabbar
+        child: AppBar(
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: isDark ? colors.heroGradient : kGColor,
             ),
           ),
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new,
+              color: isDark ? Colors.white : Colors.white,
+              size: 18,
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Transactions',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    widget.customer.displayName,
+                    style: TextStyle(
+                      color: (isDark ? Colors.white : Colors.white).withOpacity(0.8),
+                      fontSize: 13,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              // Page Size Dropdown
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.4),
+                    width: 1,
+                  ),
+                ),
+                child: DropdownButton<int>(
+                  value: _selectedPageSize,
+                  dropdownColor: isDark ? colors.surfaceAlt : Colors.white,
+                  icon: const Icon(
+                    Icons.arrow_drop_down,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  underline: const SizedBox(),
+                  isDense: true,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  onChanged: _onPageSizeChanged,
+                  items: _pageSizeOptions.map((int size) {
+                    return DropdownMenuItem<int>(
+                      value: size,
+                      child: Text(
+                        '$size',
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black87,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  selectedItemBuilder: (BuildContext context) {
+                    return _pageSizeOptions.map((int size) {
+                      return Center(
+                        child: Text(
+                          '$size',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
+                    }).toList();
+                  },
+                ),
+              ),
+            ],
+          ),
+          bottom: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            indicatorColor: isDark ? Colors.white : Colors.white,
+            indicatorWeight: 3,
+            labelColor: isDark ? Colors.white : Colors.white,
+            unselectedLabelColor: (isDark ? Colors.white : Colors.white)
+                .withOpacity(0.6),
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
+            tabs: tabs.map((String name) => Tab(text: name)).toList(),
+          ),
         ),
-        body: BlocBuilder<CustomerTransactionsBloc, CustomerTransactionsState>(
-          builder: (context, state) {
-            if (state is CustomerTransactionsLoading ||
-                state is CustomerTransactionsInitial) {
-              return const Center(child: CircularProgressIndicator());
-            }
+      ),
+      body: BlocBuilder<CustomerTransactionsBloc, CustomerTransactionsState>(
+        builder: (context, state) {
+          if (state is CustomerTransactionsLoading ||
+              state is CustomerTransactionsInitial) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            if (state is CustomerTransactionsError) {
-              return Center(
-                child: Text(
-                  state.message,
-                  style: const TextStyle(color: kErrorColor, fontSize: 13),
-                ),
-              );
-            }
-
-            final data = state is CustomerTransactionsLoaded
-                ? state.data
-                : CustomerTransactionsLocalData.empty();
-
-            return TabBarView(
-              children: [
-                _buildTabContentContainer(
-                  note: "Showing 20 last sold items from Non-Archived Data.",
-                  header: _buildPurchasesTaxToggle(),
-                  child: _buildPurchasesData(data.purchases),
-                ),
-                _buildTabContentContainer(
-                  note: "Showing 10 last credit notes from Non-Archived Data.",
-                  child: _buildCreditData(data.credit),
-                ),
-                _buildTabContentContainer(
-                  note: "Showing 10 last invoices from Non-Archived Data.",
-                  child: _buildInvoicesData(data.invoices),
-                ),
-                _buildTabContentContainer(
-                  note: "Showing 10 last invoice payments from Non-Archived Data.",
-                  child: _buildIVPayData(data.ivPay),
-                ),
-                _buildTabContentContainer(
-                  note: "Showing 10 last lay-bys from Non-Archived Data.",
-                  child: _buildLaybysData(data.laybys),
-                ),
-                _buildTabContentContainer(
-                  note: "Showing 10 last lay-by payments from Non-Archived Data.",
-                  child: _buildLBPayData(data.lbPay),
-                ),
-                _buildTabContentContainer(
-                  note: "Showing 10 last customer special orders from Non-Archived Data.",
-                  child: _buildCSOData(data.cso),
-                ),
-                _buildTabContentContainer(
-                  note: "Showing 10 last sales orders and quotes from Non-Archived Data.",
-                  child: _buildSOQuoteData(data.soQuote),
-                ),
-                _buildTabContentContainer(
-                  note: "Showing 10 last sales order payments from Non-Archived Data.",
-                  child: _buildSOPayData(data.soPay),
-                ),
-              ],
+          if (state is CustomerTransactionsError) {
+            return Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: kErrorColor, fontSize: 13),
+              ),
             );
-          },
-        ),
+          }
+
+          CustomerTransactionsLocalData data;
+          String? loadingType;
+          
+          if (state is CustomerTransactionsLoaded) {
+            data = state.data;
+          } else if (state is TransactionTypeLoading) {
+            data = state.data;
+            loadingType = state.loadingType;
+          } else {
+            data = CustomerTransactionsLocalData.empty();
+          }
+
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              _buildTabContentContainer(
+                transactionType: 'purchase',
+                totalItems: data.purchases.length,
+                typeLabel: 'sold items',
+                pagination: data.getPagination('purchase'),
+                header: _buildPurchasesTaxToggle(),
+                child: _buildPurchasesData(data.purchases),
+                isLoading: loadingType == 'purchase',
+              ),
+              _buildTabContentContainer(
+                transactionType: 'credit',
+                totalItems: data.credit.length,
+                typeLabel: 'credit notes',
+                pagination: data.getPagination('credit'),
+                child: _buildCreditData(data.credit),
+                isLoading: loadingType == 'credit',
+              ),
+              _buildTabContentContainer(
+                transactionType: 'invoice',
+                totalItems: data.invoices.length,
+                typeLabel: 'invoices',
+                pagination: data.getPagination('invoice'),
+                child: _buildInvoicesData(data.invoices),
+                isLoading: loadingType == 'invoice',
+              ),
+              _buildTabContentContainer(
+                transactionType: 'ivpay',
+                totalItems: data.ivPay.length,
+                typeLabel: 'invoice payments',
+                pagination: data.getPagination('ivpay'),
+                child: _buildIVPayData(data.ivPay),
+                isLoading: loadingType == 'ivpay',
+              ),
+              _buildTabContentContainer(
+                transactionType: 'layby',
+                totalItems: data.laybys.length,
+                typeLabel: 'lay-bys',
+                pagination: data.getPagination('layby'),
+                child: _buildLaybysData(data.laybys),
+                isLoading: loadingType == 'layby',
+              ),
+              _buildTabContentContainer(
+                transactionType: 'lbpay',
+                totalItems: data.lbPay.length,
+                typeLabel: 'lay-by payments',
+                pagination: data.getPagination('lbpay'),
+                child: _buildLBPayData(data.lbPay),
+                isLoading: loadingType == 'lbpay',
+              ),
+              _buildTabContentContainer(
+                transactionType: 'cso',
+                totalItems: data.cso.length,
+                typeLabel: 'customer special orders',
+                pagination: data.getPagination('cso'),
+                child: _buildCSOData(data.cso),
+                isLoading: loadingType == 'cso',
+              ),
+              _buildTabContentContainer(
+                transactionType: 'soquote',
+                totalItems: data.soQuote.length,
+                typeLabel: 'sales orders/quotes',
+                pagination: data.getPagination('soquote'),
+                child: _buildSOQuoteData(data.soQuote),
+                isLoading: loadingType == 'soquote',
+              ),
+              _buildTabContentContainer(
+                transactionType: 'sopay',
+                totalItems: data.soPay.length,
+                typeLabel: 'SO payments',
+                pagination: data.getPagination('sopay'),
+                child: _buildSOPayData(data.soPay),
+                isLoading: loadingType == 'sopay',
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   // --- Wrapper for Tab Content ---
   Widget _buildTabContentContainer({
-    required String note,
+    required String transactionType,
+    required int totalItems,
+    required String typeLabel,
+    required TransactionPaginationInfo pagination,
     required Widget child,
     Widget? header,
+    bool isLoading = false,
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bottomSafeArea = MediaQuery.of(context).padding.bottom;
+    
+    final currentPage = _currentPage[transactionType] ?? 1;
+    // Use hasMore from API response
+    final hasMore = pagination.hasMore;
+    
+    final noteText = "Showing up to $totalItems $typeLabel from Non-Archived data.";
+    
     return Padding(
       padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0 + bottomSafeArea),
       child: Container(
@@ -202,24 +416,52 @@ class _CustomerTransactionsScreenState
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                    note,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : Colors.black,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                          noteText,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                      ),
                     ),
-                ),
+                  ),
+                  if (isLoading) ...[
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: isDark ? Colors.white70 : Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(width: 8),
+                  // Pagination controls - always show
+                  _buildPaginationControls(
+                    transactionType: transactionType,
+                    currentPage: currentPage,
+                    hasMore: hasMore,
+                    nextCursor: pagination.nextCursor,
+                    isDark: isDark,
+                  ),
+                ],
               ),
             ),
             if (header != null) header,
@@ -245,6 +487,76 @@ class _CustomerTransactionsScreenState
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPaginationControls({
+    required String transactionType,
+    required int currentPage,
+    required bool hasMore,
+    required int? nextCursor,
+    required bool isDark,
+  }) {
+    final canGoNext = hasMore && nextCursor != null;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isDark ? Colors.white24 : Colors.grey.shade300,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Previous button (always disabled - data already in local DB)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            child: Icon(
+              Icons.chevron_left,
+              size: 18,
+              color: isDark ? Colors.white24 : Colors.grey.shade400,
+            ),
+          ),
+          // Page indicator - just show current page number
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              border: Border.symmetric(
+                vertical: BorderSide(
+                  color: isDark ? Colors.white24 : Colors.grey.shade300,
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Text(
+              '$currentPage',
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          // Next button
+          InkWell(
+            onTap: canGoNext ? () => _goToNextPage(transactionType, nextCursor) : null,
+            borderRadius: const BorderRadius.horizontal(right: Radius.circular(5)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: canGoNext
+                    ? (isDark ? Colors.white : Colors.black87)
+                    : (isDark ? Colors.white24 : Colors.grey.shade400),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -468,7 +780,7 @@ class _CustomerTransactionsScreenState
           .map(
             (row) => [
               _formatDate(row['date']),
-              _asString(row['sales_order_no']),
+              _asString(row['salesorder_no']),
               _asString(row['type']),
               _asString(row['status']),
               _formatMoney(row['total']),
@@ -492,7 +804,7 @@ class _CustomerTransactionsScreenState
           .map(
             (row) => [
               _formatDate(row['date']),
-              _asString(row['sales_order_no']),
+              _asString(row['salesorder_no']),
               _asString(row['payment_no']),
               _formatMoney(row['amount_paid']),
               _asString(row['payment_type']),

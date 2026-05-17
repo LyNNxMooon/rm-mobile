@@ -77,6 +77,11 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+    //final double titleFontSize = useDesktopNav ? 13.0 : 15.0;
+    final double inputFontSize = useDesktopNav ? 13.0 : 14.0;
+    final double buttonFontSize = useDesktopNav ? 12.0 : 13.0;
+    final double errorFontSize = useDesktopNav ? 12.0 : 14.0;
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.78)
         .clamp(420.0, 780.0);
     final bool isTablet = context.isTablet;
@@ -84,7 +89,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double errorFieldHeight = (isTablet ? 44 : 40) * uiScale;
+    final double errorFieldHeight = (isTablet ? 44 : (useDesktopNav ? 36 : 40)) * uiScale;
     final double errorButtonVerticalPadding = (isTablet ? 12 : 1) * uiScale;
 
     return MultiBlocListener(
@@ -191,6 +196,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
         backgroundColor: Colors.transparent,
         child: ModernDialogContainer(
           maxHeight: maxDialogHeight,
+          maxWidth: context.useDesktopNav ? 520 : null,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -240,7 +246,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                       }
 
                       return _buildErrorWithCredentials(
-                        context, state, colors, isDark, errorFieldHeight, errorButtonVerticalPadding);
+                        context, state, colors, isDark, errorFieldHeight, errorButtonVerticalPadding, inputFontSize, buttonFontSize, errorFontSize);
                     }
 
                     if (state is ShopsLoaded) {
@@ -282,6 +288,9 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
     bool isDark,
     double errorFieldHeight,
     double errorButtonVerticalPadding,
+    double inputFontSize,
+    double buttonFontSize,
+    double errorFontSize,
   ) {
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -307,7 +316,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: colors.onSurfaceMuted,
-                fontSize: 14,
+                fontSize: errorFontSize,
                 height: 1.4,
               ),
             ),
@@ -318,7 +327,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                 controller: _userNameController,
                 style: TextStyle(
                   color: isDark ? Colors.white : colors.onSurface,
-                  fontSize: 14,
+                  fontSize: inputFontSize,
                 ),
                 decoration: ModernDialogStyles.inputDecoration(
                   context,
@@ -335,7 +344,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                 obscureText: true,
                 style: TextStyle(
                   color: isDark ? Colors.white : colors.onSurface,
-                  fontSize: 14,
+                  fontSize: inputFontSize,
                 ),
                 decoration: ModernDialogStyles.inputDecoration(
                   context,
@@ -362,10 +371,10 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                         Navigator.of(context).pop();
                       },
                       style: ModernDialogStyles.outlinedButtonStyle(context),
-                      child: const Text(
+                      child: Text(
                         "Close",
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: buttonFontSize,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -390,10 +399,10 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                         Navigator.of(context).pop();
                       },
                       style: ModernDialogStyles.primaryButtonStyle(context),
-                      child: const Text(
+                      child: Text(
                         "Close",
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: buttonFontSize,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -412,6 +421,11 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
     final bool expanded = _expandedShop == shopName;
     final colors = ctx.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = ctx.useDesktopNav;
+    final double titleFontSize = useDesktopNav ? 13.0 : 15.0;
+    //final double inputFontSize = useDesktopNav ? 13.0 : 14.0;
+    //final double buttonFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double iconSize = useDesktopNav ? 18.0 : 20.0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -470,7 +484,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                         child: Icon(
                           Icons.storefront_rounded,
                           color: kPrimaryColor,
-                          size: 20,
+                          size: iconSize,
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -479,7 +493,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                           shopName.split(r'\\').last,
                           style: TextStyle(
                             color: isDark ? Colors.white : colors.onSurface,
-                            fontSize: 15,
+                            fontSize: titleFontSize,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -495,7 +509,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                           ),
                           child: Icon(
                             Icons.keyboard_arrow_down_rounded,
-                            size: 20,
+                            size: iconSize,
                             color: kPrimaryColor,
                           ),
                         ),
@@ -521,9 +535,13 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
     final colors = ctx.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = ctx.isTablet;
+    final bool useDesktopNav = ctx.useDesktopNav;
+    final double inputFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double buttonFontSize = useDesktopNav ? 13.0 : (isTablet ? 16.0 : 15.0);
+    final double iconSize = useDesktopNav ? 18.0 : (isTablet ? 22.0 : 20.0);
     final double textScale = MediaQuery.textScalerOf(ctx).scale(14) / 14;
     final double uiScale = (1.0 + ((textScale - 1.0) * 0.65)).clamp(1.0, 1.42);
-    final double fieldHeight = isTablet ? (48 * uiScale).clamp(48.0, 58.0) : 46.0;
+    final double fieldHeight = isTablet ? (48 * uiScale).clamp(48.0, 58.0) : (useDesktopNav ? 38.0 : 46.0);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -548,7 +566,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
               keyboardType: TextInputType.number,
               style: TextStyle(
                 color: isDark ? Colors.white : colors.onSurface,
-                fontSize: 14,
+                fontSize: inputFontSize,
               ),
               decoration: ModernDialogStyles.inputDecoration(
                 ctx,
@@ -565,7 +583,7 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
               obscureText: true,
               style: TextStyle(
                 color: isDark ? Colors.white : colors.onSurface,
-                fontSize: 14,
+                fontSize: inputFontSize,
               ),
               decoration: ModernDialogStyles.inputDecoration(
                 ctx,
@@ -595,14 +613,14 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                   onTap: loading ? null : () => _onTapStaffSignIn(shopName, ctx),
                   borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: useDesktopNav ? 12 : 16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: loading
                           ? [
                               SizedBox(
-                                height: 20,
-                                width: 20,
+                                height: iconSize,
+                                width: iconSize,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
                                   valueColor: AlwaysStoppedAnimation<Color>(
@@ -615,14 +633,14 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
                               Icon(
                                 Icons.login_rounded,
                                 color: Colors.white,
-                                size: isTablet ? 22 : 20,
+                                size: iconSize,
                               ),
                               SizedBox(width: isTablet ? 10 : 8),
                               Text(
                                 'Sign In',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: isTablet ? 16 : 15,
+                                  fontSize: buttonFontSize,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 0.2,
                                 ),

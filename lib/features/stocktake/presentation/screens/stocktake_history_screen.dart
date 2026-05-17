@@ -11,6 +11,7 @@ import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_events.d
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.dart';
 import 'package:rmmobile/features/stocktake/presentation/screens/stocktake_history_detail_screen.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 
 class StocktakeHistoryScreen extends StatefulWidget {
   const StocktakeHistoryScreen({super.key});
@@ -30,6 +31,15 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+
+    // Desktop sizing
+    final double titleFontSize = useDesktopNav ? 14.0 : 16.0;
+    final double backIconSize = useDesktopNav ? 16.0 : 18.0;
+    final double topPadding = useDesktopNav ? 12.0 : 15.0;
+    final double listPadding = useDesktopNav ? 12.0 : 15.0;
+    final double itemSpacing = useDesktopNav ? 5.0 : 7.0;
+
     return Scaffold(
       backgroundColor: colors.bg,
       body: SafeArea(
@@ -37,7 +47,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
           children: [
             // simple top bar (same vibe as your screens)
             Padding(
-              padding: const EdgeInsets.fromLTRB(15, 15, 15, 10),
+              padding: EdgeInsets.fromLTRB(topPadding, topPadding, topPadding, useDesktopNav ? 8 : 10),
               child: Row(
                 children: [
                   IconButton(
@@ -45,15 +55,15 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                     icon: Icon(
                       Icons.arrow_back_ios,
                       color: isDark ? Colors.white : kPrimaryColor,
-                      size: 18,
+                      size: backIconSize,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: useDesktopNav ? 8 : 12),
                   Text(
                     "Stocktake History",
                     style: getSmartTitle(
                       color: isDark ? Colors.white : colors.onSurface,
-                      fontSize: 16,
+                      fontSize: titleFontSize,
                     ),
                   ),
                 ],
@@ -73,7 +83,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                         state.message,
                         style: getSmartTitle(
                           color: kErrorColor,
-                          fontSize: 14,
+                          fontSize: useDesktopNav ? 12 : 14,
                         ),
                       ),
                     );
@@ -97,8 +107,8 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                                       children: [
                                         // Outer Decorative Ring
                                         Container(
-                                          width: 160,
-                                          height: 160,
+                                          width: useDesktopNav ? 120 : 160,
+                                          height: useDesktopNav ? 120 : 160,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             border: Border.all(
@@ -110,8 +120,8 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
 
                                         // Inner Filled Circle
                                         Container(
-                                          width: 130,
-                                          height: 130,
+                                          width: useDesktopNav ? 100 : 130,
+                                          height: useDesktopNav ? 100 : 130,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             color: isDark
@@ -121,8 +131,8 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                                           child: Center(
                                             // Using an "Open Box" icon usually signifies "Empty" better than a rocket
                                             child: SizedBox(
-                                              width: 80,
-                                              height: 80,
+                                              width: useDesktopNav ? 60 : 80,
+                                              height: useDesktopNav ? 60 : 80,
                                               child: Image.asset(
                                                 "assets/images/box.png",
                                                 fit: BoxFit.fill,
@@ -133,26 +143,26 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                                       ],
                                     ),
 
-                                    const SizedBox(height: 24),
+                                    SizedBox(height: useDesktopNav ? 18 : 24),
 
                                     Text(
                                       "No stocktake history found.",
                                       style: TextStyle(
                                         color: colors.onSurfaceMuted,
-                                        fontSize: 16,
+                                        fontSize: useDesktopNav ? 14 : 16,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
 
-                                    const SizedBox(height: 16),
+                                    SizedBox(height: useDesktopNav ? 12 : 16),
                                     TextButton.icon(
                                       onPressed: () {
                                         context.read<StocktakeHistoryBloc>().add(
                                           LoadHistorySessionsEvent(),
                                         );
                                       },
-                                      icon: const Icon(Icons.refresh, size: 18),
-                                      label: const Text("Refresh List"),
+                                      icon: Icon(Icons.refresh, size: useDesktopNav ? 16 : 18),
+                                      label: Text("Refresh List", style: TextStyle(fontSize: useDesktopNav ? 12 : 14)),
                                       style: TextButton.styleFrom(
                                         foregroundColor: kPrimaryColor,
                                       ),
@@ -167,13 +177,18 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                       );
                     }
     
-                    return AnimationLimiter(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(15, 5, 15, 15),
-                        separatorBuilder: (_, _) => const SizedBox(height: 7),
-                        itemCount: state.sessions.length,
-                        itemBuilder: (_, i) =>
-                            _sessionTile(state.sessions[i], i),
+                    return Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: useDesktopNav ? 800 : double.infinity),
+                        child: AnimationLimiter(
+                          child: ListView.separated(
+                            padding: EdgeInsets.fromLTRB(listPadding, 5, listPadding, listPadding),
+                            separatorBuilder: (_, _) => SizedBox(height: itemSpacing),
+                            itemCount: state.sessions.length,
+                            itemBuilder: (_, i) =>
+                                _sessionTile(state.sessions[i], i, useDesktopNav),
+                          ),
+                        ),
                       ),
                     );
                   }
@@ -188,9 +203,19 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
     );
   }
 
-  Widget _sessionTile(StocktakeHistorySessionRow s, int index) {
+  Widget _sessionTile(StocktakeHistorySessionRow s, int index, bool useDesktopNav) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+
+    // Desktop sizing
+    final double tilePaddingH = useDesktopNav ? 12.0 : 16.0;
+    final double tilePaddingV = useDesktopNav ? 10.0 : 12.0;
+    final double iconContainerSize = useDesktopNav ? 32.0 : 38.0;
+    final double iconSize = useDesktopNav ? 20.0 : 24.0;
+    final double titleFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double dateFontSize = useDesktopNav ? 10.0 : 11.0;
+    final double borderRadius = useDesktopNav ? 8.0 : 10.0;
+
     String fmt(DateTime dt) =>
         "${dt.day.toString().padLeft(2, '0')}/"
         "${dt.month.toString().padLeft(2, '0')}/"
@@ -208,10 +233,10 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
               context.navigateToNext(StocktakeHistoryDetailsScreen(session: s));
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: tilePaddingH, vertical: tilePaddingV),
               decoration: BoxDecoration(
                 color: isDark ? colors.surfaceAlt : colors.surface,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(borderRadius),
                 border: isDark
                     ? Border.all(color: Colors.white30, width: 1)
                     : null,
@@ -226,15 +251,15 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
               child: Row(
                 children: [
                   Container(
-                    width: 38,
-                    height: 38,
+                    width: iconContainerSize,
+                    height: iconContainerSize,
                     decoration: BoxDecoration(
                       color: kPrimaryColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(borderRadius),
                     ),
-                    child: const Icon(Icons.history, color: kPrimaryColor),
+                    child: Icon(Icons.history, color: kPrimaryColor, size: iconSize),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: useDesktopNav ? 10 : 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,17 +268,17 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                           "Sent ${s.totalStocks} item(s)",
                           style: getSmartTitle(
                             color: isDark ? Colors.white : colors.onSurface,
-                            fontSize: 14,
+                            fontSize: titleFontSize,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 3),
+                        SizedBox(height: useDesktopNav ? 2 : 3),
                         Text(
                           fmt(s.createdAt),
                           style: TextStyle(
                             color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                            fontSize: 11,
+                            fontSize: dateFontSize,
                           ),
                         ),
                       ],
@@ -262,6 +287,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                   Icon(
                     Icons.chevron_right_rounded,
                     color: isDark ? Colors.white54 : colors.onSurfaceMuted,
+                    size: useDesktopNav ? 20 : 24,
                   ),
                 ],
               ),

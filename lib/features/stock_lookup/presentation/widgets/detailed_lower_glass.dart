@@ -44,6 +44,7 @@ class DetailedLowerGlass extends StatefulWidget {
     this.pricingGradesCategories,
     this.pricingGradesGlobal,
     this.onFocusNodesReady,
+    this.hideButtons = false,
   });
 
   final double sell;
@@ -69,6 +70,8 @@ class DetailedLowerGlass extends StatefulWidget {
   final PricingGrades? pricingGradesGlobal;
   /// Callback to expose the focus nodes for iOS Done Bar integration
   final void Function(List<FocusNode> focusNodes)? onFocusNodesReady;
+  /// If true, hides the action buttons (Calculator, Pricing, Update) - used for desktop layout
+  final bool hideButtons;
 
   @override
   State<DetailedLowerGlass> createState() => _DetailedLowerGlassState();
@@ -260,16 +263,21 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
     final bool isDark = colors.isDark;
     final Color onGlass = isDark ? Colors.white : kSecondaryColor;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double containerVertical = (isTablet ? 24 : 20) * uiScale;
-    final double containerHorizontal = (isTablet ? 14 : 12) * uiScale;
-    final double rowGap = (isTablet ? 18 : 15) * uiScale;
-    final double fieldHeight = (isTablet ? 40 : 35) * uiScale;
-    final double buttonVertical = (isTablet ? 8 : 6) * uiScale;
-    final double buttonGap = (isTablet ? 12 : 10) * uiScale;
+    
+    // Desktop-specific smaller sizes
+    final double containerVertical = useDesktopNav ? 12 : ((isTablet ? 24 : 20) * uiScale);
+    final double containerHorizontal = useDesktopNav ? 10 : ((isTablet ? 14 : 12) * uiScale);
+    final double rowGap = useDesktopNav ? 8 : ((isTablet ? 18 : 15) * uiScale);
+    final double fieldHeight = useDesktopNav ? 26 : ((isTablet ? 40 : 35) * uiScale);
+    final double buttonVertical = useDesktopNav ? 5 : ((isTablet ? 8 : 6) * uiScale);
+    final double buttonGap = useDesktopNav ? 8 : ((isTablet ? 12 : 10) * uiScale);
+    final double labelFontSize = useDesktopNav ? 12 : 14;
+    final double inputFontSize = useDesktopNav ? 12 : 14;
 
     return Column(
       children: [
@@ -287,6 +295,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                   iconBgColor: Colors.deepPurpleAccent,
                   label: "Cost / Sell Tax",
                   value: "${widget.costTaxLabel} / ${widget.sellTaxLabel}",
+                  fontSize: labelFontSize,
                 ),
                 SizedBox(height: rowGap),
                 StockInfoRow(
@@ -295,6 +304,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                   iconBgColor: Colors.pinkAccent,
                   label: "Ex Cost",
                   value: widget.exCost.toStringAsFixed(4),
+                  fontSize: labelFontSize,
                 ),
                 SizedBox(height: rowGap),
                 StockInfoRow(
@@ -303,235 +313,183 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                   iconBgColor: Colors.lightBlue,
                   label: "Inc Cost",
                   value: widget.incCost.toStringAsFixed(4),
+                  fontSize: labelFontSize,
                 ),
                 SizedBox(height: rowGap),
               ],
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(
-                            203,
-                            128,
-                            128,
-                            1.0,
-                          ).withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: Image.asset(
-                            "assets/images/rrp.png",
-                            fit: BoxFit.fill,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Ex RRP",
-                        style: TextStyle(fontSize: 14, color: onGlass),
-                      ),
-                    ],
-                  ),
-                  if (isTablet) const Spacer(),
-                  if (!isTablet) const SizedBox(width: 12),
-                  isTablet
-                      ? Flexible(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: 350),
+              if (widget.canUpdateSellPrice)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: Color.fromRGBO(
+                                203,
+                                128,
+                                128,
+                                1.0,
+                              ).withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: SizedBox(
-                              height: fieldHeight,
-                              child: TextField(
-                                enabled: widget.canUpdateSellPrice,
-                                controller: _exRrpController,
-                                focusNode: _exRrpFocus,
-                                scrollPhysics: const ClampingScrollPhysics(),
-                                keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
-                                textInputAction: TextInputAction.done,
-                                onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: onGlass,
-                                ),
-                                onEditingComplete: () {
-                                  final trimmedValue = _exRrpController.text.trim();
-                                  if (_exRrpController.text != trimmedValue) {
-                                    _exRrpController.value = _exRrpController.value.copyWith(
-                                      text: trimmedValue,
-                                      selection: TextSelection.collapsed(offset: trimmedValue.length),
-                                    );
-                                  }
-                                },
-                                decoration: _inputDecoration(),
+                              width: 18,
+                              height: 18,
+                              child: Image.asset(
+                                "assets/images/rrp.png",
+                                fit: BoxFit.fill,
                               ),
                             ),
                           ),
-                        )
-                      : Expanded(
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: 160),
-                              child: SizedBox(
-                                height: fieldHeight,
-                                child: TextField(
-                                  enabled: widget.canUpdateSellPrice,
-                                  controller: _exRrpController,
-                                  focusNode: _exRrpFocus,
-                                  scrollPhysics: const ClampingScrollPhysics(),
-                                  keyboardType: const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                                  textInputAction: TextInputAction.done,
-                                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: onGlass,
-                                  ),
-                                  onEditingComplete: () {
-                                    final trimmedValue = _exRrpController.text.trim();
-                                    if (_exRrpController.text != trimmedValue) {
-                                      _exRrpController.value = _exRrpController.value.copyWith(
-                                        text: trimmedValue,
-                                        selection: TextSelection.collapsed(offset: trimmedValue.length),
-                                      );
-                                    }
-                                  },
-                                  decoration: _inputDecoration(),
-                                ),
-                              ),
-                            ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Ex RRP",
+                            style: TextStyle(fontSize: labelFontSize, color: onGlass),
                           ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 1,
+                      child: SizedBox(
+                        height: fieldHeight,
+                        child: TextField(
+                          enabled: widget.canUpdateSellPrice,
+                          controller: _exRrpController,
+                          focusNode: _exRrpFocus,
+                          scrollPhysics: const ClampingScrollPhysics(),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                          style: TextStyle(
+                            fontSize: inputFontSize,
+                            color: onGlass,
+                          ),
+                          onEditingComplete: () {
+                            final trimmedValue = _exRrpController.text.trim();
+                            if (_exRrpController.text != trimmedValue) {
+                              _exRrpController.value = _exRrpController.value.copyWith(
+                                text: trimmedValue,
+                                selection: TextSelection.collapsed(offset: trimmedValue.length),
+                              );
+                            }
+                          },
+                          decoration: _inputDecoration(),
                         ),
-                ],
-              ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                StockInfoRow(
+                  image: "assets/images/rrp.png",
+                  icon: Icons.sell_outlined,
+                  iconBgColor: Color.fromRGBO(203, 128, 128, 1.0).withOpacity(0.7),
+                  label: "Ex RRP",
+                  value: widget.exSell.toStringAsFixed(4),
+                  fontSize: labelFontSize,
+                ),
               SizedBox(height: rowGap),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: Colors.greenAccent.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: Image.asset(
-                            "assets/images/rrp.png",
-                            fit: BoxFit.fill,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Inc RRP",
-                        style: TextStyle(fontSize: 14, color: onGlass),
-                      ),
-                    ],
-                  ),
-                  if (isTablet) const Spacer(),
-                  if (!isTablet) const SizedBox(width: 12),
-                  isTablet
-                      ? Flexible(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: 350),
+              if (widget.canUpdateSellPrice)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: Colors.greenAccent.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: SizedBox(
-                              height: fieldHeight,
-                              child: TextField(
-                                enabled: widget.canUpdateSellPrice,
-                                keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
-                                controller: _rrpController,
-                                focusNode: _rrpFocus,
-                                scrollPhysics: const ClampingScrollPhysics(),
-                                textInputAction: TextInputAction.done,
-                                onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: onGlass,
-                                ),
-                                onEditingComplete: () {
-                                  final trimmedValue = _rrpController.text.trim();
-                                  if (_rrpController.text != trimmedValue) {
-                                    _rrpController.value = _rrpController.value.copyWith(
-                                      text: trimmedValue,
-                                      selection: TextSelection.collapsed(offset: trimmedValue.length),
-                                    );
-                                  }
-                                },
-                                decoration: _inputDecoration(),
+                              width: 18,
+                              height: 18,
+                              child: Image.asset(
+                                "assets/images/rrp.png",
+                                fit: BoxFit.fill,
                               ),
                             ),
                           ),
-                        )
-                      : Expanded(
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: 160),
-                              child: SizedBox(
-                                height: fieldHeight,
-                                child: TextField(
-                                  enabled: widget.canUpdateSellPrice,
-                                  keyboardType: const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                                  controller: _rrpController,
-                                  focusNode: _rrpFocus,
-                                  scrollPhysics: const ClampingScrollPhysics(),
-                                  textInputAction: TextInputAction.done,
-                                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: onGlass,
-                                  ),
-                                  onEditingComplete: () {
-                                    final trimmedValue = _rrpController.text.trim();
-                                    if (_rrpController.text != trimmedValue) {
-                                      _rrpController.value = _rrpController.value.copyWith(
-                                        text: trimmedValue,
-                                        selection: TextSelection.collapsed(offset: trimmedValue.length),
-                                      );
-                                    }
-                                  },
-                                  decoration: _inputDecoration(),
-                                ),
-                              ),
-                            ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Inc RRP",
+                            style: TextStyle(fontSize: labelFontSize, color: onGlass),
                           ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 1,
+                      child: SizedBox(
+                        height: fieldHeight,
+                        child: TextField(
+                          enabled: widget.canUpdateSellPrice,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          controller: _rrpController,
+                          focusNode: _rrpFocus,
+                          scrollPhysics: const ClampingScrollPhysics(),
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                          style: TextStyle(
+                            fontSize: inputFontSize,
+                            color: onGlass,
+                          ),
+                          onEditingComplete: () {
+                            final trimmedValue = _rrpController.text.trim();
+                            if (_rrpController.text != trimmedValue) {
+                              _rrpController.value = _rrpController.value.copyWith(
+                                text: trimmedValue,
+                                selection: TextSelection.collapsed(offset: trimmedValue.length),
+                              );
+                            }
+                          },
+                          decoration: _inputDecoration(),
                         ),
-                ],
-              ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                StockInfoRow(
+                  image: "assets/images/rrp.png",
+                  icon: Icons.sell_outlined,
+                  iconBgColor: Colors.greenAccent.withOpacity(0.7),
+                  label: "Inc RRP",
+                  value: widget.sell.toStringAsFixed(4),
+                  fontSize: labelFontSize,
+                ),
             ],
           ),
         ),
-        SizedBox(height: rowGap),
-        _buildGlassPanel(
-          colors: colors,
-          isDark: isDark,
-          verticalPadding: containerVertical,
-          horizontalPadding: containerHorizontal,
-          child: Builder(
-            builder: (context) {
-              final viewComponentsButton = InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PackageComponentsScreen(
-                        packageDescription: widget.packageDescription ?? '',
+        if (!widget.hideButtons) ...[
+          SizedBox(height: rowGap),
+          _buildGlassPanel(
+            colors: colors,
+            isDark: isDark,
+            verticalPadding: containerVertical,
+            horizontalPadding: containerHorizontal,
+            child: Builder(
+              builder: (context) {
+                final viewComponentsButton = InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PackageComponentsScreen(
+                          packageDescription: widget.packageDescription ?? '',
                         components: widget.packageComponents ?? [],
                       ),
                     ),
@@ -693,6 +651,7 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
             },
           ),
         ),
+        ],
       ],
     );
   }

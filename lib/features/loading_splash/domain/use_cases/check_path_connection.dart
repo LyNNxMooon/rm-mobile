@@ -132,6 +132,23 @@ class CheckPathConnection {
         AppGlobals.instance.shopfrontReminder = savedReminder;
       }
 
+      // Load auto charge sale settings
+      final savedAutoChargeSale =
+          await LocalDbDAO.instance.getAppConfig(kAutoChargeSaleKey);
+      AppGlobals.instance.autoChargeSale = savedAutoChargeSale == "1";
+
+      final savedAutoChargeSaleStock =
+          await LocalDbDAO.instance.getAppConfig(kAutoChargeSaleStockKey);
+      if (savedAutoChargeSaleStock != null && savedAutoChargeSaleStock.isNotEmpty) {
+        AppGlobals.instance.autoChargeSaleStock = int.tryParse(savedAutoChargeSaleStock);
+      }
+
+      final savedAutoChargeSalePercent =
+          await LocalDbDAO.instance.getAppConfig(kAutoChargeSalePercentKey);
+      if (savedAutoChargeSalePercent != null && savedAutoChargeSalePercent.isNotEmpty) {
+        AppGlobals.instance.autoChargeSalePercent = int.tryParse(savedAutoChargeSalePercent);
+      }
+
       final String savedStaffId =
           ((await LocalDbDAO.instance.getAppConfig(kStaffIdKey)) ?? "").trim();
       final String savedStaffNo =

@@ -22,6 +22,7 @@ import 'package:rmmobile/features/customer_lookup/presentation/BLoC/staff_barcod
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../utils/ios_done_bar.dart';
+import '../../../../utils/responsive_utils.dart';
 
 class _AddressControllers {
   _AddressControllers({
@@ -356,15 +357,33 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     super.dispose();
   }
 
+  bool _useDesktopNav(BuildContext context) {
+    return context.useDesktopNav;
+  }
+
   double _uiScale(BuildContext context) {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool useDesktopNav = _useDesktopNav(context);
+    if (useDesktopNav) return 1.0;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     return isTablet ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2) : 1.0;
   }
 
-  double _font(BuildContext context, double size) => size * _uiScale(context);
+  double _font(BuildContext context, double size) {
+    final bool useDesktopNav = _useDesktopNav(context);
+    if (useDesktopNav) {
+      // Desktop uses smaller fonts
+      if (size >= 16) return 14;
+      if (size >= 14) return 12;
+      if (size >= 12) return 11;
+      return size * 0.85;
+    }
+    return size * _uiScale(context);
+  }
 
   double _iconSize(BuildContext context, double size) {
+    final bool useDesktopNav = _useDesktopNav(context);
+    if (useDesktopNav) return size * 0.9;
     final double shortestSide = MediaQuery.of(context).size.shortestSide;
     if (shortestSide >= 900) return size * 1.6;
     if (shortestSide >= 600) return size * 1.35;
@@ -372,6 +391,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   double _editIconSize(BuildContext context, double size) {
+    final bool useDesktopNav = _useDesktopNav(context);
+    if (useDesktopNav) return size * 0.8;
     final double shortestSide = MediaQuery.of(context).size.shortestSide;
     if (shortestSide >= 900) return size * 1.9;
     if (shortestSide >= 600) return size * 1.5;
@@ -798,21 +819,25 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   InputDecoration _minimalInputDecoration() {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final Color borderColor =
         isDark ? Colors.white38 : Colors.grey.shade300;
+    final double hPadding = useDesktopNav ? 8 : 10;
+    final double vPadding = useDesktopNav ? 6 : 8;
+    final double borderRadius = useDesktopNav ? 6 : 8;
     return InputDecoration(
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      contentPadding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(borderRadius),
         borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(borderRadius),
         borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(borderRadius),
         borderSide: const BorderSide(color: kPrimaryColor, width: 1.2),
       ),
     );
@@ -832,10 +857,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
+    final double bottomPadding = useDesktopNav ? 6 : 8;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -911,9 +938,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
+    final double bottomPadding = useDesktopNav ? 6 : 8;
+    final double iconSpacing = useDesktopNav ? 10 : 12;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Row(
         children: [
           Icon(
@@ -921,7 +951,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             size: _iconSize(context, 18),
             color: isDark ? colors.onSurfaceMuted : Colors.grey[700],
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: iconSpacing),
           Expanded(
             flex: 2,
             child: Text(
@@ -972,9 +1002,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
+    final double bottomPadding = useDesktopNav ? 4 : 8;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -1003,9 +1035,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
+    final double bottomPadding = useDesktopNav ? 6 : 8;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1041,7 +1075,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   List<Widget> _buildSecondaryAddressEditors() {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 13);
+    final double headerSpacer = useDesktopNav ? 4 : 6;
+    final double sectionSpacer = useDesktopNav ? 8 : 12;
     final List<Widget> widgets = [];
 
     for (final entry in _secondaryAddressControllers.entries) {
@@ -1058,7 +1095,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ),
         ),
       );
-      widgets.add(const SizedBox(height: 6));
+      widgets.add(SizedBox(height: headerSpacer));
       widgets.add(_buildEditRow("Addr1", address.addr1));
       widgets.add(_buildEditRow("Addr2", address.addr2));
       widgets.add(_buildEditRow("Addr3", address.addr3));
@@ -1096,7 +1133,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           keyboardType: TextInputType.emailAddress,
         ),
       );
-      widgets.add(const SizedBox(height: 12));
+      widgets.add(SizedBox(height: sectionSpacer));
     }
 
     return widgets;
@@ -1221,6 +1258,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final double smallSize = _font(context, 12);
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
 
     showDialog(
       context: context,
@@ -1228,13 +1266,24 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         final double shortestSide = MediaQuery.of(context).size.shortestSide;
         final bool isTablet = shortestSide >= 600;
         final bool isLargeTablet = shortestSide >= 900;
-        final double mapWidth = isLargeTablet ? 110 : isTablet ? 96 : 46;
-        final double mapHeight = isLargeTablet ? 85 : isTablet ? 74 : 40;
-        final double mapRadius = isLargeTablet ? 14 : isTablet ? 12 : 8;
+        final double mapWidth = useDesktopNav ? 80 : isLargeTablet ? 110 : isTablet ? 96 : 46;
+        final double mapHeight = useDesktopNav ? 60 : isLargeTablet ? 85 : isTablet ? 74 : 40;
+        final double mapRadius = useDesktopNav ? 10 : isLargeTablet ? 14 : isTablet ? 12 : 8;
+        final double dialogPadding = useDesktopNav ? 16 : 20;
+        final double dialogHeaderHPadding = useDesktopNav ? 16 : 20;
+        final double dialogHeaderVPadding = useDesktopNav ? 12 : 16;
+        final double dialogBorderRadius = useDesktopNav ? 12 : 16;
+        final double cardMargin = useDesktopNav ? 12 : 16;
+        final double cardPadding = useDesktopNav ? 12 : 16;
+        final double cardBorderRadius = useDesktopNav ? 10 : 12;
+        final double sectionSpacer = useDesktopNav ? 8 : 12;
 
         return Dialog(
+          insetPadding: useDesktopNav
+              ? const EdgeInsets.symmetric(horizontal: 120, vertical: 40)
+              : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(dialogBorderRadius),
             side: isDark
                 ? const BorderSide(color: Colors.white30)
                 : BorderSide.none,
@@ -1246,17 +1295,17 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             children: [
               // Dialog Header
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
+                padding: EdgeInsets.symmetric(
+                  horizontal: dialogHeaderHPadding,
+                  vertical: dialogHeaderVPadding,
                 ),
                 decoration: BoxDecoration(
                   color: isDark
                       ? colors.surfaceAlt
                       : const Color(0xFFF3F4F6),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(dialogBorderRadius),
+                    topRight: Radius.circular(dialogBorderRadius),
                   ),
                   border: Border(
                     bottom: BorderSide(
@@ -1315,7 +1364,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               // Dialog Content (Scrollable list of addresses)
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(dialogPadding),
                   child: Column(
                     children: List.generate(widget.customer.addresses.length, (
                       index,
@@ -1334,11 +1383,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           address.addressNumber == 2 ||
                           address.addressNumber == 3;
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(16),
+                        margin: EdgeInsets.only(bottom: cardMargin),
+                        padding: EdgeInsets.all(cardPadding),
                         decoration: BoxDecoration(
                           color: isDark ? colors.surface : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(cardBorderRadius),
                           border: Border.all(
                             color: isDark ? Colors.white24 : Colors.grey.shade200,
                             width: 1.5,
@@ -1361,13 +1410,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: useDesktopNav ? 8 : 10,
+                                    vertical: useDesktopNav ? 3 : 4,
                                   ),
                                   decoration: BoxDecoration(
                                     color: kPrimaryColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
                                   ),
                                   child: Text(
                                     "Address ${address.addressNumber}",
@@ -1403,7 +1452,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                   ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: sectionSpacer),
 
                             // Address Lines
                             if (address.addr1.isNotEmpty) ...[
@@ -1455,12 +1504,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                               ),
                             ],
 
-                            const SizedBox(height: 12),
+                            SizedBox(height: sectionSpacer),
                             Divider(
                               height: 1,
                               color: isDark ? Colors.white24 : null,
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: sectionSpacer),
 
                             // Contact Info within this address
                             if (address.phone.isNotEmpty) ...[
@@ -1534,8 +1583,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   Widget _buildDialogContactRow(IconData icon, String text, double fontSize) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
+    final double bottomPadding = useDesktopNav ? 4 : 6;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Row(
         children: [
           Icon(
@@ -1689,111 +1740,124 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
               // Custom App Bar Elements (Overlay)
               SafeArea(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8.0,
-                        vertical: 8.0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          TextButton.icon(
-                            onPressed: () {
-                              _triggerSyncIfNeeded();
-                              Navigator.pop(context);
-                            },
-                            icon: Icon(
-                              Icons.arrow_back_ios_new,
-                              color: isDark ? Colors.white : Colors.white,
-                              size: 18,
-                            ),
-                            label: Text(
-                              "Customers",
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.white,
-                                fontSize: 16,
+                child: Builder(
+                  builder: (context) {
+                    final useDesktopNav = _useDesktopNav(context);
+                    final double appBarPadding = useDesktopNav ? 6.0 : 8.0;
+                    final double backIconSize = useDesktopNav ? 16 : 18;
+                    final double backTextSize = useDesktopNav ? 13 : 16;
+                    final double titleSize = useDesktopNav ? 14 : 16;
+                    final double formHorizontalPadding = useDesktopNav ? 12 : 16;
+                    final double formTopPadding = useDesktopNav ? 6 : 8;
+                    final double formBottomPadding = useDesktopNav ? 30 : 40;
+                    final double cardSpacing = useDesktopNav ? 10 : 12;
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: appBarPadding,
+                            vertical: appBarPadding,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              TextButton.icon(
+                                onPressed: () {
+                                  _triggerSyncIfNeeded();
+                                  Navigator.pop(context);
+                                },
+                                icon: Icon(
+                                  Icons.arrow_back_ios_new,
+                                  color: isDark ? Colors.white : Colors.white,
+                                  size: backIconSize,
+                                ),
+                                label: Text(
+                                  "Customers",
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white : Colors.white,
+                                    fontSize: backTextSize,
+                                  ),
+                                ),
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                ),
                               ),
-                            ),
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                            ),
-                          ),
-                          Text(
-                            "Profile",
-                            style: TextStyle(
-                              color: isDark ? Colors.white : Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 80),
-                        ],
-                      ),
-                    ),
-
-                    // Scrollable Content
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-                        child: Column(
-                          children: [
-                            _buildHeaderCard(),
-                            const SizedBox(height: 12),
-                            _buildContactDetailsCard(),
-                            const SizedBox(height: 12),
-                            _buildAddressCard(),
-                            const SizedBox(height: 12),
-                            _buildFinancialCard(),
-                            const SizedBox(height: 12),
-                            _buildPersonalCard(),
-                            const SizedBox(height: 12),
-                            _buildAdditionalInfoCard(),
-                            if (_notesController.text.isNotEmpty ||
-                                _commentsController.text.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              _buildNotesCard(),
+                              Text(
+                                "Profile",
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : Colors.white,
+                                  fontSize: titleSize,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 80),
                             ],
-                            const SizedBox(height: 12),
-                            _buildMetadataCard(),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                    IosDoneBarMulti(
-                      focusNodes: [
-                        _phoneFocusNode,
-                        _mobileFocusNode,
-                        _faxFocusNode,
-                        _postcodeFocusNode,
-                        _limitFocusNode,
-                        _daysFocusNode,
-                        _abnFocusNode,
-                        _addr2PhoneFocusNode,
-                        _addr2MobileFocusNode,
-                        _addr2PostcodeFocusNode,
-                        _addr3PhoneFocusNode,
-                        _addr3MobileFocusNode,
-                        _addr3PostcodeFocusNode,
+
+                        // Scrollable Content
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.fromLTRB(formHorizontalPadding, formTopPadding, formHorizontalPadding, formBottomPadding),
+                            child: Column(
+                              children: [
+                                _buildHeaderCard(),
+                                SizedBox(height: cardSpacing),
+                                _buildContactDetailsCard(),
+                                SizedBox(height: cardSpacing),
+                                _buildAddressCard(),
+                                SizedBox(height: cardSpacing),
+                                _buildFinancialCard(),
+                                SizedBox(height: cardSpacing),
+                                _buildPersonalCard(),
+                                SizedBox(height: cardSpacing),
+                                _buildAdditionalInfoCard(),
+                                if (_notesController.text.isNotEmpty ||
+                                    _commentsController.text.isNotEmpty) ...[
+                                  SizedBox(height: cardSpacing),
+                                  _buildNotesCard(),
+                                ],
+                                SizedBox(height: cardSpacing),
+                                _buildMetadataCard(),
+                              ],
+                            ),
+                          ),
+                        ),
+                        IosDoneBarMulti(
+                          focusNodes: [
+                            _phoneFocusNode,
+                            _mobileFocusNode,
+                            _faxFocusNode,
+                            _postcodeFocusNode,
+                            _limitFocusNode,
+                            _daysFocusNode,
+                            _abnFocusNode,
+                            _addr2PhoneFocusNode,
+                            _addr2MobileFocusNode,
+                            _addr2PostcodeFocusNode,
+                            _addr3PhoneFocusNode,
+                            _addr3MobileFocusNode,
+                            _addr3PostcodeFocusNode,
+                          ],
+                          onDone: () {
+                            _phoneFocusNode.unfocus();
+                            _mobileFocusNode.unfocus();
+                            _faxFocusNode.unfocus();
+                            _postcodeFocusNode.unfocus();
+                            _limitFocusNode.unfocus();
+                            _daysFocusNode.unfocus();
+                            _abnFocusNode.unfocus();
+                            _addr2PhoneFocusNode.unfocus();
+                            _addr2MobileFocusNode.unfocus();
+                            _addr2PostcodeFocusNode.unfocus();
+                            _addr3PhoneFocusNode.unfocus();
+                            _addr3MobileFocusNode.unfocus();
+                            _addr3PostcodeFocusNode.unfocus();
+                          },
+                        ),
                       ],
-                      onDone: () {
-                        _phoneFocusNode.unfocus();
-                        _mobileFocusNode.unfocus();
-                        _faxFocusNode.unfocus();
-                        _postcodeFocusNode.unfocus();
-                        _limitFocusNode.unfocus();
-                        _daysFocusNode.unfocus();
-                        _abnFocusNode.unfocus();
-                        _addr2PhoneFocusNode.unfocus();
-                        _addr2MobileFocusNode.unfocus();
-                        _addr2PostcodeFocusNode.unfocus();
-                        _addr3PhoneFocusNode.unfocus();
-                        _addr3MobileFocusNode.unfocus();
-                        _addr3PostcodeFocusNode.unfocus();
-                      },
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
             ],
@@ -1812,14 +1876,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   Widget _buildHeaderCard() {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double shortestSide = MediaQuery.of(context).size.shortestSide;
     final bool isTablet = shortestSide >= 600;
     final bool isLargeTablet = shortestSide >= 900;
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
     final double badgeSize = _font(context, 12);
-    final double avatarDiameter = isLargeTablet ? 80 : isTablet ? 72 : 60;
-    final double avatarTextSize = isLargeTablet ? 22 : isTablet ? 20 : _font(context, 24);
+    final double avatarDiameter = useDesktopNav ? 50 : isLargeTablet ? 80 : isTablet ? 72 : 60;
+    final double avatarTextSize = useDesktopNav ? 18 : isLargeTablet ? 22 : isTablet ? 20 : _font(context, 24);
+    final double avatarSpacing = useDesktopNav ? 12 : 16;
     final String displayName = _currentDisplayName();
     final String companyName = _companyController.text.trim();
     final int gradeValue = _parseInt(
@@ -1867,7 +1933,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: avatarSpacing),
 
               // Name and Details
               Expanded(
@@ -2038,35 +2104,81 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ],
 
           // Quick Action Buttons Row
-          Wrap(
-            alignment: WrapAlignment.spaceEvenly,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildActionButton(Icons.phone_outlined, "Call", () {
-                final String resolvedNumber =
-                    widget.customer.phone.trim().isNotEmpty
-                    ? widget.customer.phone
-                    : widget.customer.mobile;
-                _dialNumber(resolvedNumber);
-              }),
-              _buildActionButton(Icons.email_outlined, "Email", () {
-                _emailTo(widget.customer.email);
-              }),
-              _buildActionButton(
-                isEditing ? Icons.save_rounded : Icons.edit,
-                isEditing ? "Save" : "Edit",
-                () => _toggleEditSection(CustomerEditSection.header),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildLongActionButton(
-            label: "View Recent Transactions",
-            onTap: () {
-              _openCustomerTransactions();
-            },
-          ),
+          if (isTablet)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildActionButton(Icons.phone_outlined, "Call", () {
+                      final String resolvedNumber =
+                          widget.customer.phone.trim().isNotEmpty
+                          ? widget.customer.phone
+                          : widget.customer.mobile;
+                      _dialNumber(resolvedNumber);
+                    }),
+                    _buildActionButton(Icons.email_outlined, "Email", () {
+                      _emailTo(widget.customer.email);
+                    }),
+                    _buildActionButton(
+                      isEditing ? Icons.save_rounded : Icons.edit,
+                      isEditing ? "Save" : "Edit",
+                      () => _toggleEditSection(CustomerEditSection.header),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: () => _openCustomerTransactions(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    "View Transactions",
+                    maxLines: 1,
+                    style: TextStyle(fontSize: baseSize, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            )
+          else ...[
+            Wrap(
+              alignment: WrapAlignment.spaceEvenly,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildActionButton(Icons.phone_outlined, "Call", () {
+                  final String resolvedNumber =
+                      widget.customer.phone.trim().isNotEmpty
+                      ? widget.customer.phone
+                      : widget.customer.mobile;
+                  _dialNumber(resolvedNumber);
+                }),
+                _buildActionButton(Icons.email_outlined, "Email", () {
+                  _emailTo(widget.customer.email);
+                }),
+                _buildActionButton(
+                  isEditing ? Icons.save_rounded : Icons.edit,
+                  isEditing ? "Save" : "Edit",
+                  () => _toggleEditSection(CustomerEditSection.header),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildLongActionButton(
+              label: "View Transactions",
+              onTap: () {
+                _openCustomerTransactions();
+              },
+            ),
+          ],
         ],
       ),
     );
@@ -2932,6 +3044,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final double baseSize = _font(context, 14);
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
+    final double spacerHeight = useDesktopNav ? 8 : 12;
+    final double iconPadding = useDesktopNav ? 3.0 : 4.0;
     return _buildBaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2952,7 +3067,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   onTap: onEditTap,
                   borderRadius: BorderRadius.circular(16),
                   child: Padding(
-                    padding: const EdgeInsets.all(4.0),
+                    padding: EdgeInsets.all(iconPadding),
                     child: isSaving
                         ? SizedBox(
                             width: _editIconSize(context, 22),
@@ -2968,7 +3083,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacerHeight),
           ...children,
         ],
       ),
@@ -2978,12 +3093,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   Widget _buildBaseCard({required Widget child}) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
+    final double padding = useDesktopNav ? 12 : 16;
+    final double borderRadius = useDesktopNav ? 10 : 12;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: isDark ? colors.surfaceAlt : const Color(0xFFFBF7F0),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(borderRadius),
         // Adding a subtle stroke to give that "solid card" look from modern UI
         border: Border.all(
           color: isDark ? Colors.white54 : const Color(0xFFC9B9A6),
@@ -3007,9 +3125,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     if (value.isEmpty) return const SizedBox.shrink();
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
+    final double bottomPadding = useDesktopNav ? 6 : 8;
+    final double iconSpacing = useDesktopNav ? 10 : 12;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Row(
         children: [
           Icon(
@@ -3017,7 +3138,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             size: _iconSize(context, 18),
             color: isDark ? colors.onSurfaceMuted : Colors.grey[700],
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: iconSpacing),
           Expanded(
             flex: 2,
             child: Text(
@@ -3049,9 +3170,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     if (value.isEmpty) return const SizedBox.shrink();
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
+    final double bottomPadding = useDesktopNav ? 6 : 8;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -430,6 +430,30 @@ class HomeScreenModels implements HomeRepo {
             response.shopfrontName,
           );
         }
+
+        // Save auto charge sale settings
+        final autoChargeSale = response.autoChargeSale ?? false;
+        await LocalDbDAO.instance.saveAppConfig(
+          kAutoChargeSaleKey,
+          autoChargeSale ? "1" : "0",
+        );
+        AppGlobals.instance.autoChargeSale = autoChargeSale;
+
+        if (response.autoChargeSaleStock != null) {
+          await LocalDbDAO.instance.saveAppConfig(
+            kAutoChargeSaleStockKey,
+            response.autoChargeSaleStock.toString(),
+          );
+          AppGlobals.instance.autoChargeSaleStock = response.autoChargeSaleStock;
+        }
+
+        if (response.autoChargeSalePercent != null) {
+          await LocalDbDAO.instance.saveAppConfig(
+            kAutoChargeSalePercentKey,
+            response.autoChargeSalePercent.toString(),
+          );
+          AppGlobals.instance.autoChargeSalePercent = response.autoChargeSalePercent;
+        }
       }
 
       return response;

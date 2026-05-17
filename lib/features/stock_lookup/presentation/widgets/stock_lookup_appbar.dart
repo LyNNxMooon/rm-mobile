@@ -41,13 +41,19 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double iconBox = (isTablet ? 56 : 45) * uiScale;
-    final double actionHeight = (isTablet ? 50 : 45) * uiScale;
-    final double actionWidth = (isTablet ? 46 : 40) * uiScale;
+    
+    // Desktop-specific smaller sizes
+    final double iconBox = useDesktopNav ? 40 : ((isTablet ? 56 : 45) * uiScale);
+    final double actionHeight = useDesktopNav ? 36 : ((isTablet ? 50 : 45) * uiScale);
+    final double actionWidth = useDesktopNav ? 36 : ((isTablet ? 46 : 40) * uiScale);
+    final double iconSize = useDesktopNav ? 18 : 24;
+    final double titleFontSize = useDesktopNav ? 12 : 14;
+    final double subtitleFontSize = useDesktopNav ? 14 : 16;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -80,16 +86,16 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                     Text(
                       "Stock List",
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: titleFontSize,
                         color: isDark ? Colors.white70 : kThirdColor,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    SizedBox(height: useDesktopNav ? 2 : 5),
                     Text(
                       (AppGlobals.instance.shopfront ?? "RM-Shopfront")
                           .split('\\')
                           .last,
-                      style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
+                      style: getSmartTitle(color: kPrimaryColor, fontSize: subtitleFontSize),
                       maxLines: 1, // Prevent vertical overflow
                       overflow:
                           TextOverflow.ellipsis, // Handle long names gracefully
@@ -125,7 +131,7 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                   child: Icon(
                     widget.showBackArrow ? Icons.arrow_back_ios_new_rounded : Icons.home_filled,
                     color: kPrimaryColor,
-                    size: 24,
+                    size: iconSize,
                   ),
                 ),
               ),
@@ -152,7 +158,7 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                       child: Icon(
                         Icons.sync,
                         color: isDark ? Colors.white70 : Colors.grey,
-                        size: 24,
+                        size: iconSize,
                       ),
                     ),
                   );
@@ -182,7 +188,7 @@ class _StockLookupAppbarState extends State<StockLookupAppbar> {
                         child: Icon(
                           Icons.sync,
                           color: isDark ? Colors.white : Colors.blueGrey[800],
-                          size: 24,
+                          size: iconSize,
                         ),
                       ),
                     ),

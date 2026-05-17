@@ -19,6 +19,9 @@ ConnectShopfrontResponse _$ConnectShopfrontResponseFromJson(
       taxCodes: (json['taxCodes'] as List<dynamic>?)
           ?.map((e) => TaxCodeVO.fromJson(e as Map<String, dynamic>))
           .toList(),
+      autoChargeSale: json['autoChargeSale'] as bool?,
+      autoChargeSaleStock: (json['autoChargeSaleStock'] as num?)?.toInt(),
+      autoChargeSalePercent: (json['autoChargeSalePercent'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$ConnectShopfrontResponseToJson(
@@ -32,4 +35,7 @@ Map<String, dynamic> _$ConnectShopfrontResponseToJson(
       'salesCustom': instance.salesCustom,
       'reminder': instance.reminder,
       'taxCodes': instance.taxCodes,
+      'autoChargeSale': instance.autoChargeSale,
+      'autoChargeSaleStock': instance.autoChargeSaleStock,
+      'autoChargeSalePercent': instance.autoChargeSalePercent,
     };
