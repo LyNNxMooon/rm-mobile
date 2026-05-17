@@ -7,8 +7,8 @@ class ModernDialogStyles {
   ModernDialogStyles._();
 
   // Border radius values - more rounded for modern look
-  static const double dialogRadius = 28.0;
-  static const double headerRadius = 28.0;
+  static const double dialogRadius = 25.0;
+  static const double headerRadius = 25.0;
   static const double buttonRadius = 14.0;
   static const double cardRadius = 16.0;
   static const double inputRadius = 14.0;

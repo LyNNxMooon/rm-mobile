@@ -5,6 +5,7 @@ import 'package:rmmobile/constants/theme_colors.dart';
 import 'package:rmmobile/constants/txt_styles.dart';
 import 'package:rmmobile/features/stocktake/domain/entities/batch_commit_entities.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/batch_commit_bloc.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 
 /// Widget that displays batch commit progress with green ticks for completed batches
 class BatchCommitProgressWidget extends StatelessWidget {
@@ -40,38 +41,50 @@ class BatchCommitProgressWidget extends StatelessWidget {
     AppThemeColors colors,
     bool isDark,
   ) {
-    return Container(
-      margin: const EdgeInsets.only(left: 15, right: 15, top: 4, bottom: 4),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? colors.surfaceAlt : colors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: isDark ? Border.all(color: Colors.white30, width: 1) : null,
-        boxShadow: [
-          BoxShadow(
-            color: colors.cardShadow,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
+    final bool useDesktopNav = context.useDesktopNav;
+    final double horizontalMargin = useDesktopNav ? 12.0 : 15.0;
+    final double padding = useDesktopNav ? 10.0 : 12.0;
+    final double borderRadius = useDesktopNav ? 6.0 : 8.0;
+    final double fontSize = useDesktopNav ? 12.0 : 14.0;
+    final double spinnerSize = useDesktopNav ? 16.0 : 20.0;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: useDesktopNav ? 800 : double.infinity),
+        child: Container(
+          margin: EdgeInsets.only(left: horizontalMargin, right: horizontalMargin, top: useDesktopNav ? 3 : 4, bottom: useDesktopNav ? 3 : 4),
+          padding: EdgeInsets.all(padding),
+          decoration: BoxDecoration(
+            color: isDark ? colors.surfaceAlt : colors.surface,
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: isDark ? Border.all(color: Colors.white30, width: 1) : null,
+            boxShadow: [
+              BoxShadow(
+                color: colors.cardShadow,
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
+          child: Row(
+            children: [
+              SizedBox(
+                width: spinnerSize,
+                height: spinnerSize,
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: useDesktopNav ? 10 : 12),
+              Text(
+                state.message,
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: colors.onSurface,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Text(
-            state.message,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: colors.onSurface,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -82,22 +95,30 @@ class BatchCommitProgressWidget extends StatelessWidget {
     AppThemeColors colors,
     bool isDark,
   ) {
-    return Container(
-      margin: const EdgeInsets.only(left: 15, right: 15, top: 4, bottom: 4),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? colors.surfaceAlt : colors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: isDark ? Border.all(color: Colors.white30, width: 1) : null,
-        boxShadow: [
-          BoxShadow(
-            color: colors.cardShadow,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
+    final bool useDesktopNav = context.useDesktopNav;
+    final double horizontalMargin = useDesktopNav ? 12.0 : 15.0;
+    final double padding = useDesktopNav ? 10.0 : 12.0;
+    final double borderRadius = useDesktopNav ? 6.0 : 8.0;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: useDesktopNav ? 800 : double.infinity),
+        child: Container(
+          margin: EdgeInsets.only(left: horizontalMargin, right: horizontalMargin, top: useDesktopNav ? 3 : 4, bottom: useDesktopNav ? 3 : 4),
+          padding: EdgeInsets.all(padding),
+          decoration: BoxDecoration(
+            color: isDark ? colors.surfaceAlt : colors.surface,
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: isDark ? Border.all(color: Colors.white30, width: 1) : null,
+            boxShadow: [
+              BoxShadow(
+                color: colors.cardShadow,
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with overall progress
@@ -148,6 +169,8 @@ class BatchCommitProgressWidget extends StatelessWidget {
               ),
             ),
         ],
+      ),
+        ),
       ),
     );
   }

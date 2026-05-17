@@ -10,6 +10,8 @@ import '../BLoC/customer_lookup_bloc.dart';
 import '../BLoC/customer_lookup_events.dart';
 import '../BLoC/customer_lookup_states.dart';
 
+import '../../../../utils/responsive_utils.dart';
+
 class CustomerLookupAppbar extends StatelessWidget {
   final bool showBackArrow;
   
@@ -20,13 +22,17 @@ class CustomerLookupAppbar extends StatelessWidget {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double iconBox = (isTablet ? 56 : 45) * uiScale;
-    final double actionHeight = (isTablet ? 50 : 45) * uiScale;
-    final double actionWidth = (isTablet ? 46 : 40) * uiScale;
+    final double iconBox = useDesktopNav ? 40 : (isTablet ? 56 : 45) * uiScale;
+    final double actionHeight = useDesktopNav ? 36 : (isTablet ? 50 : 45) * uiScale;
+    final double actionWidth = useDesktopNav ? 36 : (isTablet ? 46 : 40) * uiScale;
+    final double titleFontSize = useDesktopNav ? 12 : 14;
+    final double shopNameFontSize = useDesktopNav ? 14 : 16;
+    final double iconSize = useDesktopNav ? 20 : 24;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -56,7 +62,7 @@ class CustomerLookupAppbar extends StatelessWidget {
                     Text(
                       'Customer List',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: titleFontSize,
                         color: isDark ? Colors.white70 : kThirdColor,
                       ),
                     ),
@@ -65,7 +71,7 @@ class CustomerLookupAppbar extends StatelessWidget {
                       (AppGlobals.instance.shopfront ?? 'RM-Shopfront')
                           .split('\\')
                           .last,
-                      style: getSmartTitle(color: kPrimaryColor, fontSize: 16),
+                      style: getSmartTitle(color: kPrimaryColor, fontSize: shopNameFontSize),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -98,7 +104,7 @@ class CustomerLookupAppbar extends StatelessWidget {
                   child: Icon(
                     showBackArrow ? Icons.arrow_back_ios_new_rounded : Icons.home_filled,
                     color: kPrimaryColor,
-                    size: 24,
+                    size: iconSize,
                   ),
                 ),
               ),
@@ -123,7 +129,7 @@ class CustomerLookupAppbar extends StatelessWidget {
                       child: Icon(
                         Icons.sync,
                         color: isDark ? Colors.white70 : Colors.grey,
-                        size: 24,
+                        size: iconSize,
                       ),
                     ),
                   );
@@ -152,7 +158,7 @@ class CustomerLookupAppbar extends StatelessWidget {
                       child: Icon(
                         Icons.sync,
                         color: isDark ? Colors.white : Colors.blueGrey[800],
-                        size: 24,
+                        size: iconSize,
                       ),
                     ),
                   ),

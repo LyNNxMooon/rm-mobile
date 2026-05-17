@@ -10,6 +10,7 @@ import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.d
 import 'package:rmmobile/utils/ios_done_bar.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/formatting_utils.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 
 class StockDetailsDialog extends StatelessWidget {
   const StockDetailsDialog({super.key});
@@ -18,86 +19,96 @@ class StockDetailsDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool useDesktopNav = context.useDesktopNav;
     final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     final double availableHeight = MediaQuery.of(context).size.height - keyboardHeight;
+    
+    final double dialogBorderRadius = useDesktopNav ? 12.0 : 16.0;
+    final double dialogMaxWidth = useDesktopNav ? 400.0 : double.infinity;
+    final double horizontalInset = useDesktopNav ? 32.0 : 24.0;
 
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: 24,
+        horizontal: horizontalInset,
         vertical: keyboardHeight > 0 ? 16 : 24,
       ),
-      child: Container(
-        constraints: BoxConstraints(
-          maxHeight: availableHeight - 48,
-        ),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2733) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BlocBuilder<StockDetailsBloc, StockFetchingStates>(
-            builder: (context, state) {
-              if (state is StockDetailsLoading) {
-                return Padding(
-                  padding: const EdgeInsets.all(40.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CupertinoActivityIndicator(radius: 15),
-                      const SizedBox(height: 15),
-                      Text(
-                        "Fetching details...",
-                        style: TextStyle(
-                          color: isDark ? Colors.white70 : kGreyColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              if (state is StockDetailsError) {
-                return Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: kErrorColor,
-                        size: 40,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        state.message,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isDark ? Colors.white70 : kGreyColor,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Text(
-                          "Close",
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: dialogMaxWidth),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: availableHeight - 48,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E2733) : Colors.white,
+            borderRadius: BorderRadius.circular(dialogBorderRadius),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(dialogBorderRadius),
+            child: BlocBuilder<StockDetailsBloc, StockFetchingStates>(
+              builder: (context, state) {
+                if (state is StockDetailsLoading) {
+                  return Padding(
+                    padding: EdgeInsets.all(useDesktopNav ? 32.0 : 40.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CupertinoActivityIndicator(radius: useDesktopNav ? 12 : 15),
+                        SizedBox(height: useDesktopNav ? 12 : 15),
+                        Text(
+                          "Fetching details...",
                           style: TextStyle(
-                            color: isDark ? colors.onHero : Colors.white,
+                            color: isDark ? Colors.white70 : kGreyColor,
+                            fontSize: useDesktopNav ? 12 : 14,
                           ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (state is StockDetailsError) {
+                  return Padding(
+                    padding: EdgeInsets.all(useDesktopNav ? 16.0 : 20.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: kErrorColor,
+                          size: useDesktopNav ? 32 : 40,
+                        ),
+                        SizedBox(height: useDesktopNav ? 8 : 10),
+                        Text(
+                          state.message,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : kGreyColor,
+                            fontSize: useDesktopNav ? 12 : 14,
+                          ),
+                        ),
+                        SizedBox(height: useDesktopNav ? 16 : 20),
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kPrimaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(useDesktopNav ? 8 : 10),
+                            ),
+                          ),
+                          child: Text(
+                            "Close",
+                            style: TextStyle(
+                              color: isDark ? colors.onHero : Colors.white,
+                              fontSize: useDesktopNav ? 12 : 14,
+                            ),
                         ),
                       ),
                     ],
@@ -139,6 +150,7 @@ class StockDetailsDialog extends StatelessWidget {
               return const SizedBox.shrink();
             },
           ),
+        ),
         ),
       ),
     );
@@ -219,6 +231,17 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    final double headerPaddingH = useDesktopNav ? 16.0 : 20.0;
+    final double headerPaddingTop = useDesktopNav ? 16.0 : 20.0;
+    final double headerPaddingBottom = useDesktopNav ? 8.0 : 10.0;
+    final double titleFontSize = useDesktopNav ? 15.0 : 18.0;
+    final double descFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double detailPaddingH = useDesktopNav ? 16.0 : 20.0;
+    final double detailPaddingV = useDesktopNav ? 8.0 : 10.0;
+    final double sectionPadding = useDesktopNav ? 16.0 : 20.0;
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -229,25 +252,25 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
               children: [
                 // --- HEADER ---
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                  padding: EdgeInsets.fromLTRB(headerPaddingH, headerPaddingTop, headerPaddingH, headerPaddingBottom),
                   child: Column(
                     children: [
                       Text(
                         "Stock Details",
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: titleFontSize,
                           fontWeight: FontWeight.bold,
                           color: kPrimaryColor,
                         ),
                       ),
-                      const SizedBox(height: 5),
+                      SizedBox(height: useDesktopNav ? 4 : 5),
                 Text(
                   widget.stock.description,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       color: isDark ? Colors.white : kThirdColor,
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: descFontSize,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -263,49 +286,57 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
 
           // --- DETAILS LIST ---
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: EdgeInsets.symmetric(horizontal: detailPaddingH, vertical: detailPaddingV),
             child: Column(
               children: [
-                _buildDetailRow(Icons.qr_code, "Barcode", widget.stock.barcode),
+                _buildDetailRow(Icons.qr_code, "Barcode", widget.stock.barcode, useDesktopNav),
                 _buildDetailRow(
                   Icons.layers_outlined,
                   "Department",
                   widget.stock.deptName ?? "-",
+                  useDesktopNav,
                 ),
                 _buildDetailRow(
                   Icons.category_outlined,
                   "Categories",
                   "${widget.stock.category1 ?? '-'} / ${widget.stock.category2 ?? '-'} / ${widget.stock.category3 ?? '-'}",
+                  useDesktopNav,
                 ),
                 _buildDetailRow(
                   Icons.text_fields,
                   "Custom 1",
                   widget.stock.custom1 ?? "-",
+                  useDesktopNav,
                 ),
                 _buildDetailRow(
                   Icons.text_fields,
                   "Custom 2",
                   widget.stock.custom2 ?? "-",
+                  useDesktopNav,
                 ),
                 _buildDetailRow(
                   Icons.shopping_bag_outlined,
                   "Supplier",
                   widget.stock.supplier,
+                  useDesktopNav,
                 ),
                 _buildDetailRow(
                   Icons.attach_money,
                   "Cost Price",
                   FormattingUtils.formatCurrencyWithDecimals(widget.cost, 2),
+                  useDesktopNav,
                 ),
                 _buildDetailRow(
                   Icons.attach_money,
                   "Sell Price",
                   FormattingUtils.formatCurrencyWithDecimals(widget.sell, 2),
+                  useDesktopNav,
                 ),
                 _buildDetailRow(
                   CupertinoIcons.cube_box_fill,
                   "In-Stock",
                   qty,
+                  useDesktopNav,
                 ),
               ],
             ),
@@ -318,7 +349,7 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
 
           // --- EDIT QUANTITY SECTION ---
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(sectionPadding),
             child: Column(
               children: [
                 Align(
@@ -326,20 +357,20 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                   child: Text(
                     "Update Count:",
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: useDesktopNav ? 11 : 13,
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white70 : kGreyColor,
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: useDesktopNav ? 6 : 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  padding: EdgeInsets.symmetric(horizontal: useDesktopNav ? 12 : 15),
                   decoration: BoxDecoration(
                     color: isDark
                         ? colors.surfaceAlt
                         : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(useDesktopNav ? 8 : 12),
                     border: Border.all(
                       color: kPrimaryColor,
                       width: 1.5,
@@ -360,7 +391,7 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                     ),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: useDesktopNav ? 15 : 18,
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : kThirdColor,
                     ),
@@ -376,15 +407,15 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       suffixIcon: Container(
-                        margin: const EdgeInsets.all(8),
-                        padding: const EdgeInsets.all(6),
+                        margin: EdgeInsets.all(useDesktopNav ? 6 : 8),
+                        padding: EdgeInsets.all(useDesktopNav ? 5 : 6),
                         decoration: BoxDecoration(
                           color: kPrimaryColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.edit,
-                          size: 22,
+                          size: useDesktopNav ? 18 : 22,
                           color: kPrimaryColor,
                         ),
                       ),
@@ -392,17 +423,17 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                     onSubmitted: (_) => _handleUpdate(),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: useDesktopNav ? 16 : 20),
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          padding: EdgeInsets.symmetric(vertical: useDesktopNav ? 6 : 8),
                           side: BorderSide(color: kPrimaryColor),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(useDesktopNav ? 8 : 12),
                           ),
                         ),
                         child: Text(
@@ -410,19 +441,20 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                           style: TextStyle(
                             color: kPrimaryColor,
                             fontWeight: FontWeight.bold,
+                            fontSize: useDesktopNav ? 12 : 14,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: useDesktopNav ? 10 : 12),
                     Expanded(
                       child: ElevatedButton(
                         onPressed: _handleUpdate,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          padding: EdgeInsets.symmetric(vertical: useDesktopNav ? 6 : 8),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(useDesktopNav ? 8 : 12),
                           ),
                           elevation: 0,
                         ),
@@ -431,6 +463,7 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                           style: TextStyle(
                             color: isDark ? colors.onHero : Colors.white,
                             fontWeight: FontWeight.bold,
+                            fontSize: useDesktopNav ? 12 : 14,
                           ),
                         ),
                       ),
@@ -454,22 +487,28 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(IconData icon, String label, String value, bool useDesktopNav) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final double verticalPadding = useDesktopNav ? 6.0 : 8.0;
+    final double iconContainerPadding = useDesktopNav ? 6.0 : 8.0;
+    final double iconSize = useDesktopNav ? 14.0 : 16.0;
+    final double labelFontSize = useDesktopNav ? 10.0 : 12.0;
+    final double valueFontSize = useDesktopNav ? 12.0 : 14.0;
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: verticalPadding),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(iconContainerPadding),
             decoration: BoxDecoration(
-              color: kPrimaryColor.withOpacity(0.1), // Icon background
+              color: kPrimaryColor.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 16, color: kPrimaryColor),
+            child: Icon(icon, size: iconSize, color: kPrimaryColor),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: useDesktopNav ? 10 : 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -477,7 +516,7 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: labelFontSize,
                     color: isDark ? Colors.white70 : kGreyColor,
                     fontWeight: FontWeight.w500,
                   ),
@@ -486,7 +525,7 @@ class _EditQuantityFormState extends State<_EditQuantityForm> {
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: valueFontSize,
                     color: isDark ? Colors.white : kThirdColor,
                     fontWeight: FontWeight.w600,
                   ),

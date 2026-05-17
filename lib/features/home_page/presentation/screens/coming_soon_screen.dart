@@ -16,11 +16,14 @@ class ComingSoonScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isTablet = context.isTablet;
-    final double outerCircle = isTablet ? 210 : 160;
-    final double innerCircle = isTablet ? 160 : 120;
-    final double iconSize = isTablet ? 78 : 60;
-    final double buttonHeight = isTablet ? 54 : 50;
-    final double sidePadding = isTablet ? 60 : 30;
+    final bool useDesktopNav = context.useDesktopNav;
+    final bool isDesktopOrTablet = isTablet || useDesktopNav;
+    final double outerCircle = isDesktopOrTablet ? 210 : 160;
+    final double innerCircle = isDesktopOrTablet ? 160 : 120;
+    final double iconSize = isDesktopOrTablet ? 78 : 60;
+    final double buttonHeight = isDesktopOrTablet ? 48 : 50;
+    final double sidePadding = useDesktopNav ? 50 : (isTablet ? 60 : 30);
+    final double maxContentWidth = useDesktopNav ? 600.0 : double.infinity;
 
     return Scaffold(
       backgroundColor: colors.bg,
@@ -37,7 +40,7 @@ class ComingSoonScreen extends StatelessWidget {
         ),
         title: Text(
           "Coming Soon",
-          style: getSmartTitle(color: colors.onHero, fontSize: 20),
+          style: getSmartTitle(color: colors.onHero, fontSize: useDesktopNav ? 18 : 20),
         ),
         centerTitle: true,
       ),
@@ -51,10 +54,13 @@ class ComingSoonScreen extends StatelessWidget {
               ),
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: sidePadding),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(height: constraints.maxHeight * 0.1),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxContentWidth),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(height: constraints.maxHeight * 0.1),
                     Stack(
                       alignment: Alignment.center,
                       children: [
@@ -104,88 +110,167 @@ class ComingSoonScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 40),
-                    SizedBox(
-                      width: double.infinity,
-                      height: buttonHeight,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          AlertInfo.show(
-                            context: context,
-                            text: "You'll be notified when it is ready!",
-                            typeInfo: TypeInfo.success,
-                            backgroundColor: colors.surface,
-                            iconColor: kPrimaryColor,
-                            textColor: colors.onSurface,
-                            padding: 70,
-                            position: MessagePosition.top,
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          foregroundColor: colors.onHero,
-                          minimumSize: Size(double.infinity, buttonHeight),
-                          padding: EdgeInsets.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 0,
-                          textStyle: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "Notify Me When Ready",
-                            textScaler: TextScaler.noScaling,
-                            maxLines: 1,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
+                    isDesktopOrTablet
+                        ? Center(
+                            child: SizedBox(
+                              width: 280,
+                              height: buttonHeight,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  AlertInfo.show(
+                                    context: context,
+                                    text: "You'll be notified when it is ready!",
+                                    typeInfo: TypeInfo.success,
+                                    backgroundColor: colors.surface,
+                                    iconColor: kPrimaryColor,
+                                    textColor: colors.onSurface,
+                                    padding: 70,
+                                    position: MessagePosition.top,
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: kPrimaryColor,
+                                  foregroundColor: colors.onHero,
+                                  minimumSize: Size(280, buttonHeight),
+                                  padding: EdgeInsets.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  elevation: 0,
+                                  textStyle: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Notify Me When Ready",
+                                  textScaler: TextScaler.noScaling,
+                                  maxLines: 1,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : SizedBox(
+                            width: double.infinity,
+                            height: buttonHeight,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                AlertInfo.show(
+                                  context: context,
+                                  text: "You'll be notified when it is ready!",
+                                  typeInfo: TypeInfo.success,
+                                  backgroundColor: colors.surface,
+                                  iconColor: kPrimaryColor,
+                                  textColor: colors.onSurface,
+                                  padding: 70,
+                                  position: MessagePosition.top,
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kPrimaryColor,
+                                foregroundColor: colors.onHero,
+                                minimumSize: Size(double.infinity, buttonHeight),
+                                padding: EdgeInsets.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                elevation: 0,
+                                textStyle: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              child: const Text(
+                                "Notify Me When Ready",
+                                textScaler: TextScaler.noScaling,
+                                maxLines: 1,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: buttonHeight,
-                      child: TextButton(
-                        onPressed: () => context.navigateBack(),
-                        style: TextButton.styleFrom(
-                          foregroundColor: kPrimaryColor,
-                          minimumSize: Size(double.infinity, buttonHeight),
-                          padding: EdgeInsets.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            "Go Back",
-                            textScaler: TextScaler.noScaling,
-                            maxLines: 1,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: kPrimaryColor,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
+                    isDesktopOrTablet
+                        ? Center(
+                            child: SizedBox(
+                              width: 280,
+                              height: buttonHeight,
+                              child: TextButton(
+                                onPressed: () => context.navigateBack(),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: kPrimaryColor,
+                                  minimumSize: Size(280, buttonHeight),
+                                  padding: EdgeInsets.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  textStyle: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Go Back",
+                                  textScaler: TextScaler.noScaling,
+                                  maxLines: 1,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: kPrimaryColor,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : SizedBox(
+                            width: double.infinity,
+                            height: buttonHeight,
+                            child: TextButton(
+                              onPressed: () => context.navigateBack(),
+                              style: TextButton.styleFrom(
+                                foregroundColor: kPrimaryColor,
+                                minimumSize: Size(double.infinity, buttonHeight),
+                                padding: EdgeInsets.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              child: const Text(
+                                "Go Back",
+                                textScaler: TextScaler.noScaling,
+                                maxLines: 1,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: kPrimaryColor,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    ),
                     SizedBox(height: constraints.maxHeight * 0.15),
                   ],
+                    ),
+                  ),
                 ),
               ),
             ),

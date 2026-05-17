@@ -16,6 +16,7 @@ import 'package:rmmobile/utils/navigation_extension.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../utils/responsive_utils.dart';
 
 class PendingCustomerQueueScreen extends StatefulWidget {
   final bool showSendButton;
@@ -129,12 +130,19 @@ class _PendingCustomerQueueScreenState
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double titleFontSize = useDesktopNav ? 14 : 16;
+    final double subtitleFontSize = useDesktopNav ? 11 : 12.5;
+    final double horizontalPadding = useDesktopNav ? 14 : 18;
+    final double itemSpacing = useDesktopNav ? 6 : 8;
+    final double topSpacer = useDesktopNav ? 8 : 10;
+    final double bottomButtonPadding = useDesktopNav ? 12 : 18;
 
     return Scaffold(
       backgroundColor: isDark ? colors.bg : kBgColor,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, size: useDesktopNav ? 20 : 24),
           onPressed: () => Navigator.of(context).pop(),
         ),
         titleSpacing: 0,
@@ -142,7 +150,7 @@ class _PendingCustomerQueueScreenState
           'Pending Customer Items',
           style: getSmartTitle(
             color: isDark ? Colors.white : colors.onSurface,
-            fontSize: 16,
+            fontSize: titleFontSize,
           ),
         ),
         backgroundColor: isDark ? colors.bg : kBgColor,
@@ -172,20 +180,20 @@ class _PendingCustomerQueueScreenState
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       "${entries.length} item(s) are queued and not sent yet.",
                       textAlign: TextAlign.left,
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: subtitleFontSize,
                         color: colors.onSurfaceMuted,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: topSpacer),
                 Expanded(
                   child: entries.isEmpty
                       ? Center(
@@ -195,13 +203,13 @@ class _PendingCustomerQueueScreenState
                           ),
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 8,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding,
+                            vertical: itemSpacing,
                           ),
                           itemCount: entries.length,
                           separatorBuilder: (context, index) =>
-                              const SizedBox(height: 8),
+                              SizedBox(height: itemSpacing),
                           itemBuilder: (context, index) {
                             final entry = entries[index];
                             final bool isCreation = entry.isCreation;
@@ -299,7 +307,7 @@ class _PendingCustomerQueueScreenState
                         ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
+                  padding: EdgeInsets.fromLTRB(horizontalPadding, 6, horizontalPadding, bottomButtonPadding),
                   child: Row(
                     children: [
                       Expanded(
@@ -397,33 +405,39 @@ class _PendingCustomerQueueScreenState
 
   Widget _buildLoadingTile(BuildContext context) {
     final colors = context.appColors;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double horizontalPadding = useDesktopNav ? 14 : 18;
+    final double tilePaddingV = useDesktopNav ? 8 : 10;
+    final double tilePaddingH = useDesktopNav ? 10 : 12;
+    final double fontSize = useDesktopNav ? 12 : 13;
+    final double spinnerSize = useDesktopNav ? 16 : 18;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Container(
-        margin: const EdgeInsets.only(top: 12, bottom: 8),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        margin: EdgeInsets.only(top: useDesktopNav ? 10 : 12, bottom: useDesktopNav ? 6 : 8),
+        padding: EdgeInsets.symmetric(vertical: tilePaddingV, horizontal: tilePaddingH),
         decoration: BoxDecoration(
           color: colors.surface,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
           border: Border.all(color: colors.divider),
         ),
         child: Row(
           children: [
-            const SizedBox(
-              width: 18,
-              height: 18,
+            SizedBox(
+              width: spinnerSize,
+              height: spinnerSize,
               child: CupertinoActivityIndicator(
                 color: kPrimaryColor,
-                radius: 10,
+                radius: useDesktopNav ? 8 : 10,
               ),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: useDesktopNav ? 8 : 10),
             Expanded(
               child: Text(
                 "Processing pending customer updates...",
                 style: TextStyle(
                   color: colors.onSurface,
-                  fontSize: 13,
+                  fontSize: fontSize,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -504,12 +518,22 @@ class _PendingCustomerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    final double uiScale = isTablet
+    final double uiScale = useDesktopNav ? 1.0 : isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
+    final double thumbnailSize = useDesktopNav ? 32 : (isTablet ? 44 : 36) * uiScale;
+    final double tilePaddingH = useDesktopNav ? 10 : 12;
+    final double tilePaddingV = useDesktopNav ? 8 : 10;
+    final double titleFontSize = useDesktopNav ? 12 : 14;
+    final double barcodeFontSize = useDesktopNav ? 11 : 13;
+    final double errorFontSize = useDesktopNav ? 10.5 : 12;
+    final double warningFontSize = useDesktopNav ? 10 : 11.5;
+    final double statusFontSize = useDesktopNav ? 10 : 11.5;
+    final double chevronSize = useDesktopNav ? 18 : 20;
+    final double borderRadius = useDesktopNav ? 8 : 10;
 
     final String title = customer?.displayName ?? pendingCustomerName(update);
     final String barcode = customer?.barcode ?? pendingCustomerBarcode(update);
@@ -520,7 +544,7 @@ class _PendingCustomerTile extends StatelessWidget {
         color: isDark
             ? Color.lerp(colors.surface, Colors.white, 0.06)
             : colors.surface,
-        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
         border: isDark
             ? Border.all(color: Colors.white.withOpacity(0.18))
             : null,
@@ -535,14 +559,14 @@ class _PendingCustomerTile extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: tilePaddingH, vertical: tilePaddingV),
       child: Row(
         children: [
           Container(
             width: thumbnailSize,
             height: thumbnailSize,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+              borderRadius: BorderRadius.circular(useDesktopNav ? 5 : isTablet ? 8 : 6),
             ),
             child: ClipOval(
               child: customer == null
@@ -563,7 +587,7 @@ class _PendingCustomerTile extends StatelessWidget {
                     ),
             ),
           ),
-          SizedBox(width: (isTablet ? 17 : 15) * uiScale),
+          SizedBox(width: useDesktopNav ? 10 : (isTablet ? 17 : 15) * uiScale),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,28 +595,28 @@ class _PendingCustomerTile extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: titleFontSize,
                     fontWeight: FontWeight.w600,
                     color: colors.onSurface,
                   ),
                 ),
-                const SizedBox(height: 3),
+                SizedBox(height: useDesktopNav ? 2 : 3),
                 Text(
                   barcode,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'monospace',
-                    fontSize: 13,
+                    fontSize: barcodeFontSize,
                     color: kPrimaryColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (update.hasConflict)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: EdgeInsets.only(top: useDesktopNav ? 3 : 4),
                     child: Text(
                       "This record has been modified in RetailManager, please review and decide whether you still want to update it.",
                       style: TextStyle(
-                        fontSize: 11.5,
+                        fontSize: warningFontSize,
                         color: Colors.orange.shade700,
                         fontWeight: FontWeight.w500,
                       ),
@@ -601,11 +625,11 @@ class _PendingCustomerTile extends StatelessWidget {
                 if (update.errorMessage != null &&
                     update.errorMessage!.trim().isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: EdgeInsets.only(top: useDesktopNav ? 3 : 4),
                     child: Text(
                       update.errorMessage!,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: errorFontSize,
                         color: Colors.red.shade600,
                         fontWeight: FontWeight.w600,
                       ),
@@ -616,10 +640,10 @@ class _PendingCustomerTile extends StatelessWidget {
           ),
           if (statusLabel != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: EdgeInsets.symmetric(horizontal: useDesktopNav ? 6 : 8, vertical: useDesktopNav ? 3 : 4),
               decoration: BoxDecoration(
                 color: (statusColor ?? kPrimaryColor).withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(useDesktopNav ? 10 : 12),
                 border: Border.all(
                   color: (statusColor ?? kPrimaryColor).withOpacity(0.6),
                 ),
@@ -627,14 +651,14 @@ class _PendingCustomerTile extends StatelessWidget {
               child: Text(
                 statusLabel!,
                 style: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: statusFontSize,
                   fontWeight: FontWeight.w700,
                   color: statusColor ?? kPrimaryColor,
                 ),
               ),
             ),
           if (canNavigate)
-            Icon(Icons.chevron_right, color: colors.onSurfaceMuted, size: 20),
+            Icon(Icons.chevron_right, color: colors.onSurfaceMuted, size: chevronSize),
         ],
       ),
     );
@@ -643,7 +667,7 @@ class _PendingCustomerTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(borderRadius),
       child: tile,
     );
   }
@@ -666,12 +690,21 @@ class _PendingCustomerCreationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    final double uiScale = isTablet
+    final double uiScale = useDesktopNav ? 1.0 : isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
+    final double thumbnailSize = useDesktopNav ? 32 : (isTablet ? 44 : 36) * uiScale;
+    final double tilePaddingH = useDesktopNav ? 10 : 12;
+    final double tilePaddingV = useDesktopNav ? 8 : 10;
+    final double titleFontSize = useDesktopNav ? 12 : 14;
+    final double barcodeFontSize = useDesktopNav ? 11 : 13;
+    final double errorFontSize = useDesktopNav ? 10.5 : 12;
+    final double statusFontSize = useDesktopNav ? 10 : 11.5;
+    final double chevronSize = useDesktopNav ? 18 : 20;
+    final double borderRadius = useDesktopNav ? 8 : 10;
 
     final String title = pendingCustomerCreationName(creation);
     final String barcode = pendingCustomerCreationBarcode(creation);
@@ -682,7 +715,7 @@ class _PendingCustomerCreationTile extends StatelessWidget {
         color: isDark
             ? Color.lerp(colors.surface, Colors.white, 0.06)
             : colors.surface,
-        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
         border: isDark
             ? Border.all(color: Colors.white.withOpacity(0.18))
             : null,
@@ -697,14 +730,14 @@ class _PendingCustomerCreationTile extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: tilePaddingH, vertical: tilePaddingV),
       child: Row(
         children: [
           Container(
             width: thumbnailSize,
             height: thumbnailSize,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+              borderRadius: BorderRadius.circular(useDesktopNav ? 5 : isTablet ? 8 : 6),
             ),
             child: ClipOval(
               child: Container(
@@ -720,7 +753,7 @@ class _PendingCustomerCreationTile extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(width: (isTablet ? 17 : 15) * uiScale),
+          SizedBox(width: useDesktopNav ? 10 : (isTablet ? 17 : 15) * uiScale),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -728,17 +761,17 @@ class _PendingCustomerCreationTile extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: titleFontSize,
                     fontWeight: FontWeight.w600,
                     color: colors.onSurface,
                   ),
                 ),
-                const SizedBox(height: 3),
+                SizedBox(height: useDesktopNav ? 2 : 3),
                 Text(
                   barcode,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'monospace',
-                    fontSize: 13,
+                    fontSize: barcodeFontSize,
                     color: kPrimaryColor,
                     fontWeight: FontWeight.w600,
                   ),
@@ -746,11 +779,11 @@ class _PendingCustomerCreationTile extends StatelessWidget {
                 if (creation.errorMessage != null &&
                     creation.errorMessage!.trim().isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: EdgeInsets.only(top: useDesktopNav ? 3 : 4),
                     child: Text(
                       creation.errorMessage!,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: errorFontSize,
                         color: Colors.red.shade600,
                         fontWeight: FontWeight.w600,
                       ),
@@ -761,10 +794,10 @@ class _PendingCustomerCreationTile extends StatelessWidget {
           ),
           if (statusLabel != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: EdgeInsets.symmetric(horizontal: useDesktopNav ? 6 : 8, vertical: useDesktopNav ? 3 : 4),
               decoration: BoxDecoration(
                 color: (statusColor ?? kPrimaryColor).withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(useDesktopNav ? 10 : 12),
                 border: Border.all(
                   color: (statusColor ?? kPrimaryColor).withOpacity(0.6),
                 ),
@@ -772,14 +805,14 @@ class _PendingCustomerCreationTile extends StatelessWidget {
               child: Text(
                 statusLabel!,
                 style: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: statusFontSize,
                   fontWeight: FontWeight.w700,
                   color: statusColor ?? kPrimaryColor,
                 ),
               ),
             ),
           if (canNavigate)
-            Icon(Icons.chevron_right, color: colors.onSurfaceMuted, size: 20),
+            Icon(Icons.chevron_right, color: colors.onSurfaceMuted, size: chevronSize),
         ],
       ),
     );
@@ -788,7 +821,7 @@ class _PendingCustomerCreationTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(borderRadius),
       child: tile,
     );
   }

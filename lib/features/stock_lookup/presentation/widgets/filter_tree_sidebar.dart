@@ -35,6 +35,8 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
   String? _selectedCat2;
   String? _selectedCat3;
 
+  bool get _isDesktop => context.useDesktopNav;
+
   @override
   void initState() {
     super.initState();
@@ -127,7 +129,7 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
       child: Column(
         children: [
           // Top spacing to align with appbar
-          const SizedBox(height: 25),
+          SizedBox(height: _isDesktop ? 12 : 25),
 
           // Header
           _buildHeader(colors, isDark, uiScale),
@@ -168,10 +170,17 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
         _selectedCat2 != null ||
         _selectedCat3 != null;
 
+    // Desktop-specific smaller sizes
+    final double iconSize = _isDesktop ? 16 : 20;
+    final double titleFontSize = _isDesktop ? 13 : 16;
+    final double clearFontSize = _isDesktop ? 11 : 13;
+    final double hPadding = _isDesktop ? 12 : 16;
+    final double vPadding = _isDesktop ? 10 : 14;
+
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: 16 * uiScale,
-        vertical: 14 * uiScale,
+        horizontal: hPadding * uiScale,
+        vertical: vPadding * uiScale,
       ),
       decoration: BoxDecoration(
         color: isDark
@@ -187,16 +196,16 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
         children: [
           Icon(
             Icons.folder_outlined,
-            size: 20 * uiScale,
+            size: iconSize * uiScale,
             color: kPrimaryColor,
           ),
-          SizedBox(width: 10 * uiScale),
+          SizedBox(width: (_isDesktop ? 8 : 10) * uiScale),
           Expanded(
             child: Text(
               'Dept/Cats',
               style: getSmartTitle(
                 color: kPrimaryColor,
-                fontSize: 16,
+                fontSize: titleFontSize,
               ),
             ),
           ),
@@ -205,12 +214,12 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
               onTap: _clearFilters,
               borderRadius: BorderRadius.circular(6),
               child: Padding(
-                padding: EdgeInsets.all(4 * uiScale),
+                padding: EdgeInsets.all((_isDesktop ? 3 : 4) * uiScale),
                 child: Text(
                   'Clear',
                   style: TextStyle(
                     color: kPrimaryColor,
-                    fontSize: 13 * uiScale,
+                    fontSize: clearFontSize * uiScale,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -401,18 +410,25 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
     required bool isDark,
     required double uiScale,
   }) {
-    final leftPadding = 8.0 + (level * 16.0);
     final bool isMediumTablet = context.isMediumTablet;
     
-    // Reduced padding and font size for medium tablets
-    final double verticalPadding = isMediumTablet ? 10 : 16;
-    final double fontSize = isMediumTablet ? 13 : 14;
-    final double iconSize = isMediumTablet ? 14 : 16;
+    // Desktop-specific smaller sizes
+    final double baseLeftPadding = _isDesktop ? 6.0 : 8.0;
+    final double levelIndent = _isDesktop ? 12.0 : 16.0;
+    final leftPadding = baseLeftPadding + (level * levelIndent);
+    
+    // Reduced padding and font size for desktop and medium tablets
+    final double verticalPadding = _isDesktop ? 8 : (isMediumTablet ? 10 : 16);
+    final double fontSize = _isDesktop ? 11 : (isMediumTablet ? 13 : 14);
+    final double iconSize = _isDesktop ? 12 : (isMediumTablet ? 14 : 16);
+    final double iconPadding = _isDesktop ? 4 : 6;
+    final double hMargin = _isDesktop ? 6 : 8;
+    final double vMargin = _isDesktop ? 2 : (isMediumTablet ? 3 : 5);
 
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: 8 * uiScale,
-        vertical: (isMediumTablet ? 3 : 5) * uiScale,
+        horizontal: hMargin * uiScale,
+        vertical: vMargin * uiScale,
       ),
       child: Material(
         color: Colors.transparent,
@@ -423,11 +439,11 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
               onExpandTap();
             }
           },
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(_isDesktop ? 6 : 8),
           child: Container(
             padding: EdgeInsets.only(
               left: leftPadding * uiScale,
-              right: 12 * uiScale,
+              right: (_isDesktop ? 8 : 12) * uiScale,
               top: verticalPadding * uiScale,
               bottom: verticalPadding * uiScale,
             ),
@@ -437,7 +453,7 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
                   : (isDark
                       ? colors.surface.withOpacity(0.5)
                       : Colors.white),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(_isDesktop ? 6 : 8),
               border: Border.all(
                 color: isSelected
                     ? kPrimaryColor.withOpacity(0.6)
@@ -449,7 +465,7 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
                   color: isDark
                       ? Colors.black.withOpacity(0.3)
                       : Colors.black.withOpacity(0.1),
-                  blurRadius: 6,
+                  blurRadius: _isDesktop ? 4 : 6,
                   offset: const Offset(0, 3),
                 ),
               ],
@@ -458,7 +474,7 @@ class _FilterTreeSidebarState extends State<FilterTreeSidebar> {
               children: [
                 // Icon
                 Container(
-                  padding: EdgeInsets.all(6 * uiScale),
+                  padding: EdgeInsets.all(iconPadding * uiScale),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? kPrimaryColor.withOpacity(0.2)

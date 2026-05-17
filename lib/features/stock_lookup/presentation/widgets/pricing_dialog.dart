@@ -101,19 +101,22 @@ class _PricingDialogState extends State<PricingDialog> {
     //final Color surfaceAlt = isDark ? colors.surfaceAlt : Colors.grey.shade50;
     final Color divider = isDark ? colors.divider : Colors.grey.shade300;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
+    final bool useSideBySide = isTablet || useDesktopNav;
     
-    final double headerSize = isTablet ? 16 : 13;
-    final double textSize = isTablet ? 15 : 13;
-    final double priceSize = isTablet ? 15 : 13;
+    // Desktop-specific smaller sizes
+    final double headerSize = useDesktopNav ? 12 : (isTablet ? 16 : 13);
+    final double textSize = useDesktopNav ? 12 : (isTablet ? 15 : 13);
+    final double priceSize = useDesktopNav ? 12 : (isTablet ? 15 : 13);
     
     // ALIGNMENT FIX: Adjusted widths so "Amount" has room to breathe and "Grade" lines up
-    final double gradeColWidth = isTablet ? 90.0 : 75.0; 
-    final double amountColWidth = isTablet ? 110.0 : 80.0; 
-    final double middleGap = isTablet ? 16.0 : 8.0;
+    final double gradeColWidth = useDesktopNav ? 70.0 : (isTablet ? 90.0 : 75.0); 
+    final double amountColWidth = useDesktopNav ? 90.0 : (isTablet ? 110.0 : 80.0); 
+    final double middleGap = useDesktopNav ? 10.0 : (isTablet ? 16.0 : 8.0);
     
-    final double inputHeight = isTablet ? 42.0 : 34.0;
-    final double rowSpacing = isTablet ? 18.0 : 10.0;
-    final double stockColWidth = isTablet ? 0.0 : 84.0;
+    final double inputHeight = useDesktopNav ? 32.0 : (isTablet ? 42.0 : 34.0);
+    final double rowSpacing = useDesktopNav ? 8.0 : (isTablet ? 18.0 : 10.0);
+    final double stockColWidth = useSideBySide ? 0.0 : 84.0;
     final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     final double availableHeight = MediaQuery.of(context).size.height - keyboardHeight;
     final dialogTheme = DialogActionTheme(colors: colors, isDark: isDark);
@@ -121,18 +124,18 @@ class _PricingDialogState extends State<PricingDialog> {
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: isTablet ? 80 : 24,
+        horizontal: useDesktopNav ? 100 : (isTablet ? 80 : 24),
         vertical: keyboardHeight > 0 ? 16 : 24,
       ),
       child: Container(
         constraints: BoxConstraints(
-          maxWidth: isTablet ? 780 : 680,
+          maxWidth: useDesktopNav ? 650 : (isTablet ? 780 : 680),
           maxHeight: availableHeight - 48,
         ),
-        padding: EdgeInsets.all(isTablet ? 24 : 18),
+        padding: EdgeInsets.all(useDesktopNav ? 16 : (isTablet ? 24 : 18)),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E2733) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(useDesktopNav ? 12 : 16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
@@ -153,7 +156,7 @@ class _PricingDialogState extends State<PricingDialog> {
                   child: Text(
                     "Pricing Grades",
                     style: TextStyle(
-                      fontSize: isTablet ? 18 : 16,
+                      fontSize: useDesktopNav ? 14 : (isTablet ? 18 : 16),
                       fontWeight: FontWeight.w700,
                       color: isDark ? Colors.white : Colors.black87,
                     ),
@@ -163,21 +166,21 @@ class _PricingDialogState extends State<PricingDialog> {
                   onPressed: () => Navigator.of(context).pop(),
                   icon: Icon(
                     Icons.close,
-                    size: isTablet ? 24 : 22,
+                    size: useDesktopNav ? 18 : (isTablet ? 24 : 22),
                     color: isDark ? Colors.white70 : Colors.black54,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: useDesktopNav ? 10 : 16),
             // Scrollable content
             Flexible(
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(height: isTablet ? 4 : 2),
-                    isTablet
+                    SizedBox(height: useSideBySide ? 4 : 2),
+                    useSideBySide
                         ? IntrinsicHeight(
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,7 +211,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                           Expanded(
                                             child: Container(
                                               margin: EdgeInsets.only(right: middleGap),
-                                              padding: EdgeInsets.only(left: isTablet ? 12 : 8),
+                                              padding: EdgeInsets.only(left: useSideBySide ? 12 : 8),
                                               child: Text(
                                                 "Rule",
                                                 style: TextStyle(
@@ -222,7 +225,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                           SizedBox(
                                             width: amountColWidth,
                                             child: Padding(
-                                              padding: EdgeInsets.only(left: isTablet ? 12 : 8),
+                                              padding: EdgeInsets.only(left: useSideBySide ? 12 : 8),
                                               child: Text(
                                                 "Amount",
                                                 style: TextStyle(
@@ -235,7 +238,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                           ),
                                         ],
                                       ),
-                                      SizedBox(height: isTablet ? 16 : 10),
+                                      SizedBox(height: useSideBySide ? 16 : 10),
                                       ..._rows.map((row) => _buildInputRow(
                                           row,
                                           textSize,
@@ -244,7 +247,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                           amountColWidth,
                                           middleGap,
                                           rowSpacing,
-                                          isTablet
+                                          useSideBySide
                                       )),
                                     ],
                                   ),
@@ -254,7 +257,7 @@ class _PricingDialogState extends State<PricingDialog> {
                                 Container(
                                   width: 1,
                                   color: divider,
-                                  margin: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 12),
+                                  margin: EdgeInsets.symmetric(horizontal: useSideBySide ? 20 : 12),
                                 ),
 
                                 // Right Column (Calculated Stock Prices)
@@ -263,8 +266,8 @@ class _PricingDialogState extends State<PricingDialog> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _buildLevelHeader(headerSize, textColor, isTablet),
-                                      SizedBox(height: isTablet ? 16 : 10),
+                                      _buildLevelHeader(headerSize, textColor, useSideBySide),
+                                      SizedBox(height: useSideBySide ? 16 : 10),
                                       ..._rows.map((row) => Container(
                                             height: inputHeight,
                                             margin: EdgeInsets.only(bottom: rowSpacing),
@@ -288,8 +291,8 @@ class _PricingDialogState extends State<PricingDialog> {
                         : Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildLevelHeader(16, textColor, isTablet),
-                              SizedBox(height: isTablet ? 16 : 10),
+                              _buildLevelHeader(16, textColor, useSideBySide),
+                              SizedBox(height: useSideBySide ? 16 : 10),
                               ..._rows.map((row) => _buildMobileInputRow(
                                     row,
                                     textSize,
@@ -306,7 +309,7 @@ class _PricingDialogState extends State<PricingDialog> {
                       "This is the pricing grades at Stock Level Only! If you need to view other Depts/Cats & Global level pricing rules, please refer to your RetailManager System.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: isTablet ? 11 : 9.5,
+                        fontSize: useDesktopNav ? 9 : (isTablet ? 11 : 9.5),
                         color: mutedText,
                         fontWeight: FontWeight.w600,
                         height: 1.3,

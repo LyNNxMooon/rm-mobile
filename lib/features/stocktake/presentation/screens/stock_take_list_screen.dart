@@ -18,6 +18,7 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../utils/responsive_utils.dart';
 import '../BLoC/stocktake_events.dart';
 import '../BLoC/stocktake_states.dart';
 import '../widgets/filter_dialog.dart';
@@ -343,6 +344,10 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   }
 
   Widget _buildItemsList() {
+    final bool useDesktopNav = context.useDesktopNav;
+    final double listPadding = useDesktopNav ? 12.0 : 15.0;
+    final double itemSpacing = useDesktopNav ? 5.0 : 7.0;
+
     return BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
       builder: (context, state) {
         if (state is LoadingStocktakeList) {
@@ -358,7 +363,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           return Center(
             child: Text(
               state.message,
-              style: getSmartTitle(color: kErrorColor, fontSize: 16),
+              style: getSmartTitle(color: kErrorColor, fontSize: useDesktopNav ? 14 : 16),
             ),
           );
         }
@@ -366,14 +371,19 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         if (state is StocktakeListLoaded) {
           if (state.stocktakeList.isEmpty) return _buildEmptyState();
 
-          return AnimationLimiter(
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(15, 0, 15, 80),
-              separatorBuilder: (_, _) => const SizedBox(height: 7),
-              physics: const BouncingScrollPhysics(),
-              itemCount: state.stocktakeList.length,
-              itemBuilder: (context, index) =>
-                  _itemTile(state.stocktakeList[index], index),
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: useDesktopNav ? 800 : double.infinity),
+              child: AnimationLimiter(
+                child: ListView.separated(
+                  padding: EdgeInsets.fromLTRB(listPadding, 0, listPadding, 80),
+                  separatorBuilder: (_, _) => SizedBox(height: itemSpacing),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: state.stocktakeList.length,
+                  itemBuilder: (context, index) =>
+                      _itemTile(state.stocktakeList[index], index),
+                ),
+              ),
             ),
           );
         }
@@ -401,6 +411,16 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   Widget _itemTile(CountedStockVO stock, int index) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+
+    // Desktop sizing
+    final double tilePaddingH = useDesktopNav ? 12.0 : 16.0;
+    final double tilePaddingV = useDesktopNav ? 8.0 : 10.0;
+    final double titleFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double barcodeFontSize = useDesktopNav ? 11.0 : 12.0;
+    final double iconSize = useDesktopNav ? 16.0 : 18.0;
+    final double borderRadius = useDesktopNav ? 8.0 : 10.0;
+
     return AnimationConfiguration.staggeredList(
       position: index,
       duration: const Duration(milliseconds: 500),
@@ -421,8 +441,8 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                   foregroundColor: colors.onHero,
                   icon: Icons.delete,
                   label: 'Delete',
-                  borderRadius: const BorderRadius.horizontal(
-                    right: Radius.circular(10),
+                  borderRadius: BorderRadius.horizontal(
+                    right: Radius.circular(borderRadius),
                   ),
                 ),
               ],
@@ -442,13 +462,13 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                 );
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+                padding: EdgeInsets.symmetric(
+                  horizontal: tilePaddingH,
+                  vertical: tilePaddingV,
                 ),
                 decoration: BoxDecoration(
                   color: isDark ? colors.surfaceAlt : colors.surface,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(borderRadius),
                   border: isDark
                       ? Border.all(color: Colors.white30, width: 1)
                       : null,
@@ -464,10 +484,10 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                   children: [
                     Icon(
                       Icons.cloud_done_outlined,
-                      size: 18,
+                      size: iconSize,
                       color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                     ),
-                    const SizedBox(width: 15),
+                    SizedBox(width: useDesktopNav ? 12 : 15),
 
                     Expanded(
                       child: Column(
@@ -479,39 +499,37 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: getSmartTitle(
                               color: isDark ? Colors.white : colors.onSurface,
-                              fontSize: 14,
+                              fontSize: titleFontSize,
                             ),
                           ),
-                          const SizedBox(height: 2), // Spacing
+                          SizedBox(height: useDesktopNav ? 1 : 2),
                           Wrap(
-                            // Wrap handles overflow better than Row here
-                            spacing: 8,
-                            runSpacing: 4,
+                            spacing: useDesktopNav ? 6 : 8,
+                            runSpacing: useDesktopNav ? 3 : 4,
                             children: [
                               Text(
                                 stock.barcode,
                                 style: TextStyle(
                                   fontFamily: 'monospace',
-                                  fontSize: 12,
+                                  fontSize: barcodeFontSize,
                                   fontWeight: FontWeight.w600,
                                   color: kPrimaryColor,
                                 ),
                               ),
-                              // Vertical Divider Visual
                               Text(
                                 "|",
                                 style: TextStyle(
                                   color: isDark
                                       ? Colors.white54
                                       : colors.onSurfaceMuted,
-                                  fontSize: 12,
+                                  fontSize: barcodeFontSize,
                                 ),
                               ),
                               Text(
                                 "In-Stock: ${stock.inStock}",
                                 style: TextStyle(
                                   fontFamily: 'monospace',
-                                  fontSize: 12,
+                                  fontSize: barcodeFontSize,
                                   fontWeight: FontWeight.w600,
                                   color: kPrimaryColor,
                                 ),
@@ -521,8 +539,8 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    _buildQtyBadge(stock.quantity),
+                    SizedBox(width: useDesktopNav ? 8 : 10),
+                    _buildQtyBadge(stock.quantity, useDesktopNav),
                   ],
                 ),
               ),
@@ -533,7 +551,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     );
   }
 
-  Widget _buildQtyBadge(num qty) {
+  Widget _buildQtyBadge(num qty, bool useDesktopNav) {
     String formattedQty;
 
     if (qty % 1 == 0) {
@@ -549,15 +567,18 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: useDesktopNav ? 8 : 10,
+        vertical: useDesktopNav ? 3 : 4,
+      ),
       decoration: BoxDecoration(
         color: kPrimaryColor.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
       ),
       child: Text(
         "Counted: $formattedQty",
-        style: const TextStyle(
-          fontSize: 12.5,
+        style: TextStyle(
+          fontSize: useDesktopNav ? 11.0 : 12.5,
           fontWeight: FontWeight.w900,
           color: kPrimaryColor,
         ),

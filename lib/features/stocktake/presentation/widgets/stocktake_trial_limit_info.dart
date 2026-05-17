@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
@@ -13,9 +14,19 @@ class StocktakeTrialLimitInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15.0),
-      child: BlocBuilder<StocktakeLimitBloc, StocktakeLimitStates>(
+    final bool useDesktopNav = context.useDesktopNav;
+    final double horizontalPadding = useDesktopNav ? 12.0 : 15.0;
+    final double borderRadius = useDesktopNav ? 8.0 : 12.0;
+    final double iconSize = useDesktopNav ? 16.0 : 18.0;
+    final double fontSize = useDesktopNav ? 12.0 : 13.0;
+    final double padding = useDesktopNav ? 10.0 : 12.0;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: useDesktopNav ? 800 : double.infinity),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+          child: BlocBuilder<StocktakeLimitBloc, StocktakeLimitStates>(
         builder: (context, state) {
           if (state is StocktakeLimitLoading) {
             return const SizedBox.shrink();
@@ -30,13 +41,13 @@ class StocktakeTrialLimitInfo extends StatelessWidget {
                 "Trial Limit: ${state.limit}   Used: ${state.used}   Remaining: ${state.remaining}";
 
             return Container(
-              margin: const EdgeInsets.only(top: 4, bottom: 4),
-              padding: const EdgeInsets.all(12),
+              margin: EdgeInsets.only(top: useDesktopNav ? 3 : 4, bottom: useDesktopNav ? 3 : 4),
+              padding: EdgeInsets.all(padding),
               decoration: BoxDecoration(
                 color: isDark
                   ? colors.surfaceAlt.withOpacity(0.85)
                   : kSecondaryColor,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(borderRadius),
                 border: isDark
                   ? Border.all(color: Colors.white30, width: 1)
                   : null,
@@ -52,13 +63,13 @@ class StocktakeTrialLimitInfo extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lock_clock, color: kPrimaryColor, size: 18),
-                  const SizedBox(width: 8),
+                  Icon(Icons.lock_clock, color: kPrimaryColor, size: iconSize),
+                  SizedBox(width: useDesktopNav ? 6 : 8),
                   Expanded(
                     child: Text(
                       summary,
-                      style: const TextStyle(
-                        fontSize: 13,
+                      style: TextStyle(
+                        fontSize: fontSize,
                         fontWeight: FontWeight.w600,
                         color: kPrimaryColor,
                       ),
@@ -71,6 +82,8 @@ class StocktakeTrialLimitInfo extends StatelessWidget {
 
           return const SizedBox.shrink();
         },
+      ),
+        ),
       ),
     );
   }

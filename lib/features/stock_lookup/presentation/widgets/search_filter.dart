@@ -28,13 +28,53 @@ class SearchFilterBar extends StatelessWidget {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    final double uiScale = isTablet
+    final double uiScale = isTablet || useDesktopNav
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
 
-    // Mobile: scanner on left, filter on right
+    // Desktop: no scanner (no camera), search icon prefix
     // Tablet: search icon prefix, scanner on right
+    // Mobile: scanner on left, filter on right
+    if (useDesktopNav) {
+      return Row(
+        children: [
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              onChanged: onChanged,
+              onTap: onSearchFocus,
+              style: TextStyle(
+                color: isDark ? Colors.white : colors.onSurface,
+                fontSize: 12,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search by barcode, description, custom1, or custom2',
+                hintStyle: TextStyle(
+                  color: isDark ? Colors.white70 : kThirdColor,
+                  fontSize: 12,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: isDark ? Colors.white70 : Colors.blueGrey[700],
+                  size: 18,
+                ),
+              ),
+            ),
+          ),
+          if (onSearchModeChanged != null)
+            SearchModeSelector(
+              currentMode: searchMode,
+              onModeChanged: onSearchModeChanged!,
+            ),
+          const SizedBox(width: 8),
+        ],
+      );
+    }
+    
     if (isTablet) {
       return Row(
         children: [

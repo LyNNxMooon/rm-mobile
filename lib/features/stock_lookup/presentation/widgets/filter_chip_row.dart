@@ -32,10 +32,19 @@ class FilterChipRow extends StatelessWidget {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
+
+    // Desktop-specific smaller sizes
+    final double hPadding = useDesktopNav ? 6 : ((isTablet ? 10 : 7) * uiScale);
+    final double vPadding = useDesktopNav ? 4 : ((isTablet ? 8 : 5) * uiScale);
+    final double fontSize = useDesktopNav ? 11 : 13;
+    final double sortIconSize = useDesktopNav ? 12 : ((isTablet ? 16 : 14) * uiScale);
+    final double borderRadius = useDesktopNav ? 16 : (isTablet ? 24 : 20);
+    final double chipSpacing = useDesktopNav ? 5 : (isTablet ? 8.0 : 6.0);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -43,20 +52,20 @@ class FilterChipRow extends StatelessWidget {
         children: _filters.map((filter) {
           final isSelected = selectedFilter == filter;
           return Padding(
-            padding: EdgeInsets.only(right: isTablet ? 8.0 : 6.0),
+            padding: EdgeInsets.only(right: chipSpacing),
             child: InkWell(
               onTap: () => onFilterChanged(filter),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: EdgeInsets.symmetric(
-                  horizontal: (isTablet ? 10 : 7) * uiScale,
-                  vertical: (isTablet ? 8 : 5) * uiScale,
+                  horizontal: hPadding,
+                  vertical: vPadding,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? kPrimaryColor
                       : (isDark ? colors.surface : kSecondaryColor),
-                  borderRadius: BorderRadius.circular(isTablet ? 24 : 20),
+                  borderRadius: BorderRadius.circular(borderRadius),
                   border: Border.all(
                     color: isSelected
                         ? kPrimaryColor
@@ -75,18 +84,18 @@ class FilterChipRow extends StatelessWidget {
                             : (isDark
                                 ? Colors.white70
                                 : Colors.blueGrey[700]),
-                        fontSize: 13,
+                        fontSize: fontSize,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     if (isSelected) ...[
-                      SizedBox(width: isTablet ? 6 : 4),
+                      SizedBox(width: useDesktopNav ? 3 : (isTablet ? 6 : 4)),
                       // Can pass 'isAscending' from parent to flip this icon
                       Icon(
                         isAscending
                             ? CupertinoIcons.sort_up
                             : CupertinoIcons.sort_down,
-                        size: (isTablet ? 16 : 14) * uiScale,
+                        size: sortIconSize,
                         color: colors.onHero,
                       ),
                     ],

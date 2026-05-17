@@ -25,19 +25,14 @@ class RestoreBackupDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final double maxDialogHeight = MediaQuery.of(context).size.height * 0.7;
+    final double maxDialogHeight = MediaQuery.of(context).size.height * 0.6;
 
     return StandardDialog(
       title: "Restore Session",
       colors: colors,
       isDark: isDark,
-      content: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxDialogHeight),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: BlocConsumer<BackupRestoreBloc, BackupRestoreState>(
+      maxHeight: maxDialogHeight,
+      content: BlocConsumer<BackupRestoreBloc, BackupRestoreState>(
                 listener: (context, state) {
                   if (state is BackupRestoreDone) {
                     Navigator.pop(context);
@@ -155,10 +150,10 @@ class RestoreBackupDialog extends StatelessWidget {
                     }
 
                     return ListView.separated(
-                      padding: const EdgeInsets.all(15),
-                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shrinkWrap: false,
                       itemCount: filteredSessions.length, // Use filtered count
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      separatorBuilder: (_, index) => const SizedBox(height: 10),
                       itemBuilder: (_, i) {
                         // Pass the filtered session to the builder
                         return _buildBackupItem(context, filteredSessions[i]);
@@ -169,10 +164,6 @@ class RestoreBackupDialog extends StatelessWidget {
                   return const SizedBox.shrink();
                 },
               ),
-            ),
-          ],
-        ),
-      ),
       actions: [
         DialogTextAction(
           label: "Cancel",

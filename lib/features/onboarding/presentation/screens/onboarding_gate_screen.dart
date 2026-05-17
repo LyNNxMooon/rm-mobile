@@ -228,17 +228,20 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
     final colors = context.appColors;
     final media = MediaQuery.of(context);
     final bool isTablet = context.isTablet;
+    final bool isDesktopPlatform = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+    final bool useDesktopLayout = isTablet || isDesktopPlatform;
     const double horizontalPadding = 22;
     final double mobileContentWidth = (media.size.width - (horizontalPadding * 2))
         .clamp(220.0, media.size.width);
-    final double cardMaxWidth = isTablet
-        ? (media.size.width * 0.68).clamp(440.0, 760.0)
+    // On desktop, constrain card width for comfortable reading
+    final double cardMaxWidth = useDesktopLayout
+        ? 620.0
         : media.size.width;
-    final double logoWidth = isTablet
-        ? (media.size.width * 0.52).clamp(320.0, 500.0)
+    final double logoWidth = useDesktopLayout
+        ? 400.0
         : mobileContentWidth;
     final double logoHeight = (logoWidth * 0.22).clamp(56.0, 110.0);
-    final double logoCardGap = isTablet ? 28 : 36;
+    final double logoCardGap = useDesktopLayout ? 28 : 36;
 
     return Scaffold(
       body: Container(
@@ -427,216 +430,214 @@ class _TermsScreenState extends State<_TermsScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    // Desktop: 50px gap on all sides; mobile: smaller padding
+    final double padding = _isDesktop ? 50.0 : 18.0;
+
     return PopScope(
       canPop: false,
       child: Scaffold(
         body: Container(
           decoration: BoxDecoration(gradient: context.appColors.heroGradient),
-          child: SafeArea(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 8,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                      decoration: BoxDecoration(
-                        color: colors.glassFill,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: colors.glassBorder,
-                          width: 1,
+          child: Padding(
+            padding: EdgeInsets.all(padding),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(_isDesktop ? 10 : 16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                  decoration: BoxDecoration(
+                    color: colors.glassFill,
+                    borderRadius: BorderRadius.circular(_isDesktop ? 10 : 16),
+                    border: Border.all(
+                      color: colors.glassBorder,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        "Terms & Conditions",
+                        style: getSmartTitle(
+                          color: colors.onHero,
+                          fontSize: 22,
                         ),
                       ),
-                      child: Column(
-                        children: [
-                          Text(
-                            "Terms & Conditions",
-                            style: getSmartTitle(
-                              color: colors.onHero,
-                              fontSize: 22,
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: colors.surface.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: colors.divider,
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          Expanded(
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: colors.surface.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: colors.divider,
-                                ),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: _isDesktop
-                                  ? Center(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.description_outlined,
-                                            size: 64,
-                                            color: colors.onSurface.withOpacity(0.6),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Text(
-                                            "Please review our Terms & Conditions",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: colors.onSurface,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          ElevatedButton.icon(
-                                            onPressed: _openTermsInBrowser,
-                                            icon: const Icon(Icons.open_in_new),
-                                            label: const Text("Open in Browser"),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: kPrimaryColor,
-                                              foregroundColor: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  : Stack(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: _isDesktop
+                                ? Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        WebViewWidget(
-                                          controller: _webViewController!,
+                                        Icon(
+                                          Icons.description_outlined,
+                                          size: 64,
+                                          color: colors.onSurface.withOpacity(0.6),
                                         ),
-                                        if (_isWebLoading)
-                                          Container(
-                                            color: colors.surface.withOpacity(0.65),
-                                            child: const Center(
-                                              child: CircularProgressIndicator(
-                                                color: kPrimaryColor,
-                                              ),
-                                            ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          "Please review our Terms & Conditions",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: colors.onSurface,
                                           ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        ElevatedButton.icon(
+                                          onPressed: _openTermsInBrowser,
+                                          icon: const Icon(Icons.open_in_new),
+                                          label: const Text("Open in Browser"),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: kPrimaryColor,
+                                            foregroundColor: Colors.white,
+                                          ),
+                                        ),
                                       ],
                                     ),
+                                  )
+                                : Stack(
+                                    children: [
+                                      WebViewWidget(
+                                        controller: _webViewController!,
+                                      ),
+                                      if (_isWebLoading)
+                                        Container(
+                                          color: colors.surface.withOpacity(0.65),
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              color: kPrimaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Checkbox(
+                            value: _isAgreed,
+                            activeColor: kPrimaryColor,
+                            checkColor: colors.onHero,
+                            side: BorderSide(
+                              color: colors.onHero.withOpacity(0.85),
+                            ),
+                            onChanged: (v) {
+                              setState(() => _isAgreed = v ?? false);
+                            },
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: Text(
+                                "I agree to the Terms & Conditions and Privacy Policy.",
+                                style: TextStyle(
+                                  color: colors.onHero.withOpacity(0.95),
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Checkbox(
-                                value: _isAgreed,
-                                activeColor: kPrimaryColor,
-                                checkColor: colors.onHero,
-                                side: BorderSide(
-                                  color: colors.onHero.withOpacity(0.85),
-                                ),
-                                onChanged: (v) {
-                                  setState(() => _isAgreed = v ?? false);
-                                },
-                              ),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 12),
-                                  child: Text(
-                                    "I agree to the Terms & Conditions and Privacy Policy.",
-                                    style: TextStyle(
-                                      color: colors.onHero.withOpacity(0.95),
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: SizedBox(
-                                  height: 40,
-                                  child: OutlinedButton(
-                                    onPressed: widget.onDecline,
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: colors.onHero,
-                                      minimumSize: const Size(double.infinity, 40),
-                                      padding: EdgeInsets.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      side: BorderSide(
-                                        color: colors.onHero.withOpacity(0.7),
-                                      ),
-                                      textStyle: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        "Decline",
-                                        textScaler: TextScaler.noScaling,
-                                        maxLines: 1,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: colors.onHero,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: SizedBox(
-                                  height: 40,
-                                  child: ElevatedButton(
-                                    onPressed: _isAgreed ? widget.onAgree : null,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: kPrimaryColor,
-                                      foregroundColor: colors.onHero,
-                                      disabledBackgroundColor: kPrimaryColor.withOpacity(0.5),
-                                      disabledForegroundColor: colors.onHero.withOpacity(0.6),
-                                      minimumSize: const Size(double.infinity, 40),
-                                      padding: EdgeInsets.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      textStyle: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        "Agree",
-                                        textScaler: TextScaler.noScaling,
-                                        maxLines: 1,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: colors.onHero,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 40,
+                              child: OutlinedButton(
+                                onPressed: widget.onDecline,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: colors.onHero,
+                                  minimumSize: const Size(double.infinity, 40),
+                                  padding: EdgeInsets.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  side: BorderSide(
+                                    color: colors.onHero.withOpacity(0.7),
+                                  ),
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "Decline",
+                                    textScaler: TextScaler.noScaling,
+                                    maxLines: 1,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: colors.onHero,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                onPressed: _isAgreed ? widget.onAgree : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: kPrimaryColor,
+                                  foregroundColor: colors.onHero,
+                                  disabledBackgroundColor: kPrimaryColor.withOpacity(0.5),
+                                  disabledForegroundColor: colors.onHero.withOpacity(0.6),
+                                  minimumSize: const Size(double.infinity, 40),
+                                  padding: EdgeInsets.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "Agree",
+                                    textScaler: TextScaler.noScaling,
+                                    maxLines: 1,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: colors.onHero,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),

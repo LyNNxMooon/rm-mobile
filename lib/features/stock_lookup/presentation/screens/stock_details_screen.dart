@@ -36,6 +36,10 @@ import '../../../../utils/responsive_utils.dart';
 import '../../../../utils/tax_calculation_utils.dart';
 import '../widgets/detailed_lower_glass.dart';
 import '../widgets/detailed_upper_glass.dart';
+import '../widgets/price_calculator_dialog.dart';
+import '../widgets/pricing_dialog.dart';
+import 'package:rmmobile/entities/vos/pricing_rules.dart';
+import 'package_components_screen.dart';
 
 class StockDetailsScreen extends StatefulWidget {
   const StockDetailsScreen({super.key, required this.stock});
@@ -231,6 +235,17 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _onCameraTap() async {
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    // On desktop, directly pick from gallery (no camera)
+    if (useDesktopNav) {
+      final x = await _picker.pickImage(
+        source: ImageSource.gallery,
+      );
+      if (x != null) _previewAndUpload(x.path);
+      return;
+    }
+    
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
@@ -298,147 +313,166 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final media = MediaQuery.of(context);
-    final double previewHeight = (media.size.height * 0.42).clamp(190.0, 340.0);
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    // Desktop-specific sizing
+    final double previewHeight = useDesktopNav
+        ? (media.size.height * 0.35).clamp(180.0, 280.0)
+        : (media.size.height * 0.42).clamp(190.0, 340.0);
+    final double dialogPadding = useDesktopNav ? 16.0 : 20.0;
+    final double titleFontSize = useDesktopNav ? 14.0 : 18.0;
+    final double buttonFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double buttonVerticalPadding = useDesktopNav ? 10.0 : 14.0;
+    final double spacingAfterTitle = useDesktopNav ? 12.0 : 15.0;
+    final double spacingAfterImage = useDesktopNav ? 16.0 : 25.0;
+    
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => Dialog(
         insetPadding: dialogInsetPadding(context),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(useDesktopNav ? 12 : 20)),
         backgroundColor: isDark ? colors.surface : Colors.white,
         elevation: 10,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Confirm Upload",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: kPrimaryColor,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: useDesktopNav ? 360 : 500,
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(dialogPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Confirm Upload",
+                  style: TextStyle(
+                    fontSize: titleFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: kPrimaryColor,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 15),
+                SizedBox(height: spacingAfterTitle),
 
-              Container(
-                height: previewHeight,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: kPrimaryColor.withOpacity(0.2)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isDark
-                          ? colors.cardShadow
-                          : kThirdColor.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+                Container(
+                  height: previewHeight,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(useDesktopNav ? 10 : 15),
+                    border: Border.all(color: kPrimaryColor.withOpacity(0.2)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isDark
+                            ? colors.cardShadow
+                            : kThirdColor.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(useDesktopNav ? 9 : 14),
+                    child: Image.file(
+                      File(path),
+                      fit: BoxFit.cover,
+                      frameBuilder:
+                          (context, child, frame, wasSynchronouslyLoaded) {
+                            if (wasSynchronouslyLoaded || frame != null) {
+                              return child;
+                            }
+                            return const Center(
+                              child: CupertinoActivityIndicator(
+                                radius: 14,
+                                color: kPrimaryColor,
+                              ),
+                            );
+                          },
+
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            color: isDark ? colors.onSurfaceMuted : kGreyColor,
+                            size: useDesktopNav ? 32 : 40,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: spacingAfterImage),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: OutlinedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: buttonVerticalPadding),
+                          side: const BorderSide(color: kPrimaryColor),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(useDesktopNav ? 8 : 12),
+                          ),
+                        ),
+                        child: Text(
+                          "Cancel",
+                          style: TextStyle(
+                            fontSize: buttonFontSize,
+                            color: kPrimaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child:
+                          BlocBuilder<
+                            StockImageUploadBloc,
+                            StockImageUploadState
+                          >(
+                            builder: (context, state) {
+                              final bool isUploading =
+                                  state is StockImageUploading;
+                              return ElevatedButton(
+                                onPressed: isUploading
+                                    ? null
+                                    : () => Navigator.pop(context, true),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: kPrimaryColor,
+                                  disabledBackgroundColor: kPrimaryColor
+                                      .withOpacity(0.85),
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: buttonVerticalPadding,
+                                  ),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(useDesktopNav ? 8 : 12),
+                                  ),
+                                ),
+                                child: isUploading
+                                    ? CupertinoActivityIndicator(
+                                        radius: useDesktopNav ? 9 : 11,
+                                        color: Colors.white,
+                                      )
+                                    : Text(
+                                        "Upload",
+                                        style: TextStyle(
+                                          fontSize: buttonFontSize,
+                                          color: isDark
+                                              ? colors.onHero
+                                              : Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                              );
+                            },
+                          ),
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Image.file(
-                    File(path),
-                    fit: BoxFit.cover,
-                    frameBuilder:
-                        (context, child, frame, wasSynchronouslyLoaded) {
-                          if (wasSynchronouslyLoaded || frame != null) {
-                            return child;
-                          }
-                          return const Center(
-                            child: CupertinoActivityIndicator(
-                              radius: 14,
-                              color: kPrimaryColor,
-                            ),
-                          );
-                        },
-
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Icon(
-                          Icons.broken_image,
-                          color: isDark ? colors.onSurfaceMuted : kGreyColor,
-                          size: 40,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: const BorderSide(color: kPrimaryColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "Cancel",
-                        style: TextStyle(
-                          color: kPrimaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child:
-                        BlocBuilder<
-                          StockImageUploadBloc,
-                          StockImageUploadState
-                        >(
-                          builder: (context, state) {
-                            final bool isUploading =
-                                state is StockImageUploading;
-                            return ElevatedButton(
-                              onPressed: isUploading
-                                  ? null
-                                  : () => Navigator.pop(context, true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kPrimaryColor,
-                                disabledBackgroundColor: kPrimaryColor
-                                    .withOpacity(0.85),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: isUploading
-                                  ? const CupertinoActivityIndicator(
-                                      radius: 11,
-                                      color: Colors.white,
-                                    )
-                                  : Text(
-                                      "Upload",
-                                      style: TextStyle(
-                                        color: isDark
-                                            ? colors.onHero
-                                            : Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            );
-                          },
-                        ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -549,34 +583,40 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     final Color imageBackground = kSecondaryColor;
     final media = MediaQuery.of(context);
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final bool isLandscape = context.isLandscape;
     final double screenHeight = media.size.height;
     final double screenWidth = media.size.width;
 
-    final double imageHeight = isTablet
-        ? (isLandscape
-              ? (screenHeight * 0.44).clamp(320.0, 520.0)
-              : (screenHeight * 0.42).clamp(360.0, 620.0))
-        : (screenHeight * 0.42).clamp(250.0, 400.0);
+    // Desktop-specific sizing
+    final double imageHeight = useDesktopNav 
+        ? (screenHeight * 0.35).clamp(200.0, 350.0)
+        : isTablet
+            ? (isLandscape
+                  ? (screenHeight * 0.44).clamp(320.0, 520.0)
+                  : (screenHeight * 0.42).clamp(360.0, 620.0))
+            : (screenHeight * 0.42).clamp(250.0, 400.0);
 
-    final double contentTargetHeight = isTablet
-        ? (screenHeight - imageHeight - (isLandscape ? 120 : 150)).clamp(
+    final double contentTargetHeight = (isTablet || useDesktopNav)
+        ? (screenHeight - imageHeight - (isLandscape || useDesktopNav ? 100 : 150)).clamp(
             380.0,
             980.0,
           )
         : 0.0;
-    final double upperMinHeight = isTablet
-        ? (contentTargetHeight * (isLandscape ? 0.56 : 0.60)).clamp(
-            260.0,
+    final double upperMinHeight = (isTablet || useDesktopNav)
+        ? (contentTargetHeight * (isLandscape || useDesktopNav ? 0.56 : 0.60)).clamp(
+            useDesktopNav ? 200.0 : 260.0,
             620.0,
           )
         : 0.0;
-    final double cardHorizontalPadding = isTablet
-        ? (screenWidth * (isLandscape ? 0.045 : 0.04)).clamp(24.0, 56.0)
-        : 20.0;
-    final double sectionGap = isTablet ? (isLandscape ? 16.0 : 20.0) : 20.0;
+    final double cardHorizontalPadding = useDesktopNav
+        ? (screenWidth * 0.03).clamp(20.0, 40.0)
+        : isTablet
+            ? (screenWidth * (isLandscape ? 0.045 : 0.04)).clamp(24.0, 56.0)
+            : 20.0;
+    final double sectionGap = useDesktopNav ? 12.0 : (isTablet ? (isLandscape ? 16.0 : 20.0) : 20.0);
     final double bottomSafeArea = MediaQuery.of(context).padding.bottom;
-    final double bottomGap = (isTablet ? 40.0 : 100.0) + bottomSafeArea;
+    final double bottomGap = (useDesktopNav ? 30.0 : (isTablet ? 40.0 : 100.0)) + bottomSafeArea;
 
     final bool hideCostPrice = AppGlobals.instance.restrictedPermissions
         .contains("Miscellaneous_HideCostPriceAndProfit");
@@ -662,7 +702,20 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
           body: SafeArea(
             bottom: false,
             top: false,
-            child: Column(
+            child: useDesktopNav
+                ? _buildDesktopLayout(
+                    colors: colors,
+                    isDark: isDark,
+                    imageBackground: imageBackground,
+                    screenWidth: screenWidth,
+                    screenHeight: screenHeight,
+                    hideCostPrice: hideCostPrice,
+                    lockSellPrice: lockSellPrice,
+                    isPackage: isPackage,
+                    custom1Label: custom1Label,
+                    custom2Label: custom2Label,
+                  )
+                : Column(
               children: [
                 Expanded(
                   child: Container(
@@ -901,14 +954,427 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     );
   }
 
+  /// Desktop layout: Image on left, Details on right (centered)
+  Widget _buildDesktopLayout({
+    required AppThemeColors colors,
+    required bool isDark,
+    required Color imageBackground,
+    required double screenWidth,
+    required double screenHeight,
+    required bool hideCostPrice,
+    required bool lockSellPrice,
+    required bool isPackage,
+    required String custom1Label,
+    required String custom2Label,
+  }) {
+    final double rightPanelWidth = screenWidth * 0.50;
+    final double leftPanelWidth = screenWidth - rightPanelWidth;
+    final double imageSize = (leftPanelWidth * 0.90).clamp(250.0, 420.0);
+    
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: isDark ? colors.heroGradient : kGColor,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // LEFT SIDE: Image and action buttons
+          SizedBox(
+            width: leftPanelWidth,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Wrap icons, image, and buttons together
+                  SizedBox(
+                    width: imageSize,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top row: Gallery + Close buttons (aligned with image left edge)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            _buildCircularIcon(
+                              icon: Icons.photo_library_rounded,
+                              onTap: _onCameraTap,
+                            ),
+                            const SizedBox(width: 10),
+                            _buildCircularIcon(
+                              icon: Icons.close_rounded,
+                              onTap: () {
+                                _triggerSyncIfNeeded();
+                                context.navigateBack();
+                              },
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 15),
+                        
+                        // Stock image
+                        Hero(
+                          tag: 'stock_image_${widget.stock.stockID}',
+                          child: Container(
+                            width: imageSize,
+                            height: imageSize,
+                            decoration: BoxDecoration(
+                              color: imageBackground,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: isDark
+                                      ? Colors.black.withOpacity(0.4)
+                                      : kThirdColor.withOpacity(0.15),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: _buildStockImage(imageBackground),
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 20),
+                        
+                        // Stacked action buttons
+                        _buildDesktopActionButtons(
+                          colors: colors,
+                          isDark: isDark,
+                          isPackage: isPackage,
+                          lockSellPrice: lockSellPrice,
+                          maxWidth: imageSize,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // RIGHT SIDE: Centered Details panels
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: rightPanelWidth - 40),
+                      child: ListView(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.only(
+                          left: 12,
+                          right: 20,
+                          top: 20,
+                          bottom: 30,
+                        ),
+                        children: [
+                          // Upper Glass - Stock info
+                          DetailedUpperGlass(
+                            descController: _descriptionController,
+                            custom1Controller: _custom1Controller,
+                            custom2Controller: _custom2Controller,
+                            custom1Label: custom1Label,
+                            custom2Label: custom2Label,
+                            dept: widget.stock.deptName ?? "-",
+                            barcode: widget.stock.barcode,
+                            qty: "Qty On-Hand: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
+                            cats: "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
+                            cost: cost,
+                            sell: sell,
+                            layByQty: (widget.stock.laybyQuantity % 1 == 0)
+                                ? widget.stock.laybyQuantity.toInt().toString()
+                                : double.parse(widget.stock.laybyQuantity.toStringAsFixed(2)).toString(),
+                            soQty: (widget.stock.salesOrderQuantity % 1 == 0)
+                                ? widget.stock.salesOrderQuantity.toInt().toString()
+                                : double.parse(widget.stock.salesOrderQuantity.toStringAsFixed(2)).toString(),
+                            exCost: exCost,
+                            costTaxLabel: _formatTaxLabel(widget.stock.goodsTax, costTaxPercentage),
+                            sellTaxLabel: _formatTaxLabel(widget.stock.salesTax, sellTaxPercentage),
+                            lastSaleDate: _formatLastSaleDate(widget.stock.lastSaleDate),
+                            showCostPrices: !hideCostPrice,
+                          ),
+                          
+                          const SizedBox(height: 12),
+                          
+                          // Lower Glass - Pricing controls (no buttons on desktop)
+                          DetailedLowerGlass(
+                            descController: _descriptionController,
+                            custom1Controller: _custom1Controller,
+                            custom2Controller: _custom2Controller,
+                            stockId: widget.stock.stockID,
+                            sell: sell,
+                            exSell: exSell,
+                            incCost: cost,
+                            exCost: exCost,
+                            costTaxLabel: _formatTaxLabel(widget.stock.goodsTax, costTaxPercentage),
+                            sellTaxLabel: _formatTaxLabel(widget.stock.salesTax, sellTaxPercentage),
+                            showCostPrices: !hideCostPrice,
+                            taxPercentage: sellTaxPercentage,
+                            taxType: sellTaxType,
+                            canUpdateSellPrice: !lockSellPrice && !isPackage,
+                            pricingRules: widget.stock.pricingRules,
+                            isPackage: isPackage,
+                            packageComponents: widget.stock.packageComponents,
+                            packageDescription: widget.stock.description,
+                            pricingGradesStock: widget.stock.pricingGradesStock,
+                            pricingGradesCategories: widget.stock.pricingGradesCategories,
+                            pricingGradesGlobal: widget.stock.pricingGradesGlobal,
+                            hideButtons: true,
+                            onFocusNodesReady: (nodes) {
+                              setState(() {
+                                _priceFocusNodes = nodes;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                IosDoneBarMulti(
+                  focusNodes: _priceFocusNodes,
+                  onDone: () {
+                    for (final node in _priceFocusNodes) {
+                      if (node.hasFocus) {
+                        node.unfocus();
+                        break;
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the stacked action buttons for desktop layout (Calculator/Components, Pricing, Update)
+  Widget _buildDesktopActionButtons({
+    required AppThemeColors colors,
+    required bool isDark,
+    required bool isPackage,
+    required bool lockSellPrice,
+    required double maxWidth,
+  }) {
+    final bool showViewComponents = isPackage && (widget.stock.packageComponents?.isNotEmpty ?? false);
+    final bool showCalculator = !isPackage && !lockSellPrice;
+    final double buttonPadding = 10.0;
+    
+    Widget buildButton({
+      required IconData icon,
+      required String label,
+      required VoidCallback? onTap,
+    }) {
+      return SizedBox(
+        width: maxWidth,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: buttonPadding, horizontal: 12),
+            decoration: BoxDecoration(
+              color: isDark ? colors.surface : kSecondaryColor,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: kPrimaryColor.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: kPrimaryColor, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: kPrimaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        if (showViewComponents)
+          buildButton(
+            icon: Icons.inventory_2_outlined,
+            label: 'COMPONENTS',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PackageComponentsScreen(
+                    packageDescription: widget.stock.description,
+                    components: widget.stock.packageComponents ?? [],
+                  ),
+                ),
+              );
+            },
+          )
+        else if (showCalculator)
+          buildButton(
+            icon: Icons.calculate,
+            label: 'CALCULATOR',
+            onTap: _openCalculatorDialog,
+          ),
+        if (showViewComponents || showCalculator) const SizedBox(height: 8),
+        buildButton(
+          icon: Icons.price_change_outlined,
+          label: 'PRICING',
+          onTap: _openPricingDialog,
+        ),
+        const SizedBox(height: 8),
+        buildButton(
+          icon: Icons.arrow_circle_up,
+          label: 'UPDATE',
+          onTap: _submitStockUpdate,
+        ),
+      ],
+    );
+  }
+
+  /// Opens the calculator dialog
+  void _openCalculatorDialog() async {
+    FocusScope.of(context).unfocus();
+    await Future.delayed(const Duration(milliseconds: 120));
+
+    final double? result = await showDialog<double>(
+      context: context,
+      builder: (context) => PriceCalculatorDialog(
+        incCost: cost,
+        exCost: exCost,
+        currentSell: sell,
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        sell = result;
+        // Calculate ex sell based on tax
+        if (sellTaxPercentage > 0) {
+          exSell = TaxCalculationUtils.calculateExclusivePrice(result, sellTaxPercentage);
+        } else {
+          exSell = result;
+        }
+      });
+    }
+  }
+
+  /// Opens the pricing dialog
+  void _openPricingDialog() {
+    final rules = widget.stock.pricingRules ?? PricingRules.empty();
+    showDialog<void>(
+      context: context,
+      builder: (_) => PricingDialog(
+        pricingRules: rules,
+        sell: sell,
+        cost: cost,
+        pricingGradesStock: widget.stock.pricingGradesStock,
+        pricingGradesCategories: widget.stock.pricingGradesCategories,
+        pricingGradesGlobal: widget.stock.pricingGradesGlobal,
+        onUpdate: (updatedRules) {
+          _submitPricingUpdate(updatedRules);
+          Navigator.pop(context);
+        },
+        onDelete: () {
+          _submitPricingUpdate(PricingRules.empty());
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  /// Submits pricing rules update
+  void _submitPricingUpdate(PricingRules rules) {
+    context.read<StockUpdateBloc>().add(
+      SubmitStockUpdateEvent(
+        stockId: widget.stock.stockID.toInt(),
+        description: _descriptionController.text,
+        sell: sell,
+        custom1: _custom1Controller.text.trim().isNotEmpty ? _custom1Controller.text.trim() : null,
+        custom2: _custom2Controller.text.trim().isNotEmpty ? _custom2Controller.text.trim() : null,
+        pricingRules: rules,
+      ),
+    );
+  }
+
+  /// Submits stock update
+  void _submitStockUpdate() {
+    context.read<StockUpdateBloc>().add(
+      SubmitStockUpdateEvent(
+        stockId: widget.stock.stockID.toInt(),
+        description: _descriptionController.text,
+        sell: sell,
+        custom1: _custom1Controller.text.trim().isNotEmpty ? _custom1Controller.text.trim() : null,
+        custom2: _custom2Controller.text.trim().isNotEmpty ? _custom2Controller.text.trim() : null,
+      ),
+    );
+  }
+
+  /// Builds the stock image widget (shared between layouts)
+  Widget _buildStockImage(Color imageBackground) {
+    final String? localImagePath = _localSelectedImagePath;
+    final String imageUrl = (widget.stock.imageUrl ?? "").trim();
+
+    if (localImagePath != null && localImagePath.isNotEmpty) {
+      return Image.file(
+        File(localImagePath),
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) => Image.asset(
+          overviewPlaceholder,
+          fit: BoxFit.contain,
+        ),
+      );
+    } else if (imageUrl.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: imageUrl,
+        fit: BoxFit.contain,
+        placeholder: (_, _) => Image.asset(
+          overviewPlaceholder,
+          fit: BoxFit.contain,
+        ),
+        errorWidget: (_, _, _) => Image.asset(
+          overviewPlaceholder,
+          fit: BoxFit.contain,
+        ),
+      );
+    } else {
+      return Image.asset(
+        overviewPlaceholder,
+        fit: BoxFit.contain,
+      );
+    }
+  }
+
   Widget topIconsRow() {
+    final bool useDesktopNav = context.useDesktopNav;
+    
     return Positioned(
       top: 0,
       left: 0,
       right: 0,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: EdgeInsets.symmetric(
+            horizontal: useDesktopNav ? 15 : 20, 
+            vertical: useDesktopNav ? 8 : 10,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -920,7 +1386,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                 },
               ),
               _buildCircularIcon(
-                icon: Icons.camera_alt_rounded,
+                // On desktop show gallery icon, on mobile show camera
+                icon: useDesktopNav ? Icons.photo_library_rounded : Icons.camera_alt_rounded,
                 onTap: _onCameraTap,
               ),
             ],
@@ -936,11 +1403,15 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double iconBoxSize = useDesktopNav ? 30 : 35;
+    final double iconSize = useDesktopNav ? 14 : 16;
+    
     return InkWell(
       onTap: onTap,
       child: Container(
-        width: 35,
-        height: 35,
+        width: iconBoxSize,
+        height: iconBoxSize,
         decoration: BoxDecoration(
           color: isDark ? colors.surface : kSecondaryColor,
           shape: BoxShape.circle,
@@ -949,7 +1420,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
               color: isDark
                   ? colors.cardShadow
                   : kThirdColor.withOpacity(0.1),
-              blurRadius: 8,
+              blurRadius: useDesktopNav ? 6 : 8,
               offset: const Offset(0, 2),
             ),
           ],
@@ -957,7 +1428,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         child: Icon(
           icon,
           color: isDark ? colors.onSurface : kThirdColor,
-          size: 16,
+          size: iconSize,
         ),
       ),
     );

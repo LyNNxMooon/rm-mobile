@@ -92,18 +92,27 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
     final bool isDark = colors.isDark;
     final media = MediaQuery.of(context);
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final bool isLandscape = context.isLandscape;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    final double uiScale = isTablet
+    final double uiScale = isTablet || useDesktopNav
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double cardMaxWidth = isTablet
-        ? (media.size.width * 0.58).clamp(420.0, 620.0)
-        : media.size.width;
-    final double logoHeight = isTablet ? 104 : 75;
-    final double topGap = isTablet ? (isLandscape ? 26 : 42) : 55;
-    final double inputHeight = (isTablet ? 44 : 40) * uiScale;
-    final double buttonHeight = (isTablet ? 42 : 38) * uiScale;
+    final double cardMaxWidth = useDesktopNav
+        ? 600.0
+        : isTablet
+            ? (media.size.width * 0.58).clamp(420.0, 620.0)
+            : media.size.width;
+    final double logoHeight = isTablet || useDesktopNav ? 104 : 75;
+    final double topGap = useDesktopNav
+        ? 32
+        : isTablet
+            ? (isLandscape ? 26 : 42)
+            : 55;
+    final double inputHeight = (isTablet || useDesktopNav ? 44 : 40) * uiScale;
+    final double buttonHeight = (isTablet || useDesktopNav ? 42 : 38) * uiScale;
+    final double horizontalPadding = useDesktopNav ? 50 : 22;
+    final double borderRadius = useDesktopNav ? 10 : 14;
 
     return BlocListener<StaffAuthBloc, StaffAuthStates>(
       listener: (context, state) {
@@ -146,8 +155,8 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                 Expanded(
                   child: Center(
                     child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
                   vertical: 16,
                 ),
                 child: Column(
@@ -173,7 +182,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                     ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: cardMaxWidth),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(borderRadius),
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                           child: Container(
@@ -181,7 +190,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                             decoration: BoxDecoration(
                               color: colors.glassFill,
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(borderRadius),
                               border: Border.all(
                                 color: colors.glassBorder,
                               ),
@@ -200,7 +209,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                   "Sign-in to continue",
                                   style: getSmartTitle(
                                     color: isDark ? Colors.white : colors.onHero,
-                                    fontSize: 21,
+                                    fontSize: useDesktopNav ? 18 : 21,
                                   ),
                                 ),
                                 const SizedBox(height: 10),
@@ -281,13 +290,13 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                           padding: EdgeInsets.zero,
                                           tapTargetSize:
                                               MaterialTapTargetSize.shrinkWrap,
-                                          textStyle: const TextStyle(
-                                            fontSize: 16,
+                                          textStyle: TextStyle(
+                                            fontSize: useDesktopNav ? 14 : 16,
                                             fontWeight: FontWeight.w700,
                                           ),
                                           shape: RoundedRectangleBorder(
                                             borderRadius:
-                                                BorderRadius.circular(9),
+                                                BorderRadius.circular(useDesktopNav ? 10 : 9),
                                           ),
                                         ),
                                         child: loading
@@ -305,7 +314,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                                     color: isDark
                                                         ? Colors.white
                                                         : colors.onHero,
-                                                    fontSize: 16,
+                                                    fontSize: useDesktopNav ? 14 : 16,
                                                     fontWeight: FontWeight.w700,
                                                   ),
                                                 ),

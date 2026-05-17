@@ -187,10 +187,11 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final bool isPortrait = context.isPortrait;
 
-    // Reset to list view when switching to portrait mode on tablets
-    if (isTablet && isPortrait && _viewMode != StockViewMode.list) {
+    // Reset to list view when switching to portrait mode on tablets (not desktop)
+    if (isTablet && !useDesktopNav && isPortrait && _viewMode != StockViewMode.list) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
@@ -204,10 +205,76 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
       resizeToAvoidBottomInset: false,
       backgroundColor: isDark ? colors.bg : kBgColor,
       body: SafeArea(
-        child: isTablet
-            ? _buildTabletLayout(colors, isDark, isPortrait)
-            : _buildMobileLayout(colors, isDark),
+        child: useDesktopNav
+            ? _buildDesktopLayout(colors, isDark)
+            : isTablet
+                ? _buildTabletLayout(colors, isDark, isPortrait)
+                : _buildMobileLayout(colors, isDark),
       ),
+    );
+  }
+
+  Widget _buildDesktopLayout(AppThemeColors colors, bool isDark) {
+    final screenSize = MediaQuery.of(context).size;
+
+    // Limit max sidebar width to 30% of screen width for desktop
+    final double maxAllowedWidth = screenSize.width * 0.30;
+    final double effectiveMaxWidth = maxAllowedWidth.clamp(
+      _minSidebarWidth,
+      _maxSidebarWidth,
+    );
+
+    return Row(
+      children: [
+        // Left sidebar - File Explorer style (resizable)
+        SizedBox(
+          width: _sidebarWidth.clamp(_minSidebarWidth, effectiveMaxWidth),
+          child: const FilterTreeSidebar(),
+        ),
+
+        // Resize handle
+        GestureDetector(
+          onHorizontalDragUpdate: (details) {
+            setState(() {
+              _sidebarWidth += details.delta.dx;
+              _sidebarWidth = _sidebarWidth.clamp(
+                _minSidebarWidth,
+                effectiveMaxWidth,
+              );
+            });
+          },
+          child: MouseRegion(
+            cursor: SystemMouseCursors.resizeColumn,
+            child: Container(
+              width: 20,
+              color: Colors.transparent,
+              child: Center(
+                child: Container(
+                  width: 5,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white24
+                        : kGreyColor.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Right side - Stock list
+        Expanded(
+          child: _buildMainContent(
+            colors,
+            isDark,
+            isTablet: false,
+            isPortrait: false,
+            isDesktop: true,
+          ),
+        ),
+      ],
     );
   }
 
@@ -279,6 +346,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
             isDark,
             isTablet: true,
             isPortrait: isPortrait,
+            isDesktop: false,
           ),
         ),
       ],
@@ -291,6 +359,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
       isDark,
       isTablet: false,
       isPortrait: false,
+      isDesktop: false,
     );
   }
 
@@ -299,14 +368,16 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     bool isDark, {
     required bool isTablet,
     required bool isPortrait,
+    bool isDesktop = false,
   }) {
+    final bool showViewModeDropdown = isDesktop || (isTablet && !isPortrait);
     return Stack(
       children: [
         Column(
           children: [
-            const SizedBox(height: 25),
+            SizedBox(height: isDesktop ? 12 : 25),
             StockLookupAppbar(showBackArrow: widget.showBackArrow),
-            const SizedBox(height: 5),
+            SizedBox(height: isDesktop ? 2 : 5),
             const PendingStockUpdatesTile(),
             Divider(
               indent: 15,
@@ -328,11 +399,11 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                       state.stocks.where((s) => s.stockID != 0).length;
                   final int visibleCount = math.min(loadedCount, totalCount);
                   return Padding(
-                    padding: const EdgeInsets.only(
+                    padding: EdgeInsets.only(
                       left: 15,
                       right: 15,
-                      bottom: 18,
-                      top: 10,
+                      bottom: isDesktop ? 10 : 18,
+                      top: isDesktop ? 5 : 10,
                     ),
                     child: Row(
                       children: [
@@ -367,17 +438,17 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             },
                           ),
                         ),
-                        // View mode dropdown (tablet landscape only)
-                        if (isTablet && !isPortrait) ...[
+                        // View mode dropdown (tablet landscape or desktop)
+                        if (showViewModeDropdown) ...[
                           const SizedBox(width: 12),
                           _buildViewModeDropdown(isDark),
                         ],
-                        const SizedBox(width: 16),
+                        SizedBox(width: isDesktop ? 12 : 16),
                         Text(
                           "$visibleCount of ${NumberFormat('#,###').format(totalCount)}",
                           style: TextStyle(
                             color: isDark ? Colors.white70 : kGreyColor,
-                            fontSize: 11,
+                            fontSize: isDesktop ? 10 : 11,
                           ),
                         ),
                       ],
@@ -385,11 +456,11 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                   );
                 }
                 return Padding(
-                  padding: const EdgeInsets.only(
+                  padding: EdgeInsets.only(
                     left: 15,
                     right: 15,
-                    bottom: 18,
-                    top: 10,
+                    bottom: isDesktop ? 10 : 18,
+                    top: isDesktop ? 5 : 10,
                   ),
                   child: Row(
                     children: [
@@ -400,12 +471,12 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           onFilterChanged: (newLabel) {},
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: isDesktop ? 6 : 8),
                       Text(
                         "0 of ${NumberFormat('#,###').format(0)}",
                         style: TextStyle(
                           color: isDark ? Colors.white70 : kGreyColor,
-                          fontSize: 11,
+                          fontSize: isDesktop ? 10 : 11,
                         ),
                       ),
                     ],
@@ -440,7 +511,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                   child: BackdropFilter(
                     filter: ui.ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
                     child: Container(
-                      height: 100,
+                      height: isDesktop ? 80 : 100,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
@@ -461,10 +532,10 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 ),
 
                 Padding(
-                  padding: const EdgeInsets.only(
+                  padding: EdgeInsets.only(
                     left: 15,
                     right: 15,
-                    bottom: 42,
+                    bottom: isDesktop ? 25 : 42,
                   ),
                   child: _buildGlassSearchBar(),
                 ),
@@ -477,6 +548,11 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
   }
 
   Widget scanner() {
+    // No scanner on desktop - Windows doesn't have back camera
+    if (context.useDesktopNav) {
+      return const SizedBox.shrink();
+    }
+    
     return AnimatedSize(
       duration: const Duration(milliseconds: 800),
       curve: Curves.easeOutCubic,
@@ -541,9 +617,13 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
   Widget _buildViewModeDropdown(bool isDark) {
     final colors = context.appColors;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double iconSize = useDesktopNav ? 18.0 : 22.0;
+    final double hPadding = useDesktopNav ? 8.0 : 12.0;
+    final double vPadding = useDesktopNav ? 3.0 : 5.0;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+      padding: EdgeInsets.symmetric(horizontal: useDesktopNav ? 4 : 5, vertical: useDesktopNav ? 2 : 3),
       decoration: BoxDecoration(
         color: isDark ? colors.surface.withOpacity(0.8) : kSecondaryColor,
         borderRadius: BorderRadius.circular(8),
@@ -562,7 +642,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               });
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
               decoration: BoxDecoration(
                 color: isSelected
                     ? kPrimaryColor.withOpacity(0.2)
@@ -571,7 +651,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               ),
               child: Icon(
                 mode.icon,
-                size: 22,
+                size: iconSize,
                 color: isSelected
                     ? kPrimaryColor
                     : (isDark ? Colors.white70 : kThirdColor),
@@ -587,17 +667,19 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
+    final double barHeight = useDesktopNav ? 48 : ((isTablet ? 64 : 56) * uiScale);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
-          height: (isTablet ? 64 : 56) * uiScale,
+          height: barHeight,
           decoration: BoxDecoration(
             border: Border.all(
               color: isDark ? Colors.white38 : kGreyColor.withOpacity(0.6),
@@ -720,15 +802,18 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
       child: BlocBuilder<StockListBloc, StockListState>(
         builder: (context, state) {
           final bool isTablet = context.isTablet;
+          final bool useDesktopNav = context.useDesktopNav;
+          final bool useGridLayout = useDesktopNav || isTablet;
+          
           if (state is StockListLoading) {
             return loadingWidget();
           }
           if (state is StockListLoaded) {
             if (state.stocks.isEmpty) return emptyOrErrorWidget();
 
-            // Use grid view for tablet non-list modes
-            if (isTablet && _viewMode != StockViewMode.list) {
-              return _buildGridView(state, isTablet);
+            // Use grid view for desktop or tablet non-list modes
+            if (useGridLayout && _viewMode != StockViewMode.list) {
+              return _buildGridView(state, useGridLayout);
             }
 
             return AnimationLimiter(
@@ -745,7 +830,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     ? state.stocks.length
                     : state.stocks.length + 1,
                 separatorBuilder: (ctx, i) =>
-                    SizedBox(height: isTablet ? 10 : 7),
+                    SizedBox(height: useDesktopNav ? 5 : (useGridLayout ? 10 : 7)),
                 itemBuilder: (context, index) {
                   if (index >= state.stocks.length) {
                     return const Center(
@@ -774,17 +859,18 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     );
   }
 
-  Widget _buildGridView(StockListLoaded state, bool isTablet) {
+  Widget _buildGridView(StockListLoaded state, bool useGridLayout) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final screenSize = MediaQuery.of(context).size;
+    final bool useDesktopNav = context.useDesktopNav;
     final bool isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
     final bool isMediumTablet = context.isMediumTablet;
-    final bool isLargeTablet = context.isLargeTablet;
+    final bool isLargeTablet = context.isLargeTablet || useDesktopNav;
 
-    // Calculate available width for the grid (accounting for sidebar in landscape)
-    final double availableWidth = isLandscape
+    // Calculate available width for the grid (accounting for sidebar)
+    final double availableWidth = (useDesktopNav || isLandscape)
         ? screenSize.width -
               _sidebarWidth -
               20 -
@@ -1571,12 +1657,15 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double thumbnailSize = (isTablet ? 44 : 36) * uiScale;
-    final double tileHorizontalPadding = (isTablet ? 16 : 15) * uiScale;
+    
+    // Desktop-specific smaller sizes
+    final double thumbnailSize = useDesktopNav ? 32 : ((isTablet ? 44 : 36) * uiScale);
+    final double tileHorizontalPadding = useDesktopNav ? 12 : ((isTablet ? 16 : 15) * uiScale);
 
     final String trimmedQuery = query.trim();
     final String lowerQuery = trimmedQuery.toLowerCase();
@@ -1593,12 +1682,21 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final bool showCustom1 = matchesQuery(stock.custom1);
     final bool showCustom2 = matchesQuery(stock.custom2);
     final bool showExtraFields = showCustom1 || showCustom2;
-    final bool shouldScaleUp = isTablet && hasQuery;
+    final bool shouldScaleUp = isTablet && !useDesktopNav && hasQuery;
     final double textUiScale = shouldScaleUp
         ? (1.0 + ((textScale - 1.0) * 0.85)).clamp(1.0, 1.65)
         : 1.0;
-    final double tileVerticalPadding =
-        (isTablet ? (shouldScaleUp || showExtraFields ? 18 : 10) : 8) * uiScale;
+    final double tileVerticalPadding = useDesktopNav 
+        ? 6 
+        : ((isTablet ? (shouldScaleUp || showExtraFields ? 18 : 10) : 8) * uiScale);
+    
+    // Desktop font sizes
+    final double descFontSize = useDesktopNav ? 12 : (14 * textUiScale);
+    final double barcodeFontSize = useDesktopNav ? 11 : (13 * textUiScale);
+    final double customLabelFontSize = useDesktopNav ? 10 : 12;
+    final double customValueFontSize = useDesktopNav ? 10 : (12 * textUiScale);
+    final double qtyFontSize = useDesktopNav ? 10 : 12;
+    final double rowSpacing = useDesktopNav ? 2 : (isTablet ? 4 : 3);
 
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(
@@ -1624,7 +1722,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                   color: isDark
                       ? Color.lerp(colors.surface, Colors.white, 0.06)
                       : kSecondaryColor,
-                  borderRadius: const BorderRadius.all(Radius.circular(10)),
+                  borderRadius: BorderRadius.all(Radius.circular(useDesktopNav ? 8 : 10)),
                   border: isDark
                       ? Border.all(color: Colors.white.withOpacity(0.18))
                       : null,
@@ -1633,7 +1731,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                       color: isDark
                           ? Colors.black.withOpacity(0.35)
                           : kThirdColor.withOpacity(0.05),
-                      blurRadius: 10,
+                      blurRadius: useDesktopNav ? 6 : 10,
                       offset: const Offset(0, 4),
                       spreadRadius: 0,
                     ),
@@ -1652,17 +1750,17 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                       width: thumbnailSize,
                       height: thumbnailSize,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+                        borderRadius: BorderRadius.circular(useDesktopNav ? 5 : (isTablet ? 8 : 6)),
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+                        borderRadius: BorderRadius.circular(useDesktopNav ? 5 : (isTablet ? 8 : 6)),
                         child: Hero(
                           tag: 'stock_image_${stock.stockID}',
                           child: StockThumbnailTile(stock: stock),
                         ),
                       ),
                     ),
-                    SizedBox(width: (isTablet ? 17 : 15) * uiScale),
+                    SizedBox(width: useDesktopNav ? 10 : ((isTablet ? 17 : 15) * uiScale)),
 
                     // TEXT COLUMN (Responsive Fix: Wrapped in Expanded)
                     Expanded(
@@ -1680,13 +1778,13 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                   highlightColor: Colors.amber.withOpacity(0.6),
                                   style: getSmartTitle(
                                     color: isDark ? Colors.white : kThirdColor,
-                                    fontSize: 14 * textUiScale,
+                                    fontSize: descFontSize,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          SizedBox(height: isTablet ? 4 : 3),
+                          SizedBox(height: rowSpacing.toDouble()),
                           // Barcode with highlighting
                           HighlightedText(
                             text: stock.barcode,
@@ -1694,20 +1792,20 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             highlightColor: Colors.amber.withOpacity(0.6),
                             style: TextStyle(
                               fontFamily: 'monospace',
-                              fontSize: 13 * textUiScale,
+                              fontSize: barcodeFontSize,
                               color: kPrimaryColor,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           // Custom1 field (only if matched)
                           if (showCustom1) ...[
-                            SizedBox(height: isTablet ? 4 : 3),
+                            SizedBox(height: rowSpacing.toDouble()),
                             Row(
                               children: [
                                 Text(
                                   'Custom 1: ',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: customLabelFontSize,
                                     color: isDark ? Colors.white70 : kGreyColor,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -1720,7 +1818,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                       0.6,
                                     ),
                                     style: TextStyle(
-                                      fontSize: 12 * textUiScale,
+                                      fontSize: customValueFontSize,
                                       color: isDark
                                           ? Colors.white70
                                           : kGreyColor,
@@ -1733,13 +1831,13 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           ],
                           // Custom2 field (only if matched)
                           if (showCustom2) ...[
-                            SizedBox(height: isTablet ? 4 : 3),
+                            SizedBox(height: rowSpacing.toDouble()),
                             Row(
                               children: [
                                 Text(
                                   'Custom 2: ',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: customLabelFontSize,
                                     color: isDark ? Colors.white70 : kGreyColor,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -1752,7 +1850,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                                       0.6,
                                     ),
                                     style: TextStyle(
-                                      fontSize: 12 * textUiScale,
+                                      fontSize: customValueFontSize,
                                       color: isDark
                                           ? Colors.white70
                                           : kGreyColor,
@@ -1767,12 +1865,12 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                       ),
                     ),
 
-                    const SizedBox(width: 8), // Gap before quantity
+                    SizedBox(width: useDesktopNav ? 6 : 8), // Gap before quantity
                     // QUANTITY
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: useDesktopNav ? 6 : 8,
+                        vertical: useDesktopNav ? 1 : 2,
                       ),
                       decoration: BoxDecoration(
                         color: stock.quantity > 0
@@ -1780,7 +1878,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                             : stock.quantity == 0
                             ? Colors.yellow.withOpacity(0.4)
                             : Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
                       ),
                       child: Text(
                         () {
@@ -1796,7 +1894,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           return qtyString;
                         }(),
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: qtyFontSize,
                           fontWeight: FontWeight.w900,
                           color: stock.quantity > 0
                               ? kPrimaryColor

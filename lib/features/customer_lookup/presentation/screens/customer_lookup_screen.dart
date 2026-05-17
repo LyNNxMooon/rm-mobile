@@ -138,6 +138,10 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double horizontalPadding = useDesktopNav ? 10 : 15;
+    final double topSpacer = useDesktopNav ? 15 : 25;
+    
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: isDark ? colors.bg : kBgColor,
@@ -146,14 +150,14 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
           children: [
             Column(
               children: [
-                const SizedBox(height: 25),
+                SizedBox(height: topSpacer),
                 CustomerLookupAppbar(showBackArrow: widget.showBackArrow),
                 const SizedBox(height: 5),
                 const PendingCustomerUpdatesTile(),
                
                 Divider(
-                  indent: 15,
-                  endIndent: 15,
+                  indent: horizontalPadding,
+                  endIndent: horizontalPadding,
                   thickness: 0.5,
                   color: isDark ? Colors.white38 : kGreyColor,
                 ),
@@ -171,11 +175,11 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                           .length;
                       final int visibleCount = math.min(loadedCount, totalCount);
                       return Padding(
-                        padding: const EdgeInsets.only(
-                          left: 15,
-                          right: 15,
-                          bottom: 18,
-                          top: 10,
+                        padding: EdgeInsets.only(
+                          left: horizontalPadding,
+                          right: horizontalPadding,
+                          bottom: useDesktopNav ? 12 : 18,
+                          top: useDesktopNav ? 6 : 10,
                         ),
                         child: Row(
                           children: [
@@ -214,7 +218,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                               "$visibleCount of ${NumberFormat('#,###').format(totalCount)}",
                               style: TextStyle(
                                 color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                                fontSize: 11,
+                                fontSize: useDesktopNav ? 10 : 11,
                               ),
                             ),
                           ],
@@ -223,11 +227,11 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                     }
 
                     return Padding(
-                      padding: const EdgeInsets.only(
-                        left: 15,
-                        right: 15,
-                        bottom: 18,
-                        top: 10,
+                      padding: EdgeInsets.only(
+                        left: horizontalPadding,
+                        right: horizontalPadding,
+                        bottom: useDesktopNav ? 12 : 18,
+                        top: useDesktopNav ? 6 : 10,
                       ),
                       child: Row(
                         children: [
@@ -243,7 +247,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                             '0 of 0',
                             style: TextStyle(
                               color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                              fontSize: 11,
+                              fontSize: useDesktopNav ? 10 : 11,
                             ),
                           ),
                         ],
@@ -272,7 +276,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                       child: BackdropFilter(
                         filter: ui.ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
                         child: Container(
-                          height: 100,
+                          height: useDesktopNav ? 80 : 100,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topCenter,
@@ -289,10 +293,10 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(
-                        left: 20,
-                        right: 20,
-                        bottom: 42,
+                      padding: EdgeInsets.only(
+                        left: useDesktopNav ? 14 : 20,
+                        right: useDesktopNav ? 14 : 20,
+                        bottom: useDesktopNav ? 30 : 42,
                       ),
                       child: _buildGlassSearchBar(),
                     ),
@@ -370,17 +374,20 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
       ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
       : 1.0;
+    final double barHeight = useDesktopNav ? 44 : (isTablet ? 64 : 56) * uiScale;
+    final double borderRadius = useDesktopNav ? 22 : 30;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
+      borderRadius: BorderRadius.circular(borderRadius),
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
-          height: (isTablet ? 64 : 56) * uiScale,
+          height: barHeight,
           decoration: BoxDecoration(
             border: Border.all(
               color: isDark ? Colors.white38 : kGreyColor.withOpacity(0.6),
@@ -388,7 +395,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
             ),
             color: (isDark ? colors.surface : kSecondaryColor)
                 .withOpacity(0.65),
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(borderRadius),
             boxShadow: [
               BoxShadow(
                 color: isDark
@@ -542,6 +549,10 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
       child: BlocBuilder<CustomerListBloc, CustomerListState>(
         builder: (context, state) {
           final bool isTablet = context.isTablet;
+          final bool useDesktopNav = context.useDesktopNav;
+          final double listHorizontalPadding = useDesktopNav ? 10 : 15;
+          final double listBottomPadding = useDesktopNav ? 80 : 100;
+          final double itemSeparator = useDesktopNav ? 5 : (isTablet ? 10 : 7);
 
           if (state is CustomerListLoading) {
             return loadingWidget();
@@ -560,11 +571,11 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
               child: ListView.separated(
                 controller: _scrollController,
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(left: 15, right: 15, top: 0, bottom: 100),
+                padding: EdgeInsets.only(left: listHorizontalPadding, right: listHorizontalPadding, top: 0, bottom: listBottomPadding),
                 itemCount: state.hasReachedMax
                     ? state.customers.length
                     : state.customers.length + 1,
-                separatorBuilder: (ctx, i) => SizedBox(height: isTablet ? 10 : 7),
+                separatorBuilder: (ctx, i) => SizedBox(height: itemSeparator),
                 itemBuilder: (context, index) {
                   if (index >= state.customers.length) {
                     return const Center(
@@ -688,14 +699,15 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
     final bool isLargeTablet = context.isLargeTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double thumbnailSize = (isLargeTablet ? 52 : isTablet ? 44 : 36) * uiScale;
-    final double tileHorizontalPadding = (isTablet ? 16 : 15) * uiScale;
-    final double accountIconSize = (isLargeTablet ? 22 : isTablet ? 19 : 16) * uiScale;
-    final double accountIconPadding = (isLargeTablet ? 9 : isTablet ? 7 : 6) * uiScale;
+    final double thumbnailSize = useDesktopNav ? 32 : (isLargeTablet ? 52 : isTablet ? 44 : 36) * uiScale;
+    final double tileHorizontalPadding = useDesktopNav ? 10 : (isTablet ? 16 : 15) * uiScale;
+    final double accountIconSize = useDesktopNav ? 14 : (isLargeTablet ? 22 : isTablet ? 19 : 16) * uiScale;
+    final double accountIconPadding = useDesktopNav ? 5 : (isLargeTablet ? 9 : isTablet ? 7 : 6) * uiScale;
 
     final String trimmedQuery = query.trim();
     final String lowerQuery = trimmedQuery.toLowerCase();
@@ -752,18 +764,19 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     final double textUiScale = shouldScaleUp
       ? (1.0 + ((textScale - 1.0) * 0.85)).clamp(1.0, 1.65)
       : 1.0;
-    final double tileVerticalPadding = (isTablet
-        ? (shouldScaleUp || showExtraFields ? 18 : 10)
-        : 8) *
-      uiScale;
+    final double tileVerticalPadding = useDesktopNav 
+        ? 6 
+        : (isTablet
+            ? (shouldScaleUp || showExtraFields ? 18 : 10)
+            : 8) *
+          uiScale;
 
-    final double titleFontSize = (isTablet ? 15 : 14) * textUiScale;
-    final double barcodeFontSize = (isTablet ? 14 : 13) * textUiScale;
-    final double infoLabelFontSize =
-      (isTablet ? 9.5 : 12) * textUiScale;
-    final double infoValueFontSize =
-      (isTablet ? 14 : 12) * textUiScale;
-    final double infoIconSize = (isTablet ? 13 : 12) * textUiScale;
+    final double titleFontSize = useDesktopNav ? 12 : (isTablet ? 15 : 14) * textUiScale;
+    final double barcodeFontSize = useDesktopNav ? 11 : (isTablet ? 14 : 13) * textUiScale;
+    final double infoLabelFontSize = useDesktopNav ? 10 : (isTablet ? 9.5 : 12) * textUiScale;
+    final double infoValueFontSize = useDesktopNav ? 10 : (isTablet ? 14 : 12) * textUiScale;
+    final double infoIconSize = useDesktopNav ? 10 : (isTablet ? 13 : 12) * textUiScale;
+    final double tileBorderRadius = useDesktopNav ? 8 : 10;
 
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(
@@ -791,7 +804,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                   color: isDark
                       ? Color.lerp(colors.surface, Colors.white, 0.06)
                       : colors.surface,
-                  borderRadius: const BorderRadius.all(Radius.circular(10)),
+                  borderRadius: BorderRadius.all(Radius.circular(tileBorderRadius)),
                   border: isDark
                       ? Border.all(color: Colors.white12)
                       : null,
@@ -817,7 +830,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                       width: thumbnailSize,
                       height: thumbnailSize,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+                        borderRadius: BorderRadius.circular(useDesktopNav ? 5 : (isTablet ? 8 : 6)),
                       ),
                       child: Hero(
                         tag: _customerHeroTag(customer),
@@ -837,7 +850,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(width: (isTablet ? 17 : 15) * uiScale),
+                    SizedBox(width: useDesktopNav ? 10 : (isTablet ? 17 : 15) * uiScale),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -859,7 +872,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                               ],
                             ),
                           ),
-                          SizedBox(height: isTablet ? 4 : 3),
+                          SizedBox(height: useDesktopNav ? 2 : (isTablet ? 4 : 3)),
                           // Barcode with highlighting
                           HighlightedText(
                             text: _barcodeLine(customer),
@@ -926,7 +939,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                                     ? Colors.white70
                                     : Colors.blueGrey[700]!))
                             .withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
+                        borderRadius: BorderRadius.circular(useDesktopNav ? 6 : (isTablet ? 10 : 8)),
                       ),
                       child: Icon(
                         Icons.person,
@@ -950,17 +963,17 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                           context.navigateToNext(CustomerDetailsScreen(customer: customer));
                         },
                         child: Container(
-                          padding: EdgeInsets.all(isTablet ? 8 : 6),
+                          padding: EdgeInsets.all(useDesktopNav ? 5 : (isTablet ? 8 : 6)),
                           decoration: BoxDecoration(
                             color: isDark 
                                 ? Colors.white.withOpacity(0.1) 
                                 : Colors.grey.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
+                            borderRadius: BorderRadius.circular(useDesktopNav ? 6 : (isTablet ? 10 : 8)),
                           ),
                           child: Icon(
                             CupertinoIcons.chevron_right,
                             color: isDark ? Colors.white54 : Colors.grey[600],
-                            size: isTablet ? 20 : 16,
+                            size: useDesktopNav ? 14 : (isTablet ? 20 : 16),
                           ),
                         ),
                       ),

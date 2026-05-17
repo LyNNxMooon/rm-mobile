@@ -15,6 +15,7 @@ import 'package:rmmobile/features/customer_lookup/presentation/BLoC/staff_barcod
 import 'package:rmmobile/entities/vos/pending_customer_creation_vo.dart';
 import 'package:rmmobile/utils/ios_done_bar.dart';
 import 'package:rmmobile/entities/vos/customer_vo.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 
 class CustomerCreateScreen extends StatefulWidget {
   final PendingCustomerCreationVO? pendingCreation;
@@ -467,13 +468,29 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     super.dispose();
   }
 
+  bool _useDesktopNav(BuildContext context) {
+    return context.useDesktopNav;
+  }
+
   double _uiScale(BuildContext context) {
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final bool useDesktopNav = _useDesktopNav(context);
+    if (useDesktopNav) return 1.0;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     return isTablet ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2) : 1.0;
   }
 
-  double _font(BuildContext context, double size) => size * _uiScale(context);
+  double _font(BuildContext context, double size) {
+    final bool useDesktopNav = _useDesktopNav(context);
+    if (useDesktopNav) {
+      // Desktop uses smaller fonts
+      if (size >= 16) return 14;
+      if (size >= 14) return 12;
+      if (size >= 12) return 11;
+      return size * 0.85;
+    }
+    return size * _uiScale(context);
+  }
 
   int _parseInt(String raw, int fallback) {
     final parsed = int.tryParse(raw.trim());
@@ -763,21 +780,25 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   InputDecoration _minimalInputDecoration({String? hintText}) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final Color borderColor =
       isDark ? Colors.white38 : Colors.grey.shade400;
+    final double hPadding = useDesktopNav ? 8 : 10;
+    final double vPadding = useDesktopNav ? 6 : 8;
+    final double borderRadius = useDesktopNav ? 6 : 8;
     return InputDecoration(
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      contentPadding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(borderRadius),
         borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(borderRadius),
         borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(borderRadius),
         borderSide: const BorderSide(color: kPrimaryColor, width: 1.2),
       ),
       hintText: hintText,
@@ -790,12 +811,15 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   Widget _buildBaseCard({required Widget child}) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
+    final double padding = useDesktopNav ? 12 : 16;
+    final double borderRadius = useDesktopNav ? 10 : 12;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: isDark ? colors.surfaceAlt : const Color(0xFFFBF7F0),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(borderRadius),
         // Adding a subtle stroke to give that "solid card" look from modern UI
         border: Border.all(
           color: isDark ? Colors.white54 : const Color(0xFFC9B9A6),
@@ -821,9 +845,12 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
+    final double bottomPadding = useDesktopNav ? 12 : 16;
+    final double spacerHeight = useDesktopNav ? 12 : 16;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: _buildBaseCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -836,7 +863,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                 color: isDark ? colors.onSurface : Colors.black87,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: spacerHeight),
             ...children,
           ],
         ),
@@ -856,16 +883,19 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
+    final double bottomPadding = useDesktopNav ? 8 : 12;
+    final double labelTopPadding = useDesktopNav ? 6.0 : 8.0;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             flex: 2,
             child: Padding(
-              padding: const EdgeInsets.only(top: 8.0),
+              padding: EdgeInsets.only(top: labelTopPadding),
               child: Text(
                 label,
                 style: TextStyle(
@@ -919,9 +949,11 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
+    final double bottomPadding = useDesktopNav ? 4 : 8;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -950,16 +982,19 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
+    final double bottomPadding = useDesktopNav ? 8 : 12;
+    final double labelTopPadding = useDesktopNav ? 6.0 : 8.0;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             flex: 2,
             child: Padding(
-              padding: const EdgeInsets.only(top: 8.0),
+              padding: EdgeInsets.only(top: labelTopPadding),
               child: Text(
                 label,
                 style: TextStyle(
@@ -998,10 +1033,13 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
     final double smallSize = _font(context, 12);
+    final double bottomPadding = useDesktopNav ? 8 : 12;
+    final double labelTopPadding = useDesktopNav ? 6.0 : 8.0;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1011,7 +1049,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               Expanded(
                 flex: 2,
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                  padding: EdgeInsets.only(top: labelTopPadding),
                   child: Text(
                     label,
                     style: TextStyle(
@@ -1072,7 +1110,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   List<Widget> _buildSecondaryAddressEditors() {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 13);
+    final double headerPadding = useDesktopNav ? 6.0 : 8.0;
+    final double sectionSpacer = useDesktopNav ? 8 : 12;
     final List<Widget> widgets = [];
 
     for (final entry in _secondaryAddressControllers.entries) {
@@ -1081,7 +1122,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
 
       widgets.add(
         Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
+          padding: EdgeInsets.only(bottom: headerPadding),
           child: Text(
             "Address $addressNumber",
             style: TextStyle(
@@ -1129,7 +1170,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
           keyboardType: TextInputType.emailAddress,
         ),
       );
-      widgets.add(const SizedBox(height: 12));
+      widgets.add(SizedBox(height: sectionSpacer));
     }
 
     return widgets;
@@ -1140,7 +1181,11 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     required VoidCallback? onTap,
   }) {
     final colors = context.appColors;
+    final bool useDesktopNav = _useDesktopNav(context);
     final double baseSize = _font(context, 14);
+    final double verticalPadding = useDesktopNav ? 10 : 14;
+    final double borderRadius = useDesktopNav ? 8 : 10;
+    final double spinnerSize = useDesktopNav ? 16 : 20;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -1148,16 +1193,16 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: kPrimaryColor,
           foregroundColor: colors.onHero,
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: EdgeInsets.symmetric(vertical: verticalPadding),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(borderRadius),
           ),
         ),
         child: _isSubmitting
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
+            ? SizedBox(
+                height: spinnerSize,
+                width: spinnerSize,
+                child: const CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
@@ -1277,51 +1322,61 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
 
             // Custom App Bar Elements (Overlay)
             SafeArea(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0,
-                      vertical: 8.0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        TextButton.icon(
-                          onPressed: () => Navigator.pop(context),
-                          icon: Icon(
-                            Icons.arrow_back_ios_new,
-                            color: isDark ? Colors.white : Colors.white,
-                            size: 18,
-                          ),
-                          label: Text(
-                            "Back",
-                            style: TextStyle(
-                              color: isDark ? Colors.white : Colors.white,
-                              fontSize: 16,
+              child: Builder(
+                builder: (context) {
+                  final useDesktopNav = _useDesktopNav(context);
+                  final double appBarPadding = useDesktopNav ? 6.0 : 8.0;
+                  final double backIconSize = useDesktopNav ? 16 : 18;
+                  final double backTextSize = useDesktopNav ? 13 : 16;
+                  final double titleSize = useDesktopNav ? 14 : 16;
+                  final double formHorizontalPadding = useDesktopNav ? 12 : 16;
+                  final double formTopPadding = useDesktopNav ? 6 : 8;
+                  final double formBottomPadding = useDesktopNav ? 30 : 40;
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: appBarPadding,
+                          vertical: appBarPadding,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton.icon(
+                              onPressed: () => Navigator.pop(context),
+                              icon: Icon(
+                                Icons.arrow_back_ios_new,
+                                color: isDark ? Colors.white : Colors.white,
+                                size: backIconSize,
+                              ),
+                              label: Text(
+                                "Back",
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : Colors.white,
+                                  fontSize: backTextSize,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(padding: EdgeInsets.zero),
                             ),
-                          ),
-                          style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                            Text(
+                              "Create Customer",
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.white,
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 80),
+                          ],
                         ),
-                        Text(
-                          "Create Customer",
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 80),
-                      ],
-                    ),
-                  ),
+                      ),
 
-                  // Scrollable Form Content
-                  Expanded(
-                    child: Form(
-                      key: _formKey,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                      // Scrollable Form Content
+                      Expanded(
+                        child: Form(
+                          key: _formKey,
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.fromLTRB(formHorizontalPadding, formTopPadding, formHorizontalPadding, formBottomPadding),
                         child: Column(
                           children: [
                             _buildSectionCard(
@@ -1665,12 +1720,12 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                               ],
                             ),
 
-                            const SizedBox(height: 12),
+                            SizedBox(height: useDesktopNav ? 8 : 12),
                             _buildLongActionButton(
                               label: "Create Customer",
                               onTap: _isSubmitting ? null : _submitCustomer,
                             ),
-                            const SizedBox(height: 24),
+                            SizedBox(height: useDesktopNav ? 16 : 24),
                           ],
                         ),
                       ),
@@ -1708,7 +1763,9 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                       _addr3PostcodeFocusNode.unfocus();
                     },
                   ),
-                ],
+                    ],
+                  );
+                },
               ),
             ),
           ],
