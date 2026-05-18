@@ -341,7 +341,10 @@ Future<void> init() async {
       getShopfrontName: sl(),
     ),
   );
-  sl.registerFactory(() => StocktakeDeleteBloc(deleteStocktakeItem: sl()));
+  sl.registerFactory(() => StocktakeDeleteBloc(
+    deleteStocktakeItem: sl(),
+    deleteAllStocktake: sl(),
+  ));
   sl.registerFactory(
     () => OnboardingBloc(
       getTermsAccepted: sl(),

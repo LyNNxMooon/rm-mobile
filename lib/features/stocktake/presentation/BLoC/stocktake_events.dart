@@ -71,6 +71,14 @@ class DeleteStocktakeEvent extends StocktakeEvent {
   DeleteStocktakeEvent(this.stockId);
 }
 
+class DeleteSelectedStocktakeEvent extends StocktakeEvent {
+  final List<int> stockIds;
+
+  DeleteSelectedStocktakeEvent(this.stockIds);
+}
+
+class DeleteAllStocktakeItemsEvent extends StocktakeEvent {}
+
 class NextStocktakePageEvent extends StocktakeEvent {}
 
 class PrevStocktakePageEvent extends StocktakeEvent {}

@@ -8,6 +8,7 @@ import 'package:rmmobile/features/stocktake/presentation/utils/transaction_type_
 import 'package:rmmobile/constants/colors.dart';
 import 'package:rmmobile/constants/standard_dialog.dart';
 import 'package:rmmobile/constants/theme_colors.dart';
+import 'package:rmmobile/utils/responsive_utils.dart';
 
 /// Dialog to display detected transactions during stocktake commit.
 /// Allows user to select which items to apply adjustments for.
@@ -100,12 +101,21 @@ class _TransactionsDetectedDialogState
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
     final screenSize = MediaQuery.of(context).size;
 
-    // Calculate dialog dimensions - almost full screen height, wider but not edge-to-edge
-    final double dialogWidth = screenSize.width * 0.92;
-    //final double maxDialogWidth = 600.0;
-    final double dialogHeight = screenSize.height * 0.95;
+    // Calculate dialog dimensions - desktop uses fixed width, mobile uses percentage
+    final double dialogWidth = useDesktopNav ? 700.0 : screenSize.width * 0.92;
+    final double dialogHeight = useDesktopNav ? screenSize.height * 0.85 : screenSize.height * 0.95;
+    
+    // Desktop-specific sizing
+    final double descFontSize = useDesktopNav ? 12.0 : 13.0;
+    final double selectAllPaddingH = useDesktopNav ? 10.0 : 12.0;
+    final double selectAllPaddingV = useDesktopNav ? 8.0 : 10.0;
+    final double checkboxSize = useDesktopNav ? 20.0 : 24.0;
+    final double selectAllFontSize = useDesktopNav ? 12.0 : 14.0;
+    final double countBadgeFontSize = useDesktopNav ? 11.0 : 12.0;
+    final double borderRadius = useDesktopNav ? 8.0 : 12.0;
 
     final subtitle = widget.isBatchMode &&
             widget.currentBatchNumber != null &&
@@ -126,34 +136,34 @@ class _TransactionsDetectedDialogState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.only(bottom: useDesktopNav ? 6 : 8),
               child: Text(
                 widget.isBatchMode
                     ? "The following items in batch ${widget.currentBatchNumber} were modified recently. Select items to apply adjustments:"
                     : "The following items were modified recently. Select items to apply adjustments:",
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: descFontSize,
                   color: isDark ? Colors.white70 : colors.onSurfaceMuted,
                 ),
               ),
             ),
-            _buildSelectAllRow(colors, isDark),
-            const SizedBox(height: 8),
+            _buildSelectAllRow(colors, isDark, useDesktopNav, selectAllPaddingH, selectAllPaddingV, checkboxSize, selectAllFontSize, countBadgeFontSize),
+            SizedBox(height: useDesktopNav ? 6 : 8),
             Flexible(
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: isDark ? Colors.white24 : colors.divider,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(borderRadius),
                 ),
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: widget.rows.length,
                   separatorBuilder: (context, index) =>
-                      const Divider(height: 1, indent: 60),
+                      Divider(height: 1, indent: useDesktopNav ? 50 : 60),
                   itemBuilder: (context, i) =>
-                      _buildAuditTile(widget.rows[i], i, colors, isDark),
+                      _buildAuditTile(widget.rows[i], i, colors, isDark, useDesktopNav),
                 ),
               ),
             ),
@@ -181,53 +191,52 @@ class _TransactionsDetectedDialogState
     );
   }
 
-  Widget _buildSelectAllRow(AppThemeColors colors, bool isDark) {
+  Widget _buildSelectAllRow(AppThemeColors colors, bool isDark, bool useDesktopNav, double paddingH, double paddingV, double checkboxSize, double fontSize, double badgeFontSize) {
     return Material(
       color: isDark
           ? colors.surface.withOpacity(0.5)
           : kPrimaryColor.withOpacity(0.05),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
       child: InkWell(
         onTap: _toggleSelectAll,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: EdgeInsets.symmetric(horizontal: paddingH, vertical: paddingV),
           child: Row(
             children: [
               SizedBox(
-                width: 24,
-                height: 24,
+                width: checkboxSize,
+                height: checkboxSize,
                 child: Checkbox(
                   value: _allSelected,
                   tristate: true,
                   onChanged: (_) => _toggleSelectAll(),
                   activeColor: kPrimaryColor,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(useDesktopNav ? 3 : 4),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: useDesktopNav ? 10 : 12),
               Text(
                 _allSelected ? "Deselect All" : "Select All",
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontSize: fontSize,
                   color: isDark ? Colors.white : colors.onSurface,
                 ),
               ),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: useDesktopNav ? 8 : 10, vertical: useDesktopNav ? 3 : 4),
                 decoration: BoxDecoration(
                   color: kPrimaryColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(useDesktopNav ? 10 : 12),
                 ),
                 child: Text(
                   "${_selectedIndices.length} / ${widget.rows.length}",
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: badgeFontSize,
                     fontWeight: FontWeight.bold,
                     color: kPrimaryColor,
                   ),
@@ -241,11 +250,20 @@ class _TransactionsDetectedDialogState
   }
 
   Widget _buildAuditTile(
-      AuditWithStockVO row, int index, AppThemeColors colors, bool isDark) {
+      AuditWithStockVO row, int index, AppThemeColors colors, bool isDark, bool useDesktopNav) {
     final s = row.stock;
     final a = row.audit;
     final timeStr = _formatAuditTime(a.auditDate);
     final isSelected = _selectedIndices.contains(index);
+    
+    // Desktop sizing
+    final double checkboxSize = useDesktopNav ? 20.0 : 24.0;
+    final double iconContainerPadding = useDesktopNav ? 6.0 : 8.0;
+    final double iconSize = useDesktopNav ? 16.0 : 20.0;
+    final double titleFontSize = useDesktopNav ? 12.0 : 13.0;
+    final double barcodeFontSize = useDesktopNav ? 10.0 : 11.0;
+    final double subtitleFontSize = useDesktopNav ? 10.0 : 11.0;
+    final double trailingFontSize = useDesktopNav ? 12.0 : 14.0;
 
     return InkWell(
       onTap: () => _toggleItem(index),
@@ -255,32 +273,33 @@ class _TransactionsDetectedDialogState
             : null,
         child: ListTile(
           dense: true,
+          visualDensity: useDesktopNav ? VisualDensity.compact : null,
           leading: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                width: 24,
-                height: 24,
+                width: checkboxSize,
+                height: checkboxSize,
                 child: Checkbox(
                   value: isSelected,
                   onChanged: (_) => _toggleItem(index),
                   activeColor: kPrimaryColor,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(useDesktopNav ? 3 : 4),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: useDesktopNav ? 6 : 8),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(iconContainerPadding),
                 decoration: BoxDecoration(
                   color: kPrimaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
                 ),
                 child: Icon(
                   TransactionTypeHelper.getIcon(a.tranType),
                   color: kPrimaryColor,
-                  size: 20,
+                  size: iconSize,
                 ),
               ),
             ],
@@ -294,7 +313,7 @@ class _TransactionsDetectedDialogState
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 13,
+                  fontSize: titleFontSize,
                   color: isDark ? Colors.white : null,
                 ),
               ),
@@ -303,7 +322,7 @@ class _TransactionsDetectedDialogState
                   s!.barcode,
                   style: TextStyle(
                     fontFamily: 'monospace',
-                    fontSize: 11,
+                    fontSize: barcodeFontSize,
                     color: kPrimaryColor.withOpacity(0.8),
                     fontWeight: FontWeight.w600,
                   ),
@@ -311,12 +330,12 @@ class _TransactionsDetectedDialogState
             ],
           ),
           subtitle: Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: EdgeInsets.only(top: useDesktopNav ? 2 : 4),
             child: Text(
               "${TransactionTypeHelper.translate(a.tranType)} on $timeStr",
               style: TextStyle(
                 color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                fontSize: 11,
+                fontSize: subtitleFontSize,
               ),
             ),
           ),
@@ -327,7 +346,7 @@ class _TransactionsDetectedDialogState
                     : a.movement.toString()),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 14,
+              fontSize: trailingFontSize,
               color: a.movement < 0 ? kErrorColor : Colors.green,
             ),
           ),

@@ -24,7 +24,7 @@ class StockDetailsDialog extends StatelessWidget {
     final double availableHeight = MediaQuery.of(context).size.height - keyboardHeight;
     
     final double dialogBorderRadius = useDesktopNav ? 12.0 : 16.0;
-    final double dialogMaxWidth = useDesktopNav ? 400.0 : double.infinity;
+    final double dialogMaxWidth = useDesktopNav ? 500.0 : double.infinity;
     final double horizontalInset = useDesktopNav ? 32.0 : 24.0;
 
     return Dialog(

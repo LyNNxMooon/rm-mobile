@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/features/stocktake/domain/use_cases/backup_stocktake.dart';
 import 'package:rmmobile/features/stocktake/domain/use_cases/commit_stocktake.dart';
+import 'package:rmmobile/features/stocktake/domain/use_cases/delete_all_stocktake.dart';
 import 'package:rmmobile/features/stocktake/domain/use_cases/fetch_counted_stock_by_id.dart';
 import 'package:rmmobile/features/stocktake/domain/use_cases/fetch_counting_stock.dart';
 import 'package:rmmobile/features/stocktake/domain/use_cases/fetch_sessions.dart';
@@ -329,10 +330,13 @@ class CommittingStocktakeBloc
 class StocktakeDeleteBloc
     extends Bloc<StocktakeEvent, StocktakeDeleteStates> {
   final DeleteStocktakeItem deleteStocktakeItem;
+  final DeleteAllStocktake? deleteAllStocktake;
 
-  StocktakeDeleteBloc({required this.deleteStocktakeItem})
+  StocktakeDeleteBloc({required this.deleteStocktakeItem, this.deleteAllStocktake})
       : super(StocktakeDeleteInitial()) {
     on<DeleteStocktakeEvent>(_onDeleteStocktake);
+    on<DeleteSelectedStocktakeEvent>(_onDeleteSelectedStocktake);
+    on<DeleteAllStocktakeItemsEvent>(_onDeleteAllStocktake);
   }
 
   Future<void> _onDeleteStocktake(
@@ -347,6 +351,41 @@ class StocktakeDeleteBloc
         shopfront: shopfront,
       );
       emit(StocktakeDeleted("Stocktake item deleted."));
+    } catch (error) {
+      emit(StocktakeDeleteError(error.toString()));
+    }
+  }
+
+  Future<void> _onDeleteSelectedStocktake(
+    DeleteSelectedStocktakeEvent event,
+    Emitter<StocktakeDeleteStates> emit,
+  ) async {
+    emit(StocktakeDeleting());
+    try {
+      final shopfront = AppGlobals.instance.shopfront ?? "";
+      for (final stockId in event.stockIds) {
+        await deleteStocktakeItem(
+          stockId: stockId,
+          shopfront: shopfront,
+        );
+      }
+      final count = event.stockIds.length;
+      emit(StocktakeDeleted("$count item${count > 1 ? 's' : ''} deleted."));
+    } catch (error) {
+      emit(StocktakeDeleteError(error.toString()));
+    }
+  }
+
+  Future<void> _onDeleteAllStocktake(
+    DeleteAllStocktakeItemsEvent event,
+    Emitter<StocktakeDeleteStates> emit,
+  ) async {
+    emit(StocktakeDeleting());
+    try {
+      if (deleteAllStocktake != null) {
+        await deleteAllStocktake!();
+      }
+      emit(StocktakeDeleted("All stocktake items deleted."));
     } catch (error) {
       emit(StocktakeDeleteError(error.toString()));
     }

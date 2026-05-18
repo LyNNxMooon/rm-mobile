@@ -223,7 +223,7 @@ class TransactionPulseWidget extends StatelessWidget {
                 Text(
                   "All Caught Up!",
                   style: getSmartTitle(
-                    fontSize: isTablet ? 16 : 14,
+                    fontSize: isTablet ? 16 : 16,
                     color: colors.isDark ? Colors.white : colors.onSurface,
                   ),
                 ),
@@ -231,7 +231,7 @@ class TransactionPulseWidget extends StatelessWidget {
                 Text(
                   "No pending transactions.",
                   style: TextStyle(
-                    fontSize: isTablet ? 13 : 11,
+                    fontSize: isTablet ? 13 : 13,
                     color: colors.isDark
                         ? Colors.white54
                         : Colors.grey.shade600,
@@ -261,7 +261,7 @@ class TransactionPulseWidget extends StatelessWidget {
                 Text(
                   "On Track",
                   style: TextStyle(
-                    fontSize: isTablet ? 12 : 10,
+                    fontSize: isTablet ? 12 : 12,
                     fontWeight: FontWeight.w600,
                     color: Colors.green,
                   ),
@@ -282,13 +282,13 @@ class TransactionPulseWidget extends StatelessWidget {
     List<TransactionCategory> activeCategories,
   ) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final double subtitleFontSize = isTablet ? 11 : (screenWidth < 360 ? 8 : 9);
+    final double subtitleFontSize = isTablet ? 11 : (screenWidth < 360 ? 10 : 11);
     
     // Scale factor for responsive font sizes (matching action grid cards)
     final double scale = isTablet
         ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)
         : 1.0;
-    final double titleSize = isTablet ? (14 * scale).clamp(14.0, 18.0) : 12.0;
+    final double titleSize = isTablet ? (14 * scale).clamp(14.0, 18.0) : 14.0;
     
     // Determine layout based on screen width and category count
     final bool useCompactLayout = screenWidth < 400 || 
@@ -409,7 +409,7 @@ class TransactionPulseWidget extends StatelessWidget {
                     style: TextStyle(
                       fontSize: isTablet 
                           ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
-                          : 10.0,
+                          : 12.0,
                       fontWeight: FontWeight.w600,
                       color: kPrimaryColor,
                     ),
@@ -559,7 +559,7 @@ class TransactionPulseWidget extends StatelessWidget {
                     style: TextStyle(
                       fontSize: isTablet 
                           ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
-                          : 10.0,
+                          : 12.0,
                       fontWeight: FontWeight.w600,
                       color: colors.isDark ? Colors.white : colors.onSurface,
                     ),
@@ -571,7 +571,7 @@ class TransactionPulseWidget extends StatelessWidget {
                   Text(
                     "${category.count}",
                     style: TextStyle(
-                      fontSize: isTablet ? 18 : 15,
+                      fontSize: isTablet ? 18 : 17,
                       fontWeight: FontWeight.bold,
                       color: category.color,
                     ),
@@ -582,7 +582,7 @@ class TransactionPulseWidget extends StatelessWidget {
                     Text(
                       category.analysisLine1!,
                       style: TextStyle(
-                        fontSize: isTablet ? 11 : 9,
+                        fontSize: isTablet ? 11 : 11,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF4CAF50), // Green
                       ),
@@ -596,7 +596,7 @@ class TransactionPulseWidget extends StatelessWidget {
                     Text(
                       category.analysisLine2!,
                       style: TextStyle(
-                        fontSize: isTablet ? 11 : 9,
+                        fontSize: isTablet ? 11 : 11,
                         fontWeight: FontWeight.w500,
                         color: colors.isDark
                             ? Colors.white70

@@ -15,6 +15,9 @@ CountedStockVO _$CountedStockVOFromJson(Map<String, dynamic> json) =>
       dateModified: DateTime.parse(json['date_modified'] as String),
       description: json['description'] as String,
       barcode: json['barcode'] as String,
+      category1: json['category1'] as String?,
+      category2: json['category2'] as String?,
+      category3: json['category3'] as String?,
     );
 
 Map<String, dynamic> _$CountedStockVOToJson(CountedStockVO instance) =>
@@ -26,4 +29,7 @@ Map<String, dynamic> _$CountedStockVOToJson(CountedStockVO instance) =>
       'date_modified': instance.dateModified.toIso8601String(),
       'barcode': instance.barcode,
       'description': instance.description,
+      'category1': instance.category1,
+      'category2': instance.category2,
+      'category3': instance.category3,
     };

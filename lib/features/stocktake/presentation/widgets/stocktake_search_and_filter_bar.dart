@@ -81,38 +81,41 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
                 ),
               ),
 
-              SizedBox(width: useDesktopNav ? 6 : 8),
-              SizedBox(
-                height: actionSize,
-                width: actionSize,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isDark ? colors.surfaceAlt : colors.surface,
-                    borderRadius: BorderRadius.circular(borderRadius),
-                    border: Border.all(
-                      color: isDark ? Colors.white38 : colors.divider,
-                      width: 1,
-                    ),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(borderRadius),
-                    child: InkWell(
-                      onTap: () {
-                        context.navigateToNext(const StocktakeHistoryScreen());
-                      },
+              // History icon - only on mobile/tablet, not on desktop
+              if (!useDesktopNav) ...[
+                SizedBox(width: 8),
+                SizedBox(
+                  height: actionSize,
+                  width: actionSize,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? colors.surfaceAlt : colors.surface,
                       borderRadius: BorderRadius.circular(borderRadius),
-                      child: Center(
-                        child: Icon(
-                          Icons.history,
-                          color: isDark ? Colors.white70 : colors.onSurface,
-                          size: iconSize,
+                      border: Border.all(
+                        color: isDark ? Colors.white38 : colors.divider,
+                        width: 1,
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(borderRadius),
+                      child: InkWell(
+                        onTap: () {
+                          context.navigateToNext(const StocktakeHistoryScreen());
+                        },
+                        borderRadius: BorderRadius.circular(borderRadius),
+                        child: Center(
+                          child: Icon(
+                            Icons.history,
+                            color: isDark ? Colors.white70 : colors.onSurface,
+                            size: iconSize,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
