@@ -736,7 +736,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     final double tabletScale = isTablet
         ? (media.size.shortestSide / 768).clamp(0.85, 1.3)
         : 1.0;
-    final double fontSize = isTablet ? (22 * tabletScale) : 22;
+    final double fontSize = isTablet ? (22 * tabletScale) : 24;
 
     return ShaderMask(
       shaderCallback: (bounds) {
@@ -904,7 +904,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                           color: colors.isDark
                               ? Colors.white60
                               : Colors.blueGrey.shade700,
-                          fontSize: isTablet ? 14 : 11,
+                          fontSize: isTablet ? 14 : 13,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1003,12 +1003,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: isTablet ? 16 : 12, color: color),
+          Icon(icon, size: isTablet ? 16 : 14, color: color),
           const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
-              fontSize: isTablet ? 13 : 10,
+              fontSize: isTablet ? 13 : 12,
               fontWeight: FontWeight.w600,
               color: colors.isDark ? Colors.white70 : Colors.blueGrey.shade700,
             ),
@@ -1049,7 +1049,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           Text(
             title,
             style: getSmartTitle(
-              fontSize: isTablet ? 18 : 16,
+              fontSize: isTablet ? 18 : 18,
               color: colors.isDark ? Colors.white : colors.onSurface,
             ).copyWith(height: compact ? 1.0 : null),
           ),
@@ -1198,7 +1198,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 style: getSmartTitle(
                   fontSize: isTablet 
                       ? (14 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(14.0, 18.0)
-                      : 12.0,
+                      : 14.0,
                   color: colors.isDark ? Colors.white70 : Colors.grey.shade700,
                 ),
               ),
@@ -1217,7 +1217,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   style: TextStyle(
                     fontSize: isTablet 
                         ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
-                        : 10.0,
+                        : 12.0,
                     fontWeight: FontWeight.w600,
                     color: colors.isDark
                         ? Colors.white54
@@ -1231,7 +1231,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 style: TextStyle(
                   fontSize: isTablet 
                       ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
-                      : 10.0,
+                      : 12.0,
                   fontWeight: FontWeight.w600,
                   color: kPrimaryColor,
                 ),
@@ -1263,10 +1263,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     final double scale = isTablet
         ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)
         : 1.0;
-    final double titleSize = isTablet ? (14 * scale).clamp(14.0, 18.0) : 12.0;
+    final double titleSize = isTablet ? (14 * scale).clamp(14.0, 18.0) : 14.0;
     final double subTitleSize = isTablet
         ? (12 * scale).clamp(12.0, 14.0)
-        : 10.0;
+        : 12.0;
     final double iconSize = isTablet ? 34.0 : 22.0;
 
     final bool isComingSoon = item['comingSoon'] ?? false;
@@ -1439,7 +1439,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                     badgeCount > 99 ? '99+' : badgeCount.toString(),
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: isTablet ? 11 : 9,
+                      fontSize: isTablet ? 11 : 11,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

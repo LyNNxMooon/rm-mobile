@@ -97,12 +97,16 @@ dev_dependencies:
   json_serializable: any
   hive_generator: any
 
-flutter_icons:
-  android: true       # Set to false if you don’t want Android icon
-  ios: true           # Set to false if you don’t want iOS icon
+flutter_launcher_icons:
+  android: true       # Set to false if you don't want Android icon
+  ios: true           # Set to false if you don't want iOS icon
   image_path: "assets/images/appicon.png"
   adaptive_icon_background: "#ffffff"   # (For Android adaptive icons)
   adaptive_icon_foreground: "assets/images/appicon.png"
+  windows:
+    generate: true
+    image_path: "assets/images/appicon_rounded.png"
+    icon_size: 48 # min:48, max:256, default: 48
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

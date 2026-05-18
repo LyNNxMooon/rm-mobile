@@ -1225,25 +1225,44 @@ class SQLiteDAOImpl extends LocalDbDAO {
       List<Map<String, dynamic>> result;
 
       if (q.isEmpty) {
-        result = await db.query(
-          'Stocktake',
-          where: 'shopfront = ?',
-          whereArgs: [shopfront],
-          orderBy: 'stocktake_date ASC',
-          limit: limit,
-          offset: offset,
-        );
+        result = await db.rawQuery('''
+          SELECT 
+            st.stocktake_date,
+            st.stock_id,
+            st.quantity,
+            st.inStock,
+            st.date_modified,
+            st.barcode,
+            st.description,
+            s.cat1 AS category1,
+            s.cat2 AS category2,
+            s.cat3 AS category3
+          FROM Stocktake st
+          LEFT JOIN Stocks s ON st.stock_id = s.stock_id AND st.shopfront = s.shopfront
+          WHERE st.shopfront = ?
+          ORDER BY st.stocktake_date ASC
+          LIMIT ? OFFSET ?
+        ''', [shopfront, limit, offset]);
       } else {
         final like = '%$q%';
-        result = await db.query(
-          'Stocktake',
-          where:
-              'shopfront = ? AND (barcode LIKE ? OR description LIKE ?)',
-          whereArgs: [shopfront, like, like],
-          orderBy: 'stocktake_date ASC',
-          limit: limit,
-          offset: offset,
-        );
+        result = await db.rawQuery('''
+          SELECT 
+            st.stocktake_date,
+            st.stock_id,
+            st.quantity,
+            st.inStock,
+            st.date_modified,
+            st.barcode,
+            st.description,
+            s.cat1 AS category1,
+            s.cat2 AS category2,
+            s.cat3 AS category3
+          FROM Stocktake st
+          LEFT JOIN Stocks s ON st.stock_id = s.stock_id AND st.shopfront = s.shopfront
+          WHERE st.shopfront = ? AND (st.barcode LIKE ? OR st.description LIKE ?)
+          ORDER BY st.stocktake_date ASC
+          LIMIT ? OFFSET ?
+        ''', [shopfront, like, like, limit, offset]);
       }
 
       return result.map((map) {

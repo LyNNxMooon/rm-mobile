@@ -13,6 +13,9 @@ class CountedStockVO {
   final DateTime dateModified;
   final String barcode;
   final String description;
+  final String? category1;
+  final String? category2;
+  final String? category3;
 
   CountedStockVO({
     required this.inStock,
@@ -22,6 +25,9 @@ class CountedStockVO {
     required this.dateModified,
     required this.description,
     required this.barcode,
+    this.category1,
+    this.category2,
+    this.category3,
   });
 
   factory CountedStockVO.fromJson(Map<String, dynamic> json) =>
@@ -36,9 +42,11 @@ class CountedStockVO {
       quantity: m['quantity'] as num,
       inStock: m['inStock'] as num,
       dateModified: DateTime.parse(m['date_modified'].toString()),
-
       description: m['description'].toString(),
       barcode: m['barcode'].toString(),
+      category1: m['category1']?.toString(),
+      category2: m['category2']?.toString(),
+      category3: m['category3']?.toString(),
     );
   }
 }

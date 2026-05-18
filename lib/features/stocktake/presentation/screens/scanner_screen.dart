@@ -7,16 +7,25 @@ import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:rmmobile/entities/vos/stock_vo.dart';
+import 'package:rmmobile/entities/vos/counted_stock_vo.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_states.dart';
+import 'package:rmmobile/features/stocktake/presentation/BLoC/batch_commit_bloc.dart';
 import 'package:rmmobile/features/stocktake/presentation/screens/stock_take_list_screen.dart';
+import 'package:rmmobile/features/stocktake/presentation/screens/stocktake_history_screen.dart';
+import 'package:rmmobile/features/stocktake/presentation/widgets/edit_qty_dialog.dart';
+import 'package:rmmobile/features/stocktake/presentation/widgets/stocktake_trial_limit_info.dart';
+import 'package:rmmobile/features/stocktake/presentation/widgets/stocktake_search_and_filter_bar.dart';
+import 'package:rmmobile/features/stocktake/presentation/widgets/batch_commit_progress_widget.dart';
+import 'package:rmmobile/features/stocktake/presentation/widgets/transactions_detected_dialog.dart';
+import 'package:rmmobile/features/stocktake/presentation/widgets/stocktake_success_dialog.dart';
+import 'package:rmmobile/features/stocktake/presentation/widgets/stocktake_commit_error_dialog.dart';
 import 'package:rmmobile/features/transactions/presentation/screens/stock_selection_screen.dart';
 import 'package:rmmobile/features/stocktake/presentation/widgets/stocktake_question_dialog.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/responsive_utils.dart';
 import '../../../../constants/colors.dart';
-//import '../../../../constants/global_widgets.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
 import '../../../../utils/enums.dart';
@@ -38,6 +47,10 @@ class Debouncer {
   void run(VoidCallback action) {
     _timer?.cancel();
     _timer = Timer(Duration(milliseconds: milliseconds), action);
+  }
+
+  void dispose() {
+    _timer?.cancel();
   }
 }
 
@@ -70,6 +83,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
   // Tax percentages for desktop display
   double _costTaxPercentage = 0.0;
   double _sellTaxPercentage = 0.0;
+
+  // Selected items for deletion
+  final Set<int> _selectedStockIds = {};
 
   // Helper to handle saving the count
   void _submitCount() {
@@ -172,6 +188,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
     // Close scanner when text fields gain focus
     qtyFocusNode.addListener(_onFocusChange);
     txtFieldFocusNode.addListener(_onFocusChange);
+
+    // Load stocktake list for desktop layout
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.useDesktopNav) {
+        context.read<FetchingStocktakeListBloc>().add(FetchStocktakeListEvent(reset: true));
+        context.read<StocktakeLimitBloc>().add(FetchStocktakeLimitEvent());
+      }
+    });
   }
 
   void _onFocusChange() {
@@ -190,6 +214,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     qtyFocusNode.removeListener(_onFocusChange);
     txtFieldFocusNode.removeListener(_onFocusChange);
     _searchLoadingTimer?.cancel();
+    _desktopSearchDebouncer.dispose();
     scannerController.dispose();
     qtyController.dispose();
     qtyFocusNode.dispose();
@@ -241,6 +266,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
     return _buildMobileLayout(context, colors, isDark, isTablet, isLandscape, cardHorizontalPadding);
   }
 
+  // Desktop search query state
+  String _desktopSearchQuery = "";
+  final Debouncer _desktopSearchDebouncer = Debouncer(milliseconds: 500);
+
   Widget _buildDesktopLayout(
     BuildContext context,
     AppThemeColors colors,
@@ -259,62 +288,80 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 _buildDesktopAppBar(colors, isDark),
 
                 Expanded(
-                  child: SingleChildScrollView(
-                    physics: const ClampingScrollPhysics(),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1000),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 50,
-                            vertical: 16,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Mode selector
-                              ScanModeSelector(
-                                onModeChanged: (newMode) {
-                                  setState(() {
-                                    isManualCount = (newMode == ScanMode.manualCount);
-                                    qtyController.clear();
-                                    _bcController.clear();
-                                    countingStock = null;
-                                    _lastAutoBarcode = null;
-                                    _autoQty = 0;
-                                    context.read<ScannerBloc>().add(
-                                      ResetStocktakeEvent(ScannerInitial()),
-                                    );
-                                  });
-                                },
-                              ),
-                              const SizedBox(height: 16),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final leftPanelWidth = constraints.maxWidth * 0.45;
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Left side - Input and stock details (45% width)
+                          SizedBox(
+                            width: leftPanelWidth,
+                            child: SingleChildScrollView(
+                              physics: const ClampingScrollPhysics(),
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Mode selector
+                                  ScanModeSelector(
+                                    onModeChanged: (newMode) {
+                                      setState(() {
+                                        isManualCount = (newMode == ScanMode.manualCount);
+                                        qtyController.clear();
+                                        _bcController.clear();
+                                        countingStock = null;
+                                        _lastAutoBarcode = null;
+                                        _autoQty = 0;
+                                        context.read<ScannerBloc>().add(
+                                          ResetStocktakeEvent(ScannerInitial()),
+                                        );
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
 
-                              // Main content area - vertical layout on desktop
-                              // Barcode and count entry on top
-                              _buildDesktopInputPanel(isDark, colors),
-                              const SizedBox(height: 16),
+                                  // Barcode and count entry
+                                  _buildDesktopInputPanelNoListButton(isDark, colors),
+                                  const SizedBox(height: 16),
 
-                              // Item details below
-                              BlocConsumer<ScannerBloc, ScannerStates>(
-                                builder: (context, state) {
-                                  if (state is StockLoaded) {
-                                    return _buildDesktopProductPanel(state.stock, isDark, colors);
-                                  }
-                                  return _buildDesktopProductPanel(null, isDark, colors);
-                                },
-                                listener: _handleScannerStateChanges,
+                                  // Item details - full panel
+                                  BlocConsumer<ScannerBloc, ScannerStates>(
+                                    builder: (context, state) {
+                                      if (state is StockLoaded) {
+                                        return _buildDesktopProductPanel(state.stock, isDark, colors);
+                                      }
+                                      return _buildDesktopProductPanel(null, isDark, colors);
+                                    },
+                                    listener: _handleScannerStateChanges,
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
+
+                          // Divider
+                          Container(
+                            width: 1,
+                            color: isDark ? colors.divider : Colors.grey.shade200,
+                          ),
+
+                          // Right side - Stocktake list table
+                          Expanded(
+                            child: _buildDesktopStocktakeListPanel(isDark, colors),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
 
                 // Stock count save listener
                 _stockCountSaveListener(),
+                // Batch commit listener
+                _batchCommitListener(),
+                // Delete listener
+                _stocktakeDeleteListener(),
               ],
             ),
             if (_isSearchLoading) _buildLoadingOverlay(isDark, colors),
@@ -680,6 +727,710 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Compact input panel for desktop two-column layout
+  /// Input panel for desktop two-column layout (no View List button)
+  Widget _buildDesktopInputPanelNoListButton(bool isDark, AppThemeColors colors) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? colors.surfaceAlt : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark ? Colors.white24 : Colors.grey.shade200,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? colors.cardShadow : Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            "Enter Stock",
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colors.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Barcode input
+          TextField(
+            controller: _bcController,
+            focusNode: txtFieldFocusNode,
+            scrollPhysics: const ClampingScrollPhysics(),
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 12,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Barcode or Description',
+              hintStyle: TextStyle(color: colors.onSurfaceMuted, fontSize: 11),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: BorderSide(color: isDark ? Colors.white38 : Colors.grey.shade400),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(color: kPrimaryColor),
+              ),
+              filled: true,
+              fillColor: colors.surface,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              suffixIcon: IconButton(
+                onPressed: () async {
+                  StockVO? selectedStock;
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => StockLookupScreen(
+                        showBackArrow: true,
+                        selectionMode: true,
+                        onStockSelected: (stock) {
+                          selectedStock = stock;
+                        },
+                      ),
+                    ),
+                  );
+                  if (selectedStock != null && mounted) {
+                    setState(() {
+                      countingStock = selectedStock;
+                      _bcController.text = selectedStock!.barcode;
+                    });
+                    context.read<ScannerBloc>().add(
+                      SelectDuplicateStock(selected: selectedStock!),
+                    );
+                    qtyFocusNode.requestFocus();
+                  }
+                },
+                icon: const Icon(Icons.search, size: 18),
+                color: kPrimaryColor,
+              ),
+            ),
+            onSubmitted: (value) {
+              final trimmed = value.trim();
+              if (trimmed.isNotEmpty) {
+                context.read<ScannerBloc>().add(FetchStockDetails(barcode: trimmed));
+              }
+              qtyFocusNode.requestFocus();
+            },
+          ),
+          const SizedBox(height: 12),
+
+          // Qty input
+          TextField(
+            controller: qtyController,
+            focusNode: qtyFocusNode,
+            scrollPhysics: const ClampingScrollPhysics(),
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 12,
+            ),
+            decoration: InputDecoration(
+              hintText: "Counted Qty",
+              hintStyle: TextStyle(color: colors.onSurfaceMuted, fontSize: 11),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: BorderSide(color: isDark ? Colors.white38 : Colors.grey.shade400),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(color: kPrimaryColor),
+              ),
+              filled: true,
+              fillColor: colors.surface,
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            enabled: isManualCount,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (value) {
+              _submitCount();
+              txtFieldFocusNode.requestFocus();
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Submit button
+          SizedBox(
+            height: 36,
+            child: ElevatedButton(
+              onPressed: isManualCount && countingStock != null
+                  ? () {
+                      _submitCount();
+                      txtFieldFocusNode.requestFocus();
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryColor,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: isDark ? colors.surface : Colors.grey.shade200,
+                disabledForegroundColor: colors.onSurfaceMuted,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              ),
+              child: const Text("Save Count", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Desktop stocktake list panel with search, trial info, commit button, and table view
+  Widget _buildDesktopStocktakeListPanel(bool isDark, AppThemeColors colors) {
+    return Column(
+      children: [
+        // Header with title and history button
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isDark ? colors.surface : Colors.white,
+            border: Border(
+              bottom: BorderSide(
+                color: isDark ? colors.divider : Colors.grey.shade200,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
+                  builder: (context, state) {
+                    final count = state is StocktakeListLoaded ? state.totalCount : 0;
+                    return Text(
+                      count > 0 ? "Counted Items ($count)" : "Counted Items",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: colors.onSurface,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              IconButton(
+                onPressed: () => context.navigateToNext(const StocktakeHistoryScreen()),
+                icon: Icon(
+                  Icons.history,
+                  color: kPrimaryColor,
+                  size: 20,
+                ),
+                tooltip: "View History",
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              ),
+            ],
+          ),
+        ),
+
+        // Trial limit info
+        const StocktakeTrialLimitInfo(),
+
+        // Batch commit progress
+        const BatchCommitProgressWidget(),
+
+        // Search bar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: StocktakeSearchAndFilterBar(
+            onChanged: (value) {
+              _desktopSearchQuery = value;
+              _desktopSearchDebouncer.run(() {
+                context.read<FetchingStocktakeListBloc>().add(
+                  FetchStocktakeListEvent(
+                    reset: true,
+                    query: _desktopSearchQuery,
+                  ),
+                );
+              });
+            },
+            onFilterTap: () {},
+          ),
+        ),
+
+        // Table header
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isDark ? colors.surfaceAlt : kSecondaryColor,
+            border: Border(
+              bottom: BorderSide(
+                color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
+              ),
+            ),
+          ),
+          child: BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
+            builder: (context, state) {
+              final items = state is StocktakeListLoaded ? state.stocktakeList : <CountedStockVO>[];
+              final allSelected = items.isNotEmpty && items.every((item) => _selectedStockIds.contains(item.stockID));
+              return Row(
+                children: [
+                  SizedBox(
+                    width: 40,
+                    child: Checkbox(
+                      value: allSelected,
+                      onChanged: items.isEmpty ? null : (value) {
+                        setState(() {
+                          if (value == true) {
+                            _selectedStockIds.addAll(items.map((e) => e.stockID));
+                          } else {
+                            _selectedStockIds.clear();
+                          }
+                        });
+                      },
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Barcode',
+                      style: TextStyle(
+                        color: colors.onSurfaceMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'Description',
+                      style: TextStyle(
+                        color: colors.onSurfaceMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Cat1 / Cat2 / Cat3',
+                      style: TextStyle(
+                        color: colors.onSurfaceMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 70,
+                    child: Text(
+                      'System',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: colors.onSurfaceMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 70,
+                    child: Text(
+                      'Count',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: colors.onSurfaceMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+
+        // Table rows
+        Expanded(
+          child: BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
+            builder: (context, state) {
+              if (state is LoadingStocktakeList) {
+                return const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              }
+
+              if (state is StocktakeListError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: colors.onSurfaceMuted.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        "Error: ${state.message}",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colors.onSurfaceMuted,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (state is StocktakeListLoaded) {
+                final items = state.stocktakeList;
+                if (items.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 48,
+                          color: colors.onSurfaceMuted.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          "No items counted yet",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colors.onSurfaceMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return _buildStocktakeTableRow(item, isDark, colors, index);
+                  },
+                );
+              }
+
+              return Center(
+                child: Text(
+                  "Scan items to start counting",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colors.onSurfaceMuted,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        // Commit button
+        _buildDesktopCommitButton(isDark, colors),
+      ],
+    );
+  }
+
+  Widget _buildDesktopCommitButton(bool isDark, AppThemeColors colors) {
+    final hasSelected = _selectedStockIds.isNotEmpty;
+    return BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
+      builder: (context, state) {
+        final hasItems = state is StocktakeListLoaded && state.totalCount > 0;
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? colors.surface : Colors.white,
+            border: Border(
+              top: BorderSide(
+                color: isDark ? colors.divider : Colors.grey.shade200,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Delete Selected button
+              SizedBox(
+                height: 40,
+                child: OutlinedButton.icon(
+                  onPressed: hasSelected ? _handleDeleteSelectedStocktake : null,
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  label: Text(
+                    hasSelected ? "Delete (${_selectedStockIds.length})" : "Delete",
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: kErrorColor,
+                    side: BorderSide(color: hasSelected ? kErrorColor : colors.onSurfaceMuted.withOpacity(0.3)),
+                    disabledForegroundColor: colors.onSurfaceMuted,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Send to RM button
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: ElevatedButton.icon(
+                    onPressed: hasItems ? _handleDesktopCommit : null,
+                    icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+                    label: const Text(
+                      "Send to RM",
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kPrimaryColor,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: isDark ? colors.surface : Colors.grey.shade200,
+                      disabledForegroundColor: colors.onSurfaceMuted,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleDeleteSelectedStocktake() {
+    final count = _selectedStockIds.length;
+    showDialog(
+      context: context,
+      builder: (context) => StocktakeQuestionDialog(
+        title: "RetailManager Question",
+        message: "Are you sure you want to delete $count selected item${count > 1 ? 's' : ''}? This action cannot be undone.",
+        onYesPressed: () {
+          context.navigateBack();
+          this.context.read<StocktakeDeleteBloc>().add(
+            DeleteSelectedStocktakeEvent(_selectedStockIds.toList()),
+          );
+          setState(() {
+            _selectedStockIds.clear();
+          });
+        },
+        onNoPressed: () {
+          context.navigateBack();
+        },
+      ),
+    );
+  }
+
+  void _handleDesktopCommit() {
+    context.read<BatchCommitBloc>().add(StartBatchCommitEvent());
+  }
+
+  Widget _batchCommitListener() {
+    return BlocListener<BatchCommitBloc, BatchCommitState>(
+      listener: (context, state) {
+        if (state is BatchCommitAwaitingAuditDecision) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => TransactionsDetectedDialog(
+              rows: state.audits,
+              isBatchMode: true,
+              currentBatchNumber: state.currentBatchNumber,
+              totalBatches: state.totalBatches,
+            ),
+          );
+        } else if (state is BatchCommitEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("No unsynced stocks found."),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        } else if (state is BatchCommitFailed) {
+          context.read<StocktakeLimitBloc>().add(FetchStocktakeLimitEvent());
+          showDialog(
+            context: context,
+            builder: (_) => StocktakeCommitErrorDialog(message: state.message),
+          );
+        } else if (state is BatchCommitCompleted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => StocktakeSuccessDialog(
+              message: "The Stocktake has been sent to your Shopfront!\n\nTo finalise the stocktake, go to your Shopfront in RetailManager and open the Stocktake window, Run the Discrepancy Report and Commit the Stocktake.",
+              onOkayPressed: () {
+                Navigator.of(ctx).pop();
+                context.read<FetchingStocktakeListBloc>().add(
+                  FetchStocktakeListEvent(reset: true),
+                );
+                context.read<StocktakeLimitBloc>().add(
+                  FetchStocktakeLimitEvent(),
+                );
+                context.read<BatchCommitBloc>().add(CancelBatchCommitEvent());
+              },
+            ),
+          );
+        }
+      },
+      child: const SizedBox.shrink(),
+    );
+  }
+
+  Widget _stocktakeDeleteListener() {
+    return BlocListener<StocktakeDeleteBloc, StocktakeDeleteStates>(
+      listener: (context, state) {
+        if (state is StocktakeDeleted) {
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.success(message: state.message),
+          );
+          context.read<FetchingStocktakeListBloc>().add(
+            FetchStocktakeListEvent(reset: true, query: _desktopSearchQuery),
+          );
+        } else if (state is StocktakeDeleteError) {
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.error(message: state.message),
+          );
+        }
+      },
+      child: const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildStocktakeTableRow(CountedStockVO item, bool isDark, AppThemeColors colors, int index) {
+    final isSelected = _selectedStockIds.contains(item.stockID);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showEditDialog(item),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? (isDark ? kPrimaryColor.withOpacity(0.15) : kPrimaryColor.withOpacity(0.08)) : null,
+            border: Border(
+              bottom: BorderSide(
+                color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 40,
+                child: Checkbox(
+                  value: isSelected,
+                  onChanged: (value) {
+                    setState(() {
+                      if (value == true) {
+                        _selectedStockIds.add(item.stockID);
+                      } else {
+                        _selectedStockIds.remove(item.stockID);
+                      }
+                    });
+                  },
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  item.barcode,
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : Colors.black87,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Expanded(
+                flex: 3,
+                child: Text(
+                  item.description,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  _formatCategories(item),
+                  style: TextStyle(
+                    color: colors.onSurfaceMuted,
+                    fontSize: 11,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              SizedBox(
+                width: 70,
+                child: Text(
+                  _formatQty(item.inStock),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colors.onSurfaceMuted,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 70,
+                child: Text(
+                  _formatQty(item.quantity),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatQty(num qty) {
+    return qty % 1 == 0 ? qty.toInt().toString() : qty.toStringAsFixed(2);
+  }
+
+  String _formatCategories(CountedStockVO item) {
+    final cat1 = item.category1 ?? '-';
+    final cat2 = item.category2 ?? '-';
+    final cat3 = item.category3 ?? '-';
+    return '$cat1 / $cat2 / $cat3';
+  }
+
+  void _showEditDialog(CountedStockVO item) {
+    context.read<StockDetailsBloc>().add(
+      FetchStockDetailsByID(
+        stockId: item.stockID,
+        qty: item.quantity,
+      ),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => const StockDetailsDialog(),
     );
   }
 
