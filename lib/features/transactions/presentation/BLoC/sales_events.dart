@@ -119,6 +119,12 @@ class RemoveCartItem extends SalesEvent {
 /// Clear all cart items
 class ClearCart extends SalesEvent {}
 
+/// Load multiple cart items at once (for transaction switch)
+class LoadCartItems extends SalesEvent {
+  final List<dynamic> items; // List<CartItemVO>
+  LoadCartItems({required this.items});
+}
+
 /// Reset search state (e.g., after dialog dismissed)
 class ResetSearchState extends SalesEvent {}
 

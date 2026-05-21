@@ -160,6 +160,10 @@ const String kSalesPreventFinaliseIfOutOfStockKey = "sales_prevent_finalise_if_o
 const String kSalesDisplayCustomerMessagesKey = "sales_display_customer_messages";
 const String kSalesScanIndividualUnitsForFractionalKey = "sales_scan_individual_units_for_fractional";
 const String kSalesPromptScanIndividualFractionalKey = "sales_prompt_scan_individual_fractional";
+const String kSalesIsCompactViewKey = "sales_is_compact_view";
+const String kSalesHideBarcodeKey = "sales_hide_barcode";
+const String kSalesHideCategoriesKey = "sales_hide_categories";
+const String kSalesHideTaxCodeKey = "sales_hide_tax_code";
 
 const customersTableCreationQuery = '''
   CREATE TABLE Customers (

@@ -193,7 +193,8 @@ class ModernDialogStyles {
       fillColor: isDark
           ? Colors.white.withOpacity(0.08)
           : const Color(0xFFF5F7FA),
-      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(inputRadius),
         borderSide: BorderSide(

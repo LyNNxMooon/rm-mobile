@@ -38,12 +38,13 @@ class OutOfStockFinaliseDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
 
     return StandardDialog(
       title: 'Not Permitted!',
       colors: colors,
       isDark: isDark,
-      maxWidth: isTablet ? 450 : double.infinity,
+      maxWidth: useDesktopNav ? 500 : (isTablet ? 450 : double.infinity),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -52,6 +52,7 @@ class SalesTopHeader extends StatefulWidget {
 
 class _SalesTopHeaderState extends State<SalesTopHeader> {
   bool _isSearchMode = true; // Start in search mode
+  bool _isSearchFocused = false; // Track focus state for border highlight
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -71,6 +72,10 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
   void _onSearchFocusChange() {
     if (_searchFocusNode.hasFocus) {
       widget.onCustomerFieldFocus?.call();
+    }
+    // Update focus state for border highlight
+    if (mounted) {
+      setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
     }
   }
 
@@ -168,6 +173,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
 
     return Container(
       padding: EdgeInsets.fromLTRB(12, isTablet ? 8 : 5, 12, isTablet ? 8 : 5),
@@ -203,9 +209,9 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
                   ),
                 ],
               ),
-              // View Mode Toggle (tablet only)
-              if (isTablet && widget.viewMode != null && widget.onViewModeChanged != null)
-                _buildViewModeToggle(colors, isDark, isTablet),
+              // View Mode Toggle (tablet and desktop)
+              if ((isTablet || useDesktopNav) && widget.viewMode != null && widget.onViewModeChanged != null)
+                _buildViewModeToggle(colors, isDark, isTablet || useDesktopNav),
               // Ex Tax / Inc Tax Toggle
               _buildTaxToggle(colors, isDark, isTablet),
             ],
@@ -318,51 +324,61 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
   }
 
   Widget _buildCustomerSearchField(AppThemeColors colors, bool isDark, bool isTablet) {
+    final bool useDesktopNav = context.useDesktopNav;
+    final double containerHeight = useDesktopNav ? 36 : (isTablet ? 46 : 40);
+    
     return Container(
-      height: isTablet ? 46 : 40,
+      height: containerHeight,
       decoration: BoxDecoration(
         color: isDark ? colors.surface : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5),
+          color: _isSearchFocused
+              ? kPrimaryColor
+              : (isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5)),
+          width: _isSearchFocused ? 2 : 1,
         ),
       ),
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-              decoration: InputDecoration(
-                hintText: "Search customer: barcode, name, phone, email...",
-                hintStyle: TextStyle(
-                  fontSize: 13,
-                  color: colors.onSurfaceMuted,
+            child: Center(
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                style: TextStyle(
+                  fontSize: useDesktopNav ? 13 : 14,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.only(left: 12, right: 8),
-                  child: Icon(
-                    Icons.person_search_outlined,
-                    size: 22,
-                    color: kPrimaryColor,
+                textAlignVertical: TextAlignVertical.center,
+                decoration: InputDecoration(
+                  hintText: "Search customer: barcode, name, phone, email...",
+                  hintStyle: TextStyle(
+                    fontSize: useDesktopNav ? 12 : 13,
+                    color: colors.onSurfaceMuted,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: useDesktopNav ? 8 : 10,
+                  ),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 12, right: 8),
+                    child: Icon(
+                      Icons.person_search_outlined,
+                      size: useDesktopNav ? 18 : 22,
+                      color: kPrimaryColor,
+                    ),
+                  ),
+                  prefixIconConstraints: BoxConstraints(
+                    minWidth: useDesktopNav ? 38 : 42,
+                    minHeight: useDesktopNav ? 18 : 22,
                   ),
                 ),
-                prefixIconConstraints: const BoxConstraints(
-                  minWidth: 42,
-                  minHeight: 22,
-                ),
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => _submitSearch(),
               ),
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => _submitSearch(),
             ),
           ),
           // Close button (only show if customer is selected, allowing to cancel search)
@@ -412,8 +428,11 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
   }
 
   Widget _buildCustomerSelector(AppThemeColors colors, bool isDark, bool isTablet) {
+    final bool useDesktopNav = context.useDesktopNav;
+    final double containerHeight = useDesktopNav ? 36 : (isTablet ? 46 : 40);
+    
     return Container(
-      height: isTablet ? 46 : 40,
+      height: containerHeight,
       decoration: BoxDecoration(
         color: isDark ? colors.surface : Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -428,7 +447,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
             padding: const EdgeInsets.only(left: 12, right: 8),
             child: Icon(
               Icons.person,
-              size: 22,
+              size: useDesktopNav ? 18 : 22,
               color: kPrimaryColor,
             ),
           ),
@@ -439,7 +458,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
               child: Text(
                 "${widget.customerBarcode ?? ''} | ${widget.customerName ?? ''}",
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: useDesktopNav ? 13 : 14,
                   color: isDark ? Colors.white : Colors.black87,
                   fontWeight: FontWeight.w500,
                 ),
@@ -453,8 +472,8 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
             Container(
               margin: EdgeInsets.only(right: isTablet ? 8 : 6),
               padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 10 : 8,
-                vertical: isTablet ? 4 : 3,
+                horizontal: useDesktopNav ? 6 : (isTablet ? 10 : 8),
+                vertical: useDesktopNav ? 2 : (isTablet ? 4 : 3),
               ),
               decoration: BoxDecoration(
                 color: kPrimaryColor.withOpacity(0.15),
@@ -470,7 +489,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
                   Text(
                     "\$ ",
                     style: TextStyle(
-                      fontSize: isTablet ? 14 : 12,
+                      fontSize: useDesktopNav ? 11 : (isTablet ? 14 : 12),
                       fontWeight: FontWeight.w900,
                       color: kPrimaryColor,
                     ),
@@ -478,7 +497,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
                   Text(
                     _gradeLabel(widget.customerGrade!),
                     style: TextStyle(
-                      fontSize: isTablet ? 13 : 11,
+                      fontSize: useDesktopNav ? 10 : (isTablet ? 13 : 11),
                       fontWeight: FontWeight.w700,
                       color: kPrimaryColor,
                     ),

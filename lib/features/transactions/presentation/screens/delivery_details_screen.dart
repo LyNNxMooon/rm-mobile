@@ -301,7 +301,13 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = context.appColors;
-    final isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
+    final isTablet = context.isTablet || useDesktopNav;
+    
+    // Desktop-specific flex ratios for shorter State/Phone/Date fields
+    final int leftFlex = useDesktopNav ? 10 : 11;
+    final int rightFlex = useDesktopNav ? 8 : 7;
+    final double rightLabelWidth = useDesktopNav ? 80.0 : (isTablet ? 45.0 : 35.0);
 
     return Scaffold(
       backgroundColor: isDark ? colors.bg : Colors.grey.shade50,
@@ -488,7 +494,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         Row(
                           children: [
                             Expanded(
-                              flex: 11,
+                              flex: leftFlex,
                               child: _buildFieldRow(
                                 "State",
                                 _stateController,
@@ -499,13 +505,13 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              flex: 7,
+                              flex: rightFlex,
                               child: _buildFieldRow(
-                                "Post\nCode",
+                                useDesktopNav ? "Post Code" : "Post\nCode",
                                 _postcodeController,
                                 isDark,
                                 colors,
-                                labelWidth: isTablet ? 45.0 : 35.0,
+                                labelWidth: rightLabelWidth,
                               ),
                             ),
                           ],
@@ -517,7 +523,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         Row(
                           children: [
                             Expanded(
-                              flex: 11,
+                              flex: leftFlex,
                               child: _buildFieldRow(
                                 "Phone",
                                 _phoneController,
@@ -528,13 +534,13 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              flex: 7,
+                              flex: rightFlex,
                               child: _buildFieldRow(
                                 "Country",
                                 _countryController,
                                 isDark,
                                 colors,
-                                labelWidth: isTablet ? 45.0 : 35.0,
+                                labelWidth: rightLabelWidth,
                               ),
                             ),
                           ],
@@ -550,7 +556,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         Row(
                           children: [
                             Expanded(
-                              flex: 11,
+                              flex: leftFlex,
                               child: Row(
                                 children: [
                                   SizedBox(
@@ -575,11 +581,11 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              flex: 7,
+                              flex: rightFlex,
                               child: Row(
                                 children: [
                                   SizedBox(
-                                    width: isTablet ? 45.0 : 35.0,
+                                    width: rightLabelWidth,
                                     child: Text(
                                       "Time",
                                       style: TextStyle(

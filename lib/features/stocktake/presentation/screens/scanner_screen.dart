@@ -387,7 +387,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
           IconButton(
             onPressed: () => context.navigateBack(),
             icon: Icon(
-              Icons.arrow_back,
+              Icons.home_filled,
               color: colors.onSurface,
               size: 20,
             ),
@@ -1267,7 +1267,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             context: context,
             barrierDismissible: false,
             builder: (ctx) => StocktakeSuccessDialog(
-              message: "The Stocktake has been sent to your Shopfront!\n\nTo finalise the stocktake, go to your Shopfront in RetailManager and open the Stocktake window, Run the Discrepancy Report and Commit the Stocktake.",
+              message: "The Stocktake has been sent to your Shopfront!\n\nTo finalise the stocktake, go to your Shopfront in RetailManager and open the Stocktake window, Run the Discrepancy Report, Make any changes if required and Commit the Stocktake.",
               onOkayPressed: () {
                 Navigator.of(ctx).pop();
                 context.read<FetchingStocktakeListBloc>().add(

@@ -311,7 +311,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
             context: context,
             barrierDismissible: false,
             builder: (context) => StocktakeSuccessDialog(
-              message: "The Stocktake has been sent to your Shopfront!\n\nTo finalise the stocktake, go to your Shopfront in RetailManager and open the Stocktake window, Run the Discrepancy Report and Commit the Stocktake.",
+              message: "The Stocktake has been sent to your Shopfront!\n\nTo finalise the stocktake, go to your Shopfront in RetailManager and open the Stocktake window, Run the Discrepancy Report, Make any changes if required and Commit the Stocktake.",
               onOkayPressed: () {
                 Navigator.of(context).pop();
                 context.read<FetchingStocktakeListBloc>().add(
@@ -332,7 +332,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         elevation: 4,
         backgroundColor: kPrimaryColor,
         label: Text(
-          "Send Stocktake to RM",
+          "Send to shopfront",
           style: TextStyle(
             color: colors.onHero,
             fontWeight: FontWeight.bold,

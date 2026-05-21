@@ -321,36 +321,32 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
               ),
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              height: errorFieldHeight,
-              child: TextField(
-                controller: _userNameController,
-                style: TextStyle(
-                  color: isDark ? Colors.white : colors.onSurface,
-                  fontSize: inputFontSize,
-                ),
-                decoration: ModernDialogStyles.inputDecoration(
-                  context,
-                  hintText: 'Username',
-                  prefixIcon: Icons.person_outline_rounded,
-                ),
+            TextField(
+              controller: _userNameController,
+              textAlignVertical: TextAlignVertical.center,
+              style: TextStyle(
+                color: isDark ? Colors.white : colors.onSurface,
+                fontSize: inputFontSize,
+              ),
+              decoration: ModernDialogStyles.inputDecoration(
+                context,
+                hintText: 'Username',
+                prefixIcon: Icons.person_outline_rounded,
               ),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              height: errorFieldHeight,
-              child: TextField(
-                controller: _pwdController,
-                obscureText: true,
-                style: TextStyle(
-                  color: isDark ? Colors.white : colors.onSurface,
-                  fontSize: inputFontSize,
-                ),
-                decoration: ModernDialogStyles.inputDecoration(
-                  context,
-                  hintText: 'Password',
-                  prefixIcon: Icons.lock_outline_rounded,
-                ),
+            TextField(
+              controller: _pwdController,
+              obscureText: true,
+              textAlignVertical: TextAlignVertical.center,
+              style: TextStyle(
+                color: isDark ? Colors.white : colors.onSurface,
+                fontSize: inputFontSize,
+              ),
+              decoration: ModernDialogStyles.inputDecoration(
+                context,
+                hintText: 'Password',
+                prefixIcon: Icons.lock_outline_rounded,
               ),
             ),
             const SizedBox(height: 24),
@@ -539,9 +535,6 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
     final double inputFontSize = useDesktopNav ? 12.0 : 14.0;
     final double buttonFontSize = useDesktopNav ? 13.0 : (isTablet ? 16.0 : 15.0);
     final double iconSize = useDesktopNav ? 18.0 : (isTablet ? 22.0 : 20.0);
-    final double textScale = MediaQuery.textScalerOf(ctx).scale(14) / 14;
-    final double uiScale = (1.0 + ((textScale - 1.0) * 0.65)).clamp(1.0, 1.42);
-    final double fieldHeight = isTablet ? (48 * uiScale).clamp(48.0, 58.0) : (useDesktopNav ? 38.0 : 46.0);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -559,37 +552,33 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
       ),
       child: Column(
         children: [
-          SizedBox(
-            height: fieldHeight,
-            child: TextField(
-              controller: _staffNoController,
-              keyboardType: TextInputType.number,
-              style: TextStyle(
-                color: isDark ? Colors.white : colors.onSurface,
-                fontSize: inputFontSize,
-              ),
-              decoration: ModernDialogStyles.inputDecoration(
-                ctx,
-                hintText: 'Staff ID',
-                prefixIcon: Icons.badge_outlined,
-              ),
+          TextField(
+            controller: _staffNoController,
+            keyboardType: TextInputType.number,
+            textAlignVertical: TextAlignVertical.center,
+            style: TextStyle(
+              color: isDark ? Colors.white : colors.onSurface,
+              fontSize: inputFontSize,
+            ),
+            decoration: ModernDialogStyles.inputDecoration(
+              ctx,
+              hintText: 'Staff ID',
+              prefixIcon: Icons.badge_outlined,
             ),
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            height: fieldHeight,
-            child: TextField(
-              controller: _staffPwdController,
-              obscureText: true,
-              style: TextStyle(
-                color: isDark ? Colors.white : colors.onSurface,
-                fontSize: inputFontSize,
-              ),
-              decoration: ModernDialogStyles.inputDecoration(
-                ctx,
-                hintText: 'Password',
-                prefixIcon: Icons.lock_outline_rounded,
-              ),
+          TextField(
+            controller: _staffPwdController,
+            obscureText: true,
+            textAlignVertical: TextAlignVertical.center,
+            style: TextStyle(
+              color: isDark ? Colors.white : colors.onSurface,
+              fontSize: inputFontSize,
+            ),
+            decoration: ModernDialogStyles.inputDecoration(
+              ctx,
+              hintText: 'Password',
+              prefixIcon: Icons.lock_outline_rounded,
             ),
           ),
           const SizedBox(height: 16),

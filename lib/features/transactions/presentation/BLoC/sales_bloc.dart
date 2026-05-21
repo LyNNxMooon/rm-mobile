@@ -77,6 +77,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     on<EditCartItem>(_onEditCartItem);
     on<RemoveCartItem>(_onRemoveCartItem);
     on<ClearCart>(_onClearCart);
+    on<LoadCartItems>(_onLoadCartItems);
     on<ResetSearchState>(_onResetSearchState);
     on<RecalculatePricesForGrade>(_onRecalculatePricesForGrade);
     // Customer events
@@ -674,6 +675,18 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 
   void _onClearCart(ClearCart event, Emitter<SalesState> emit) {
     _cartItems.clear();
+    emit(CartUpdated(
+      cartItems: List.from(_cartItems),
+      selectedCustomer: _selectedCustomer,
+    ));
+  }
+
+  void _onLoadCartItems(LoadCartItems event, Emitter<SalesState> emit) {
+    // Clear existing items and load new ones
+    _cartItems.clear();
+    for (final item in event.items) {
+      _cartItems.add(item as CartItemVO);
+    }
     emit(CartUpdated(
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,

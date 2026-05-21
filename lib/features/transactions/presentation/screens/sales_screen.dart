@@ -16,6 +16,7 @@ import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_loo
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
+import 'package:rmmobile/utils/dependency_injection_utils.dart' as di;
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 
@@ -91,11 +92,19 @@ class SalesScreen extends StatefulWidget {
     this.title = "Sales",
     this.themeColor = Colors.green,
     this.icon = Icons.point_of_sale_outlined,
+    this.initialDiscount = 0.0,
+    this.initialComment = '',
+    this.initialSurvey = '',
+    this.initialDelivery,
   });
 
   final String title;
   final Color themeColor;
   final IconData icon;
+  final double initialDiscount;
+  final String initialComment;
+  final String initialSurvey;
+  final DeliveryInfoVO? initialDelivery;
 
   @override
   State<SalesScreen> createState() => _SalesScreenState();
@@ -162,6 +171,9 @@ class _SalesScreenState extends State<SalesScreen>
   bool _autoRemindLowStock = false;
   bool _promptScanIndividualFractional = false;
   bool _displayCustomerMessagesAsPrompt = false;
+  bool _hideBarcode = false;
+  bool _hideCategories = false;
+  bool _hideTaxCode = false;
 
   // Payment amounts for each payment type
   final Map<String, double> _paymentAmounts = {};
@@ -585,6 +597,7 @@ class _SalesScreenState extends State<SalesScreen>
 
   Future<bool> _showBelowCostPrompt(AppThemeColors colors, bool isDark) async {
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -592,12 +605,12 @@ class _SalesScreenState extends State<SalesScreen>
           title: "RetailManager Question",
           colors: colors,
           isDark: isDark,
-          maxWidth: isTablet ? 450 : double.infinity,
+          maxWidth: useDesktopNav ? 400 : (isTablet ? 450 : double.infinity),
           onClose: () => Navigator.of(dialogContext).pop(false),
           content: Text(
             "Selling Price should be greater than Cost, continue?",
             style: TextStyle(
-              fontSize: 16,
+              fontSize: useDesktopNav ? 14 : 16,
               height: 1.4,
               color: isDark ? Colors.white70 : Colors.black54,
             ),
@@ -705,6 +718,25 @@ class _SalesScreenState extends State<SalesScreen>
       parent: _actionsAnimationController,
       curve: Curves.easeOutCubic,
     );
+    // Apply initial values from transaction switch
+    if (widget.initialDiscount > 0) {
+      _discountValue = widget.initialDiscount;
+      _discountController.text = widget.initialDiscount.toStringAsFixed(2);
+    }
+    if (widget.initialComment.isNotEmpty) {
+      _commentValue = widget.initialComment;
+    }
+    if (widget.initialSurvey.isNotEmpty) {
+      _surveyValue = widget.initialSurvey;
+      _surveyController.text = widget.initialSurvey;
+    }
+    if (widget.initialDelivery != null) {
+      _deliveryInfo = widget.initialDelivery;
+      _committedDeliveryAddress = DeliveryAddressData.fromDeliveryInfo(
+        widget.initialDelivery!,
+        companyName: null,
+      );
+    }
     // Close scanner when search field is focused
     _searchFocusNode.addListener(() {
       if (_searchFocusNode.hasFocus) {
@@ -731,6 +763,8 @@ class _SalesScreenState extends State<SalesScreen>
     _reminderShown = true;
     final colors = context.appColors;
     final isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+    final bool isTablet = context.isTablet;
     await showDialog<void>(
       context: context,
       builder: (ctx) {
@@ -738,6 +772,7 @@ class _SalesScreenState extends State<SalesScreen>
           title: "Reminder",
           colors: colors,
           isDark: isDark,
+          maxWidth: useDesktopNav ? 400 : (isTablet ? 450 : double.infinity),
           onClose: () => Navigator.of(ctx).pop(),
           content: Text(
             reminder,
@@ -762,6 +797,8 @@ class _SalesScreenState extends State<SalesScreen>
   ) async {
     if (_salesPromptDialogOpen || !mounted) return;
     _salesPromptDialogOpen = true;
+    final bool useDesktopNav = context.useDesktopNav;
+    final bool isTablet = context.isTablet;
     await showDialog<void>(
       context: context,
       builder: (ctx) {
@@ -769,6 +806,7 @@ class _SalesScreenState extends State<SalesScreen>
           title: "Sales Prompt",
           colors: colors,
           isDark: isDark,
+          maxWidth: useDesktopNav ? 400 : (isTablet ? 450 : double.infinity),
           onClose: () => Navigator.of(ctx).pop(),
           content: Text(
             message,
@@ -956,6 +994,10 @@ class _SalesScreenState extends State<SalesScreen>
             settings.scanIndividualUnitsForFractional;
         _promptScanIndividualFractional =
             settings.promptScanIndividualFractional;
+        _isCompactView = settings.isCompactView;
+        _hideBarcode = settings.hideBarcode;
+        _hideCategories = settings.hideCategories;
+        _hideTaxCode = settings.hideTaxCode;
       });
     }
   }
@@ -1096,6 +1138,8 @@ class _SalesScreenState extends State<SalesScreen>
     AppThemeColors colors,
     bool isDark,
   ) {
+    final bool useDesktopNav = context.useDesktopNav;
+    final bool isTablet = context.isTablet;
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -1104,12 +1148,13 @@ class _SalesScreenState extends State<SalesScreen>
           title: "Fractional Quantity Item",
           colors: colors,
           isDark: isDark,
+          maxWidth: useDesktopNav ? 420 : (isTablet ? 450 : double.infinity),
           showClose: true,
           onClose: () => Navigator.of(dialogContext).pop(false),
           content: Text(
             "Would you like to Scan Individual Units for Fractional Quantity Items?",
             style: TextStyle(
-              fontSize: 15,
+              fontSize: useDesktopNav ? 14 : 15,
               color: isDark ? Colors.white70 : Colors.black54,
             ),
           ),
@@ -1134,7 +1179,8 @@ class _SalesScreenState extends State<SalesScreen>
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
+    final bool isTablet = context.isTablet || useDesktopNav;
     final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     final bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
@@ -1419,8 +1465,8 @@ class _SalesScreenState extends State<SalesScreen>
                                 _selectedCustomer != null
                                 ? () => _openCustomerTransactions()
                                 : null,
-                            viewMode: isTablet ? _cartViewMode : null,
-                            onViewModeChanged: isTablet
+                            viewMode: (isTablet || useDesktopNav) ? _cartViewMode : null,
+                            onViewModeChanged: (isTablet || useDesktopNav)
                                 ? (mode) => setState(() => _cartViewMode = mode)
                                 : null,
                             onCustomerFieldFocus: _closeScanner,
@@ -1460,8 +1506,8 @@ class _SalesScreenState extends State<SalesScreen>
                             searchFocusNode: _searchFocusNode,
                             showScanner: _showScanner,
                             isTorchOn: _isTorchOn,
-                            onScannerToggle: () => _toggleScanner(),
-                            onTorchToggle: () {
+                            onScannerToggle: useDesktopNav ? null : () => _toggleScanner(),
+                            onTorchToggle: useDesktopNav ? null : () {
                               setState(() {
                                 _scannerController.toggleTorch();
                                 _isTorchOn = !_isTorchOn;
@@ -1505,7 +1551,7 @@ class _SalesScreenState extends State<SalesScreen>
                           // Bottom Section: Summary, Payment & Commit
                           // Hide on tablet landscape when keyboard is visible to prevent overflow
                           if (!(isTablet && isLandscape && isKeyboardVisible))
-                            _buildBottomSummary(colors, isDark, isTablet),
+                            _buildBottomSummary(colors, isDark, isTablet, useDesktopNav),
                         ],
                       ),
                     ),
@@ -1547,7 +1593,7 @@ class _SalesScreenState extends State<SalesScreen>
       leadingWidth: 40,
       leading: IconButton(
         icon: const Icon(
-          Icons.arrow_back_ios_new,
+          Icons.home_filled,
           size: 20,
           color: Colors.white,
         ),
@@ -1583,8 +1629,16 @@ class _SalesScreenState extends State<SalesScreen>
           onSelected: (value) {
             if (value == 'default') {
               setState(() => _isCompactView = false);
+              _salesBloc.saveSalesSetting(
+                key: kSalesIsCompactViewKey,
+                value: false,
+              );
             } else if (value == 'compact') {
               setState(() => _isCompactView = true);
+              _salesBloc.saveSalesSetting(
+                key: kSalesIsCompactViewKey,
+                value: true,
+              );
             } else if (value == 'settings') {
               if (!AppGlobals.instance.hasPermission("Setup_Options")) {
                 showTopSnackBar(
@@ -1650,6 +1704,8 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Widget _buildCartArea(AppThemeColors colors, bool isDark, bool isTablet) {
+    final bool useDesktopNav = context.useDesktopNav;
+    
     if (_cartItems.isEmpty) {
       return LayoutBuilder(
         builder: (context, constraints) {
@@ -1668,7 +1724,7 @@ class _SalesScreenState extends State<SalesScreen>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      "Cart is empty",
+                      "List is Empty",
                       style: TextStyle(
                         fontSize: 16,
                         color: colors.onSurfaceMuted,
@@ -1695,13 +1751,13 @@ class _SalesScreenState extends State<SalesScreen>
     // Check if any item is in edit mode - if so, use list view for the edit form
     final bool hasEditingItem = _cartItems.any((item) => item.isEditing);
 
-    // Use different views based on cart view mode (tablet only)
+    // Use different views based on cart view mode (tablet and desktop)
     // But switch to list view if any item is being edited (edit form needs space)
-    if (isTablet &&
+    if ((isTablet || useDesktopNav) &&
         !hasEditingItem &&
         _cartViewMode == CartViewMode.gridMedium) {
       return _buildCartGridView(colors, isDark);
-    } else if (isTablet &&
+    } else if ((isTablet || useDesktopNav) &&
         !hasEditingItem &&
         _cartViewMode == CartViewMode.largeIcons) {
       return _buildCartLargeIconView(colors, isDark);
@@ -1709,12 +1765,13 @@ class _SalesScreenState extends State<SalesScreen>
 
     // Default list view - use CustomScrollView so header scrolls with content
     // This prevents overflow when keyboard appears on tablets
+    
     return AnimationLimiter(
       child: CustomScrollView(
         controller: _scrollController,
         slivers: [
-          // Optional Tablet Header Row mimicking the desktop grid (not shown in compact view)
-          if (isTablet && !_isCompactView)
+          // Header Row for Tablet/Desktop (not shown in compact view)
+          if ((isTablet || useDesktopNav) && !_isCompactView)
             SliverToBoxAdapter(
               child: Container(
                 padding: const EdgeInsets.symmetric(
@@ -1729,34 +1786,90 @@ class _SalesScreenState extends State<SalesScreen>
                     ),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    // Space for thumbnail
-                    const SizedBox(width: 40),
-                    Expanded(flex: 2, child: _buildGridHeader("Code", colors)),
-                    const SizedBox(width: 30),
-                    Expanded(
-                      flex: 4,
-                      child: _buildGridHeader("Description", colors),
-                    ),
-                    SizedBox(
-                      width: 120,
-                      child: _buildGridHeader(
-                        "Price",
-                        colors,
-                        alignRight: true,
+                child: useDesktopNav
+                    ? Row(
+                        children: [
+                          // Space for thumbnail
+                          const SizedBox(width: 48),
+                          // Barcode
+                          if (!_hideBarcode)
+                            Expanded(
+                              flex: 1,
+                              child: _buildGridHeader("Code", colors),
+                            ),
+                          // Description
+                          Expanded(
+                            flex: 3,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 20),
+                              child: _buildGridHeader("Description", colors),
+                            ),
+                          ),
+                          // Categories
+                          if (!_hideCategories)
+                            Expanded(
+                              flex: 2,
+                              child: _buildGridHeader("Categories", colors),
+                            ),
+                          // Tax Code
+                          if (!_hideTaxCode)
+                            Transform.translate(
+                              offset: const Offset(-160, 0),
+                              child: SizedBox(
+                                width: 40,
+                                child: _buildGridHeader("Tax", colors),
+                              ),
+                            ),
+                          // Price
+                          Transform.translate(
+                            offset: const Offset(-110, 0),
+                            child: SizedBox(
+                              width: 80,
+                              child: _buildGridHeader("Price", colors, alignRight: true),
+                            ),
+                          ),
+                          // Qty
+                          Transform.translate(
+                            offset: const Offset(-60, 0),
+                            child: SizedBox(
+                              width: 60,
+                              child: _buildGridHeader("Qty", colors, alignCenter: true),
+                            ),
+                          ),                         // Ext
+                          SizedBox(
+                            width: 100,
+                            child: _buildGridHeader("Ext", colors, alignRight: true),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          // Space for thumbnail
+                          const SizedBox(width: 40),
+                          Expanded(flex: 2, child: _buildGridHeader("Code", colors)),
+                          const SizedBox(width: 30),
+                          Expanded(
+                            flex: 4,
+                            child: _buildGridHeader("Description", colors),
+                          ),
+                          SizedBox(
+                            width: 120,
+                            child: _buildGridHeader(
+                              "Price",
+                              colors,
+                              alignRight: true,
+                            ),
+                          ),
+                          SizedBox(
+                            width: 140,
+                            child: Center(child: _buildGridHeader("Qty", colors)),
+                          ),
+                          SizedBox(
+                            width: 130,
+                            child: _buildGridHeader("Ext", colors, alignRight: true),
+                          ),
+                        ],
                       ),
-                    ),
-                    SizedBox(
-                      width: 140,
-                      child: Center(child: _buildGridHeader("Qty", colors)),
-                    ),
-                    SizedBox(
-                      width: 130,
-                      child: _buildGridHeader("Ext", colors, alignRight: true),
-                    ),
-                  ],
-                ),
               ),
             ),
 
@@ -1764,7 +1877,7 @@ class _SalesScreenState extends State<SalesScreen>
           SliverPadding(
             padding: EdgeInsets.symmetric(
               horizontal: 10,
-              vertical: _isCompactView ? 2 : 6,
+              vertical: _isCompactView ? 2 : (useDesktopNav ? 4 : 6),
             ),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
@@ -1772,7 +1885,7 @@ class _SalesScreenState extends State<SalesScreen>
                 return Padding(
                   padding: EdgeInsets.only(
                     bottom: index < _cartItems.length - 1
-                        ? (_isCompactView ? 0 : 4)
+                        ? (_isCompactView ? 0 : (useDesktopNav ? 2 : 4))
                         : 0,
                   ),
                   child: AnimationConfiguration.staggeredList(
@@ -1890,10 +2003,13 @@ class _SalesScreenState extends State<SalesScreen>
     String title,
     AppThemeColors colors, {
     bool alignRight = false,
+    bool alignCenter = false,
   }) {
     return Text(
       title,
-      textAlign: alignRight ? TextAlign.right : TextAlign.left,
+      textAlign: alignCenter 
+          ? TextAlign.center 
+          : (alignRight ? TextAlign.right : TextAlign.left),
       style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.bold,
@@ -1904,28 +2020,40 @@ class _SalesScreenState extends State<SalesScreen>
 
   /// Grid view for cart items (2 columns, horizontal tiles)
   Widget _buildCartGridView(AppThemeColors colors, bool isDark) {
+    final bool useDesktopNav = context.useDesktopNav;
     final bool isMediumTablet = context.isMediumTablet;
     final bool isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
     final bool isLargeTablet = !isMediumTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
+    // Desktop uses smaller UI scale
+    final double uiScale = useDesktopNav 
+        ? 0.85 
+        : (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
 
     // Calculate aspect ratio based on content needs (higher = shorter tiles)
-    // Large tablets get taller tiles (lower aspect ratio)
-    final double childAspectRatio = isLandscape
-        ? (isMediumTablet ? 5.5 : (isLargeTablet ? 5.8 : 5.2))
-        : (isMediumTablet ? 3.4 : (isLargeTablet ? 4.0 : 3.2));
+    // Desktop uses more columns and higher aspect ratio for compact tiles
+    final int crossAxisCount = useDesktopNav ? 3 : 2;
+    final double childAspectRatio = useDesktopNav
+        ? 5.5
+        : (isLandscape
+            ? (isMediumTablet ? 5.5 : (isLargeTablet ? 5.8 : 5.2))
+            : (isMediumTablet ? 3.4 : (isLargeTablet ? 4.0 : 3.2)));
 
     return AnimationLimiter(
       child: GridView.builder(
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 80),
+        padding: EdgeInsets.only(
+          left: useDesktopNav ? 8 : 12,
+          right: useDesktopNav ? 8 : 12,
+          top: useDesktopNav ? 6 : 8,
+          bottom: useDesktopNav ? 60 : 80,
+        ),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: useDesktopNav ? 6 : 10,
+          crossAxisSpacing: useDesktopNav ? 6 : 10,
           childAspectRatio: childAspectRatio,
         ),
         itemCount: _cartItems.length,
@@ -1934,7 +2062,7 @@ class _SalesScreenState extends State<SalesScreen>
           return AnimationConfiguration.staggeredGrid(
             position: index,
             duration: const Duration(milliseconds: 300),
-            columnCount: 2,
+            columnCount: crossAxisCount,
             child: ScaleAnimation(
               child: FadeInAnimation(
                 child: _buildCartGridTile(item, index, colors, isDark, uiScale),
@@ -1948,26 +2076,34 @@ class _SalesScreenState extends State<SalesScreen>
 
   /// Large icon view for cart items (3-4 columns, vertical tiles with larger thumbnails)
   Widget _buildCartLargeIconView(AppThemeColors colors, bool isDark) {
+    final bool useDesktopNav = context.useDesktopNav;
     final bool isMediumTablet = context.isMediumTablet;
     final bool isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
     final bool isLargeTablet = !isMediumTablet;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    final double uiScale = (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
+    // Desktop uses smaller UI scale
+    final double uiScale = useDesktopNav 
+        ? 0.8 
+        : (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2);
 
-    // More columns for medium tablets, and in landscape mode use 6 columns with smaller cards
-    final int crossAxisCount = isLandscape ? 6 : (isMediumTablet ? 5 : 4);
-    // Landscape: higher aspect ratio for smaller cards, Portrait: lower for taller cards
-    final double childAspectRatio = isLandscape
-        ? (isMediumTablet ? 0.88 : 0.95)
-        : (isMediumTablet ? 0.65 : 0.60);
-    // More spacing in landscape, less in portrait
-    final double spacing = isLandscape ? 14 : 8;
+    // Desktop uses more columns with smaller cards
+    final int crossAxisCount = useDesktopNav 
+        ? 8 
+        : (isLandscape ? 6 : (isMediumTablet ? 5 : 4));
+    // Desktop uses higher aspect ratio for compact cards
+    final double childAspectRatio = useDesktopNav
+        ? 0.75
+        : (isLandscape
+            ? (isMediumTablet ? 0.88 : 0.95)
+            : (isMediumTablet ? 0.65 : 0.60));
+    // Desktop uses smaller spacing
+    final double spacing = useDesktopNav ? 6 : (isLandscape ? 14 : 8);
 
-    // For large tablets, use Wrap with flexible height cards
-    if (isLargeTablet) {
+    // For large tablets or desktop, use Wrap with flexible height cards
+    if (isLargeTablet || useDesktopNav) {
       final double screenWidth = MediaQuery.of(context).size.width;
-      final double horizontalPadding = 24; // 12 left + 12 right
+      final double horizontalPadding = useDesktopNav ? 16 : 24; // 12 left + 12 right
       final double totalSpacing = spacing * (crossAxisCount - 1);
       final double cardWidth =
           (screenWidth - horizontalPadding - totalSpacing) / crossAxisCount;
@@ -1978,11 +2114,11 @@ class _SalesScreenState extends State<SalesScreen>
           child: SingleChildScrollView(
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.only(
-              left: 12,
-              right: 12,
-              top: 8,
-              bottom: 80,
+            padding: EdgeInsets.only(
+              left: useDesktopNav ? 8 : 12,
+              right: useDesktopNav ? 8 : 12,
+              top: useDesktopNav ? 6 : 8,
+              bottom: useDesktopNav ? 60 : 80,
             ),
             child: Wrap(
               spacing: spacing,
@@ -2067,16 +2203,26 @@ class _SalesScreenState extends State<SalesScreen>
     bool isDark,
     double uiScale,
   ) {
+    final bool useDesktopNav = context.useDesktopNav;
     final bool isMediumTablet = context.isMediumTablet;
     final bool isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
-    final bool isLargeTablet = !isMediumTablet;
-    // Wider thumbnail in landscape, even wider for large tablets
-    final double thumbnailSize = isLandscape
-        ? (isMediumTablet ? 115 : (isLargeTablet ? 140 : 125))
-        : (isMediumTablet ? 95 : (isLargeTablet ? 130 : 105));
+    final bool isLargeTablet = !isMediumTablet && !useDesktopNav;
+    // Desktop uses smaller thumbnail, tablet uses larger
+    final double thumbnailSize = useDesktopNav
+        ? 90
+        : (isLandscape
+            ? (isMediumTablet ? 115 : (isLargeTablet ? 140 : 125))
+            : (isMediumTablet ? 95 : (isLargeTablet ? 130 : 105)));
     final double displayPrice = _isIncTax ? item.incPrice : item.exPrice;
     final double displayExt = _isIncTax ? item.extension : item.extensionEx;
+
+    // Desktop-specific font sizes
+    final double descFontSize = useDesktopNav ? 11 : (isLargeTablet ? 14 : 13 * uiScale);
+    final double codeFontSize = useDesktopNav ? 10 : (isLargeTablet ? 13 : 11 * uiScale);
+    final double priceFontSize = useDesktopNav ? 10 : 12 * uiScale;
+    final double qtyFontSize = useDesktopNav ? 9 : 11 * uiScale;
+    final double extFontSize = useDesktopNav ? 11 : 13 * uiScale;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -2145,9 +2291,9 @@ class _SalesScreenState extends State<SalesScreen>
               // Item details
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 6,
+                  padding: EdgeInsets.symmetric(
+                    vertical: useDesktopNav ? 4 : 8,
+                    horizontal: useDesktopNav ? 4 : 6,
                   ),
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -2159,27 +2305,27 @@ class _SalesScreenState extends State<SalesScreen>
                         Text(
                           item.description,
                           style: TextStyle(
-                            fontSize: isLargeTablet ? 14 : 13 * uiScale,
+                            fontSize: descFontSize,
                             fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white : kThirdColor,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: useDesktopNav ? 1 : 2),
                         // Code/Barcode
                         Text(
                           item.code,
                           style: TextStyle(
                             fontFamily: 'monospace',
-                            fontSize: isLargeTablet ? 13 : 11 * uiScale,
+                            fontSize: codeFontSize,
                             fontWeight: FontWeight.bold,
                             color: kPrimaryColor,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: useDesktopNav ? 2 : 4),
                         // Price and Qty row - fully scrollable
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
@@ -2192,15 +2338,15 @@ class _SalesScreenState extends State<SalesScreen>
                                   2,
                                 ),
                                 style: TextStyle(
-                                  fontSize: 12 * uiScale,
+                                  fontSize: priceFontSize,
                                   color: colors.onSurfaceMuted,
                                 ),
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: useDesktopNav ? 4 : 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: useDesktopNav ? 4 : 6,
+                                  vertical: useDesktopNav ? 1 : 2,
                                 ),
                                 decoration: BoxDecoration(
                                   color: isDark
@@ -2211,7 +2357,7 @@ class _SalesScreenState extends State<SalesScreen>
                                 child: Text(
                                   "x ${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
                                   style: TextStyle(
-                                    fontSize: 11 * uiScale,
+                                    fontSize: qtyFontSize,
                                     fontWeight: FontWeight.bold,
                                     color: isDark
                                         ? Colors.white70
@@ -2219,16 +2365,16 @@ class _SalesScreenState extends State<SalesScreen>
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: useDesktopNav ? 4 : 6),
                               Text(
                                 "=",
                                 style: TextStyle(
-                                  fontSize: 12 * uiScale,
+                                  fontSize: priceFontSize,
                                   fontWeight: FontWeight.bold,
                                   color: colors.onSurfaceMuted,
                                 ),
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: useDesktopNav ? 4 : 6),
                               // Extension price
                               Text(
                                 FormattingUtils.formatCurrencyWithDecimals(
@@ -2236,7 +2382,7 @@ class _SalesScreenState extends State<SalesScreen>
                                   2,
                                 ),
                                 style: TextStyle(
-                                  fontSize: 13 * uiScale,
+                                  fontSize: extFontSize,
                                   fontWeight: FontWeight.bold,
                                   color: isDark ? Colors.white : Colors.black87,
                                 ),
@@ -2456,10 +2602,17 @@ class _SalesScreenState extends State<SalesScreen>
     bool isLandscape,
     double cardWidth,
   ) {
+    final bool useDesktopNav = context.useDesktopNav;
     final double displayExt = _isIncTax ? item.extension : item.extensionEx;
 
     // Calculate thumbnail height based on card width (square-ish with some ratio)
     final double thumbnailHeight = isLandscape ? cardWidth * 0.85 : cardWidth;
+    
+    // Desktop-specific font sizes
+    final double descFontSize = useDesktopNav ? 10 : 14;
+    final double codeFontSize = useDesktopNav ? 9 : 13;
+    final double extFontSize = useDesktopNav ? 10 : 13 * uiScale;
+    final double qtyFontSize = useDesktopNav ? 9 : 11 * uiScale;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -2538,12 +2691,12 @@ class _SalesScreenState extends State<SalesScreen>
                     ),
                     // Qty badge
                     Positioned(
-                      top: 4,
-                      right: 4,
+                      top: useDesktopNav ? 2 : 4,
+                      right: useDesktopNav ? 2 : 4,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: useDesktopNav ? 5 : 8,
+                          vertical: useDesktopNav ? 2 : 4,
                         ),
                         decoration: BoxDecoration(
                           color: kPrimaryColor,
@@ -2552,7 +2705,7 @@ class _SalesScreenState extends State<SalesScreen>
                         child: Text(
                           "x ${formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false)}",
                           style: TextStyle(
-                            fontSize: 11 * uiScale,
+                            fontSize: qtyFontSize,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -2564,7 +2717,7 @@ class _SalesScreenState extends State<SalesScreen>
               ),
               // Item details - flexible height content
               Padding(
-                padding: const EdgeInsets.only(left: 8, right: 8, bottom: 3),
+                padding: EdgeInsets.only(left: useDesktopNav ? 4 : 8, right: useDesktopNav ? 4 : 8, bottom: useDesktopNav ? 2 : 3),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -2572,7 +2725,7 @@ class _SalesScreenState extends State<SalesScreen>
                     Text(
                       item.description,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: descFontSize,
                         fontWeight: FontWeight.w600,
                         color: isDark ? Colors.white : kThirdColor,
                       ),
@@ -2580,13 +2733,13 @@ class _SalesScreenState extends State<SalesScreen>
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: useDesktopNav ? 1 : 2),
                     // Code/Barcode
                     Text(
                       item.code,
                       style: TextStyle(
                         fontFamily: 'monospace',
-                        fontSize: 13,
+                        fontSize: codeFontSize,
                         fontWeight: FontWeight.bold,
                         color: kPrimaryColor,
                       ),
@@ -2594,12 +2747,12 @@ class _SalesScreenState extends State<SalesScreen>
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: useDesktopNav ? 1 : 2),
                     // Extension (price)
                     Text(
                       FormattingUtils.formatCurrencyWithDecimals(displayExt, 2),
                       style: TextStyle(
-                        fontSize: 13 * uiScale,
+                        fontSize: extFontSize,
                         fontWeight: FontWeight.bold,
                         color: Colors.green.shade600,
                       ),
@@ -2711,6 +2864,9 @@ class _SalesScreenState extends State<SalesScreen>
       colors: colors,
       isDark: isDark,
       isIncTax: _isIncTax,
+      hideBarcode: _hideBarcode,
+      hideCategories: _hideCategories,
+      hideTaxCode: _hideTaxCode,
     );
   }
 
@@ -2726,6 +2882,9 @@ class _SalesScreenState extends State<SalesScreen>
       colors: colors,
       isDark: isDark,
       isIncTax: _isIncTax,
+      hideBarcode: _hideBarcode,
+      hideCategories: _hideCategories,
+      hideTaxCode: _hideTaxCode,
     );
   }
 
@@ -2741,6 +2900,9 @@ class _SalesScreenState extends State<SalesScreen>
       colors: colors,
       isDark: isDark,
       isIncTax: _isIncTax,
+      hideBarcode: _hideBarcode,
+      hideCategories: _hideCategories,
+      hideTaxCode: _hideTaxCode,
     );
   }
 
@@ -2748,7 +2910,13 @@ class _SalesScreenState extends State<SalesScreen>
     AppThemeColors colors,
     bool isDark,
     bool isTablet,
+    bool useDesktopNav,
   ) {
+    // Desktop uses smaller sizes
+    final double balanceFontSize = useDesktopNav ? 16 : (isTablet ? 22 : 18);
+    final double totalFontSize = useDesktopNav ? 16 : (isTablet ? 22 : 18);
+    final double labelFontSize = useDesktopNav ? 11 : (isTablet ? 14 : 12.5);
+    
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E2733) : Colors.white,
@@ -2784,41 +2952,60 @@ class _SalesScreenState extends State<SalesScreen>
                       children: [
                         // Actions Button - offset upward
                         Transform.translate(
-                          offset: Offset(0, isTablet ? -8 : -6),
-                          child: _buildActionsButton(colors, isDark, isTablet),
+                          offset: Offset(0, useDesktopNav ? -4 : (isTablet ? -8 : -6)),
+                          child: _buildActionsButton(colors, isDark, isTablet, useDesktopNav),
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: useDesktopNav ? 8 : 12),
                         // Finalise Button
-                        _buildFinaliseButton(colors, isDark, isTablet),
+                        _buildFinaliseButton(colors, isDark, isTablet, useDesktopNav),
                       ],
                     ),
 
-                    SizedBox(width: isTablet ? 38 : 5),
+                    SizedBox(width: useDesktopNav ? 20 : (isTablet ? 38 : 5)),
 
                     // Balance display
                     Expanded(
                       child: Transform.translate(
-                        offset: Offset(isTablet ? -32 : 0, 0),
+                        offset: Offset(useDesktopNav ? -16 : (isTablet ? -32 : 0), 0),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 5),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
+                              // Qty and Lines (vertical)
+                              Text(
+                                "Total Qty: (${_cartItems.fold<double>(0, (sum, item) => sum + item.qty).toStringAsFixed(_cartItems.any((item) => item.stock?.allowFractions ?? false) ? 2 : 0)})",
+                                style: TextStyle(
+                                  fontSize: labelFontSize,
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.onSurfaceMuted,
+                                ),
+                              ),
+                              SizedBox(height: useDesktopNav ? 2 : (isTablet ? 3 : 2)),
+                              Text(
+                                "Lines: (${_cartItems.length})",
+                                style: TextStyle(
+                                  fontSize: labelFontSize,
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.onSurfaceMuted,
+                                ),
+                              ),
+                              SizedBox(height: useDesktopNav ? 4 : (isTablet ? 6 : 5)),
                               // Balance label
                               Text(
                                 "Balance",
                                 style: TextStyle(
-                                  fontSize: isTablet ? 14 : 12.5,
+                                  fontSize: labelFontSize,
                                   color: colors.onSurfaceMuted,
                                 ),
                               ),
-                              SizedBox(height: isTablet ? 6 : 4),
+                              SizedBox(height: useDesktopNav ? 3 : (isTablet ? 6 : 4)),
                               // Balance amount in border
                               Container(
                                 padding: EdgeInsets.symmetric(
-                                  horizontal: isTablet ? 12 : 8,
-                                  vertical: isTablet ? 2 : 7,
+                                  horizontal: useDesktopNav ? 8 : (isTablet ? 12 : 8),
+                                  vertical: useDesktopNav ? 4 : (isTablet ? 2 : 7),
                                 ),
                                 decoration: BoxDecoration(
                                   border: Border.all(
@@ -2837,7 +3024,7 @@ class _SalesScreenState extends State<SalesScreen>
                                     2,
                                   ),
                                   style: TextStyle(
-                                    fontSize: isTablet ? 22 : 18,
+                                    fontSize: balanceFontSize,
                                     letterSpacing: -0.5,
                                     color: isDark
                                         ? Colors.white
@@ -2854,10 +3041,10 @@ class _SalesScreenState extends State<SalesScreen>
                     SizedBox(width: isTablet ? 0 : 5),
 
                     Transform.translate(
-                      offset: Offset(isTablet ? -10 : 0, 0),
+                      offset: Offset(useDesktopNav ? -5 : (isTablet ? -10 : 0), 0),
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
-                          maxWidth: isTablet ? 200 : 110,
+                          maxWidth: useDesktopNav ? 150 : (isTablet ? 200 : 110),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -2866,43 +3053,43 @@ class _SalesScreenState extends State<SalesScreen>
                               "${isTablet ? 'Subtotal' : 'Sub'}: ${FormattingUtils.formatCurrencyWithDecimals(_displaySubtotal, 2)}",
                               style: TextStyle(
                                 color: colors.onSurfaceMuted,
-                                fontSize: isTablet ? 14 : 12.5,
+                                fontSize: labelFontSize,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                            SizedBox(height: isTablet ? 6 : 8),
+                            SizedBox(height: useDesktopNav ? 4 : (isTablet ? 6 : 8)),
                             Text(
                               "${isTablet ? 'Discount' : 'Dis'}: ${FormattingUtils.formatCurrencyWithDecimals(_discount, 2)}",
                               style: TextStyle(
                                 color: _discount > 0
                                     ? kPrimaryColor
                                     : colors.onSurfaceMuted,
-                                fontSize: isTablet ? 14 : 12.5,
+                                fontSize: labelFontSize,
                                 fontWeight: _discount > 0
                                     ? FontWeight.w600
                                     : FontWeight.normal,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                            SizedBox(height: isTablet ? 6 : 8),
+                            SizedBox(height: useDesktopNav ? 4 : (isTablet ? 6 : 8)),
                             Text(
                               "Rounding: ${FormattingUtils.formatCurrencyWithDecimals(_rounding, 2)}",
                               style: TextStyle(
                                 color: colors.onSurfaceMuted,
-                                fontSize: isTablet ? 14 : 12.5,
+                                fontSize: labelFontSize,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                            SizedBox(height: isTablet ? 14 : 22),
+                            SizedBox(height: useDesktopNav ? 8 : (isTablet ? 14 : 22)),
                             Transform.translate(
-                              offset: Offset(0, isTablet ? 0 : -8),
+                              offset: Offset(0, useDesktopNav ? 0 : (isTablet ? 0 : -8)),
                               child: Text(
                                 FormattingUtils.formatCurrencyWithDecimals(
                                   _displayTotal,
                                   2,
                                 ),
                                 style: TextStyle(
-                                  fontSize: isTablet ? 22 : 18,
+                                  fontSize: totalFontSize,
                                   fontWeight: FontWeight.w900,
                                   color: isDark ? Colors.white : Colors.black87,
                                   letterSpacing: -0.5,
@@ -2958,6 +3145,8 @@ class _SalesScreenState extends State<SalesScreen>
             // Show warning dialog
             final colors = context.appColors;
             final isDark = colors.isDark;
+            final bool useDesktopNav = context.useDesktopNav;
+            final bool isTabletSize = context.isTablet;
             await showDialog<void>(
               context: context,
               builder: (ctx) {
@@ -2965,12 +3154,13 @@ class _SalesScreenState extends State<SalesScreen>
                   title: "RetailManager Warning",
                   colors: colors,
                   isDark: isDark,
+                  maxWidth: useDesktopNav ? 420 : (isTabletSize ? 450 : double.infinity),
                   onClose: () => Navigator.pop(ctx),
                   content: Text(
                     "Automatic charge item added to sale!\n\n${autoChargeStock.description}\n\nSale needs to be recalculated.",
                     style: TextStyle(
                       color: isDark ? Colors.white70 : Colors.black54,
-                      fontSize: 15,
+                      fontSize: useDesktopNav ? 14 : 15,
                     ),
                   ),
                   actions: [
@@ -3026,16 +3216,19 @@ class _SalesScreenState extends State<SalesScreen>
         builder: (ctx) {
           final colors = context.appColors;
           final isDark = colors.isDark;
+          final bool useDesktopNav = context.useDesktopNav;
+          final bool isTabletSize = context.isTablet;
           return StandardDialog(
             title: "RetailManager Question",
             colors: colors,
             isDark: isDark,
+            maxWidth: useDesktopNav ? 420 : (isTabletSize ? 450 : double.infinity),
             onClose: () => Navigator.pop(ctx, false),
             content: Text(
               "You have not selected or entered all required serial numbers\n\nContinue?",
               style: TextStyle(
                 color: isDark ? Colors.white70 : Colors.black54,
-                fontSize: 15,
+                fontSize: useDesktopNav ? 14 : 15,
               ),
             ),
             actions: [
@@ -3066,16 +3259,19 @@ class _SalesScreenState extends State<SalesScreen>
         builder: (ctx) {
           final colors = context.appColors;
           final isDark = colors.isDark;
+          final bool useDesktopNav = context.useDesktopNav;
+          final bool isTabletSize = context.isTablet;
           return StandardDialog(
             title: "Selling at Loss",
             colors: colors,
             isDark: isDark,
+            maxWidth: useDesktopNav ? 420 : (isTabletSize ? 450 : double.infinity),
             onClose: () => Navigator.pop(ctx, false),
             content: Text(
               "The item(s) are being sold at a loss, continue?",
               style: TextStyle(
                 color: isDark ? Colors.white70 : Colors.black54,
-                fontSize: 15,
+                fontSize: useDesktopNav ? 14 : 15,
               ),
             ),
             actions: [
@@ -3871,6 +4067,8 @@ class _SalesScreenState extends State<SalesScreen>
     if (!mounted || _isNegativeSellPriceDialogOpen) return;
     _isNegativeSellPriceDialogOpen = true;
 
+    final bool useDesktopNav = context.useDesktopNav;
+    final bool isTablet = context.isTablet;
     showDialog(
       context: context,
       builder: (ctx) {
@@ -3880,6 +4078,7 @@ class _SalesScreenState extends State<SalesScreen>
           title: "RetailManager Error",
           colors: colors,
           isDark: isDark,
+          maxWidth: useDesktopNav ? 380 : (isTablet ? 420 : double.infinity),
           onClose: () => Navigator.pop(ctx),
           content: Text(
             "Sell price cannot be negative.",
@@ -3961,12 +4160,23 @@ class _SalesScreenState extends State<SalesScreen>
     bool isDark,
   ) {
     final isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final scannerController = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
       detectionTimeoutMs: 1000,
       returnImage: false,
     );
     String? scannedValue;
+    
+    // Desktop-specific sizes
+    final double dialogWidth = useDesktopNav ? 350 : (isTablet ? 400 : 300);
+    final double dialogHeight = useDesktopNav ? 280 : (isTablet ? 320 : 260);
+    final double headerPaddingH = useDesktopNav ? 16 : (isTablet ? 20 : 16);
+    final double headerPaddingV = useDesktopNav ? 12 : (isTablet ? 16 : 12);
+    final double iconSize = useDesktopNav ? 20 : (isTablet ? 24 : 20);
+    final double iconSpacing = useDesktopNav ? 8 : (isTablet ? 12 : 8);
+    final double titleFontSize = useDesktopNav ? 15 : (isTablet ? 18 : 16);
+    final double closeBtnSize = useDesktopNav ? 20 : (isTablet ? 24 : 20);
 
     showDialog(
       context: context,
@@ -3980,15 +4190,15 @@ class _SalesScreenState extends State<SalesScreen>
               ),
               contentPadding: EdgeInsets.zero,
               content: SizedBox(
-                width: isTablet ? 400 : 300,
-                height: isTablet ? 320 : 260,
+                width: dialogWidth,
+                height: dialogHeight,
                 child: Column(
                   children: [
                     // Header
                     Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: isTablet ? 20 : 16,
-                        vertical: isTablet ? 16 : 12,
+                        horizontal: headerPaddingH,
+                        vertical: headerPaddingV,
                       ),
                       decoration: BoxDecoration(
                         color: kPrimaryColor.withOpacity(0.1),
@@ -4002,14 +4212,14 @@ class _SalesScreenState extends State<SalesScreen>
                           Icon(
                             Icons.qr_code_scanner,
                             color: kPrimaryColor,
-                            size: isTablet ? 24 : 20,
+                            size: iconSize,
                           ),
-                          SizedBox(width: isTablet ? 12 : 8),
+                          SizedBox(width: iconSpacing),
                           Expanded(
                             child: Text(
                               "Scan for $_surveyLabel",
                               style: TextStyle(
-                                fontSize: isTablet ? 18 : 16,
+                                fontSize: titleFontSize,
                                 fontWeight: FontWeight.w600,
                                 color: isDark ? Colors.white : Colors.black87,
                               ),
@@ -4023,7 +4233,7 @@ class _SalesScreenState extends State<SalesScreen>
                             child: Icon(
                               Icons.close,
                               color: isDark ? Colors.white54 : Colors.black45,
-                              size: isTablet ? 24 : 20,
+                              size: closeBtnSize,
                             ),
                           ),
                         ],
@@ -4442,6 +4652,13 @@ class _SalesScreenState extends State<SalesScreen>
     _closeScanner();
     final controller = TextEditingController(text: _commentValue);
     final isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    // Desktop-specific sizes
+    final double dialogWidth = useDesktopNav ? 450 : (isTablet ? 520 : MediaQuery.of(context).size.width * 0.92);
+    final double dialogPadding = useDesktopNav ? 20 : (isTablet ? 24 : 18);
+    final double titleFontSize = useDesktopNav ? 16 : (isTablet ? 18 : 16);
+    final double closeBtnSize = useDesktopNav ? 22 : (isTablet ? 24 : 22);
 
     showDialog(
       context: context,
@@ -4456,8 +4673,8 @@ class _SalesScreenState extends State<SalesScreen>
               child: Material(
                 color: Colors.transparent,
                 child: Container(
-                  width: isTablet ? 520 : MediaQuery.of(context).size.width * 0.92,
-                  padding: EdgeInsets.all(isTablet ? 24 : 18),
+                  width: dialogWidth,
+                  padding: EdgeInsets.all(dialogPadding),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E2733) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -4480,7 +4697,7 @@ class _SalesScreenState extends State<SalesScreen>
                           Text(
                             "Comment",
                             style: TextStyle(
-                              fontSize: isTablet ? 18 : 16,
+                              fontSize: titleFontSize,
                               fontWeight: FontWeight.w700,
                               color: isDark ? Colors.white : Colors.black87,
                             ),
@@ -4489,7 +4706,7 @@ class _SalesScreenState extends State<SalesScreen>
                             onTap: () => Navigator.of(dialogContext).pop(),
                             child: Icon(
                               Icons.close,
-                              size: isTablet ? 24 : 22,
+                              size: closeBtnSize,
                               color: isDark ? Colors.white70 : Colors.black54,
                             ),
                           ),
@@ -4597,6 +4814,13 @@ class _SalesScreenState extends State<SalesScreen>
     _closeScanner();
     _surveyController.text = _surveyValue;
     final isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    // Desktop-specific sizes
+    final double dialogWidth = useDesktopNav ? 450 : (isTablet ? 520 : MediaQuery.of(context).size.width * 0.92);
+    final double dialogPadding = useDesktopNav ? 20 : (isTablet ? 24 : 18);
+    final double titleFontSize = useDesktopNav ? 16 : (isTablet ? 18 : 16);
+    final double closeBtnSize = useDesktopNav ? 22 : (isTablet ? 24 : 22);
 
     showDialog(
       context: context,
@@ -4611,8 +4835,8 @@ class _SalesScreenState extends State<SalesScreen>
               child: Material(
                 color: Colors.transparent,
                 child: Container(
-                  width: isTablet ? 520 : MediaQuery.of(context).size.width * 0.92,
-                  padding: EdgeInsets.all(isTablet ? 24 : 18),
+                  width: dialogWidth,
+                  padding: EdgeInsets.all(dialogPadding),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E2733) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -4635,7 +4859,7 @@ class _SalesScreenState extends State<SalesScreen>
                           Text(
                             _surveyLabel,
                             style: TextStyle(
-                              fontSize: isTablet ? 18 : 16,
+                              fontSize: titleFontSize,
                               fontWeight: FontWeight.w700,
                               color: isDark ? Colors.white : Colors.black87,
                             ),
@@ -4644,7 +4868,7 @@ class _SalesScreenState extends State<SalesScreen>
                             onTap: () => Navigator.of(dialogContext).pop(),
                             child: Icon(
                               Icons.close,
-                              size: isTablet ? 24 : 22,
+                              size: closeBtnSize,
                               color: isDark ? Colors.white70 : Colors.black54,
                             ),
                           ),
@@ -4876,6 +5100,11 @@ class _SalesScreenState extends State<SalesScreen>
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    // Desktop-specific sizes
+    final double dialogMaxWidth = useDesktopNav ? 520 : (isTablet ? 600 : double.infinity);
+    final double maxHeightPercent = useDesktopNav ? 0.75 : 0.85;
 
     showDialog(
       context: context,
@@ -4887,15 +5116,15 @@ class _SalesScreenState extends State<SalesScreen>
               subtitle: 'Configure your sales preferences',
               colors: colors,
               isDark: isDark,
-              maxWidth: isTablet ? 600 : double.infinity,
+              maxWidth: dialogMaxWidth,
               onClose: () => Navigator.pop(dialogContext),
               content: Flexible(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.85,
+                    maxHeight: MediaQuery.of(context).size.height * maxHeightPercent,
                   ),
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(useDesktopNav ? 14 : 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -4987,6 +5216,72 @@ class _SalesScreenState extends State<SalesScreen>
                           ),
                         ]),
                         const SizedBox(height: 16),
+
+                        // Hide Fields Section (Desktop only)
+                        if (useDesktopNav) ...[
+                          _buildSettingsGroupHeader(
+                            'Hide Fields',
+                            Icons.visibility_off_outlined,
+                            isDark,
+                          ),
+                          _buildSettingsGroupContainer(isDark, colors, [
+                            _buildSettingsSwitch(
+                              'Bar Code',
+                              _hideBarcode,
+                              (v) {
+                                setDialogState(() => _hideBarcode = v);
+                                setState(() {});
+                                _salesBloc.saveSalesSetting(
+                                  key: kSalesHideBarcodeKey,
+                                  value: v,
+                                );
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            Divider(
+                              height: 1,
+                              color: isDark
+                                  ? Colors.white12
+                                  : Colors.grey.shade200,
+                            ),
+                            _buildSettingsSwitch(
+                              'Categories',
+                              _hideCategories,
+                              (v) {
+                                setDialogState(() => _hideCategories = v);
+                                setState(() {});
+                                _salesBloc.saveSalesSetting(
+                                  key: kSalesHideCategoriesKey,
+                                  value: v,
+                                );
+                              },
+                              isDark,
+                              colors,
+                            ),
+                            Divider(
+                              height: 1,
+                              color: isDark
+                                  ? Colors.white12
+                                  : Colors.grey.shade200,
+                            ),
+                            _buildSettingsSwitch(
+                              'Tax Code',
+                              _hideTaxCode,
+                              (v) {
+                                setDialogState(() => _hideTaxCode = v);
+                                setState(() {});
+                                _salesBloc.saveSalesSetting(
+                                  key: kSalesHideTaxCodeKey,
+                                  value: v,
+                                );
+                              },
+                              isDark,
+                              colors,
+                            ),
+                          ]),
+                          const SizedBox(height: 16),
+                        ],
 
                         // Sales Window Section
                         _buildSettingsGroupHeader(
@@ -5265,6 +5560,16 @@ class _SalesScreenState extends State<SalesScreen>
     bool isDark,
   ) {
     final isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    // Desktop-specific sizes
+    final double dialogWidth = useDesktopNav ? 420 : (isTablet ? 500 : MediaQuery.of(context).size.width * 0.85);
+    final double dialogPadding = useDesktopNav ? 22 : (isTablet ? 28 : 24);
+    final double titleFontSize = useDesktopNav ? 17 : (isTablet ? 20 : 18);
+    final double closeBtnSize = useDesktopNav ? 24 : (isTablet ? 26 : 24);
+    final double headerSpacing = useDesktopNav ? 18 : (isTablet ? 24 : 20);
+    final double bottomSpacing = useDesktopNav ? 12 : (isTablet ? 16 : 12);
+    
     showDialog(
       context: context,
       barrierColor: Colors.black54,
@@ -5273,8 +5578,8 @@ class _SalesScreenState extends State<SalesScreen>
           child: Material(
             color: Colors.transparent,
             child: Container(
-              width: isTablet ? 500 : MediaQuery.of(context).size.width * 0.85,
-              padding: EdgeInsets.all(isTablet ? 28 : 24),
+              width: dialogWidth,
+              padding: EdgeInsets.all(dialogPadding),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E2733) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -5296,7 +5601,7 @@ class _SalesScreenState extends State<SalesScreen>
                       Text(
                         "Tax Breakdown",
                         style: TextStyle(
-                          fontSize: isTablet ? 20 : 18,
+                          fontSize: titleFontSize,
                           fontWeight: FontWeight.bold,
                           color: isDark ? Colors.white : Colors.black87,
                         ),
@@ -5305,15 +5610,15 @@ class _SalesScreenState extends State<SalesScreen>
                         onTap: () => Navigator.of(dialogContext).pop(),
                         child: Icon(
                           Icons.close,
-                          size: isTablet ? 26 : 24,
+                          size: closeBtnSize,
                           color: isDark ? Colors.white70 : Colors.black54,
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: isTablet ? 24 : 20),
+                  SizedBox(height: headerSpacing),
                   _buildTaxBreakdown(colors, isDark),
-                  SizedBox(height: isTablet ? 16 : 12),
+                  SizedBox(height: bottomSpacing),
                 ],
               ),
             ),
@@ -5329,6 +5634,16 @@ class _SalesScreenState extends State<SalesScreen>
     bool isDark,
   ) {
     final isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    // Desktop-specific sizes
+    final double dialogWidth = useDesktopNav ? 420 : (isTablet ? 500 : MediaQuery.of(context).size.width * 0.85);
+    final double dialogPadding = useDesktopNav ? 22 : (isTablet ? 28 : 24);
+    final double titleFontSize = useDesktopNav ? 17 : (isTablet ? 20 : 18);
+    final double closeBtnSize = useDesktopNav ? 24 : (isTablet ? 26 : 24);
+    final double headerSpacing = useDesktopNav ? 18 : (isTablet ? 24 : 20);
+    final double bottomSpacing = useDesktopNav ? 12 : (isTablet ? 16 : 12);
+    
     showDialog(
       context: context,
       barrierColor: Colors.black54,
@@ -5337,8 +5652,8 @@ class _SalesScreenState extends State<SalesScreen>
           child: Material(
             color: Colors.transparent,
             child: Container(
-              width: isTablet ? 500 : MediaQuery.of(context).size.width * 0.85,
-              padding: EdgeInsets.all(isTablet ? 28 : 24),
+              width: dialogWidth,
+              padding: EdgeInsets.all(dialogPadding),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E2733) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -5360,7 +5675,7 @@ class _SalesScreenState extends State<SalesScreen>
                       Text(
                         "Profit Breakdown",
                         style: TextStyle(
-                          fontSize: isTablet ? 20 : 18,
+                          fontSize: titleFontSize,
                           fontWeight: FontWeight.bold,
                           color: isDark ? Colors.white : Colors.black87,
                         ),
@@ -5369,15 +5684,15 @@ class _SalesScreenState extends State<SalesScreen>
                         onTap: () => Navigator.of(dialogContext).pop(),
                         child: Icon(
                           Icons.close,
-                          size: isTablet ? 26 : 24,
+                          size: closeBtnSize,
                           color: isDark ? Colors.white70 : Colors.black54,
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: isTablet ? 24 : 20),
+                  SizedBox(height: headerSpacing),
                   _buildProfitBreakdown(colors, isDark),
-                  SizedBox(height: isTablet ? 16 : 12),
+                  SizedBox(height: bottomSpacing),
                 ],
               ),
             ),
@@ -5432,10 +5747,40 @@ class _SalesScreenState extends State<SalesScreen>
   ) {
     _closeScanner();
     final isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final discountController = TextEditingController(
       text: _discountValue > 0 ? _discountValue.toStringAsFixed(2) : '',
     );
     double tempDiscount = _discountValue;
+    
+    // Desktop-specific sizes
+    final double dialogWidth = useDesktopNav ? 520 : (isTablet ? 600 : MediaQuery.of(context).size.width * 0.92);
+    final double dialogPadding = useDesktopNav ? 22 : (isTablet ? 28 : 20);
+    final double titleFontSize = useDesktopNav ? 17 : (isTablet ? 20 : 18);
+    final double closeBtnSize = useDesktopNav ? 24 : (isTablet ? 26 : 24);
+    final double headerSpacing = useDesktopNav ? 16 : (isTablet ? 20 : 16);
+    final double labelFontSize = useDesktopNav ? 12 : (isTablet ? 14 : 12);
+    final double inputFontSize = useDesktopNav ? 20 : (isTablet ? 24 : 20);
+    final double labelToInputSpacing = useDesktopNav ? 8 : (isTablet ? 10 : 8);
+    final double inputPaddingH = useDesktopNav ? 14 : (isTablet ? 16 : 14);
+    final double inputPaddingV = useDesktopNav ? 14 : (isTablet ? 16 : 14);
+    final double infoBoxSpacing = useDesktopNav ? 10 : (isTablet ? 12 : 10);
+    final double infoBoxPaddingH = useDesktopNav ? 12 : (isTablet ? 14 : 12);
+    final double infoBoxPaddingV = useDesktopNav ? 8 : (isTablet ? 10 : 8);
+    final double infoLabelFontSize = useDesktopNav ? 13 : (isTablet ? 15 : 13);
+    final double infoValueFontSize = useDesktopNav ? 16 : (isTablet ? 18 : 16);
+    final double infoBoxBottomSpacing = useDesktopNav ? 6 : (isTablet ? 8 : 6);
+    final double columnSpacing = useDesktopNav ? 18 : (isTablet ? 24 : 16);
+    final double profitTopPadding = useDesktopNav ? 24 : (isTablet ? 32 : 24);
+    final double profitBoxPadding = useDesktopNav ? 16 : (isTablet ? 20 : 16);
+    final double profitTitleFontSize = useDesktopNav ? 14 : (isTablet ? 16 : 14);
+    final double profitRowSpacing = useDesktopNav ? 12 : (isTablet ? 18 : 14);
+    final double profitRowInnerSpacing = useDesktopNav ? 10 : (isTablet ? 14 : 12);
+    final double profitValueFontSize = useDesktopNav ? 14 : (isTablet ? 16 : 14);
+    final double actionsTopSpacing = useDesktopNav ? 20 : (isTablet ? 24 : 20);
+    final double buttonPadding = useDesktopNav ? 12 : (isTablet ? 14 : 12);
+    final double buttonFontSize = useDesktopNav ? 14 : (isTablet ? 15 : 14);
+    final double buttonSpacing = useDesktopNav ? 12 : (isTablet ? 16 : 12);
 
     showDialog(
       context: context,
@@ -5462,10 +5807,8 @@ class _SalesScreenState extends State<SalesScreen>
                   child: Material(
                     color: Colors.transparent,
                     child: Container(
-                      width: isTablet
-                          ? 600
-                          : MediaQuery.of(context).size.width * 0.92,
-                      padding: EdgeInsets.all(isTablet ? 28 : 20),
+                      width: dialogWidth,
+                      padding: EdgeInsets.all(dialogPadding),
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF1E2733) : Colors.white,
                         borderRadius: BorderRadius.circular(16),
@@ -5488,7 +5831,7 @@ class _SalesScreenState extends State<SalesScreen>
                               Text(
                                 "Discount",
                                 style: TextStyle(
-                                  fontSize: isTablet ? 20 : 18,
+                                  fontSize: titleFontSize,
                                   fontWeight: FontWeight.bold,
                                   color: isDark ? Colors.white : Colors.black87,
                                 ),
@@ -5497,7 +5840,7 @@ class _SalesScreenState extends State<SalesScreen>
                                 onTap: () => Navigator.of(dialogContext).pop(),
                                 child: Icon(
                                   Icons.close,
-                                  size: isTablet ? 26 : 24,
+                                  size: closeBtnSize,
                                   color: isDark
                                       ? Colors.white70
                                       : Colors.black54,
@@ -5505,7 +5848,7 @@ class _SalesScreenState extends State<SalesScreen>
                               ),
                             ],
                           ),
-                          SizedBox(height: isTablet ? 20 : 16),
+                          SizedBox(height: headerSpacing),
 
                           // Main content row: Discount input + Profit breakdown
                           Row(
@@ -5520,19 +5863,19 @@ class _SalesScreenState extends State<SalesScreen>
                                     Text(
                                       "Discount Amount",
                                       style: TextStyle(
-                                        fontSize: isTablet ? 14 : 12,
+                                        fontSize: labelFontSize,
                                         fontWeight: FontWeight.w600,
                                         color: isDark
                                             ? Colors.white70
                                             : Colors.blueGrey.shade700,
                                       ),
                                     ),
-                                    SizedBox(height: isTablet ? 10 : 8),
+                                    SizedBox(height: labelToInputSpacing),
                                     TextField(
                                       controller: discountController,
                                       autofocus: true,
                                       style: TextStyle(
-                                        fontSize: isTablet ? 24 : 20,
+                                        fontSize: inputFontSize,
                                         fontWeight: FontWeight.bold,
                                         color: isDark
                                             ? Colors.white
@@ -5544,7 +5887,7 @@ class _SalesScreenState extends State<SalesScreen>
                                           color: isDark
                                               ? Colors.white30
                                               : Colors.grey.shade400,
-                                          fontSize: isTablet ? 24 : 20,
+                                          fontSize: inputFontSize,
                                         ),
                                         filled: true,
                                         fillColor: isDark
@@ -5557,8 +5900,8 @@ class _SalesScreenState extends State<SalesScreen>
                                           borderSide: BorderSide.none,
                                         ),
                                         contentPadding: EdgeInsets.symmetric(
-                                          horizontal: isTablet ? 16 : 14,
-                                          vertical: isTablet ? 16 : 14,
+                                          horizontal: inputPaddingH,
+                                          vertical: inputPaddingV,
                                         ),
                                       ),
                                       onChanged: (value) {
@@ -5582,12 +5925,12 @@ class _SalesScreenState extends State<SalesScreen>
                                         Navigator.of(dialogContext).pop();
                                       },
                                     ),
-                                    SizedBox(height: isTablet ? 12 : 10),
+                                    SizedBox(height: infoBoxSpacing),
                                     // Current discount display
                                     Container(
                                       padding: EdgeInsets.symmetric(
-                                        horizontal: isTablet ? 14 : 12,
-                                        vertical: isTablet ? 10 : 8,
+                                        horizontal: infoBoxPaddingH,
+                                        vertical: infoBoxPaddingV,
                                       ),
                                       decoration: BoxDecoration(
                                         color: kPrimaryColor.withOpacity(0.1),
@@ -5600,7 +5943,7 @@ class _SalesScreenState extends State<SalesScreen>
                                           Text(
                                             "Discount:",
                                             style: TextStyle(
-                                              fontSize: isTablet ? 15 : 13,
+                                              fontSize: infoLabelFontSize,
                                               color: isDark
                                                   ? Colors.white70
                                                   : Colors.blueGrey.shade700,
@@ -5617,7 +5960,7 @@ class _SalesScreenState extends State<SalesScreen>
                                                   2,
                                                 ),
                                                 style: TextStyle(
-                                                  fontSize: isTablet ? 18 : 16,
+                                                  fontSize: infoValueFontSize,
                                                   fontWeight: FontWeight.bold,
                                                   color: kPrimaryColor,
                                                 ),
@@ -5627,12 +5970,12 @@ class _SalesScreenState extends State<SalesScreen>
                                         ],
                                       ),
                                     ),
-                                    SizedBox(height: isTablet ? 8 : 6),
+                                    SizedBox(height: infoBoxBottomSpacing),
                                     // New total display
                                     Container(
                                       padding: EdgeInsets.symmetric(
-                                        horizontal: isTablet ? 14 : 12,
-                                        vertical: isTablet ? 10 : 8,
+                                        horizontal: infoBoxPaddingH,
+                                        vertical: infoBoxPaddingV,
                                       ),
                                       decoration: BoxDecoration(
                                         color: isDark
@@ -5647,7 +5990,7 @@ class _SalesScreenState extends State<SalesScreen>
                                           Text(
                                             "New Total:",
                                             style: TextStyle(
-                                              fontSize: isTablet ? 15 : 13,
+                                              fontSize: infoLabelFontSize,
                                               color: isDark
                                                   ? Colors.white70
                                                   : Colors.blueGrey.shade700,
@@ -5664,7 +6007,7 @@ class _SalesScreenState extends State<SalesScreen>
                                                   2,
                                                 ),
                                                 style: TextStyle(
-                                                  fontSize: isTablet ? 18 : 16,
+                                                  fontSize: infoValueFontSize,
                                                   fontWeight: FontWeight.bold,
                                                   color: isDark
                                                       ? Colors.white
@@ -5679,16 +6022,16 @@ class _SalesScreenState extends State<SalesScreen>
                                   ],
                                 ),
                               ),
-                              SizedBox(width: isTablet ? 24 : 16),
+                              SizedBox(width: columnSpacing),
                               // Profit breakdown section
                               Expanded(
                                 flex: 2,
                                 child: Padding(
                                   padding: EdgeInsets.only(
-                                    top: isTablet ? 32 : 24,
+                                    top: profitTopPadding,
                                   ),
                                   child: Container(
-                                    padding: EdgeInsets.all(isTablet ? 20 : 16),
+                                    padding: EdgeInsets.all(profitBoxPadding),
                                     decoration: BoxDecoration(
                                       color: isDark
                                           ? colors.surface
@@ -5709,29 +6052,31 @@ class _SalesScreenState extends State<SalesScreen>
                                         Text(
                                           "Profit Preview",
                                           style: TextStyle(
-                                            fontSize: isTablet ? 16 : 14,
+                                            fontSize: profitTitleFontSize,
                                             fontWeight: FontWeight.w600,
                                             color: isDark
                                                 ? Colors.white70
                                                 : Colors.blueGrey.shade700,
                                           ),
                                         ),
-                                        SizedBox(height: isTablet ? 18 : 14),
+                                        SizedBox(height: profitRowSpacing),
                                         _buildProfitRow(
                                           "Cost:",
                                           _totalCost,
                                           isDark,
                                           isTablet,
+                                          useDesktopNav: useDesktopNav,
                                         ),
-                                        SizedBox(height: isTablet ? 14 : 12),
+                                        SizedBox(height: profitRowInnerSpacing),
                                         _buildProfitRow(
                                           "eGP:",
                                           egp,
                                           isDark,
                                           isTablet,
                                           highlight: true,
+                                          useDesktopNav: useDesktopNav,
                                         ),
-                                        SizedBox(height: isTablet ? 14 : 12),
+                                        SizedBox(height: profitRowInnerSpacing),
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
@@ -5739,7 +6084,7 @@ class _SalesScreenState extends State<SalesScreen>
                                             Text(
                                               "eGP%:",
                                               style: TextStyle(
-                                                fontSize: isTablet ? 16 : 14,
+                                                fontSize: profitValueFontSize,
                                                 color: egp < 0
                                                     ? Colors.redAccent
                                                     : const Color(0xFF30B24C),
@@ -5755,9 +6100,7 @@ class _SalesScreenState extends State<SalesScreen>
                                                 child: Text(
                                                   "${egpPercent.toStringAsFixed(2)}%",
                                                   style: TextStyle(
-                                                    fontSize: isTablet
-                                                        ? 16
-                                                        : 14,
+                                                    fontSize: profitValueFontSize,
                                                     fontWeight: FontWeight.bold,
                                                     color: egp < 0
                                                         ? Colors.redAccent
@@ -5777,7 +6120,7 @@ class _SalesScreenState extends State<SalesScreen>
                               ),
                             ],
                           ),
-                          SizedBox(height: isTablet ? 24 : 20),
+                          SizedBox(height: actionsTopSpacing),
 
                           // Action buttons
                           Row(
@@ -5794,7 +6137,7 @@ class _SalesScreenState extends State<SalesScreen>
                                     },
                                     style: OutlinedButton.styleFrom(
                                       padding: EdgeInsets.symmetric(
-                                        vertical: isTablet ? 14 : 12,
+                                        vertical: buttonPadding,
                                       ),
                                       side: const BorderSide(
                                         color: Colors.redAccent,
@@ -5808,12 +6151,12 @@ class _SalesScreenState extends State<SalesScreen>
                                       style: TextStyle(
                                         color: Colors.redAccent,
                                         fontWeight: FontWeight.w600,
-                                        fontSize: isTablet ? 15 : 14,
+                                        fontSize: buttonFontSize,
                                       ),
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: isTablet ? 16 : 12),
+                                SizedBox(width: buttonSpacing),
                               ],
                               Expanded(
                                 child: ElevatedButton(
@@ -5832,7 +6175,7 @@ class _SalesScreenState extends State<SalesScreen>
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: kPrimaryColor,
                                     padding: EdgeInsets.symmetric(
-                                      vertical: isTablet ? 14 : 12,
+                                      vertical: buttonPadding,
                                     ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
@@ -5843,7 +6186,7 @@ class _SalesScreenState extends State<SalesScreen>
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600,
-                                      fontSize: isTablet ? 15 : 14,
+                                      fontSize: buttonFontSize,
                                     ),
                                   ),
                                 ),
@@ -5869,18 +6212,20 @@ class _SalesScreenState extends State<SalesScreen>
     bool isDark,
     bool isTablet, {
     bool highlight = false,
+    bool useDesktopNav = false,
   }) {
     final isNegative = amount < 0;
     final highlightColor = isNegative
         ? Colors.redAccent
         : const Color(0xFF30B24C);
+    final double fontSize = useDesktopNav ? 14 : (isTablet ? 16 : 14);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: TextStyle(
-            fontSize: isTablet ? 16 : 14,
+            fontSize: fontSize,
             color: highlight
                 ? highlightColor
                 : (isDark ? Colors.white70 : Colors.blueGrey.shade700),
@@ -5895,7 +6240,7 @@ class _SalesScreenState extends State<SalesScreen>
             child: Text(
               FormattingUtils.formatCurrencyWithDecimals(amount, 4),
               style: TextStyle(
-                fontSize: isTablet ? 16 : 14,
+                fontSize: fontSize,
                 fontWeight: FontWeight.bold,
                 color: highlight
                     ? highlightColor
@@ -5974,6 +6319,9 @@ class _SalesScreenState extends State<SalesScreen>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // Switch Transaction - Full width with border
+                            _buildSwitchTransactionTile(context, colors, isDark, isTablet),
+                            const SizedBox(height: 10),
                             // Row 1: Sales Customer | Add Discount
                             Row(
                               children: [
@@ -6110,8 +6458,12 @@ class _SalesScreenState extends State<SalesScreen>
     AppThemeColors colors,
     bool isDark,
     bool isTablet,
+    bool useDesktopNav,
   ) {
-    final size = isTablet ? 70.0 : 50.0;
+    // Desktop uses smaller size (but not too small)
+    final size = useDesktopNav ? 50.0 : (isTablet ? 70.0 : 50.0);
+    final iconSize = useDesktopNav ? 24.0 : (isTablet ? 34.0 : 24.0);
+    
     return Builder(
       builder: (context) => GestureDetector(
         onTap: () {
@@ -6156,7 +6508,7 @@ class _SalesScreenState extends State<SalesScreen>
           child: Icon(
             Icons.menu,
             color: kPrimaryColor,
-            size: isTablet ? 34 : 24,
+            size: iconSize,
           ),
         ),
       ),
@@ -6167,10 +6519,17 @@ class _SalesScreenState extends State<SalesScreen>
     AppThemeColors colors,
     bool isDark,
     bool isTablet,
+    bool useDesktopNav,
   ) {
     final isSales = widget.title == "Sales";
     final requiresCustomer = !isSales && _selectedCustomer == null;
     final isDisabled = _cartItems.isEmpty || requiresCustomer;
+
+    // Desktop uses smaller padding and font
+    final verticalPadding = useDesktopNav ? 8.0 : (isTablet ? 10.0 : 14.0);
+    final horizontalPadding = useDesktopNav ? 16.0 : (isTablet ? 52.0 : 10.0);
+    final iconSize = useDesktopNav ? 16.0 : (isTablet ? 22.0 : 16.0);
+    final fontSize = useDesktopNav ? 11.0 : (isTablet ? 15.0 : 11.0);
 
     return GestureDetector(
       onTap: isDisabled ? null : () => _showFinaliseDialog(),
@@ -6178,8 +6537,8 @@ class _SalesScreenState extends State<SalesScreen>
         opacity: isDisabled ? 0.4 : 1.0,
         child: Container(
           padding: EdgeInsets.symmetric(
-            vertical: isTablet ? 10 : 14,
-            horizontal: isTablet ? 52 : 10,
+            vertical: verticalPadding,
+            horizontal: horizontalPadding,
           ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -6206,14 +6565,14 @@ class _SalesScreenState extends State<SalesScreen>
               Icon(
                 Icons.check_circle_outline,
                 color: Colors.white,
-                size: isTablet ? 22 : 16,
+                size: iconSize,
               ),
               const SizedBox(width: 8),
               Text(
                 "FINALISE",
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: isTablet ? 15 : 11,
+                  fontSize: fontSize,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.8,
                 ),
@@ -6435,6 +6794,271 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
+  Widget _buildSwitchTransactionTile(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+    bool isTablet,
+  ) {
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).pop();
+        setState(() {
+          _showActions = false;
+          _actionsAnimationController.reverse();
+        });
+        Future.microtask(() {
+          if (mounted) {
+            _showSwitchTransactionConfirmDialog(colors, isDark);
+          }
+        });
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 16 : 14,
+          vertical: isTablet ? 14 : 12,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E2733) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: kPrimaryColor,
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: kPrimaryColor.withOpacity(isDark ? 0.3 : 0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.swap_horiz_rounded,
+              size: isTablet ? 24 : 22,
+              color: kPrimaryColor,
+            ),
+            SizedBox(width: isTablet ? 12 : 10),
+            Text(
+              "Switch Transaction",
+              style: TextStyle(
+                color: kPrimaryColor,
+                fontWeight: FontWeight.w700,
+                fontSize: isTablet ? 15 : 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSwitchTransactionConfirmDialog(AppThemeColors colors, bool isDark) {
+    final bool useDesktopNav = context.useDesktopNav;
+    final bool isTablet = context.isTablet;
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => StandardDialog(
+        title: "Switch Transaction",
+        colors: colors,
+        isDark: isDark,
+        maxWidth: useDesktopNav ? 400 : (isTablet ? 450 : double.infinity),
+        onClose: () => Navigator.pop(ctx),
+        content: Text(
+          "Are you sure you want to switch this transaction to a different type? All current items will be transferred.",
+          style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+        ),
+        actions: [
+          DialogTextAction(
+            label: "Cancel",
+            style: DialogActionStyle.cancelOutline,
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          DialogTextAction(
+            label: "Yes, Switch",
+            style: DialogActionStyle.primary,
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showTransactionTypePickerDialog(colors, isDark);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTransactionTypePickerDialog(AppThemeColors colors, bool isDark) {
+    final bool useDesktopNav = context.useDesktopNav;
+    final bool isTablet = context.isTablet;
+    
+    // Determine available transaction types based on current type
+    // Note: "Sales" is excluded - only Account Sales, Sales Order, Quotes, Lay-bys can be switched
+    final List<Map<String, dynamic>> availableTypes = [];
+    
+    if (widget.title != "Account Sales") {
+      availableTypes.add({
+        "title": "Account Sales",
+        "icon": Icons.receipt_long_outlined,
+        "color": const Color.fromARGB(255, 210, 148, 172),
+      });
+    }
+    if (widget.title != "Sales Order") {
+      availableTypes.add({
+        "title": "Sales Order",
+        "icon": Icons.shopping_cart_outlined,
+        "color": const Color.fromARGB(255, 44, 133, 211),
+      });
+    }
+    if (widget.title != "Quotes") {
+      availableTypes.add({
+        "title": "Quotes",
+        "icon": Icons.request_quote_outlined,
+        "color": Colors.orange,
+      });
+    }
+    if (widget.title != "Lay-bys") {
+      availableTypes.add({
+        "title": "Lay-bys",
+        "icon": Icons.inventory_2_outlined,
+        "color": const Color.fromARGB(255, 152, 86, 165),
+      });
+    }
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => StandardDialog(
+        title: "Select Transaction Type",
+        subtitle: "Choose where to transfer this transaction",
+        colors: colors,
+        isDark: isDark,
+        maxWidth: useDesktopNav ? 420 : (isTablet ? 480 : double.infinity),
+        onClose: () => Navigator.pop(ctx),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: availableTypes.map((type) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: InkWell(
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _switchToTransaction(
+                    type["title"] as String,
+                    type["color"] as Color,
+                    type["icon"] as IconData,
+                  );
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: isDark ? colors.surfaceAlt : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: (type["color"] as Color).withOpacity(0.5),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: (type["color"] as Color).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          type["icon"] as IconData,
+                          color: type["color"] as Color,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          type["title"] as String,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: colors.onSurfaceMuted,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        actions: [
+          DialogTextAction(
+            label: "Cancel",
+            style: DialogActionStyle.cancelOutline,
+            onPressed: () => Navigator.pop(ctx),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _switchToTransaction(String title, Color themeColor, IconData icon) async {
+    // Capture current cart data before navigation
+    final cartItems = List<CartItemVO>.from(_cartItems);
+    final customer = _selectedCustomer;
+    final discount = _discountValue;
+    final comment = _commentValue;
+    final survey = _surveyValue;
+    final delivery = _deliveryInfo;
+    
+    // Delete current session from database to prevent duplicates
+    if (_currentSessionId != null) {
+      await _salesBloc.deleteSaleSession(sessionId: _currentSessionId!);
+    }
+    
+    // Clear current cart to prevent auto-save on dispose
+    _salesBloc.add(ClearCart());
+    _currentSessionId = null;
+    
+    if (!mounted) return;
+    
+    // Navigate to new transaction screen with the data
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) {
+            final bloc = di.sl<SalesBloc>();
+            // Load cart items directly into the bloc state
+            bloc.add(LoadCartItems(items: cartItems));
+            // Set customer if exists
+            if (customer != null) {
+              bloc.add(SelectCustomer(customer: customer));
+            }
+            return bloc;
+          },
+          child: _SwitchTransactionWrapper(
+            title: title,
+            themeColor: themeColor,
+            icon: icon,
+            discount: discount,
+            comment: comment,
+            survey: survey,
+            delivery: delivery,
+            customer: customer,
+          ),
+        ),
+      ),
+    );
+  }
+
   void _handleGridActionTap(
     BuildContext context,
     AppThemeColors colors,
@@ -6528,12 +7152,15 @@ class _SalesScreenState extends State<SalesScreen>
     if (_cartItems.isEmpty && _currentSessionId == null) {
       return;
     }
+    final bool useDesktopNav = context.useDesktopNav;
+    final bool isTablet = context.isTablet;
     showDialog(
       context: context,
       builder: (ctx) => StandardDialog(
         title: "Clear Session",
         colors: colors,
         isDark: isDark,
+        maxWidth: useDesktopNav ? 400 : (isTablet ? 450 : double.infinity),
         onClose: () => Navigator.pop(ctx),
         content: Text(
           "Are you sure you want to clear this session? This will delete it permanently.",
@@ -6617,6 +7244,47 @@ class _SalesScreenState extends State<SalesScreen>
       totalGp: double.parse(totals.totalGp.toStringAsFixed(4)),
       colors: colors,
       isDark: isDark,
+    );
+  }
+}
+
+/// Wrapper widget to pass preserved data to SalesScreen when switching transaction types
+class _SwitchTransactionWrapper extends StatefulWidget {
+  final String title;
+  final Color themeColor;
+  final IconData icon;
+  final double discount;
+  final String comment;
+  final String survey;
+  final DeliveryInfoVO? delivery;
+  final CustomerVO? customer;
+
+  const _SwitchTransactionWrapper({
+    required this.title,
+    required this.themeColor,
+    required this.icon,
+    required this.discount,
+    required this.comment,
+    required this.survey,
+    this.delivery,
+    this.customer,
+  });
+
+  @override
+  State<_SwitchTransactionWrapper> createState() => _SwitchTransactionWrapperState();
+}
+
+class _SwitchTransactionWrapperState extends State<_SwitchTransactionWrapper> {
+  @override
+  Widget build(BuildContext context) {
+    return SalesScreen(
+      title: widget.title,
+      themeColor: widget.themeColor,
+      icon: widget.icon,
+      initialDiscount: widget.discount,
+      initialComment: widget.comment,
+      initialSurvey: widget.survey,
+      initialDelivery: widget.delivery,
     );
   }
 }

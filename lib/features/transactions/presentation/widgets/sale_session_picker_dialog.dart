@@ -70,32 +70,36 @@ class SaleSessionPickerDialog extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = AppThemeColors(context);
     final isTablet = context.isTablet;
+    final useDesktopNav = context.useDesktopNav;
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
     final media = MediaQuery.of(context);
     final double maxDialogHeight = (media.size.height -
         media.viewInsets.vertical -
-        (isTablet ? 120 : 88))
+        (isTablet || useDesktopNav ? 120 : 88))
       .clamp(280.0, media.size.height * 0.92)
       .toDouble();
 
     final iconColor = _getColorForSessionType();
     final icon = _getIconForSessionType();
 
+    // Use tablet sizing for desktop
+    final bool useWideLayout = isTablet || useDesktopNav;
+
     return StandardDialog(
       title: "",
       colors: colors,
       isDark: isDark,
-      maxWidth: isTablet ? 500 : double.infinity,
+      maxWidth: useDesktopNav ? 550 : (isTablet ? 500 : double.infinity),
       maxHeight: maxDialogHeight,
       showHeader: false,
       contentPadding: EdgeInsets.fromLTRB(
-        isTablet ? 12 : 8,
-        isTablet ? 20 : 16,
-        isTablet ? 12 : 8,
-        isTablet ? 18 : 14,
+        useWideLayout ? 12 : 8,
+        useWideLayout ? 20 : 16,
+        useWideLayout ? 12 : 8,
+        useWideLayout ? 18 : 14,
       ),
       insetPadding: EdgeInsets.symmetric(
-        horizontal: isTablet ? 40 : 12,
+        horizontal: useDesktopNav ? 60 : (isTablet ? 40 : 12),
       ),
       onClose: () => Navigator.pop(context, (
         result: SessionPickerResult.cancelled,
@@ -110,7 +114,7 @@ class SaleSessionPickerDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: EdgeInsets.all(isTablet ? 10 : 8),
+                  padding: EdgeInsets.all(useWideLayout ? 10 : 8),
                   decoration: BoxDecoration(
                     color: iconColor,
                     borderRadius: BorderRadius.circular(10),
@@ -118,10 +122,10 @@ class SaleSessionPickerDialog extends StatelessWidget {
                   child: Icon(
                     icon,
                     color: Colors.white,
-                    size: isTablet ? 24 : 20,
+                    size: useWideLayout ? 24 : 20,
                   ),
                 ),
-                SizedBox(width: isTablet ? 14 : 10),
+                SizedBox(width: useWideLayout ? 14 : 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +133,7 @@ class SaleSessionPickerDialog extends StatelessWidget {
                       Text(
                         "Pending $sessionType",
                         style: TextStyle(
-                          fontSize: isTablet ? 18 : 16,
+                          fontSize: useWideLayout ? 18 : 16,
                           fontWeight: FontWeight.w700,
                           color: isDark ? Colors.white : Colors.black87,
                         ),
@@ -138,7 +142,7 @@ class SaleSessionPickerDialog extends StatelessWidget {
                       Text(
                         "${sessions.length} ${sessions.length == 1 ? 'record' : 'records'} in the list",
                         style: TextStyle(
-                          fontSize: isTablet ? 13 : 12,
+                          fontSize: useWideLayout ? 13 : 12,
                           color: isDark ? Colors.white54 : Colors.black54,
                         ),
                       ),
@@ -152,7 +156,7 @@ class SaleSessionPickerDialog extends StatelessWidget {
                   )),
                   icon: Icon(
                     Icons.close,
-                    size: isTablet ? 24 : 22,
+                    size: useWideLayout ? 24 : 22,
                     color: isDark ? Colors.white70 : Colors.black54,
                   ),
                 ),
@@ -164,9 +168,9 @@ class SaleSessionPickerDialog extends StatelessWidget {
               child: ListView.separated(
                 shrinkWrap: true,
                 padding: EdgeInsets.fromLTRB(
-                  isTablet ? 8 : 6,
+                  useWideLayout ? 8 : 6,
                   12,
-                  isTablet ? 8 : 6,
+                  useWideLayout ? 8 : 6,
                   12,
                 ),
                 itemCount: sessions.length,
@@ -178,7 +182,7 @@ class SaleSessionPickerDialog extends StatelessWidget {
                     session,
                     colors,
                     isDark,
-                    isTablet,
+                    useWideLayout,
                     dateFormat,
                   );
                 },
