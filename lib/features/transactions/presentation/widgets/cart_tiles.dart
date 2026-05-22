@@ -443,10 +443,22 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   @override
   Widget build(BuildContext context) {
     final isTablet = widget.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final bool hasPromotion = _hasPromotion;
+    
+    // Desktop-specific sizes (between mobile and tablet)
+    final double containerPadding = useDesktopNav ? 10 : (isTablet ? 12 : 10);
+    final double thumbnailSize = useDesktopNav ? 36 : (isTablet ? 44 : 36);
+    final double descFontSize = useDesktopNav ? 13 : 14;
+    final double codeFontSize = useDesktopNav ? 12 : 13;
+    final double totalLabelFontSize = useDesktopNav ? 9 : (isTablet ? 10 : 9);
+    final double totalFontSize = useDesktopNav ? 13 : (isTablet ? 15 : 13);
+    final double fieldHeight = useDesktopNav ? 40 : (isTablet ? 52 : 30);
+    final double priceFieldWidth = useDesktopNav ? 100 : (isTablet ? 220 : 100);
+    final double qtyFieldWidth = useDesktopNav ? 70 : (isTablet ? 100 : 50);
 
     return Container(
-      padding: EdgeInsets.all(isTablet ? 12 : 10),
+      padding: EdgeInsets.all(containerPadding),
       decoration: BoxDecoration(
         color: widget.isDark
             ? Color.lerp(widget.colors.surface, kPrimaryColor, 0.08)
@@ -464,9 +476,9 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
             children: [
               // Thumbnail
               Container(
-                width: isTablet ? 44 : 36,
-                height: isTablet ? 44 : 36,
-                margin: EdgeInsets.only(right: isTablet ? 10 : 8),
+                width: thumbnailSize,
+                height: thumbnailSize,
+                margin: EdgeInsets.only(right: useDesktopNav ? 6 : (isTablet ? 10 : 8)),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(6),
                   color: widget.isDark ? widget.colors.surface : Colors.white,
@@ -493,12 +505,12 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (_allowRenaming)
-                      _buildDescriptionField(isTablet)
+                      _buildDescriptionField(isTablet, useDesktopNav: useDesktopNav)
                     else
                       Text(
                         widget.item.description,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: descFontSize,
                           fontWeight: FontWeight.w600,
                           color: widget.isDark ? Colors.white : Colors.black87,
                         ),
@@ -509,7 +521,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                       widget.item.code,
                       style: TextStyle(
                         fontFamily: 'monospace',
-                        fontSize: 13,
+                        fontSize: codeFontSize,
                         fontWeight: FontWeight.w900,
                         color: kPrimaryColor,
                       ),
@@ -517,7 +529,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                   ],
                 ),
               ),
-              SizedBox(width: isTablet ? 12 : 8),
+              SizedBox(width: useDesktopNav ? 6 : (isTablet ? 12 : 8)),
               // Total display
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -526,7 +538,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                   Text(
                     "Total",
                     style: TextStyle(
-                      fontSize: isTablet ? 10 : 9,
+                      fontSize: totalLabelFontSize,
                       color: widget.colors.onSurfaceMuted,
                     ),
                   ),
@@ -536,7 +548,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                       2,
                     ),
                     style: TextStyle(
-                      fontSize: isTablet ? 15 : 13,
+                      fontSize: totalFontSize,
                       fontWeight: FontWeight.bold,
                       color: widget.isDark ? Colors.white : Colors.black87,
                     ),
@@ -546,7 +558,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
             ],
           ),
 
-          SizedBox(height: isTablet ? 10 : 8),
+          SizedBox(height: useDesktopNav ? 6 : (isTablet ? 10 : 8)),
 
           // Edit fields and actions row - horizontally scrollable for narrow screens
           Row(
@@ -559,6 +571,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                   physics: const BouncingScrollPhysics(),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Action buttons
                       if (widget.item.trackSerial && !widget.hideSerialButton) ...[
@@ -566,74 +579,82 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                           onTap: () => _showSerialDialog(context),
                           isTablet: isTablet,
                           hasValue: widget.item.serialNumbers.isNotEmpty,
+                          useDesktopNav: useDesktopNav,
                         ),
-                        SizedBox(width: isTablet ? 6 : 4),
+                        SizedBox(width: useDesktopNav ? 4 : (isTablet ? 6 : 4)),
                       ],
 
                       // Tax & GP button (combined)
                       _buildTaxGpButton(
                         onTap: () => _showItemTaxAndGpDialog(context),
                         isTablet: isTablet,
+                        useDesktopNav: useDesktopNav,
                       ),
-                      SizedBox(width: isTablet ? 6 : 4),
+                      SizedBox(width: useDesktopNav ? 20 : (isTablet ? 6 : 4)),
 
                       // Sell Price field
-                      SizedBox(
-                        width: isTablet ? 220 : 100,
-                        height: isTablet ? 52 : 30,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Positioned.fill(
-                              child: _buildCompactField(
-                                label: "Price",
-                                controller: _priceController,
-                                prefix: "\$",
-                                isTablet: isTablet,
-                                maxDecimals: 4,
-                                enabled: widget.allowPriceEdit,
-                                focusNode: _priceFocusNode,
-                                selectAllOnTap: true,
-                                onChanged: (value) {
-                                  final price = double.tryParse(value);
-                                  if (price != null) widget.onPriceChanged(price);
-                                },
-                              ),
-                            ),
-                            if (hasPromotion)
-                              Positioned(
-                                left: 2,
-                                top: isTablet ? -14 : -10,
-                                child: Text(
-                                  "(*Promotion)",
-                                  style: TextStyle(
-                                    fontSize: isTablet ? 11 : 9,
-                                    color: kErrorColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                      Padding(
+                        padding: EdgeInsets.only(top: useDesktopNav ? 7 : 0),
+                        child: SizedBox(
+                          width: priceFieldWidth,
+                          height: fieldHeight,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Positioned.fill(
+                                child: _buildCompactField(
+                                  label: "Price",
+                                  controller: _priceController,
+                                  prefix: "\$",
+                                  isTablet: isTablet,
+                                  maxDecimals: 4,
+                                  enabled: widget.allowPriceEdit,
+                                  focusNode: _priceFocusNode,
+                                  selectAllOnTap: true,
+                                  useDesktopNav: useDesktopNav,
+                                  onChanged: (value) {
+                                    final price = double.tryParse(value);
+                                    if (price != null) widget.onPriceChanged(price);
+                                  },
                                 ),
                               ),
-                          ],
+                              if (hasPromotion)
+                                Positioned(
+                                  left: 2,
+                                  top: useDesktopNav ? -10 : (isTablet ? -14 : -10),
+                                  child: Text(
+                                    "(*Promotion)",
+                                    style: TextStyle(
+                                      fontSize: useDesktopNav ? 9 : (isTablet ? 11 : 9),
+                                      color: kErrorColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
 
-                      SizedBox(width: isTablet ? 10 : 6),
+                      SizedBox(width: useDesktopNav ? 20 : (isTablet ? 10 : 6)),
 
                       // Calculator button (mobile: replaces arrows, tablet: before arrows)
                       _buildCalculatorButton(
                         onTap: widget.allowPriceEdit ? () => _openPriceCalculator(context) : null,
                         isTablet: isTablet,
                         enabled: widget.allowPriceEdit,
+                        useDesktopNav: useDesktopNav,
                       ),
-                      SizedBox(width: isTablet ? 6 : 4),
+                      SizedBox(width: useDesktopNav ? 20 : (isTablet ? 6 : 4)),
 
-                      // Grade arrows - tablet only in this row
-                      if (isTablet) ...[                        
+                      // Grade arrows - tablet and desktop in this row
+                      if (isTablet || useDesktopNav) ...[                        
                         _buildGradePickerArrows(
                           isTablet: isTablet,
                           enabled: !hasPromotion,
+                          useDesktopNav: useDesktopNav,
                         ),
-                        SizedBox(width: 10),
+                        SizedBox(width: useDesktopNav ? 20 : 10),
                       ],
 
                       // Qty with +/- buttons
@@ -641,46 +662,53 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                         icon: Icons.remove,
                         onTap: _decrementQty,
                         isTablet: isTablet,
+                        useDesktopNav: useDesktopNav,
                       ),
-                      SizedBox(width: isTablet ? 10 : 2),
-                      SizedBox(
-                        width: isTablet ? 100 : 50,
-                        height: isTablet ? 52 : 30,
-                        child: _buildCompactField(
-                          controller: _qtyController,
-                          isTablet: isTablet,
-                          textAlign: TextAlign.center,
-                          isNumber: !_allowFractions,
-                          maxDecimals: _allowFractions ? 3 : null,
-                          focusNode: _qtyFocusNode,
-                          onChanged: (value) {
-                            final qty = double.tryParse(value);
-                            if (qty != null && qty != 0) widget.onQtyChanged(qty);
-                          },
+                      SizedBox(width: useDesktopNav ? 4 : (isTablet ? 10 : 2)),
+                      Padding(
+                        padding: EdgeInsets.only(top: useDesktopNav ? 7 : 0),
+                        child: SizedBox(
+                          width: qtyFieldWidth,
+                          height: fieldHeight,
+                          child: _buildCompactField(
+                            controller: _qtyController,
+                            isTablet: isTablet,
+                            textAlign: TextAlign.center,
+                            isNumber: !_allowFractions,
+                            maxDecimals: _allowFractions ? 3 : null,
+                            focusNode: _qtyFocusNode,
+                            useDesktopNav: useDesktopNav,
+                            onChanged: (value) {
+                              final qty = double.tryParse(value);
+                              if (qty != null && qty != 0) widget.onQtyChanged(qty);
+                            },
+                          ),
                         ),
                       ),
-                      SizedBox(width: isTablet ? 10 : 2),
+                      SizedBox(width: useDesktopNav ? 4 : (isTablet ? 10 : 2)),
                       _buildQtyButton(
                         icon: Icons.add,
                         onTap: _incrementQty,
                         isTablet: isTablet,
+                        useDesktopNav: useDesktopNav,
                       ),
 
-                      // Delete and Save buttons - only in this row for tablet
-                      if (isTablet) ...[
-                        SizedBox(width: 6),
+                      // Delete and Save buttons - only in this row for tablet and desktop
+                      if (isTablet || useDesktopNav) ...[
+                        SizedBox(width: useDesktopNav ? 20 : 6),
 
                         _buildIconButton(
                           icon: Icons.delete_outline,
                           onTap: widget.onDelete,
                           isTablet: isTablet,
                           isDestructive: true,
+                          useDesktopNav: useDesktopNav,
                         ),
 
-                        SizedBox(width: 6),
+                        SizedBox(width: useDesktopNav ? 20 : 6),
 
                         // Save button
-                        _buildCompactSaveButton(isTablet: isTablet),
+                        _buildCompactSaveButton(isTablet: isTablet, useDesktopNav: useDesktopNav),
                       ],
                     ],
                   ),
@@ -689,8 +717,8 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
             ],
           ),
 
-          // Grade arrows, Delete and Save buttons - separate row for mobile only
-          if (!isTablet) ...[
+          // Grade arrows, Delete and Save buttons - separate row for mobile only (not desktop)
+          if (!isTablet && !useDesktopNav) ...[
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -699,6 +727,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                 _buildGradePickerArrows(
                   isTablet: isTablet,
                   enabled: !hasPromotion,
+                  useDesktopNav: useDesktopNav,
                 ),
                 const SizedBox(width: 8),
                 _buildIconButton(
@@ -729,8 +758,12 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     bool enabled = true,
     FocusNode? focusNode,
     bool selectAllOnTap = false,
+    bool useDesktopNav = false,
   }) {
-    final fieldHeight = isTablet ? 52.0 : 30.0;
+    final fieldHeight = useDesktopNav ? 40.0 : (isTablet ? 52.0 : 30.0);
+    final fontSize = useDesktopNav ? 12.0 : (isTablet ? 18.0 : 12.0);
+    final horizontalPadding = useDesktopNav ? 6.0 : (isTablet ? 12.0 : 6.0);
+    final verticalPadding = useDesktopNav ? 12.0 : (isTablet ? 14.0 : 6.0);
     
     // Build regex pattern based on maxDecimals
     final decimalPattern = maxDecimals != null
@@ -762,7 +795,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
           ? [FilteringTextInputFormatter.allow(RegExp(r'^-?\d*'))]
           : [FilteringTextInputFormatter.allow(RegExp(decimalPattern))],
       style: TextStyle(
-        fontSize: isTablet ? 18 : 12,
+        fontSize: fontSize,
         fontWeight: FontWeight.w600,
         color: enabled
             ? (widget.isDark ? Colors.white : Colors.black87)
@@ -771,7 +804,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
       decoration: InputDecoration(
         prefixText: prefix,
         prefixStyle: TextStyle(
-          fontSize: isTablet ? 18 : 12,
+          fontSize: fontSize,
           fontWeight: FontWeight.w600,
           color: enabled
               ? (widget.isDark ? Colors.white70 : Colors.black54)
@@ -783,8 +816,8 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
           maxHeight: fieldHeight,
         ),
         contentPadding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 12 : 6,
-          vertical: isTablet ? 14 : 6,
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(6),
@@ -826,8 +859,9 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     return textField;
   }
 
-  Widget _buildDescriptionField(bool isTablet) {
-    final fieldHeight = isTablet ? 52.0 : 32.0;
+  Widget _buildDescriptionField(bool isTablet, {bool useDesktopNav = false}) {
+    final fieldHeight = useDesktopNav ? 30.0 : (isTablet ? 52.0 : 32.0);
+    final fontSize = useDesktopNav ? 12.0 : (isTablet ? 18.0 : 14.0);
     final textField = TextField(
       controller: _descriptionController,
       focusNode: _descriptionFocusNode,
@@ -836,7 +870,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
       maxLines: 1,
       minLines: 1,
       style: TextStyle(
-        fontSize: isTablet ? 18 : 14,
+        fontSize: fontSize,
         fontWeight: FontWeight.w600,
         color: widget.isDark ? Colors.white : Colors.black87,
       ),
@@ -847,8 +881,8 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
           maxHeight: fieldHeight,
         ),
         contentPadding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 12 : 10,
-          vertical: isTablet ? 14 : 8,
+          horizontal: useDesktopNav ? 8 : (isTablet ? 12 : 10),
+          vertical: useDesktopNav ? 6 : (isTablet ? 14 : 8),
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(4),
@@ -874,8 +908,8 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
       },
     );
 
-    // On tablet, wrap with MediaQuery to disable text scaling and prevent cutoff
-    if (isTablet) {
+    // On tablet or desktop, wrap with MediaQuery to disable text scaling and prevent cutoff
+    if (isTablet || useDesktopNav) {
       return MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
         child: textField,
@@ -889,9 +923,11 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     required VoidCallback? onTap,
     required bool isTablet,
     bool enabled = true,
+    bool useDesktopNav = false,
   }) {
-    final width = isTablet ? 52.0 : 24.0;
-    final height = isTablet ? 52.0 : 30.0;
+    final width = useDesktopNav ? 28.0 : (isTablet ? 52.0 : 24.0);
+    final height = useDesktopNav ? 34.0 : (isTablet ? 52.0 : 30.0);
+    final iconSize = useDesktopNav ? 18.0 : (isTablet ? 26.0 : 16.0);
     return InkWell(
       onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(6),
@@ -911,7 +947,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
         ),
         child: Icon(
           icon,
-          size: isTablet ? 26 : 16,
+          size: iconSize,
           color: enabled
               ? kPrimaryColor
               : (widget.isDark ? Colors.white30 : Colors.grey.shade400),
@@ -923,11 +959,12 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   Widget _buildGradePickerArrows({
     required bool isTablet,
     required bool enabled,
+    bool useDesktopNav = false,
   }) {
-    final double height = isTablet ? 52 : 28;
-    final double width = isTablet ? 32 : 24;
-    final double iconSize = isTablet ? 18 : 12;
-    final double iconGap = isTablet ? 2 : 0;
+    final double height = useDesktopNav ? 34 : (isTablet ? 52 : 28);
+    final double width = useDesktopNav ? 26 : (isTablet ? 32 : 24);
+    final double iconSize = useDesktopNav ? 12 : (isTablet ? 18 : 12);
+    final double iconGap = useDesktopNav ? 0 : (isTablet ? 2 : 0);
 
     return InkWell(
       onTap: enabled ? _showPricingGradeDialog : null,
@@ -973,8 +1010,10 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     required VoidCallback? onTap,
     required bool isTablet,
     bool enabled = true,
+    bool useDesktopNav = false,
   }) {
-    final size = isTablet ? 52.0 : 30.0;
+    final size = useDesktopNav ? 34.0 : (isTablet ? 52.0 : 30.0);
+    final iconSize = useDesktopNav ? 18.0 : (isTablet ? 22.0 : 14.0);
     final Color bgColor = widget.isDark ? widget.colors.surface : Colors.grey.shade100;
     final Color fgColor = enabled 
         ? (widget.isDark ? Colors.white70 : Colors.blueGrey.shade700)
@@ -994,7 +1033,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
         ),
         child: Icon(
           Icons.calculate_outlined,
-          size: isTablet ? 22 : 14,
+          size: iconSize,
           color: fgColor,
         ),
       ),
@@ -1028,8 +1067,10 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     required bool isTablet,
     bool isDestructive = false,
     bool hasValue = false,
+    bool useDesktopNav = false,
   }) {
-    final size = isTablet ? 52.0 : 30.0;
+    final size = useDesktopNav ? 34.0 : (isTablet ? 52.0 : 30.0);
+    final iconSize = useDesktopNav ? 18.0 : (isTablet ? 22.0 : 16.0);
     final Color bgColor = isDestructive
         ? kErrorColor.withOpacity(0.1)
         : hasValue
@@ -1057,7 +1098,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: borderColor),
         ),
-        child: Icon(icon, size: isTablet ? 22 : 16, color: fgColor),
+        child: Icon(icon, size: iconSize, color: fgColor),
       ),
     );
   }
@@ -1066,8 +1107,9 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     required VoidCallback onTap,
     required bool isTablet,
     bool hasValue = false,
+    bool useDesktopNav = false,
   }) {
-    final size = isTablet ? 52.0 : 30.0;
+    final size = useDesktopNav ? 34.0 : (isTablet ? 52.0 : 30.0);
     final Color bgColor = hasValue
         ? kPrimaryColor.withOpacity(0.15)
         : (widget.isDark ? widget.colors.surface : Colors.grey.shade100);
@@ -1093,7 +1135,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
           child: Text(
             "S/N",
             style: TextStyle(
-              fontSize: isTablet ? 14 : 10,
+              fontSize: useDesktopNav ? 10 : (isTablet ? 14 : 10),
               fontWeight: FontWeight.w700,
               color: fgColor,
             ),
@@ -1103,8 +1145,8 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
     );
   }
 
-  Widget _buildCompactSaveButton({required bool isTablet}) {
-    final size = isTablet ? 52.0 : 30.0;
+  Widget _buildCompactSaveButton({required bool isTablet, bool useDesktopNav = false}) {
+    final size = useDesktopNav ? 34.0 : (isTablet ? 52.0 : 30.0);
     return InkWell(
       onTap: widget.onSave,
       borderRadius: BorderRadius.circular(6),
@@ -1115,7 +1157,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
           color: kPrimaryColor,
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Icon(Icons.check, size: isTablet ? 24 : 16, color: Colors.white),
+        child: Icon(Icons.check, size: useDesktopNav ? 18 : (isTablet ? 24 : 16), color: Colors.white),
       ),
     );
   }
@@ -1142,8 +1184,10 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
   Widget _buildTaxGpButton({
     required VoidCallback onTap,
     required bool isTablet,
+    bool useDesktopNav = false,
   }) {
-    final size = isTablet ? 52.0 : 30.0;
+    final size = useDesktopNav ? 34.0 : (isTablet ? 52.0 : 30.0);
+    final iconSize = useDesktopNav ? 18.0 : (isTablet ? 22.0 : 14.0);
     final Color bgColor = widget.isDark ? widget.colors.surface : Colors.grey.shade100;
     final Color fgColor = widget.isDark ? Colors.white70 : Colors.blueGrey.shade700;
     final Color borderColor = widget.isDark ? Colors.white24 : Colors.grey.shade300;
@@ -1161,7 +1205,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
         ),
         child: Icon(
           Icons.trending_up,
-          size: isTablet ? 22 : 14,
+          size: iconSize,
           color: fgColor,
         ),
       ),
@@ -1308,6 +1352,9 @@ class MobileCartTile extends StatelessWidget {
   final VoidCallback? onDelete;
   final bool isIncTax;
   final double taxRate;
+  final bool hideBarcode;
+  final bool hideCategories;
+  final bool hideTaxCode;
 
   const MobileCartTile({
     super.key,
@@ -1318,6 +1365,9 @@ class MobileCartTile extends StatelessWidget {
     this.onDelete,
     this.isIncTax = true,
     this.taxRate = 0.1,
+    this.hideBarcode = false,
+    this.hideCategories = false,
+    this.hideTaxCode = false,
   });
 
   double get _displayPrice =>
@@ -1328,10 +1378,42 @@ class MobileCartTile extends StatelessWidget {
       item.stock?.isOnPromotion == true &&
       item.stock?.promotion?.promotionRrp != null;
 
+  /// Extract tax code from salesTax string (e.g., "GST 10%" -> "GST")
+  String _extractTaxCode() {
+    final salesTax = item.stock?.salesTax;
+    if (salesTax == null || salesTax.isEmpty) return '';
+    // Extract just the first word (the tax code)
+    final parts = salesTax.trim().split(' ');
+    return parts.isNotEmpty ? parts[0] : '';
+  }
+
+  /// Format categories as "Cat1 / Cat2 / Cat3"
+  String _formatCategories() {
+    final stock = item.stock;
+    if (stock == null) return '';
+    final cats = <String>[];
+    if (stock.category1?.isNotEmpty == true) cats.add(stock.category1!);
+    if (stock.category2?.isNotEmpty == true) cats.add(stock.category2!);
+    if (stock.category3?.isNotEmpty == true) cats.add(stock.category3!);
+    return cats.join(' / ');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    // Desktop-specific font sizes (same as grid view)
+    final double descFontSize = useDesktopNav ? 12 : 14;
+    final double codeFontSize = useDesktopNav ? 11 : 13;
+    final double qtyFontSize = useDesktopNav ? 11 : 13;
+    final double extFontSize = useDesktopNav ? 12 : 14;
+    
+    // Desktop-specific sizing
+    final double verticalPadding = useDesktopNav ? 0 : 8;
+    final double thumbnailSize = useDesktopNav ? 36 : 38;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: verticalPadding),
       decoration: BoxDecoration(
         color: isDark
             ? Color.lerp(colors.surface, Colors.white, 0.06)
@@ -1355,8 +1437,8 @@ class MobileCartTile extends StatelessWidget {
         children: [
           // Thumbnail Image
           Container(
-            width: 38,
-            height: 38,
+            width: thumbnailSize,
+            height: thumbnailSize,
             margin: const EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(6),
@@ -1377,58 +1459,91 @@ class MobileCartTile extends StatelessWidget {
                   : Image.asset(overviewPlaceholder, fit: BoxFit.fill),
             ),
           ),
-          // Item Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          // Item Details - Desktop uses evenly distributed columns
+          if (useDesktopNav) ...[
+            // Barcode (conditionally hidden)
+            if (!hideBarcode)
+              SizedBox(
+                width: 100,
+                child: Text(
+                  item.code,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: codeFontSize,
+                    fontWeight: FontWeight.w900,
+                    color: kPrimaryColor,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            // Description
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Text(
                   item.description,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: descFontSize,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            // Categories (conditionally hidden)
+            if (!hideCategories)
+              SizedBox(
+                width: 120,
+                child: Text(
+                  _formatCategories().isNotEmpty ? _formatCategories() : '-',
+                  style: TextStyle(
+                    fontSize: codeFontSize,
+                    color: isDark ? Colors.white60 : Colors.grey.shade600,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  item.code,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    color: kPrimaryColor,
+              ),
+            // Tax Code (conditionally hidden)
+            if (!hideTaxCode)
+              SizedBox(
+                width: 50,
+                child: Text(
+                  _extractTaxCode().isNotEmpty ? _extractTaxCode() : '-',
+                  style: TextStyle(
+                    fontSize: codeFontSize,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white60 : Colors.grey.shade700,
                   ),
                 ),
-              ],
-            ),
-          ),
-
-          // Quantity & Extension Total
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Qty Display
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              ),
+            // Qty
+            SizedBox(
+              width: 50,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
                   color: isDark ? colors.surface : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false),
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: qtyFontSize,
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              // Extension Total
-              Column(
+            ),
+            const SizedBox(width: 8),
+            // Extension Total
+            SizedBox(
+              width: 90,
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   if (_hasPromotion)
@@ -1446,15 +1561,91 @@ class MobileCartTile extends StatelessWidget {
                       2,
                     ),
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: extFontSize,
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ] else ...[
+            // Mobile layout - original
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.description,
+                    style: TextStyle(
+                      fontSize: descFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.code,
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: codeFontSize,
+                      fontWeight: FontWeight.w900,
+                      color: kPrimaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Mobile Qty & Extension
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark ? colors.surface : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false),
+                    style: TextStyle(
+                      fontSize: qtyFontSize,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (_hasPromotion)
+                      Text(
+                        "(*Promotion)",
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: kErrorColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    Text(
+                      FormattingUtils.formatCurrencyWithDecimals(
+                        _displayExtension,
+                        2,
+                      ),
+                      style: TextStyle(
+                        fontSize: extFontSize,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -1470,6 +1661,9 @@ class TabletCartTile extends StatelessWidget {
   final VoidCallback? onDelete;
   final bool isIncTax;
   final double taxRate;
+  final bool hideBarcode;
+  final bool hideCategories;
+  final bool hideTaxCode;
 
   const TabletCartTile({
     super.key,
@@ -1480,6 +1674,9 @@ class TabletCartTile extends StatelessWidget {
     this.onDelete,
     this.isIncTax = true,
     this.taxRate = 0.1,
+    this.hideBarcode = false,
+    this.hideCategories = false,
+    this.hideTaxCode = false,
   });
 
   double get _displayPrice =>
@@ -1492,10 +1689,42 @@ class TabletCartTile extends StatelessWidget {
 
   String get _formattedPrice => formatSellPriceForDisplay(_displayPrice);
 
+  /// Extract tax code from salesTax string (e.g., "GST 10%" -> "GST")
+  String _extractTaxCode() {
+    final salesTax = item.stock?.salesTax;
+    if (salesTax == null || salesTax.isEmpty) return '';
+    final parts = salesTax.trim().split(' ');
+    return parts.isNotEmpty ? parts[0] : '';
+  }
+
+  /// Format categories as "Cat1 / Cat2 / Cat3"
+  String _formatCategories() {
+    final stock = item.stock;
+    if (stock == null) return '';
+    final cats = <String>[];
+    if (stock.category1?.isNotEmpty == true) cats.add(stock.category1!);
+    if (stock.category2?.isNotEmpty == true) cats.add(stock.category2!);
+    if (stock.category3?.isNotEmpty == true) cats.add(stock.category3!);
+    return cats.join(' / ');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bool useDesktopNav = context.useDesktopNav;
+    
+    // Desktop-specific font sizes (same as grid view)
+    final double descFontSize = useDesktopNav ? 12 : 14;
+    final double codeFontSize = useDesktopNav ? 11 : 13;
+    final double priceFontSize = useDesktopNav ? 11 : 14;
+    final double qtyFontSize = useDesktopNav ? 11 : 14;
+    final double extFontSize = useDesktopNav ? 12 : 15;
+    
+    // Desktop-specific sizing
+    final double verticalPadding = useDesktopNav ? 6 : 8;
+    final double thumbnailSize = useDesktopNav ? 36 : 45;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: verticalPadding),
       decoration: BoxDecoration(
         color: isDark
             ? Color.lerp(colors.surface, Colors.white, 0.06)
@@ -1518,8 +1747,8 @@ class TabletCartTile extends StatelessWidget {
         children: [
           // Thumbnail Image
           Container(
-            width: 45,
-            height: 45,
+            width: thumbnailSize,
+            height: thumbnailSize,
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(6),
@@ -1540,92 +1769,233 @@ class TabletCartTile extends StatelessWidget {
                   : Image.asset(overviewPlaceholder, fit: BoxFit.fill),
             ),
           ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              item.code,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
-                fontSize: 13,
+          // Desktop layout with evenly distributed columns
+          if (useDesktopNav) ...[
+            // Barcode (conditionally hidden)
+            if (!hideBarcode)
+              Expanded(
+                flex: 1,
+                child: Text(
+                  item.code,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w900,
+                    color: kPrimaryColor,
+                    fontSize: codeFontSize,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            // Description
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Text(
+                  item.description,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontSize: descFontSize,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 4,
-            child: Text(
-              item.description,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.black87,
-                fontSize: 14,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          SizedBox(
-            width: 120,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (_hasPromotion)
-                  Text(
-                    "(*Promotion)",
+            // Categories (conditionally hidden)
+            if (!hideCategories)
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: Text(
+                    _formatCategories().isNotEmpty ? _formatCategories() : '-',
                     style: TextStyle(
-                      fontSize: 10,
-                      color: kErrorColor,
-                      fontWeight: FontWeight.w600,
+                      fontSize: codeFontSize,
+                      color: isDark ? Colors.white60 : Colors.grey.shade600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            // Tax Code (conditionally hidden)
+            if (!hideTaxCode)
+              Transform.translate(
+                offset: const Offset(-150, 0),
+                child: SizedBox(
+                  width: 40,
+                  child: Text(
+                    _extractTaxCode().isNotEmpty ? _extractTaxCode() : '-',
+                    style: TextStyle(
+                      fontSize: codeFontSize,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white60 : Colors.grey.shade700,
                     ),
                   ),
-                Text(
-                  "\$$_formattedPrice",
-                  textAlign: TextAlign.right,
-                  style: TextStyle(color: colors.onSurfaceMuted, fontSize: 14),
                 ),
-              ],
+              ),
+            // Base Sell Price
+            Transform.translate(
+              offset: const Offset(-100, 0),
+              child: SizedBox(
+                width: 80,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (_hasPromotion)
+                      Text(
+                        "(*Promo)",
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: kErrorColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    Text(
+                      "\$$_formattedPrice",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: colors.onSurfaceMuted,
+                        fontSize: priceFontSize,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          SizedBox(
-            width: 120,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark ? colors.surface : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+            // Qty
+            Transform.translate(
+              offset: const Offset(-50, 0),
+              child: SizedBox(
+                width: 60,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark ? colors.surface : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: qtyFontSize,
+                        color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          SizedBox(
-            width: 130,
-            child: Text(
-                  FormattingUtils.formatCurrencyWithDecimals(
-                    _displayExtension,
-                    2,
-                  ),
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: isDark ? Colors.white : Colors.black87,
+            // Extension Total
+            SizedBox(
+              width: 100,
+              child: Text(
+                FormattingUtils.formatCurrencyWithDecimals(
+                  _displayExtension,
+                  2,
+                ),
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: extFontSize,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
               ),
             ),
-          ),
+          ] else ...[
+            // Tablet/Mobile layout
+            Expanded(
+              flex: 2,
+              child: Text(
+                item.code,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w900,
+                  color: kPrimaryColor,
+                  fontSize: codeFontSize,
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 4,
+              child: Text(
+                item.description,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontSize: descFontSize,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            SizedBox(
+              width: 120,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (_hasPromotion)
+                    Text(
+                      "(*Promotion)",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: kErrorColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  Text(
+                    "\$$_formattedPrice",
+                    textAlign: TextAlign.right,
+                    style: TextStyle(color: colors.onSurfaceMuted, fontSize: priceFontSize),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 120,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark ? colors.surface : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: qtyFontSize,
+                      color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 130,
+              child: Text(
+                FormattingUtils.formatCurrencyWithDecimals(
+                  _displayExtension,
+                  2,
+                ),
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: extFontSize,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1640,6 +2010,9 @@ class CompactCartTile extends StatelessWidget {
   final bool isDark;
   final bool isIncTax;
   final double taxRate;
+  final bool hideBarcode;
+  final bool hideCategories;
+  final bool hideTaxCode;
 
   const CompactCartTile({
     super.key,
@@ -1649,15 +2022,156 @@ class CompactCartTile extends StatelessWidget {
     required this.isDark,
     this.isIncTax = true,
     this.taxRate = 0.1,
+    this.hideBarcode = false,
+    this.hideCategories = false,
+    this.hideTaxCode = false,
   });
 
   double get _displayExtension =>
       isIncTax ? item.extension : item.extensionEx;
 
+  /// Extract tax code from salesTax string (e.g., "GST 10%" -> "GST")
+  String _extractTaxCode() {
+    final salesTax = item.stock?.salesTax;
+    if (salesTax == null || salesTax.isEmpty) return '';
+    final parts = salesTax.trim().split(' ');
+    return parts.isNotEmpty ? parts[0] : '';
+  }
+
+  /// Format categories as "Cat1 / Cat2 / Cat3"
+  String _formatCategories() {
+    final stock = item.stock;
+    if (stock == null) return '';
+    final cats = <String>[];
+    if (stock.category1?.isNotEmpty == true) cats.add(stock.category1!);
+    if (stock.category2?.isNotEmpty == true) cats.add(stock.category2!);
+    if (stock.category3?.isNotEmpty == true) cats.add(stock.category3!);
+    return cats.join(' / ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final isTablet = context.isTablet;
+    final useDesktopNav = context.useDesktopNav;
 
+    // Desktop uses evenly distributed columns
+    if (useDesktopNav) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Row(
+              children: [
+                // Barcode (conditionally hidden)
+                if (!hideBarcode)
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      item.code,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: kPrimaryColor,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                // Description
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 50),
+                    child: Text(
+                      item.description,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                // Categories (conditionally hidden)
+                if (!hideCategories)
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Text(
+                        _formatCategories(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white60 : Colors.grey.shade600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                // Tax Code (conditionally hidden)
+                if (!hideTaxCode)
+                  Transform.translate(
+                    offset: const Offset(-150, 0),
+                    child: SizedBox(
+                      width: 40,
+                      child: Text(
+                        _extractTaxCode(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? Colors.white60 : Colors.grey.shade700,
+                        ),
+                      ),
+                    ),
+                  ),
+                // Qty
+                Transform.translate(
+                  offset: const Offset(-80, 0),
+                  child: SizedBox(
+                    width: 60,
+                    child: Text(
+                      formatQtyForDisplay(item.qty, item.stock?.allowFractions ?? false),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white70 : Colors.blueGrey.shade700,
+                      ),
+                    ),
+                  ),
+                ),
+                // Price
+                SizedBox(
+                  width: 100,
+                  child: Text(
+                    FormattingUtils.formatCurrencyWithDecimals(
+                      _displayExtension,
+                      2,
+                    ),
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: isDark ? Colors.white24 : Colors.grey.shade400,
+          ),
+        ],
+      );
+    }
+
+    // Mobile/Tablet layout (unchanged)
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

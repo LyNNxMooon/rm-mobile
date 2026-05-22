@@ -177,16 +177,20 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    final double uiScale = isTablet
-        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
-        : 1.0;
+    final double uiScale = useDesktopNav
+        ? 0.92
+        : (isTablet
+            ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+            : 1.0);
 
-    final dialogWidth = isTablet ? 720.0 : MediaQuery.of(context).size.width * 0.98;
-    final dialogHeight = isTablet ? 750.0 : MediaQuery.of(context).size.height * 0.7;
+    final dialogWidth = useDesktopNav ? 620.0 : (isTablet ? 720.0 : MediaQuery.of(context).size.width * 0.98);
+    final dialogHeight = useDesktopNav ? 550.0 : (isTablet ? 750.0 : MediaQuery.of(context).size.height * 0.7);
+    final bool isLargeLayout = isTablet || useDesktopNav;
 
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 15),
+      insetPadding: EdgeInsets.symmetric(horizontal: useDesktopNav ? 40 : 15),
       backgroundColor: isDark ? colors.surface : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SizedBox(
@@ -194,21 +198,21 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
         height: dialogHeight,
         child: Column(
           children: [
-            _buildHeader(colors, isDark, isTablet, uiScale),
+            _buildHeader(colors, isDark, isLargeLayout, uiScale),
             Expanded(
               flex: 2,
-              child: _buildSerialsTable(colors, isDark, isTablet, uiScale),
+              child: _buildSerialsTable(colors, isDark, isLargeLayout, uiScale),
             ),
-            _buildBottomSection(colors, isDark, isTablet, uiScale),
+            _buildBottomSection(colors, isDark, isLargeLayout, uiScale),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(AppThemeColors colors, bool isDark, bool isTablet, double uiScale) {
+  Widget _buildHeader(AppThemeColors colors, bool isDark, bool isLargeLayout, double uiScale) {
     return Container(
-      padding: EdgeInsets.all((isTablet ? 16 : 12) * uiScale),
+      padding: EdgeInsets.all((isLargeLayout ? 16 : 12) * uiScale),
       decoration: BoxDecoration(
         color: kPrimaryColor.withOpacity(isDark ? 0.2 : 0.1),
         borderRadius: const BorderRadius.only(
@@ -226,7 +230,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                   widget.barcode,
                   style: TextStyle(
                     fontFamily: 'monospace',
-                    fontSize: (isTablet ? 14 : 12) * uiScale,
+                    fontSize: (isLargeLayout ? 14 : 12) * uiScale,
                     fontWeight: FontWeight.bold,
                     color: kPrimaryColor,
                   ),
@@ -235,7 +239,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                 Text(
                   widget.description,
                   style: TextStyle(
-                    fontSize: (isTablet ? 15 : 13) * uiScale,
+                    fontSize: (isLargeLayout ? 15 : 13) * uiScale,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
@@ -248,8 +252,8 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
           SizedBox(width: 12 * uiScale),
           Container(
             padding: EdgeInsets.symmetric(
-              horizontal: (isTablet ? 14 : 10) * uiScale,
-              vertical: (isTablet ? 10 : 8) * uiScale,
+              horizontal: (isLargeLayout ? 14 : 10) * uiScale,
+              vertical: (isLargeLayout ? 10 : 8) * uiScale,
             ),
             decoration: BoxDecoration(
               color: _isValid
@@ -267,7 +271,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                 Text(
                   "Selected",
                   style: TextStyle(
-                    fontSize: (isTablet ? 11 : 10) * uiScale,
+                    fontSize: (isLargeLayout ? 11 : 10) * uiScale,
                     color: colors.onSurfaceMuted,
                   ),
                 ),
@@ -275,7 +279,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                 Text(
                   "$_selectedCount / ${widget.targetQuantity}",
                   style: TextStyle(
-                    fontSize: (isTablet ? 18 : 16) * uiScale,
+                    fontSize: (isLargeLayout ? 18 : 16) * uiScale,
                     fontWeight: FontWeight.bold,
                     color: _isValid
                         ? const Color(0xFF30B24C)
@@ -290,11 +294,11 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
     );
   }
 
-  Widget _buildSerialsTable(AppThemeColors colors, bool isDark, bool isTablet, double uiScale) {
+  Widget _buildSerialsTable(AppThemeColors colors, bool isDark, bool isLargeLayout, double uiScale) {
     final filtered = _filteredRows;
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: (isTablet ? 16 : 12) * uiScale),
+      margin: EdgeInsets.symmetric(horizontal: (isLargeLayout ? 16 : 12) * uiScale),
       decoration: BoxDecoration(
         color: isDark ? colors.surfaceAlt : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(8),
@@ -306,8 +310,8 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
         children: [
           Container(
             padding: EdgeInsets.symmetric(
-              horizontal: (isTablet ? 12 : 8) * uiScale,
-              vertical: (isTablet ? 10 : 8) * uiScale,
+              horizontal: (isLargeLayout ? 12 : 8) * uiScale,
+              vertical: (isLargeLayout ? 10 : 8) * uiScale,
             ),
             decoration: BoxDecoration(
               color: isDark ? colors.surface : Colors.grey.shade200,
@@ -320,35 +324,35 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
               children: [
                 SizedBox(width: 40 * uiScale),
                 Expanded(
-                  flex: isTablet ? 3 : 2,
+                  flex: isLargeLayout ? 3 : 2,
                   child: Text(
                     "Serial Number",
                     style: TextStyle(
-                      fontSize: (isTablet ? 13 : 11) * uiScale,
+                      fontSize: (isLargeLayout ? 13 : 11) * uiScale,
                       fontWeight: FontWeight.bold,
                       color: colors.onSurfaceMuted,
                     ),
                   ),
                 ),
                 SizedBox(
-                  width: (isTablet ? 70 : 50) * uiScale,
+                  width: (isLargeLayout ? 70 : 50) * uiScale,
                   child: Text(
                     "Age",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: (isTablet ? 13 : 11) * uiScale,
+                      fontSize: (isLargeLayout ? 13 : 11) * uiScale,
                       fontWeight: FontWeight.bold,
                       color: colors.onSurfaceMuted,
                     ),
                   ),
                 ),
                 SizedBox(
-                  width: (isTablet ? 110 : 80) * uiScale,
+                  width: (isLargeLayout ? 110 : 80) * uiScale,
                   child: Text(
                     "Warranty",
                     textAlign: TextAlign.right,
                     style: TextStyle(
-                      fontSize: (isTablet ? 13 : 11) * uiScale,
+                      fontSize: (isLargeLayout ? 13 : 11) * uiScale,
                       fontWeight: FontWeight.bold,
                       color: colors.onSurfaceMuted,
                     ),
@@ -365,7 +369,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                           ? "No serials available"
                           : "No matching serials",
                       style: TextStyle(
-                        fontSize: (isTablet ? 14 : 12) * uiScale,
+                        fontSize: (isLargeLayout ? 14 : 12) * uiScale,
                         color: colors.onSurfaceMuted,
                       ),
                     ),
@@ -390,8 +394,8 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                             opacity: isDisabled ? 0.5 : 1.0,
                             child: Padding(
                               padding: EdgeInsets.symmetric(
-                                horizontal: (isTablet ? 12 : 8) * uiScale,
-                                vertical: (isTablet ? 10 : 8) * uiScale,
+                                horizontal: (isLargeLayout ? 12 : 8) * uiScale,
+                                vertical: (isLargeLayout ? 10 : 8) * uiScale,
                               ),
                               child: Row(
                                 children: [
@@ -407,12 +411,12 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                                     ),
                                   ),
                                   Expanded(
-                                    flex: isTablet ? 3 : 2,
+                                    flex: isLargeLayout ? 3 : 2,
                                     child: TextField(
                                       controller: row.numberController,
                                       style: TextStyle(
                                         fontFamily: 'monospace',
-                                        fontSize: (isTablet ? 13 : 11) * uiScale,
+                                        fontSize: (isLargeLayout ? 13 : 11) * uiScale,
                                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                         color: isSelected
                                             ? kPrimaryColor
@@ -430,20 +434,20 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                                     ),
                                   ),
                                   SizedBox(
-                                    width: (isTablet ? 70 : 50) * uiScale,
+                                    width: (isLargeLayout ? 70 : 50) * uiScale,
                                     child: Text(
                                       row.entry.ageInDays != null
                                           ? "${row.entry.ageInDays}"
                                           : "-",
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
-                                        fontSize: (isTablet ? 12 : 10) * uiScale,
+                                        fontSize: (isLargeLayout ? 12 : 10) * uiScale,
                                         color: isDark ? Colors.white70 : Colors.blueGrey.shade600,
                                       ),
                                     ),
                                   ),
                                   SizedBox(
-                                    width: (isTablet ? 110 : 80) * uiScale,
+                                    width: (isLargeLayout ? 110 : 80) * uiScale,
                                     child: InkWell(
                                       onTap: () => _pickWarrantyDate(row),
                                       child: Row(
@@ -457,7 +461,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                                               textAlign: TextAlign.right,
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
-                                                fontSize: (isTablet ? 12 : 10) * uiScale,
+                                                fontSize: (isLargeLayout ? 12 : 10) * uiScale,
                                                 color: isDark
                                                     ? Colors.white70
                                                     : Colors.blueGrey.shade600,
@@ -466,7 +470,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                                           ),
                                           Icon(
                                             Icons.arrow_drop_down,
-                                            size: (isTablet ? 18 : 16) * uiScale,
+                                            size: (isLargeLayout ? 18 : 16) * uiScale,
                                             color: colors.onSurfaceMuted,
                                           ),
                                         ],
@@ -487,9 +491,9 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
     );
   }
 
-  Widget _buildBottomSection(AppThemeColors colors, bool isDark, bool isTablet, double uiScale) {
+  Widget _buildBottomSection(AppThemeColors colors, bool isDark, bool isLargeLayout, double uiScale) {
     return Container(
-      padding: EdgeInsets.all((isTablet ? 16 : 12) * uiScale),
+      padding: EdgeInsets.all((isLargeLayout ? 16 : 12) * uiScale),
       decoration: BoxDecoration(
         color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
         borderRadius: const BorderRadius.only(
@@ -501,7 +505,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            height: (isTablet ? 44 : 40) * uiScale,
+            height: (isLargeLayout ? 44 : 40) * uiScale,
             decoration: BoxDecoration(
               color: isDark ? colors.surface : Colors.white,
               borderRadius: BorderRadius.circular(8),
@@ -523,13 +527,13 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                   child: TextField(
                     controller: _searchController,
                     style: TextStyle(
-                      fontSize: (isTablet ? 14 : 13) * uiScale,
+                      fontSize: (isLargeLayout ? 14 : 13) * uiScale,
                       color: isDark ? Colors.white : Colors.black87,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Search serials...',
                       hintStyle: TextStyle(
-                        fontSize: (isTablet ? 14 : 13) * uiScale,
+                        fontSize: (isLargeLayout ? 14 : 13) * uiScale,
                         color: colors.onSurfaceMuted,
                       ),
                       border: InputBorder.none,
@@ -567,13 +571,13 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                   onPressed: _addEmptyRow,
                   label: Text(
                     "Add",
-                    style: TextStyle(fontSize: (isTablet ? 13 : 12) * uiScale),
+                    style: TextStyle(fontSize: (isLargeLayout ? 13 : 12) * uiScale),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: kPrimaryColor,
                     side: const BorderSide(color: kPrimaryColor),
                     padding: EdgeInsets.symmetric(
-                      vertical: (isTablet ? 12 : 10) * uiScale,
+                      vertical: (isLargeLayout ? 12 : 10) * uiScale,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -589,7 +593,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                     foregroundColor: isDark ? Colors.white70 : Colors.grey.shade700,
                     side: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade400),
                     padding: EdgeInsets.symmetric(
-                      vertical: (isTablet ? 12 : 10) * uiScale,
+                      vertical: (isLargeLayout ? 12 : 10) * uiScale,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -597,7 +601,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                   ),
                   child: Text(
                     "Cancel",
-                    style: TextStyle(fontSize: (isTablet ? 14 : 13) * uiScale),
+                    style: TextStyle(fontSize: (isLargeLayout ? 14 : 13) * uiScale),
                   ),
                 ),
               ),
@@ -617,7 +621,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                         ? Colors.white38
                         : Colors.grey.shade500,
                     padding: EdgeInsets.symmetric(
-                      vertical: (isTablet ? 12 : 10) * uiScale,
+                      vertical: (isLargeLayout ? 12 : 10) * uiScale,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -626,7 +630,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                   child: Text(
                     "Confirm",
                     style: TextStyle(
-                      fontSize: (isTablet ? 14 : 13) * uiScale,
+                      fontSize: (isLargeLayout ? 14 : 13) * uiScale,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

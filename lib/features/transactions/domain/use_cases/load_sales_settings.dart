@@ -13,6 +13,10 @@ class SalesSettingsResult {
   final bool displayCustomerMessagesAsPrompt;
   final bool scanIndividualUnitsForFractional;
   final bool promptScanIndividualFractional;
+  final bool isCompactView;
+  final bool hideBarcode;
+  final bool hideCategories;
+  final bool hideTaxCode;
 
   SalesSettingsResult({
     required this.scanIndividualUnits,
@@ -25,6 +29,10 @@ class SalesSettingsResult {
     required this.displayCustomerMessagesAsPrompt,
     required this.scanIndividualUnitsForFractional,
     required this.promptScanIndividualFractional,
+    required this.isCompactView,
+    required this.hideBarcode,
+    required this.hideCategories,
+    required this.hideTaxCode,
   });
 }
 
@@ -62,6 +70,18 @@ class LoadSalesSettings {
     final promptScanIndividualFractional = await LocalDbDAO.instance.getAppConfig(
       kSalesPromptScanIndividualFractionalKey,
     );
+    final isCompactView = await LocalDbDAO.instance.getAppConfig(
+      kSalesIsCompactViewKey,
+    );
+    final hideBarcode = await LocalDbDAO.instance.getAppConfig(
+      kSalesHideBarcodeKey,
+    );
+    final hideCategories = await LocalDbDAO.instance.getAppConfig(
+      kSalesHideCategoriesKey,
+    );
+    final hideTaxCode = await LocalDbDAO.instance.getAppConfig(
+      kSalesHideTaxCodeKey,
+    );
 
     if (oneDisplayLinePerItem == null) {
       await LocalDbDAO.instance.saveAppConfig(
@@ -83,6 +103,10 @@ class LoadSalesSettings {
       displayCustomerMessagesAsPrompt: displayCustomerMessages == 'true',
       scanIndividualUnitsForFractional: scanIndividualUnitsForFractional == 'true',
       promptScanIndividualFractional: promptScanIndividualFractional == 'true',
+      isCompactView: isCompactView == 'true',
+      hideBarcode: hideBarcode == 'true',
+      hideCategories: hideCategories == 'true',
+      hideTaxCode: hideTaxCode == 'true',
     );
   }
 }

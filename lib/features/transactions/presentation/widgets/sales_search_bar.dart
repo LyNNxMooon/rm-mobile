@@ -6,13 +6,13 @@ import '../../../../constants/theme_colors.dart';
 import '../../../../utils/responsive_utils.dart';
 
 /// Search bar widget with scanner toggle for sales screen
-class SalesSearchBar extends StatelessWidget {
+class SalesSearchBar extends StatefulWidget {
   final TextEditingController searchController;
   final FocusNode searchFocusNode;
   final bool showScanner;
   final bool isTorchOn;
-  final VoidCallback onScannerToggle;
-  final VoidCallback onTorchToggle;
+  final VoidCallback? onScannerToggle;
+  final VoidCallback? onTorchToggle;
   final ValueChanged<String> onSearch;
   final VoidCallback? onGoToStockLookup;
 
@@ -22,11 +22,36 @@ class SalesSearchBar extends StatelessWidget {
     required this.searchFocusNode,
     required this.showScanner,
     required this.isTorchOn,
-    required this.onScannerToggle,
-    required this.onTorchToggle,
+    this.onScannerToggle,
+    this.onTorchToggle,
     required this.onSearch,
     this.onGoToStockLookup,
   });
+
+  @override
+  State<SalesSearchBar> createState() => _SalesSearchBarState();
+}
+
+class _SalesSearchBarState extends State<SalesSearchBar> {
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.searchFocusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    widget.searchFocusNode.removeListener(_onFocusChange);
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (mounted) {
+      setState(() => _isFocused = widget.searchFocusNode.hasFocus);
+    }
+  }
 
   Widget _buildIconButton({
     required bool isTablet,
@@ -66,76 +91,89 @@ class SalesSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
     final bool isTablet = context.isTablet;
+    final double containerHeight = useDesktopNav ? 36 : (isTablet ? 46 : 40);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Container(
-        height: isTablet ? 46 : 40,
+        height: containerHeight,
         decoration: BoxDecoration(
           color: isDark ? colors.surface : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5),
+            color: _isFocused
+                ? kPrimaryColor
+                : (isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5)),
+            width: _isFocused ? 2 : 1,
           ),
         ),
         child: Row(
           children: [
             Expanded(
-              child: TextField(
-                controller: searchController,
-                focusNode: searchFocusNode,
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87,
-                  fontSize: 14,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Scan barcode or type to search',
-                  hintStyle: TextStyle(color: colors.onSurfaceMuted, fontSize: 13),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
+              child: Center(
+                child: TextField(
+                  controller: widget.searchController,
+                  focusNode: widget.searchFocusNode,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontSize: useDesktopNav ? 13 : 14,
                   ),
+                  textAlignVertical: TextAlignVertical.center,
+                  decoration: InputDecoration(
+                    hintText: 'Scan barcode or type to search',
+                    hintStyle: TextStyle(
+                      color: colors.onSurfaceMuted, 
+                      fontSize: useDesktopNav ? 12 : 13,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: useDesktopNav ? 8 : 10,
+                    ),
+                  ),
+                  onSubmitted: (value) {
+                    if (value.trim().isNotEmpty) {
+                      widget.onSearch(value.trim());
+                      widget.searchController.clear();
+                    }
+                  },
                 ),
-                onSubmitted: (value) {
-                  if (value.trim().isNotEmpty) {
-                    onSearch(value.trim());
-                    searchController.clear();
-                  }
-                },
               ),
             ),
             // Torch toggle (only visible when scanner is open)
-            if (showScanner) ...[
+            if (widget.showScanner && widget.onTorchToggle != null) ...[
               Padding(
                 padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
                 child: _buildIconButton(
                   isTablet: isTablet,
                   isDark: isDark,
                   colors: colors,
-                  icon: isTorchOn ? Icons.flash_on : Icons.flash_off,
-                  onTap: onTorchToggle,
-                  iconColor: isTorchOn ? Colors.amber : colors.onSurfaceMuted,
-                  isActive: isTorchOn,
+                  icon: widget.isTorchOn ? Icons.flash_on : Icons.flash_off,
+                  onTap: widget.onTorchToggle!,
+                  iconColor: widget.isTorchOn ? Colors.amber : colors.onSurfaceMuted,
+                  isActive: widget.isTorchOn,
                 ),
               ),
             ],
-            // Scanner toggle
-            Padding(
-              padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
-              child: _buildIconButton(
-                isTablet: isTablet,
-                isDark: isDark,
-                colors: colors,
-                icon: Icons.qr_code_scanner,
-                onTap: onScannerToggle,
-                iconColor: showScanner ? Colors.green : kPrimaryColor,
-                isActive: showScanner,
+            // Scanner toggle (hidden on desktop where scanner is not available)
+            if (widget.onScannerToggle != null)
+              Padding(
+                padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
+                child: _buildIconButton(
+                  isTablet: isTablet,
+                  isDark: isDark,
+                  colors: colors,
+                  icon: Icons.qr_code_scanner,
+                  onTap: widget.onScannerToggle!,
+                  iconColor: widget.showScanner ? Colors.green : kPrimaryColor,
+                  isActive: widget.showScanner,
+                ),
               ),
-            ),
             // Go to Stock Lookup button
-            if (onGoToStockLookup != null)
+            if (widget.onGoToStockLookup != null)
               Padding(
                 padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
                 child: _buildIconButton(
@@ -143,7 +181,7 @@ class SalesSearchBar extends StatelessWidget {
                   isDark: isDark,
                   colors: colors,
                   icon: Icons.double_arrow_rounded,
-                  onTap: onGoToStockLookup!,
+                  onTap: widget.onGoToStockLookup!,
                   iconColor: kPrimaryColor,
                 ),
               ),

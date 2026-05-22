@@ -286,6 +286,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _manualIpController,
+                        textAlignVertical: TextAlignVertical.center,
                         style: TextStyle(
                           color: isDark ? Colors.white : colors.onSurface,
                           fontSize: inputFontSize,
@@ -326,6 +327,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _manualCodeController,
+                        textAlignVertical: TextAlignVertical.center,
                         style: TextStyle(
                           color: isDark ? Colors.white : colors.onSurface,
                           fontSize: inputFontSize,
@@ -368,6 +370,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       TextField(
                         controller: _manualPortController,
                         keyboardType: TextInputType.number,
+                        textAlignVertical: TextAlignVertical.center,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                         ],
@@ -1286,7 +1289,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.arrow_back_ios_new,
+                Icons.home_filled,
                 size: 18,
                 color: kPrimaryColor,
               ),

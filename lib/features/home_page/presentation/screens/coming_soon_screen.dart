@@ -33,7 +33,7 @@ class ComingSoonScreen extends StatelessWidget {
         leading: IconButton(
           onPressed: () => context.navigateBack(),
           icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
+            Icons.home_filled,
             color: colors.onHero,
             size: 20,
           ),

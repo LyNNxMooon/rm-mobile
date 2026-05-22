@@ -35,7 +35,7 @@ class _StocktakeAppbarSessionState extends State<StocktakeAppbarSession> {
               IconButton(
                 onPressed: () => context.navigateBack(),
                 icon: Icon(
-                  Icons.arrow_back_ios,
+                  Icons.home_filled,
                   color: colors.onSurface,
                   size: 20,
                 ),

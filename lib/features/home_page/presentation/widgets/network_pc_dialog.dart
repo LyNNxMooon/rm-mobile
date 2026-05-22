@@ -113,6 +113,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                       TextField(
                         controller: _manualPortController,
                         keyboardType: TextInputType.number,
+                        textAlignVertical: TextAlignVertical.center,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
                         ],
@@ -218,17 +219,11 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
     _connectCodeController.clear();
     final colors = context.appColors;
     final bool isDark = colors.isDark;
-    final bool isTablet = context.isTablet;
     final bool useDesktopNav = context.useDesktopNav;
     final double inputFontSize = useDesktopNav ? 13.0 : 15.0;
     final double buttonFontSize = useDesktopNav ? 13.0 : 15.0;
     final double iconSize = useDesktopNav ? 18.0 : 20.0;
     final double hintFontSize = useDesktopNav ? 13.0 : 15.0;
-    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    final double uiScale = isTablet
-        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
-        : 1.0;
-    final double fieldHeight = (isTablet ? 52 : (useDesktopNav ? 40 : 48)) * uiScale;
     final double maxDialogHeight = (MediaQuery.of(context).size.height * 0.56)
         .clamp(340.0, 520.0);
 
@@ -269,20 +264,18 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                       ),
                       const SizedBox(height: 20),
                     // Input section
-                    SizedBox(
-                      height: fieldHeight,
-                      child: TextField(
-                        controller: _connectCodeController,
-                        style: TextStyle(
-                          color: isDark ? Colors.white : colors.onSurface,
-                          fontSize: inputFontSize,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: ModernDialogStyles.inputDecoration(
-                          context,
-                          hintText: "Enter Host Code",
-                          prefixIcon: Icons.keyboard_alt_outlined,
-                        ),
+                    TextField(
+                      controller: _connectCodeController,
+                      textAlignVertical: TextAlignVertical.center,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : colors.onSurface,
+                        fontSize: inputFontSize,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      decoration: ModernDialogStyles.inputDecoration(
+                        context,
+                        hintText: "Enter Host Code",
+                        prefixIcon: Icons.keyboard_alt_outlined,
                       ),
                     ),
                     const SizedBox(height: 20),

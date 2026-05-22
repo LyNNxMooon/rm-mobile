@@ -643,13 +643,14 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
+    final bool useDesktopNav = context.useDesktopNav;
 
     if (_currentStep == 4) {
       return Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 40 : 20,
-          vertical: isTablet ? 24 : 16,
+          horizontal: useDesktopNav ? 60 : (isTablet ? 40 : 20),
+          vertical: useDesktopNav ? 40 : (isTablet ? 24 : 16),
         ),
         child: const SizedBox.shrink(),
       );
@@ -662,18 +663,18 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
       onClose: _handleClose,
       colors: colors,
       isDark: isDark,
-      maxWidth: isTablet ? 500 : MediaQuery.of(context).size.width * 0.95,
+      maxWidth: useDesktopNav ? 550 : (isTablet ? 500 : MediaQuery.of(context).size.width * 0.95),
       actions: _dialogActions(colors, isDark),
       content: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
         child: _currentStep == 0
-            ? _buildPaymentsStep(colors, isDark, isTablet)
+            ? _buildPaymentsStep(colors, isDark, isTablet || useDesktopNav)
             : _currentStep == 1
-            ? _buildCommitOptions(colors, isDark, isTablet)
+            ? _buildCommitOptions(colors, isDark, isTablet || useDesktopNav)
             : _currentStep == 2
-            ? _buildEmailForm(colors, isDark, isTablet)
-            : _buildReceiptStep(colors, isDark, isTablet),
+            ? _buildEmailForm(colors, isDark, isTablet || useDesktopNav)
+            : _buildReceiptStep(colors, isDark, isTablet || useDesktopNav),
       ),
     );
   }
