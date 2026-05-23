@@ -25,9 +25,12 @@ class NetworkPcDialog extends StatefulWidget {
 
 class _NetworkPcDialogState extends State<NetworkPcDialog> {
   static const int _defaultAgentPort = 5000;
+  static const int _maxPairAttempts = 3;
   NetworkServerVO? _selectedPc;
   int _selectedPort = _defaultAgentPort;
   bool _isPairFlowLoading = false;
+  int _pairAttempts = 0;
+  bool _isPairCodeDialogOpen = false;
   final TextEditingController _connectCodeController = TextEditingController();
   final TextEditingController _manualPortController = TextEditingController(
     text: _defaultAgentPort.toString(),
@@ -217,6 +220,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
   void _showPairCodeDialog(BuildContext context, String pairCode) {
     _connectCodeController.clear();
+    _pairAttempts = 0;
+    _isPairCodeDialogOpen = true;
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool useDesktopNav = context.useDesktopNav;
@@ -434,6 +439,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
               final selectedPc = _selectedPc;
               if (selectedPc == null) return;
 
+              _isPairCodeDialogOpen = false;
               final navigator = Navigator.of(context, rootNavigator: true);
 
               // Save cash drawer from API response if available
@@ -496,7 +502,19 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
             }
 
             if (state is PairDeviceError) {
-              _showError(context, state.message);
+              _pairAttempts++;
+              final attemptsRemaining = _maxPairAttempts - _pairAttempts;
+              
+              if (_pairAttempts >= _maxPairAttempts) {
+                // Close the pair code dialog after max attempts
+                if (_isPairCodeDialogOpen) {
+                  _isPairCodeDialogOpen = false;
+                  Navigator.of(context, rootNavigator: true).pop();
+                  _showError(context, "Maximum attempts reached. Please tap the server again to get a new code.");
+                }
+              } else {
+                _showError(context, "${state.message}\n$attemptsRemaining attempt${attemptsRemaining == 1 ? '' : 's'} remaining.");
+              }
             }
           },
         ),
