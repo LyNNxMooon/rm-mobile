@@ -2074,6 +2074,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     const XTypeGroup typeGroup = XTypeGroup(
       label: 'Database',
       extensions: ['db'],
+      uniformTypeIdentifiers: ['public.database', 'public.data', 'public.item'],
     );
 
     final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
