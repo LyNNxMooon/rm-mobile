@@ -513,11 +513,22 @@ class SQLiteDAOImpl extends LocalDbDAO {
       final trimmed = query.trim();
       if (trimmed.isEmpty) return StockSearchResult.none();
 
+      // Calculate barcode variations for cross-platform compatibility (iOS/Android)
+      // iOS (Apple Vision) reads UPC-A as 13-digit EAN-13 with leading zero
+      // Android (ML Kit) reads UPC-A as 12 digits
+      final withoutLeadingZero = (trimmed.length == 13 && trimmed.startsWith('0'))
+          ? trimmed.substring(1)
+          : trimmed;
+      final withLeadingZero = (trimmed.length == 12)
+          ? '0$trimmed'
+          : trimmed;
+
       // 1) Barcode exact match (case-insensitive, ALL matches) - exclude default stock
+      // Check all three variations: original, without leading zero, with leading zero
       final barcodeRows = await db.query(
         'Stocks',
-        where: 'Barcode = ? COLLATE NOCASE AND shopfront = ? AND stock_id != 0',
-        whereArgs: [trimmed, shopfront],
+        where: '(Barcode = ? OR Barcode = ? OR Barcode = ?) COLLATE NOCASE AND shopfront = ? AND stock_id != 0',
+        whereArgs: [trimmed, withoutLeadingZero, withLeadingZero, shopfront],
       );
 
       if (barcodeRows.isNotEmpty) {
