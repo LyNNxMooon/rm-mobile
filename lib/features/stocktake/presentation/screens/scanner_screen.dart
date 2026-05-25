@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 
 import 'package:alert_info/alert_info.dart';
@@ -1622,6 +1624,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                     }
                                   },
                                   onScan: (String barcode) {
+                                    print('📷 BARCODE SCANNED: $barcode');
                                     context.read<ScannerBloc>().add(
                                       FetchStockDetails(barcode: barcode),
                                     );
