@@ -287,7 +287,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   Widget _buildSubmitFAB() {
     final colors = context.appColors;
     
-    return BlocListener<BatchCommitBloc, BatchCommitState>(
+    return BlocConsumer<BatchCommitBloc, BatchCommitState>(
       listener: (context, state) {
         if (state is BatchCommitAwaitingAuditDecision) {
           // Show audit decision dialog for current batch
@@ -327,19 +327,23 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           );
         }
       },
-      child: FloatingActionButton.extended(
-        onPressed: _handleSendToRM,
-        elevation: 4,
-        backgroundColor: kPrimaryColor,
-        label: Text(
-          "Send to shopfront",
-          style: TextStyle(
-            color: colors.onHero,
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
+      builder: (context, state) {
+        final bool isCommitting = state is BatchCommitInProgress || state is BatchCommitPreparing;
+        
+        return FloatingActionButton.extended(
+          onPressed: isCommitting ? null : _handleSendToRM,
+          elevation: isCommitting ? 0 : 4,
+          backgroundColor: isCommitting ? colors.onSurfaceMuted : kPrimaryColor,
+          label: Text(
+            isCommitting ? "Sending..." : "Send to shopfront",
+            style: TextStyle(
+              color: isCommitting ? colors.surface : colors.onHero,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
