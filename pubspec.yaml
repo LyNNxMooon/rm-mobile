@@ -35,7 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   http: ^1.2.0
-  mobile_scanner: ^7.1.4
+  mobile_scanner: ^7.2.0
   dio: ^5.9.0
   logger: ^2.6.1
   retrofit: ^4.9.0
