@@ -202,10 +202,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   void _onFocusChange() {
     // Only close scanner when manual barcode field gains focus.
-    // Qty field should work alongside scanner.
     if (txtFieldFocusNode.hasFocus && isScan) {
       setState(() => isScan = false);
     }
+    
+    // Pause scanner when qty field has focus, resume when unfocused
+    if (qtyFocusNode.hasFocus && isScan) {
+      // Pause scanning while user enters count
+      scannerController.stop();
+    } else if (!qtyFocusNode.hasFocus && isScan) {
+      // Resume scanning when qty field loses focus
+      scannerController.start();
+    }
+    
     if (mounted) {
       setState(() {});
     }
