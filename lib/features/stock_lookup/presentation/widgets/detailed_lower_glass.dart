@@ -326,22 +326,27 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(5),
+                            width: useDesktopNav ? 20 : 24,
+                            height: useDesktopNav ? 20 : 24,
                             decoration: BoxDecoration(
-                              color: Color.fromRGBO(
-                                203,
-                                128,
-                                128,
-                                1.0,
-                              ).withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(8),
+                              color: isDark ? colors.surface : kSecondaryColor,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: isDark
+                                      ? colors.cardShadow
+                                      : kThirdColor.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
-                            child: SizedBox(
-                              width: 18,
-                              height: 18,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
                               child: Image.asset(
-                                "assets/images/rrp.png",
-                                fit: BoxFit.fill,
+                                'assets/images/rrp.png',
+                                fit: BoxFit.contain,
+                                color: isDark ? colors.onSurface : Colors.black,
                               ),
                             ),
                           ),
@@ -406,17 +411,27 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(5),
+                            width: useDesktopNav ? 20 : 24,
+                            height: useDesktopNav ? 20 : 24,
                             decoration: BoxDecoration(
-                              color: Colors.greenAccent.withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(8),
+                              color: isDark ? colors.surface : kSecondaryColor,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: isDark
+                                      ? colors.cardShadow
+                                      : kThirdColor.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
-                            child: SizedBox(
-                              width: 18,
-                              height: 18,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
                               child: Image.asset(
-                                "assets/images/rrp.png",
-                                fit: BoxFit.fill,
+                                'assets/images/rrp.png',
+                                fit: BoxFit.contain,
+                                color: isDark ? colors.onSurface : Colors.black,
                               ),
                             ),
                           ),

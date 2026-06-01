@@ -213,17 +213,27 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(5),
+                        width: useDesktopNav ? 20 : 24,
+                        height: useDesktopNav ? 20 : 24,
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(8),
+                          color: isDark ? colors.surface : kSecondaryColor,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: isDark
+                                  ? colors.cardShadow
+                                  : kThirdColor.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         ),
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
                           child: Image.asset(
                             'assets/images/desc.png',
-                            fit: BoxFit.fill,
+                            fit: BoxFit.contain,
+                            color: isDark ? colors.onSurface : Colors.black,
                           ),
                         ),
                       ),
@@ -316,17 +326,27 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(5),
+                          width: useDesktopNav ? 20 : 24,
+                          height: useDesktopNav ? 20 : 24,
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(8),
+                            color: isDark ? colors.surface : kSecondaryColor,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: isDark
+                                    ? colors.cardShadow
+                                    : kThirdColor.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
                           ),
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
                             child: Image.asset(
                               'assets/images/cus1.png',
-                              fit: BoxFit.fill,
+                              fit: BoxFit.contain,
+                              color: isDark ? colors.onSurface : Colors.black,
                             ),
                           ),
                         ),
@@ -411,17 +431,27 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(5),
+                          width: useDesktopNav ? 20 : 24,
+                          height: useDesktopNav ? 20 : 24,
                           decoration: BoxDecoration(
-                            color: Colors.deepOrange.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(8),
+                            color: isDark ? colors.surface : kSecondaryColor,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: isDark
+                                    ? colors.cardShadow
+                                    : kThirdColor.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
                           ),
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
                             child: Image.asset(
                               'assets/images/cus2.png',
-                              fit: BoxFit.fill,
+                              fit: BoxFit.contain,
+                              color: isDark ? colors.onSurface : Colors.black,
                             ),
                           ),
                         ),
@@ -554,15 +584,6 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
     final content = Row(
       mainAxisSize: isTablet ? MainAxisSize.min : MainAxisSize.max,
       children: [
-        SizedBox(
-          width: 20,
-          height: 20,
-          child: Image.asset(
-            iconPath,
-            fit: BoxFit.fill,
-          ),
-        ),
-        const SizedBox(width: 6),
         isTablet
             ? Text(
                 '$label:',
@@ -649,6 +670,8 @@ class StockInfoRow extends StatelessWidget {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final Color onGlass = isDark ? Colors.white : kSecondaryColor;
+    final bool useDesktopNav = context.useDesktopNav;
+    final double iconBoxSize = useDesktopNav ? 20 : 24;
     return Padding(
       padding: const EdgeInsets.symmetric(
         vertical: 6.0,
@@ -660,15 +683,28 @@ class StockInfoRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(5),
+                width: iconBoxSize,
+                height: iconBoxSize,
                 decoration: BoxDecoration(
-                  color: iconBgColor.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(8),
+                  color: isDark ? colors.surface : kSecondaryColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark
+                          ? colors.cardShadow
+                          : kThirdColor.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
-                child: SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: Image.asset(image, fit: BoxFit.fill),
+                child: Padding(
+                  padding: const EdgeInsets.all(5),
+                  child: Image.asset(
+                    image,
+                    fit: BoxFit.contain,
+                    color: isDark ? colors.onSurface : Colors.black,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),

@@ -3,6 +3,8 @@ import 'package:rmmobile/features/stocktake/domain/entities/batch_commit_entitie
 import 'package:rmmobile/features/stocktake/domain/entities/stocktake_audit_entities.dart';
 import 'package:rmmobile/features/stocktake/domain/use_cases/batch_commit_stocktake.dart';
 import 'package:rmmobile/features/stocktake/domain/use_cases/has_unsynced_stocktakes.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/discover_host.dart';
+import 'package:rmmobile/local_db/local_db_dao.dart';
 import 'package:rmmobile/utils/global_var_utils.dart';
 
 // ============================================================================
@@ -107,6 +109,12 @@ class BatchCommitFailed extends BatchCommitState {
   BatchCommitFailed(this.message, {this.progress});
 }
 
+/// Connection to host failed
+class BatchCommitConnectionFailed extends BatchCommitState {
+  final String message;
+  BatchCommitConnectionFailed(this.message);
+}
+
 /// No items to commit
 class BatchCommitEmpty extends BatchCommitState {}
 
@@ -117,6 +125,7 @@ class BatchCommitEmpty extends BatchCommitState {}
 class BatchCommitBloc extends Bloc<BatchCommitEvent, BatchCommitState> {
   final BatchCommitStocktake batchCommitStocktake;
   final HasUnsyncedStocktakes hasUnsyncedStocktakes;
+  final DiscoverHost discoverHost;
 
   List<StocktakeBatch> _batches = [];
   BatchCommitProgress? _currentProgress;
@@ -125,6 +134,7 @@ class BatchCommitBloc extends Bloc<BatchCommitEvent, BatchCommitState> {
   BatchCommitBloc({
     required this.batchCommitStocktake,
     required this.hasUnsyncedStocktakes,
+    required this.discoverHost,
   }) : super(BatchCommitInitial()) {
     on<StartBatchCommitEvent>(_onStart);
     on<ResolveBatchAuditsEvent>(_onResolveAudits);
@@ -136,9 +146,32 @@ class BatchCommitBloc extends Bloc<BatchCommitEvent, BatchCommitState> {
     StartBatchCommitEvent event,
     Emitter<BatchCommitState> emit,
   ) async {
-    emit(BatchCommitPreparing());
+    emit(BatchCommitPreparing("Checking server connection..."));
 
     try {
+      // Check connection to host first
+      final ip = (AppGlobals.instance.currentHostIp ?? "").trim();
+      final portStr = await LocalDbDAO.instance.getHostPort();
+      final port = int.tryParse(portStr ?? "") ?? 5000;
+
+      if (ip.isEmpty) {
+        emit(BatchCommitConnectionFailed(
+          "The server connection info has changed! Please connect to server again.",
+        ));
+        return;
+      }
+
+      try {
+        await discoverHost(ip, port);
+      } catch (e) {
+        emit(BatchCommitConnectionFailed(
+          "The server connection info has changed! Please connect to server again.",
+        ));
+        return;
+      }
+
+      emit(BatchCommitPreparing());
+
       // Check if there are items to sync
       final shopfront = AppGlobals.instance.shopfront ?? "";
       final hasItems = await hasUnsyncedStocktakes(shopfront: shopfront);

@@ -4,8 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/constants/colors.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import '../../../../constants/theme_colors.dart';
-import '../../../../constants/txt_styles.dart';
-import '../../../../utils/global_var_utils.dart';
+//import '../../../../constants/txt_styles.dart';
+//import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/responsive_utils.dart';
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
@@ -39,7 +39,7 @@ class AppBarSession extends StatelessWidget {
     // Responsive Sizing
     final double networkIconSize = isLargeTablet ? 42 : isTablet ? 32 : 22;
     final double settingsIconSize = isLargeTablet ? 32 : isTablet ? 30 : 22;
-    final double glassPadding = isTablet ? 12.0 : 11.0;
+    //final double glassPadding = isTablet ? 12.0 : 11.0;
     final double horizontalPadding = isTablet ? 22 : 16;
 
     return Padding(
@@ -47,87 +47,11 @@ class AppBarSession extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // --- LEFT SIDE: SERVER STATUS (Glass Container) ---
-          Flexible(
-            child: BlocBuilder<StaffAuthBloc, StaffAuthStates>(
-              builder: (context, staffState) {
-                return BlocBuilder<ShopFrontConnectionBloc, ShopfrontConnectionStates>(
-                  builder: (context, state) {
-                    return ValueListenableBuilder<String?>(
-                      valueListenable: AppGlobals.instance.hostNameNotifier,
-                      builder: (context, host, _) {
-                        final bool isOffline = host == null || host.isEmpty;
-
-                        if (isOffline) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.55),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.amber, width: 1.5),
-                            ),
-                            child: Text(
-                              'Offline Mode',
-                              style: TextStyle(
-                                fontSize: isTablet ? 16 : 14,
-                                color: Colors.grey.shade900,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          );
-                        }
-
-                        // Frosted Glass Server Pill
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: glassPadding, vertical: glassPadding - 1.5),
-                              decoration: BoxDecoration(
-                                // Darker glass fill for dark mode to match drawer
-                                color: isDark
-                                    ? Colors.black.withOpacity(0.13)
-                                    : colors.glassFill,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isDark
-                                      ? Colors.white.withOpacity(0.15)
-                                      : colors.glassBorder,
-                                  width: isDark ? 1.5 : 0.5,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Icon(
-                                  //   Icons.lan_outlined,
-                                  //   size: 16,
-                                  //   color: isDark ? Colors.white70 : colors.onHero.withOpacity(0.7),
-                                  // ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      "Server: $host",
-                                      style: getSmartTitle(
-                                        fontSize: isTablet ? 17 : 15,
-                                        color: isDark ? Colors.white : colors.onHero,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-            ),
+          // --- LEFT SIDE: LOGO ---
+          Image.asset(
+            "assets/images/trademark.png",
+            height: isTablet ? 38 : 30,
+            fit: BoxFit.contain,
           ),
 
           const SizedBox(width: 20),

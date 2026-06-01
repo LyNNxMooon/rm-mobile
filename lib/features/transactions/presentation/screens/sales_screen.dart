@@ -16,6 +16,8 @@ import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_loo
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_states.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/discover_host.dart';
+import 'package:rmmobile/features/home_page/presentation/widgets/network_pc_dialog.dart';
 import 'package:rmmobile/utils/dependency_injection_utils.dart' as di;
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -752,7 +754,41 @@ class _SalesScreenState extends State<SalesScreen>
     // Check for saved sessions after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkSavedSessions();
+      _checkHostConnection();
     });
+  }
+
+  /// Checks host connection in background and shows network dialog if failed
+  Future<void> _checkHostConnection() async {
+    final ip = (AppGlobals.instance.currentHostIp ?? "").trim();
+    final portStr = await LocalDbDAO.instance.getHostPort();
+    final port = int.tryParse(portStr ?? "") ?? 5000;
+
+    if (ip.isEmpty) {
+      if (mounted) {
+        _showNetworkPcDialog();
+      }
+      return;
+    }
+
+    try {
+      final discoverHost = di.sl<DiscoverHost>();
+      await discoverHost(ip, port);
+    } catch (e) {
+      if (mounted) {
+        _showNetworkPcDialog();
+      }
+    }
+  }
+
+  void _showNetworkPcDialog() {
+    context.read<FetchingNetworkServerBloc>().add(FetchNetworkServerEvent());
+    showDialog(
+      context: context,
+      builder: (_) => const NetworkPcDialog(
+        message: "The server connection info has changed! Please connect to server again.",
+      ),
+    );
   }
 
   Future<void> _maybeShowShopfrontReminder() async {

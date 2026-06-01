@@ -66,25 +66,12 @@ class TransactionPulseWidget extends StatelessWidget {
             isTablet ? 8 : 6,
           ),
           decoration: BoxDecoration(
-            color: colors.isDark
-                ? colors.surfaceAlt.withOpacity(0.98)
-                : Colors.white,
+            color: Colors.white.withOpacity(0.08),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: colors.isDark
-                  ? Colors.white10
-                  : Colors.grey.shade200.withOpacity(0.8),
+              color: Colors.white12,
               width: 1,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: colors.isDark
-                    ? Colors.black.withOpacity(0.06)
-                    : colors.cardShadow.withOpacity(0.08),
-                blurRadius: 3,
-                offset: const Offset(0, 1),
-              ),
-            ],
           ),
           child: activeCategories.isEmpty
               ? _buildAllCaughtUpState(context, colors, isTablet)
@@ -224,7 +211,7 @@ class TransactionPulseWidget extends StatelessWidget {
                   "All Caught Up!",
                   style: getSmartTitle(
                     fontSize: isTablet ? 16 : 16,
-                    color: colors.isDark ? Colors.white : colors.onSurface,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -232,9 +219,7 @@ class TransactionPulseWidget extends StatelessWidget {
                   "No pending transactions.",
                   style: TextStyle(
                     fontSize: isTablet ? 13 : 13,
-                    color: colors.isDark
-                        ? Colors.white54
-                        : Colors.grey.shade600,
+                    color: Colors.white54,
                   ),
                 ),
               ],
@@ -326,9 +311,7 @@ class TransactionPulseWidget extends StatelessWidget {
                                 "Pending Transaction Activity",
                                 style: getSmartTitle(
                                   fontSize: titleSize,
-                                  color: colors.isDark
-                                      ? Colors.white70
-                                      : Colors.grey.shade700,
+                                  color: Colors.white70,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -339,9 +322,7 @@ class TransactionPulseWidget extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: subtitleFontSize,
                                 fontWeight: FontWeight.w500,
-                                color: colors.isDark
-                                    ? Colors.white70
-                                    : Colors.blueGrey.shade600,
+                                color: Colors.white70,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -351,9 +332,7 @@ class TransactionPulseWidget extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: subtitleFontSize,
                                   fontWeight: FontWeight.w500,
-                                  color: colors.isDark
-                                      ? Colors.white70
-                                      : Colors.blueGrey.shade600,
+                                  color: Colors.white70,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -370,9 +349,7 @@ class TransactionPulseWidget extends StatelessWidget {
                             "Pending Transaction Activity",
                             style: getSmartTitle(
                               fontSize: titleSize,
-                              color: colors.isDark
-                                  ? Colors.white70
-                                  : Colors.grey.shade700,
+                              color: Colors.white70,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -382,9 +359,7 @@ class TransactionPulseWidget extends StatelessWidget {
                             style: TextStyle(
                               fontSize: subtitleFontSize,
                               fontWeight: FontWeight.w500,
-                              color: colors.isDark
-                                  ? Colors.white70
-                                  : Colors.blueGrey.shade600,
+                              color: Colors.white70,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -561,7 +536,7 @@ class TransactionPulseWidget extends StatelessWidget {
                           ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
                           : 12.0,
                       fontWeight: FontWeight.w600,
-                      color: colors.isDark ? Colors.white : colors.onSurface,
+                      color: Colors.white,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -598,9 +573,7 @@ class TransactionPulseWidget extends StatelessWidget {
                       style: TextStyle(
                         fontSize: isTablet ? 11 : 11,
                         fontWeight: FontWeight.w500,
-                        color: colors.isDark
-                            ? Colors.white70
-                            : Colors.blueGrey.shade600,
+                        color: Colors.white70,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

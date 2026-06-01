@@ -27,6 +27,7 @@ import '../../../customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import '../../../stocktake/presentation/screens/scanner_screen.dart';
 import '../../../transactions/presentation/BLoC/sales_bloc.dart';
 import '../../../transactions/presentation/screens/sales_screen.dart';
+import '../../domain/use_cases/discover_host.dart';
 
 import '../BLoC/home_screen_bloc.dart';
 import '../BLoC/home_screen_events.dart';
@@ -226,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     );
   }
 
-  void _showNetworkDialog() {
+  void _showNetworkDialog({String? message}) {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     if (context.read<FetchStockBloc>().state is FetchStockProgress) return;
     logger.d("State is noticed");
@@ -234,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     showDialog(
       context: context,
       builder: (context) {
-        return const NetworkPcDialog();
+        return NetworkPcDialog(message: message);
       },
     );
   }
@@ -418,7 +419,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: BoxDecoration(gradient: colors.heroGradient),
+          decoration: BoxDecoration(
+            color: Color.fromRGBO(28, 57, 83, 1),
+          ),
           child: Row(
             children: [
               // Navigation Rail with extended labels
@@ -449,7 +452,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(gradient: colors.heroGradient),
+        decoration: BoxDecoration(
+          color: Color.fromRGBO(28, 57, 83, 1),
+        ),
         child: SafeArea(
           bottom: false,
           top: true,
@@ -476,69 +481,34 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     AppThemeColors colors,
     bool isDark,
   ) {
-    return ValueListenableBuilder<String?>(
-      valueListenable: AppGlobals.instance.hostNameNotifier,
-      builder: (context, hostName, _) {
-        final String serverName = (hostName ?? "").isEmpty 
-            ? "Not connected" 
-            : hostName!;
-        
-        return Container(
-          color: isDark ? colors.surface : Colors.white,
-          child: Column(
-            children: [
-              // Server status header - top padding aligns with shopfront name in main content
-              Container(
-                width: 220,
-                padding: const EdgeInsets.fromLTRB(16, 72, 16, 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Icon(
-                        (hostName ?? "").isEmpty ? Icons.cloud_off : Icons.cloud_done,
-                        size: 20,
-                        color: (hostName ?? "").isEmpty ? Colors.orange : kPrimaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            serverName,
-                            style: getSmartTitle(
-                              fontSize: 13,
-                              color: isDark ? Colors.white : colors.onSurface,
-                            ),
-                            maxLines: 2,
-                          ),
-                          Text(
-                            (hostName ?? "").isEmpty ? "Offline" : "Connected",
-                            style: TextStyle(fontSize: 11, color: colors.onSurfaceMuted),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              // Navigation items
-              Expanded(
-                child: NavigationRail(
-                  selectedIndex: _selectedTabIndex,
-                  onDestinationSelected: (index) => setState(() => _selectedTabIndex = index),
-                  extended: true,
-                  minExtendedWidth: 220,
-                  backgroundColor: Colors.transparent,
-                  selectedIconTheme: const IconThemeData(color: kPrimaryColor, size: 22),
+    return Container(
+      color: isDark ? colors.surface : Colors.white,
+      child: Column(
+        children: [
+          // Logo header - top padding aligns with shopfront name in main content
+          Container(
+            width: 220,
+            padding: const EdgeInsets.fromLTRB(16, 72, 16, 16),
+            child: Image.asset(
+              "assets/images/trademark_dark.png",
+              height: 32,
+              fit: BoxFit.contain,
+            ),
+          ),
+          const Divider(height: 1),
+          // Navigation items
+          Expanded(
+            child: NavigationRail(
+              selectedIndex: _selectedTabIndex,
+              onDestinationSelected: (index) => setState(() => _selectedTabIndex = index),
+              extended: true,
+              minExtendedWidth: 220,
+              backgroundColor: Colors.transparent,
+              selectedIconTheme: const IconThemeData(color: kPrimaryColor, size: 22),
                   unselectedIconTheme: IconThemeData(color: colors.onSurfaceMuted, size: 22),
                   selectedLabelTextStyle: const TextStyle(
                     color: kPrimaryColor,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     fontSize: 14,
                   ),
                   unselectedLabelTextStyle: TextStyle(
@@ -592,8 +562,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             ],
           ),
         );
-      },
-    );
   }
 
   /// Builds a custom action button for the NavigationRail trailing area
@@ -636,7 +604,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
   /// Builds the Classic style layout with GlassDrawer (mobile only pattern)
   Widget _buildClassicStyleLayout(BuildContext context) {
-    final colors = context.appColors;
+    //final colors = context.appColors;
     final bool isTablet = context.isTablet;
     final bool isPortrait = context.isPortrait;
     final media = MediaQuery.of(context);
@@ -655,7 +623,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(gradient: colors.heroGradient),
+        decoration: BoxDecoration(
+          color: Color.fromRGBO(28, 57, 83, 1),
+        ),
         child: SafeArea(
           bottom: false,
           top: true,
@@ -756,7 +726,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       blendMode: BlendMode.srcIn,
       child: Text(
         "Welcome to RM-Mobile",
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize),
+        style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize),
         textAlign: TextAlign.center,
       ),
     );
@@ -784,14 +754,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           ? EdgeInsets.zero  // Padding handles the gap on desktop
           : const EdgeInsets.only(top: 12),
       decoration: BoxDecoration(
-        color: colors.isDark ? colors.surface : const Color(0xFFF6F7F9),
-        // On desktop: rounded corners on all sides; on mobile: only top
+        color: Color.fromRGBO(13, 27, 52, 1),
+        // On desktop: rounded corners on all sides; on mobile: no rounding
         borderRadius: useDesktopNav
             ? BorderRadius.circular(10)
-            : BorderRadius.only(
-                topLeft: Radius.circular(isTablet ? 28 : 20),
-                topRight: Radius.circular(isTablet ? 28 : 20),
-              ),
+            : BorderRadius.zero,
         boxShadow: [
           BoxShadow(
             color: colors.cardShadow,
@@ -803,10 +770,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       child: ClipRRect(
         borderRadius: useDesktopNav
             ? BorderRadius.circular(10)
-            : BorderRadius.only(
-                topLeft: Radius.circular(isTablet ? 28 : 20),
-                topRight: Radius.circular(isTablet ? 28 : 20),
-              ),
+            : BorderRadius.zero,
         child: SingleChildScrollView(
           padding: EdgeInsets.only(
             // Less bottom padding on desktop (no bottom nav)
@@ -851,7 +815,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }
 
   Widget _buildGreetingHeader(BuildContext context) {
-    final colors = context.appColors;
+   // final colors = context.appColors;
     final bool isTablet = context.isTablet;
     final String shopfront = (AppGlobals.instance.shopfront ?? "").trim();
     final String shopName = shopfront.isEmpty
@@ -861,11 +825,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     final String staffLabel = staffName.isEmpty
         ? "Staff: Not signed in"
         : "Staff: $staffName";
-
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final String logoAsset = isDark
-        ? "assets/images/trademark_dark.png"
-        : "assets/images/trademark.png";
 
     return SizedBox(
       width: double.infinity,
@@ -879,45 +838,23 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        shopName,
-                        style: getSmartTitle(
-                          fontSize: isTablet ? 22 : 20,
-                          color: colors.isDark
-                              ? Colors.white
-                              : colors.onSurface,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        staffLabel,
-                        style: TextStyle(
-                          color: colors.isDark
-                              ? Colors.white60
-                              : Colors.blueGrey.shade700,
-                          fontSize: isTablet ? 14 : 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Image.asset(
-                  logoAsset,
-                  height: isTablet ? 64 : 36,
-                  fit: BoxFit.contain,
-                ),
-              ],
+            Text(
+              shopName,
+              style: getSmartTitle(
+                fontSize: isTablet ? 20 : 18,
+                color: Colors.white,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              staffLabel,
+              style: TextStyle(
+                color: Colors.white60,
+                fontSize: isTablet ? 14 : 13,
+                fontWeight: FontWeight.w400,
+              ),
             ),
             SizedBox(height: isTablet ? 14 : 10),
             _buildStatusRow(context),
@@ -933,19 +870,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       builder: (context, _) {
         return BlocBuilder<FetchCustomerBloc, FetchCustomerStates>(
           builder: (context, _) {
-            final String ip = (AppGlobals.instance.currentHostIp ?? "").trim();
-            final bool isOffline = ip.isEmpty;
             final bool isSyncing = _isSyncInProgress(context);
             return Wrap(
               spacing: isTablet ? 10 : 6,
               runSpacing: isTablet ? 10 : 6,
               children: [
-                _buildStatusPill(
-                  context,
-                  label: isOffline ? "Offline" : "Server IP: $ip",
-                  icon: Icons.cloud_outlined,
-                  color: isOffline ? Colors.amber : kPrimaryColor,
-                ),
                 _buildStatusPill(
                   context,
                   label: isSyncing ? "Syncing" : "Sync complete",
@@ -978,7 +907,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     required IconData icon,
     required Color color,
   }) {
-    final colors = context.appColors;
+    //final colors = context.appColors;
     final bool isTablet = context.isTablet;
     return Container(
       padding: EdgeInsets.symmetric(
@@ -986,19 +915,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         vertical: isTablet ? 8 : 5,
       ),
       decoration: BoxDecoration(
-        color: colors.isDark ? colors.surfaceAlt : Colors.white,
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: colors.isDark ? Colors.white12 : Colors.grey.shade200,
+          color: Colors.white24,
         ),
-        boxShadow: [
-          if (!colors.isDark)
-            BoxShadow(
-              color: colors.cardShadow.withOpacity(0.10),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
-            ),
-        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1009,8 +930,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             label,
             style: TextStyle(
               fontSize: isTablet ? 13 : 12,
-              fontWeight: FontWeight.w600,
-              color: colors.isDark ? Colors.white70 : Colors.blueGrey.shade700,
+              fontWeight: FontWeight.w400,
+              color: Colors.white70,
             ),
           ),
         ],
@@ -1024,7 +945,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     bool compact = false,
     IconData? icon,
   }) {
-    final colors = context.appColors;
+    //final colors = context.appColors;
     final bool isTablet = context.isTablet;
     final EdgeInsets padding = compact
         ? EdgeInsets.symmetric(horizontal: isTablet ? 22 : 16)
@@ -1042,7 +963,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             Icon(
               icon,
               size: isTablet ? 20 : 18,
-              color: colors.isDark ? Colors.white70 : colors.onSurface,
+              color: Colors.white70,
             ),
             const SizedBox(width: 8),
           ],
@@ -1050,14 +971,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             title,
             style: getSmartTitle(
               fontSize: isTablet ? 18 : 18,
-              color: colors.isDark ? Colors.white : colors.onSurface,
+              color: Colors.white,
             ).copyWith(height: compact ? 1.0 : null),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Container(
               height: 1.5,
-              color: colors.isDark ? Colors.white30 : const Color(0xFFCECECE),
+              color: Colors.white30,
             ),
           ),
         ],
@@ -1161,25 +1082,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         14,
       ),
       decoration: BoxDecoration(
-        color: colors.isDark
-            ? colors.surfaceAlt.withOpacity(0.98)
-            : Colors.white,
+        color: Colors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: colors.isDark
-              ? Colors.white10
-              : Colors.grey.shade200.withOpacity(0.8),
+          color: Colors.white12,
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: colors.isDark
-                ? Colors.black.withOpacity(0.06)
-                : colors.cardShadow.withOpacity(0.08),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1190,7 +1098,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               Icon(
                 Icons.upcoming_outlined,
                 size: isTablet ? 18 : 14,
-                color: colors.isDark ? Colors.white54 : Colors.grey.shade600,
+                color: Colors.white54,
               ),
               const SizedBox(width: 4),
               Text(
@@ -1199,7 +1107,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   fontSize: isTablet 
                       ? (14 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(14.0, 18.0)
                       : 14.0,
-                  color: colors.isDark ? Colors.white70 : Colors.grey.shade700,
+                  color: Colors.white70,
                 ),
               ),
               const SizedBox(width: 4),
@@ -1209,7 +1117,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   vertical: 1,
                 ),
                 decoration: BoxDecoration(
-                  color: colors.isDark ? Colors.white10 : Colors.grey.shade100,
+                  color: Colors.white10,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -1218,10 +1126,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                     fontSize: isTablet 
                         ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
                         : 12.0,
-                    fontWeight: FontWeight.w600,
-                    color: colors.isDark
-                        ? Colors.white54
-                        : Colors.grey.shade500,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white54,
                   ),
                 ),
               ),
@@ -1232,7 +1138,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   fontSize: isTablet 
                       ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
                       : 12.0,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   color: kPrimaryColor,
                 ),
               ),
@@ -1258,7 +1164,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     Map<String, dynamic> item, {
     int badgeCount = 0,
   }) {
-    final colors = context.appColors;
+    //final colors = context.appColors;
     final bool isTablet = context.isTablet;
     final double scale = isTablet
         ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)
@@ -1273,16 +1179,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     final Color itemColor = item['color'] ?? kPrimaryColor;
     final Color titleColor = isComingSoon
         ? Colors.grey.shade500
-        : (colors.isDark ? Colors.white : colors.onSurface);
+        : Colors.white;
     final Color subtitleColor = isComingSoon
         ? Colors.grey.shade400
-        : (colors.isDark
-              ? colors.onSurfaceMuted
-              : kThirdColor.withOpacity(0.78));
+        : Colors.white60;
     final Color iconColor = isComingSoon ? Colors.grey.shade500 : itemColor;
     final Color background = isComingSoon
-        ? (colors.isDark ? Colors.white10 : Colors.grey.shade100)
-        : (colors.isDark ? colors.surfaceAlt.withOpacity(0.98) : Colors.white);
+        ? Colors.white10
+        : Colors.white.withOpacity(0.08);
 
     return InkWell(
       onTap: () => _handleActionTap(item['action'] as String?),
@@ -1296,22 +1200,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               border: Border.all(
                 color: isComingSoon
                     ? Colors.transparent
-                    : (colors.isDark
-                          ? Colors.white10
-                          : Colors.grey.shade200.withOpacity(0.8)),
+                    : Colors.white12,
                 width: 1,
               ),
-              boxShadow: isComingSoon
-                  ? []
-                  : [
-                      BoxShadow(
-                        color: colors.isDark
-                            ? Colors.black.withOpacity(0.02)
-                            : colors.cardShadow.withOpacity(0.04),
-                        blurRadius: 1,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
             ),
             child: Padding(
               padding: EdgeInsets.fromLTRB(
@@ -1330,24 +1221,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                         vertical: isTablet ? 0 : 0,
                       ),
                       decoration: BoxDecoration(
-                        color: colors.isDark
-                            ? Colors.white10
-                            : Colors.white.withOpacity(0.9),
+                        color: Colors.white.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
                         border: Border.all(
-                          color: colors.isDark
-                              ? Colors.white10
-                              : Colors.grey.shade200,
+                          color: Colors.white12,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: colors.isDark
-                                ? Colors.black.withOpacity(0.04)
-                                : colors.cardShadow.withOpacity(0.06),
-                            blurRadius: 2,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1369,7 +1247,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                             item['subTitle'],
                             style: TextStyle(
                               fontSize: subTitleSize,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                               color: subtitleColor,
                             ),
                             maxLines: 1,
@@ -1383,9 +1261,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   Container(
                     padding: EdgeInsets.all(isTablet ? 6 : 4),
                     decoration: BoxDecoration(
-                      color: colors.isDark
-                          ? Colors.black.withOpacity(0.18)
-                          : Colors.grey.shade100,
+                      color: Colors.white.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Icon(
@@ -1440,7 +1316,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: isTablet ? 11 : 11,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -1452,13 +1328,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }
 
   Widget _buildBottomNav(BuildContext context) {
-    final colors = context.appColors;
     return BottomNavigationBar(
       currentIndex: _selectedTabIndex,
       type: BottomNavigationBarType.fixed,
-      backgroundColor: colors.isDark ? colors.surface : Colors.white,
-      selectedItemColor: kPrimaryColor,
-      unselectedItemColor: colors.onSurfaceMuted,
+      backgroundColor: Color.fromRGBO(109, 205, 251, 1),
+      selectedItemColor: Colors.white,
+      unselectedItemColor: Colors.white70,
       onTap: (index) => setState(() => _selectedTabIndex = index),
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: "Home"),
@@ -1521,6 +1396,78 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       const CustomSnackBar.info(message: "Sync in progress. Please wait."),
     );
     return true;
+  }
+
+  /// Checks host connection in background before navigating to a screen.
+  /// If connection fails, shows the network PC dialog with an error message.
+  /// Returns true if connection succeeded, false otherwise.
+  Future<bool> _checkHostConnection() async {
+    final ip = (AppGlobals.instance.currentHostIp ?? "").trim();
+    final portStr = await LocalDbDAO.instance.getHostPort();
+    final port = int.tryParse(portStr ?? "") ?? 5000;
+
+    if (ip.isEmpty) {
+      _showNetworkDialog(
+        message: "The server connection info has changed! Please connect to server again.",
+      );
+      return false;
+    }
+
+    try {
+      final discoverHost = di.sl<DiscoverHost>();
+      await discoverHost(ip, port);
+      return true;
+    } catch (e) {
+      logger.d("Host connection check failed: $e");
+      if (mounted) {
+        _showNetworkDialog(
+          message: "The server connection info has changed! Please connect to server again.",
+        );
+      }
+      return false;
+    }
+  }
+
+  /// Navigates to a transaction screen immediately.
+  /// Connection check is performed inside SalesScreen itself.
+  void _navigateToTransactionScreen({
+    required String title,
+    required Color themeColor,
+    required IconData icon,
+  }) {
+    context
+        .navigateToNext(
+          BlocProvider(
+            create: (_) => di.sl<SalesBloc>(),
+            child: SalesScreen(
+              title: title,
+              themeColor: themeColor,
+              icon: icon,
+            ),
+          ),
+        )
+        .then((_) => _sessionCountsCubit.loadSessionCounts());
+  }
+
+  /// Checks host connection silently without showing dialog on failure.
+  /// Returns true if connection succeeded, false otherwise.
+  Future<bool> _checkHostConnectionSilent() async {
+    final ip = (AppGlobals.instance.currentHostIp ?? "").trim();
+    final portStr = await LocalDbDAO.instance.getHostPort();
+    final port = int.tryParse(portStr ?? "") ?? 5000;
+
+    if (ip.isEmpty) {
+      return false;
+    }
+
+    try {
+      final discoverHost = di.sl<DiscoverHost>();
+      await discoverHost(ip, port);
+      return true;
+    } catch (e) {
+      logger.d("Host connection check failed: $e");
+      return false;
+    }
   }
 
   Future<String> _loadLastSyncLabel() async {
@@ -1667,18 +1614,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
     if (action == "sales") {
       if (_blockTransactionsIfSyncing(context)) return;
-      context
-          .navigateToNext(
-            BlocProvider(
-              create: (_) => di.sl<SalesBloc>(),
-              child: const SalesScreen(
-                title: "Sales",
-                themeColor: Colors.green,
-                icon: Icons.point_of_sale_outlined,
-              ),
-            ),
-          )
-          .then((_) => _sessionCountsCubit.loadSessionCounts());
+      _navigateToTransactionScreen(
+        title: "Sales",
+        themeColor: Colors.green,
+        icon: Icons.point_of_sale_outlined,
+      );
       return;
     }
     if (action == "account_sales") {
@@ -1692,18 +1632,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         );
         return;
       }
-      context
-          .navigateToNext(
-            BlocProvider(
-              create: (_) => di.sl<SalesBloc>(),
-              child: const SalesScreen(
-                title: "Account Sales",
-                themeColor: Color.fromARGB(255, 210, 148, 172),
-                icon: Icons.receipt_long_outlined,
-              ),
-            ),
-          )
-          .then((_) => _sessionCountsCubit.loadSessionCounts());
+      _navigateToTransactionScreen(
+        title: "Account Sales",
+        themeColor: const Color.fromARGB(255, 210, 148, 172),
+        icon: Icons.receipt_long_outlined,
+      );
       return;
     }
     if (action == "sales_order") {
@@ -1717,18 +1650,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         );
         return;
       }
-      context
-          .navigateToNext(
-            BlocProvider(
-              create: (_) => di.sl<SalesBloc>(),
-              child: const SalesScreen(
-                title: "Sales Order",
-                themeColor: Color.fromARGB(255, 44, 133, 211),
-                icon: Icons.shopping_cart_outlined,
-              ),
-            ),
-          )
-          .then((_) => _sessionCountsCubit.loadSessionCounts());
+      _navigateToTransactionScreen(
+        title: "Sales Order",
+        themeColor: const Color.fromARGB(255, 44, 133, 211),
+        icon: Icons.shopping_cart_outlined,
+      );
       return;
     }
     if (action == "quotes") {
@@ -1742,18 +1668,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         );
         return;
       }
-      context
-          .navigateToNext(
-            BlocProvider(
-              create: (_) => di.sl<SalesBloc>(),
-              child: const SalesScreen(
-                title: "Quotes",
-                themeColor: Colors.orange,
-                icon: Icons.request_quote_outlined,
-              ),
-            ),
-          )
-          .then((_) => _sessionCountsCubit.loadSessionCounts());
+      _navigateToTransactionScreen(
+        title: "Quotes",
+        themeColor: Colors.orange,
+        icon: Icons.request_quote_outlined,
+      );
       return;
     }
     if (action == "lay_bys") {
@@ -1767,18 +1686,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         );
         return;
       }
-      context
-          .navigateToNext(
-            BlocProvider(
-              create: (_) => di.sl<SalesBloc>(),
-              child: const SalesScreen(
-                title: "Lay-bys",
-                themeColor: Color.fromARGB(255, 152, 86, 165),
-                icon: Icons.inventory_2_outlined,
-              ),
-            ),
-          )
-          .then((_) => _sessionCountsCubit.loadSessionCounts());
+      _navigateToTransactionScreen(
+        title: "Lay-bys",
+        themeColor: const Color.fromARGB(255, 152, 86, 165),
+        icon: Icons.inventory_2_outlined,
+      );
       return;
     }
 
@@ -2026,9 +1938,7 @@ class _ComingSoonCarouselState extends State<_ComingSoonCarousel> {
                   decoration: BoxDecoration(
                     color: isActive
                         ? kPrimaryColor
-                        : (widget.colors.isDark
-                              ? Colors.white24
-                              : Colors.grey.shade300),
+                        : Colors.white24,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -2056,23 +1966,17 @@ class _ComingSoonCarouselState extends State<_ComingSoonCarousel> {
               width: size,
               height: size,
               decoration: BoxDecoration(
-                color: widget.colors.isDark
-                    ? Colors.white.withOpacity(0.08)
-                    : Colors.grey.shade100,
+                color: Colors.white.withOpacity(0.08),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: widget.colors.isDark
-                      ? Colors.white12
-                      : Colors.grey.shade200,
+                  color: Colors.white12,
                   width: 1,
                 ),
               ),
               child: Icon(
                 icon,
                 size: iconSize,
-                color: widget.colors.isDark
-                    ? Colors.white38
-                    : Colors.grey.shade400,
+                color: Colors.white38,
               ),
             ),
             const SizedBox(height: 6),
@@ -2080,10 +1984,8 @@ class _ComingSoonCarouselState extends State<_ComingSoonCarousel> {
               title,
               style: TextStyle(
                 fontSize: widget.isTablet ? 11 : 10,
-                fontWeight: FontWeight.w500,
-                color: widget.colors.isDark
-                    ? Colors.white54
-                    : Colors.grey.shade500,
+                fontWeight: FontWeight.w400,
+                color: Colors.white54,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

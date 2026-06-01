@@ -2040,105 +2040,107 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
           ),
 
-          Padding(
-            padding: EdgeInsets.only(
-              top: isTablet ? 12 : 8,
-              bottom: 0,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _bcController,
-                    focusNode: txtFieldFocusNode,
-                    scrollPhysics: const ClampingScrollPhysics(),
-                    style: TextStyle(
-                      color: isDark ? Colors.white : Colors.black87,
-                      fontSize: 14,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Manual Barcode/Desc Entry',
-                      hintStyle: TextStyle(
-                        color: colors.onSurfaceMuted,
-                        fontSize: 13,
+          // Hide manual barcode entry when count field is focused
+          if (!qtyFocusNode.hasFocus)
+            Padding(
+              padding: EdgeInsets.only(
+                top: isTablet ? 12 : 8,
+                bottom: 0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _bcController,
+                      focusNode: txtFieldFocusNode,
+                      scrollPhysics: const ClampingScrollPhysics(),
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                        fontSize: 14,
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: isDark ? Colors.white38 : Colors.grey.shade400,
+                      decoration: InputDecoration(
+                        hintText: 'Manual Barcode/Desc Entry',
+                        hintStyle: TextStyle(
+                          color: colors.onSurfaceMuted,
+                          fontSize: 13,
                         ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: kPrimaryColor),
-                      ),
-                      disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: isDark ? Colors.white24 : Colors.grey.shade300,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white38 : Colors.grey.shade400,
+                          ),
                         ),
-                      ),
-                      filled: true,
-                      fillColor: colors.surface,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                      suffixIcon: IconButton(
-                        onPressed: () async {
-                          StockVO? selectedStock;
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => StockLookupScreen(
-                                showBackArrow: true,
-                                selectionMode: true,
-                                onStockSelected: (stock) {
-                                  selectedStock = stock;
-                                },
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: kPrimaryColor),
+                        ),
+                        disabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white24 : Colors.grey.shade300,
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: colors.surface,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        suffixIcon: IconButton(
+                          onPressed: () async {
+                            StockVO? selectedStock;
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => StockLookupScreen(
+                                  showBackArrow: true,
+                                  selectionMode: true,
+                                  onStockSelected: (stock) {
+                                    selectedStock = stock;
+                                  },
+                                ),
                               ),
-                            ),
-                          );
-                          if (selectedStock != null && mounted) {
-                            setState(() {
-                              countingStock = selectedStock;
-                              _bcController.text = selectedStock!.barcode;
-                            });
-                            context.read<ScannerBloc>().add(
-                              SelectDuplicateStock(selected: selectedStock!),
                             );
-                            qtyFocusNode.requestFocus();
-                            qtyController.selection = TextSelection(
-                              baseOffset: 0,
-                              extentOffset: qtyController.text.length,
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.double_arrow_rounded),
-                        color: kPrimaryColor,
-                        iconSize: 22,
+                            if (selectedStock != null && mounted) {
+                              setState(() {
+                                countingStock = selectedStock;
+                                _bcController.text = selectedStock!.barcode;
+                              });
+                              context.read<ScannerBloc>().add(
+                                SelectDuplicateStock(selected: selectedStock!),
+                              );
+                              qtyFocusNode.requestFocus();
+                              qtyController.selection = TextSelection(
+                                baseOffset: 0,
+                                extentOffset: qtyController.text.length,
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.double_arrow_rounded),
+                          color: kPrimaryColor,
+                          iconSize: 22,
+                        ),
                       ),
-                    ),
-                    onSubmitted: (value) {
-                      final trimmed = value.trim();
-                      if (trimmed.isNotEmpty) {
-                        context.read<ScannerBloc>().add(
-                          FetchStockDetails(barcode: trimmed),
+                      onSubmitted: (value) {
+                        final trimmed = value.trim();
+                        if (trimmed.isNotEmpty) {
+                          context.read<ScannerBloc>().add(
+                            FetchStockDetails(barcode: trimmed),
+                          );
+                        }
+                        qtyFocusNode.requestFocus();
+                        qtyController.selection = TextSelection(
+                          baseOffset: 0,
+                          extentOffset: qtyController.text.length,
                         );
-                      }
-                      qtyFocusNode.requestFocus();
-                      qtyController.selection = TextSelection(
-                        baseOffset: 0,
-                        extentOffset: qtyController.text.length,
-                      );
-                    },
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
           // Gap between Manual Barcode Entry and Counted Qty
-          SizedBox(height: isTablet ? 12 : 6),
+          SizedBox(height: qtyFocusNode.hasFocus ? 0 : (isTablet ? 12 : 6)),
 
           Padding(
             padding: EdgeInsets.only(
@@ -2353,39 +2355,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     // Dynamic sizing based on device context
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    final double iconSize = isTablet ? 26.0 : 20.0;
     final double fontSize = isTablet ? 16.0 : 14.0;
-    final double paddingSize = isTablet ? 8.0 : 5.0;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: paddingSize,
-                vertical: paddingSize,
-              ),
-              decoration: BoxDecoration(
-                color: kPrimaryColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: SizedBox(
-                width: iconSize,
-                height: iconSize,
-                child: Image.asset(image, fit: BoxFit.fill),
-              ),
-            ),
-            SizedBox(width: isTablet ? 12 : 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: fontSize,
-                color: isDark ? colors.onSurfaceMuted : kGreyColor,
-              ),
-            ),
-          ],
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: fontSize,
+            color: isDark ? colors.onSurfaceMuted : kGreyColor,
+          ),
         ),
         Flexible(
           child: Text(

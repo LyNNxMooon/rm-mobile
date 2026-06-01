@@ -12,6 +12,9 @@ import 'package:rmmobile/features/stocktake/presentation/BLoC/batch_commit_bloc.
 import 'package:rmmobile/features/stocktake/presentation/widgets/edit_qty_dialog.dart';
 import 'package:rmmobile/features/stocktake/presentation/widgets/empty_stock_state_widget.dart';
 import 'package:rmmobile/features/stocktake/presentation/widgets/batch_commit_progress_widget.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
+import 'package:rmmobile/features/home_page/presentation/widgets/network_pc_dialog.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
@@ -66,6 +69,14 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     showDialog(
       context: context,
       builder: (_) => StocktakeCommitErrorDialog(message: message),
+    );
+  }
+
+  void _showNetworkPcDialog(String message) {
+    context.read<FetchingNetworkServerBloc>().add(FetchNetworkServerEvent());
+    showDialog(
+      context: context,
+      builder: (_) => NetworkPcDialog(message: message),
     );
   }
 
@@ -303,6 +314,9 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           );
         } else if (state is BatchCommitEmpty) {
           _showError("No unsynced stocks found.");
+        } else if (state is BatchCommitConnectionFailed) {
+          // Show network PC dialog when connection fails
+          _showNetworkPcDialog(state.message);
         } else if (state is BatchCommitFailed) {
           context.read<StocktakeLimitBloc>().add(FetchStocktakeLimitEvent());
           _showError(state.message);

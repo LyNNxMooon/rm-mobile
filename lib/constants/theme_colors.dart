@@ -36,17 +36,11 @@ class AppThemeColors {
 
   Color get onHero => isDark ? Theme.of(context).colorScheme.onPrimary : kSecondaryColor;
 
-  LinearGradient get heroGradient => isDark
-      ? const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF2B4D69), Color(0xFF182029)],
-        )
-      : const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF0A6A94), Color(0xFF031525)],
-        );
+  LinearGradient get heroGradient => const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF101B32), Color(0xFF101B32)],
+    );
 
   LinearGradient get glassGradient => isDark
       ? LinearGradient(

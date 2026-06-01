@@ -153,7 +153,7 @@ class _CustomerTransactionsScreenState
         child: AppBar(
           flexibleSpace: Container(
             decoration: BoxDecoration(
-              gradient: isDark ? colors.heroGradient : kGColor,
+              gradient: colors.heroGradient,
             ),
           ),
           elevation: 0,
