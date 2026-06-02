@@ -271,7 +271,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                 title: Text(
                   "Take Photo",
                   style: TextStyle(
-                    color: isDark ? colors.onSurface : null,
+                    color: isDark ? colors.onSurface : kThirdColor,
                   ),
                 ),
                 onTap: () async {
@@ -291,7 +291,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                 title: Text(
                   "Choose from Gallery",
                   style: TextStyle(
-                    color: isDark ? colors.onSurface : null,
+                    color: isDark ? colors.onSurface : kThirdColor,
                   ),
                 ),
                 onTap: () async {
@@ -331,7 +331,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
       builder: (_) => Dialog(
         insetPadding: dialogInsetPadding(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(useDesktopNav ? 12 : 20)),
-        backgroundColor: isDark ? colors.surface : Colors.white,
+        backgroundColor: isDark ? colors.surface : kSecondaryColor,
         elevation: 10,
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -360,9 +360,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                     border: Border.all(color: kPrimaryColor.withOpacity(0.2)),
                     boxShadow: [
                       BoxShadow(
-                        color: isDark
-                            ? colors.cardShadow
-                            : kThirdColor.withOpacity(0.1),
+                        color: colors.cardShadow,
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -459,9 +457,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                         "Upload",
                                         style: TextStyle(
                                           fontSize: buttonFontSize,
-                                          color: isDark
-                                              ? colors.onHero
-                                              : Colors.white,
+                                          color: Colors.white,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -578,9 +574,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    final bool isDark = colors.isDark;
-    final Color imageBackground = kSecondaryColor;
     final media = MediaQuery.of(context);
     final bool isTablet = context.isTablet;
     final bool useDesktopNav = context.useDesktopNav;
@@ -631,6 +624,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
     );
 
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final Color imageBackground = isDark ? colors.surface : kSecondaryColor;
     return MultiBlocListener(
       listeners: [
         BlocListener<SettingsBloc, SettingsState>(
@@ -645,6 +641,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
             if (state is StockImageUploaded) {
               //context.navigateBack();
               _shouldSyncOnExit = true;
+              final colors = context.appColors;
+              final bool isDark = colors.isDark;
               AlertInfo.show(
                 context: context,
                 text: state.message,
@@ -698,7 +696,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         child: Scaffold(
           extendBodyBehindAppBar: true,
           extendBody: true,
-          backgroundColor: isDark ? colors.bg : kPrimaryColor,
+          backgroundColor: const Color.fromRGBO(13, 27, 52, 1),
           body: SafeArea(
             bottom: false,
             top: false,
@@ -722,7 +720,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                     width: double.infinity,
                     height: double.infinity,
                     decoration: BoxDecoration(
-                      gradient: isDark ? colors.heroGradient : kGColor,
+                      gradient: colors.heroGradient,
                     ),
                     child: Stack(
                       children: [
@@ -974,8 +972,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: BoxDecoration(
-        gradient: isDark ? colors.heroGradient : kGColor,
+      decoration: const BoxDecoration(
+        color: Color.fromRGBO(13, 27, 52, 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1026,9 +1024,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: isDark
-                                      ? Colors.black.withOpacity(0.4)
-                                      : kThirdColor.withOpacity(0.15),
+                                  color: isDark ? colors.onSurface.withOpacity(0.1) : kThirdColor.withOpacity(0.1),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -1417,9 +1413,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? colors.cardShadow
-                  : kThirdColor.withOpacity(0.1),
+              color: colors.cardShadow,
               blurRadius: useDesktopNav ? 6 : 8,
               offset: const Offset(0, 2),
             ),

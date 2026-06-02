@@ -21,7 +21,7 @@ class DefaultTitleStyle implements TitleStyleComponent {
   TextStyle getStyle() {
     return const TextStyle(
       fontSize: 20,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w400,
       color: kSecondaryColor,
     );
   }

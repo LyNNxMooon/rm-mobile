@@ -95,7 +95,7 @@ class ComingSoonScreen extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w500,
                         color: colors.onSurface,
                       ),
                     ),
@@ -140,7 +140,7 @@ class ComingSoonScreen extends StatelessWidget {
                                   elevation: 0,
                                   textStyle: const TextStyle(
                                     fontSize: 15,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                                 child: const Text(
@@ -151,7 +151,7 @@ class ComingSoonScreen extends StatelessWidget {
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 15,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
@@ -185,7 +185,7 @@ class ComingSoonScreen extends StatelessWidget {
                                 elevation: 0,
                                 textStyle: const TextStyle(
                                   fontSize: 18,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               child: const Text(
@@ -195,8 +195,8 @@ class ComingSoonScreen extends StatelessWidget {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -219,7 +219,7 @@ class ComingSoonScreen extends StatelessWidget {
                                   ),
                                   textStyle: const TextStyle(
                                     fontSize: 15,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                                 child: const Text(
@@ -230,7 +230,7 @@ class ComingSoonScreen extends StatelessWidget {
                                   style: TextStyle(
                                     color: kPrimaryColor,
                                     fontSize: 15,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
@@ -251,7 +251,7 @@ class ComingSoonScreen extends StatelessWidget {
                                 ),
                                 textStyle: const TextStyle(
                                   fontSize: 18,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               child: const Text(
@@ -262,7 +262,7 @@ class ComingSoonScreen extends StatelessWidget {
                                 style: TextStyle(
                                   color: kPrimaryColor,
                                   fontSize: 18,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),

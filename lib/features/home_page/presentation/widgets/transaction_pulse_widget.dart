@@ -66,25 +66,22 @@ class TransactionPulseWidget extends StatelessWidget {
             isTablet ? 8 : 6,
           ),
           decoration: BoxDecoration(
-            color: colors.isDark
-                ? colors.surfaceAlt.withOpacity(0.98)
-                : Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: colors.isDark
-                  ? Colors.white10
-                  : Colors.grey.shade200.withOpacity(0.8),
-              width: 1,
+            borderRadius: BorderRadius.circular(20),
+            border: Border(
+              top: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.4),
+              left: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.4),
+              right: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
+              bottom: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: colors.isDark
-                    ? Colors.black.withOpacity(0.06)
-                    : colors.cardShadow.withOpacity(0.08),
-                blurRadius: 3,
-                offset: const Offset(0, 1),
-              ),
-            ],
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF42A5F5).withOpacity(0.40),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.45],
+            ),
           ),
           child: activeCategories.isEmpty
               ? _buildAllCaughtUpState(context, colors, isTablet)
@@ -205,10 +202,10 @@ class TransactionPulseWidget extends StatelessWidget {
         children: [
           Container(
             padding: EdgeInsets.all(isTablet ? 12 : 10),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            // decoration: BoxDecoration(
+            //   color: Colors.green.withOpacity(0.1),
+            //   borderRadius: BorderRadius.circular(10),
+            // ),
             child: Icon(
               Icons.check_circle_outline_rounded,
               color: Colors.green,
@@ -224,7 +221,7 @@ class TransactionPulseWidget extends StatelessWidget {
                   "All Caught Up!",
                   style: getSmartTitle(
                     fontSize: isTablet ? 16 : 16,
-                    color: colors.isDark ? Colors.white : colors.onSurface,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -232,9 +229,7 @@ class TransactionPulseWidget extends StatelessWidget {
                   "No pending transactions.",
                   style: TextStyle(
                     fontSize: isTablet ? 13 : 13,
-                    color: colors.isDark
-                        ? Colors.white54
-                        : Colors.grey.shade600,
+                    color: Colors.white54,
                   ),
                 ),
               ],
@@ -326,9 +321,7 @@ class TransactionPulseWidget extends StatelessWidget {
                                 "Pending Transaction Activity",
                                 style: getSmartTitle(
                                   fontSize: titleSize,
-                                  color: colors.isDark
-                                      ? Colors.white70
-                                      : Colors.grey.shade700,
+                                  color: Colors.white70,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -339,9 +332,7 @@ class TransactionPulseWidget extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: subtitleFontSize,
                                 fontWeight: FontWeight.w500,
-                                color: colors.isDark
-                                    ? Colors.white70
-                                    : Colors.blueGrey.shade600,
+                                color: Colors.white70,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -351,9 +342,7 @@ class TransactionPulseWidget extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: subtitleFontSize,
                                   fontWeight: FontWeight.w500,
-                                  color: colors.isDark
-                                      ? Colors.white70
-                                      : Colors.blueGrey.shade600,
+                                  color: Colors.white70,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -370,9 +359,7 @@ class TransactionPulseWidget extends StatelessWidget {
                             "Pending Transaction Activity",
                             style: getSmartTitle(
                               fontSize: titleSize,
-                              color: colors.isDark
-                                  ? Colors.white70
-                                  : Colors.grey.shade700,
+                              color: Colors.white70,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -382,9 +369,7 @@ class TransactionPulseWidget extends StatelessWidget {
                             style: TextStyle(
                               fontSize: subtitleFontSize,
                               fontWeight: FontWeight.w500,
-                              color: colors.isDark
-                                  ? Colors.white70
-                                  : Colors.blueGrey.shade600,
+                              color: Colors.white70,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -455,11 +440,11 @@ class TransactionPulseWidget extends StatelessWidget {
             // Add separator between items, but not after the last one
             if (i < categories.length - 1)
               Container(
-                width: 1.5,
+                width: 1,
                 margin: EdgeInsets.symmetric(vertical: isTablet ? 8 : 6),
-                color: colors.isDark
-                    ? Colors.white30
-                    : const Color(0xFFCECECE),
+                color:
+                     Colors.white30
+               
               ),
           ],
         ],
@@ -477,16 +462,29 @@ class TransactionPulseWidget extends StatelessWidget {
     return Wrap(
       spacing: isTablet ? 8 : 6,
       runSpacing: isTablet ? 8 : 6,
-      children: categories.map((category) {
+      children: categories.asMap().entries.map((entry) {
+        final index = entry.key;
+        final category = entry.value;
+        final isLastInRow = (index + 1) % 2 == 0;
+       // final isLastRow = index >= categories.length - 2;
+        
         return SizedBox(
           width: (MediaQuery.of(context).size.width - 
                   (isTablet ? 44 + 24 + 16 : 32 + 16 + 12)) / 2,
-          child: _buildCategoryTile(
-            context,
-            colors,
-            isTablet,
-            category,
-            isCompact: true,
+          child: Container(
+            decoration: !isTablet ? BoxDecoration(
+              border: Border(
+                right: !isLastInRow ? BorderSide(color: Colors.white30, width: 0.5) : BorderSide.none,
+               // bottom: !isLastRow ? BorderSide(color: Colors.white30, width: 1) : BorderSide.none,
+              ),
+            ) : null,
+            child: _buildCategoryTile(
+              context,
+              colors,
+              isTablet,
+              category,
+              isCompact: true,
+            ),
           ),
         );
       }).toList(),
@@ -517,7 +515,7 @@ class TransactionPulseWidget extends StatelessWidget {
           horizontal: isTablet ? 12 : 8,
           vertical: isTablet ? 10 : 8,
         ),
-        decoration: isCompact
+        decoration: isCompact && isTablet
             ? BoxDecoration(
                 color: category.color.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(10),
@@ -537,7 +535,7 @@ class TransactionPulseWidget extends StatelessWidget {
                 padding: EdgeInsets.all(isTablet ? 9 : 7),
                 decoration: BoxDecoration(
                   color: category.color,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(30),
                 ),
                 child: Icon(
                   category.icon,
@@ -561,7 +559,7 @@ class TransactionPulseWidget extends StatelessWidget {
                           ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
                           : 12.0,
                       fontWeight: FontWeight.w600,
-                      color: colors.isDark ? Colors.white : colors.onSurface,
+                      color: Colors.white,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -598,9 +596,7 @@ class TransactionPulseWidget extends StatelessWidget {
                       style: TextStyle(
                         fontSize: isTablet ? 11 : 11,
                         fontWeight: FontWeight.w500,
-                        color: colors.isDark
-                            ? Colors.white70
-                            : Colors.blueGrey.shade600,
+                        color: Colors.white70,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

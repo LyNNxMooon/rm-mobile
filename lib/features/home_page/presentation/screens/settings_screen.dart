@@ -699,7 +699,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ],
       child: Scaffold(
         body: Container(
-          decoration: BoxDecoration(gradient: colors.heroGradient),
+          decoration: const BoxDecoration(color: Color.fromRGBO(13, 27, 52, 1)),
           child: SafeArea(
             child: Column(
               children: [
@@ -719,6 +719,122 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           children: [
                             const SizedBox(height: 10),
+
+                            _buildSectionTitle("Server Info"),
+                        _buildGlassContainer(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 15,
+                              vertical: 12,
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: kPrimaryColor.withOpacity(0.5),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.dns_outlined,
+                                        size: 20,
+                                        color: context.appColors.isDark
+                                            ? Colors.white
+                                            : context.appColors.onHero,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 15),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Server Name",
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: context.appColors.isDark
+                                                  ? Colors.white70
+                                                  : context.appColors.onHero,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            (AppGlobals.instance.hostName ?? "").isEmpty
+                                                ? "Not connected"
+                                                : AppGlobals.instance.hostName!,
+                                            style: getSmartTitle(
+                                              fontSize: 14,
+                                              color: context.appColors.isDark
+                                                  ? Colors.white
+                                                  : context.appColors.onHero,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: kPrimaryColor.withOpacity(0.5),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.cloud_outlined,
+                                        size: 20,
+                                        color: context.appColors.isDark
+                                            ? Colors.white
+                                            : context.appColors.onHero,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 15),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Server IP",
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: context.appColors.isDark
+                                                  ? Colors.white70
+                                                  : context.appColors.onHero,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            (AppGlobals.instance.currentHostIp ?? "").isEmpty
+                                                ? "Not connected"
+                                                : AppGlobals.instance.currentHostIp!,
+                                            style: getSmartTitle(
+                                              fontSize: 14,
+                                              color: context.appColors.isDark
+                                                  ? Colors.white
+                                                  : context.appColors.onHero,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
 
                             _buildSectionTitle("Shopfront"),
                         _buildGlassContainer(
@@ -1285,7 +1401,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: colors.surfaceAlt.withOpacity(0.6),
+                color: colors.surfaceAlt,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1332,7 +1448,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildGlassContainer({required Widget child}) {
-    final colors = context.appColors;
     return ClipRRect(
       borderRadius: BorderRadius.circular(15),
       child: BackdropFilter(
@@ -1340,10 +1455,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
           decoration: BoxDecoration(
-            color: colors.glassFill,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: colors.glassBorder),
-            boxShadow: [BoxShadow(blurRadius: 20, color: colors.cardShadow)],
+            // Asymmetric border: Thicker on top/left, thinner on right/bottom
+            border: Border(
+              top: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
+              left: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
+              right: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
+              bottom: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
+            ),
+            // Glass gradient sweep
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF42A5F5).withOpacity(0.40),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.6],
+            ),
           ),
           child: child,
         ),

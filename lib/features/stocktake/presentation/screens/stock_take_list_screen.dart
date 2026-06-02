@@ -12,6 +12,9 @@ import 'package:rmmobile/features/stocktake/presentation/BLoC/batch_commit_bloc.
 import 'package:rmmobile/features/stocktake/presentation/widgets/edit_qty_dialog.dart';
 import 'package:rmmobile/features/stocktake/presentation/widgets/empty_stock_state_widget.dart';
 import 'package:rmmobile/features/stocktake/presentation/widgets/batch_commit_progress_widget.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
+import 'package:rmmobile/features/home_page/presentation/widgets/network_pc_dialog.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
@@ -66,6 +69,14 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     showDialog(
       context: context,
       builder: (_) => StocktakeCommitErrorDialog(message: message),
+    );
+  }
+
+  void _showNetworkPcDialog(String message) {
+    context.read<FetchingNetworkServerBloc>().add(FetchNetworkServerEvent());
+    showDialog(
+      context: context,
+      builder: (_) => NetworkPcDialog(message: message),
     );
   }
 
@@ -287,7 +298,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   Widget _buildSubmitFAB() {
     final colors = context.appColors;
     
-    return BlocListener<BatchCommitBloc, BatchCommitState>(
+    return BlocConsumer<BatchCommitBloc, BatchCommitState>(
       listener: (context, state) {
         if (state is BatchCommitAwaitingAuditDecision) {
           // Show audit decision dialog for current batch
@@ -303,6 +314,9 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           );
         } else if (state is BatchCommitEmpty) {
           _showError("No unsynced stocks found.");
+        } else if (state is BatchCommitConnectionFailed) {
+          // Show network PC dialog when connection fails
+          _showNetworkPcDialog(state.message);
         } else if (state is BatchCommitFailed) {
           context.read<StocktakeLimitBloc>().add(FetchStocktakeLimitEvent());
           _showError(state.message);
@@ -327,19 +341,23 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           );
         }
       },
-      child: FloatingActionButton.extended(
-        onPressed: _handleSendToRM,
-        elevation: 4,
-        backgroundColor: kPrimaryColor,
-        label: Text(
-          "Send to shopfront",
-          style: TextStyle(
-            color: colors.onHero,
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
+      builder: (context, state) {
+        final bool isCommitting = state is BatchCommitInProgress || state is BatchCommitPreparing;
+        
+        return FloatingActionButton.extended(
+          onPressed: isCommitting ? null : _handleSendToRM,
+          elevation: isCommitting ? 0 : 4,
+          backgroundColor: isCommitting ? colors.onSurfaceMuted : kPrimaryColor,
+          label: Text(
+            isCommitting ? "Sending..." : "Send to shopfront",
+            style: TextStyle(
+              color: isCommitting ? colors.surface : colors.onHero,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

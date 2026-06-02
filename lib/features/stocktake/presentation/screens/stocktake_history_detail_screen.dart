@@ -38,6 +38,8 @@ class StocktakeHistoryDetailsScreen extends StatefulWidget {
 
 class _StocktakeHistoryDetailsScreenState
     extends State<StocktakeHistoryDetailsScreen> {
+  String _searchQuery = "";
+  final TextEditingController _searchController = TextEditingController();
   Future<String?> _exportSessionToExcel({
     required StocktakeHistorySessionRow session,
     required List<CountedStockVO> items,
@@ -138,6 +140,21 @@ class _StocktakeHistoryDetailsScreenState
     context.read<StocktakeHistoryBloc>().add(
       LoadHistoryItemsEvent(widget.session.sessionId),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<CountedStockVO> _filterItems(List<CountedStockVO> items) {
+    if (_searchQuery.isEmpty) return items;
+    final query = _searchQuery.toLowerCase();
+    return items.where((item) {
+      return item.barcode.toLowerCase().contains(query) ||
+          item.description.toLowerCase().contains(query);
+    }).toList();
   }
 
   // @override
@@ -270,6 +287,10 @@ class _StocktakeHistoryDetailsScreenState
                 ),
               ),
 
+              // Search bar
+              _buildSearchBar(colors, isDark, useDesktopNav),
+              const SizedBox(height: 10),
+              
               Expanded(
                 child: BlocBuilder<StocktakeHistoryBloc, StocktakeHistoryState>(
                   builder: (context, state) {
@@ -296,14 +317,28 @@ class _StocktakeHistoryDetailsScreenState
                         );
                       }
 
+                      final filteredItems = _filterItems(state.items);
+                      
+                      if (filteredItems.isEmpty) {
+                        return EmptyStockState(
+                          message: "No items match your search",
+                          onRetry: () {
+                            setState(() {
+                              _searchQuery = "";
+                              _searchController.clear();
+                            });
+                          },
+                        );
+                      }
+
                       return Center(
                         child: ConstrainedBox(
                           constraints: BoxConstraints(maxWidth: useDesktopNav ? 800 : double.infinity),
                           child: ListView.separated(
                             padding: EdgeInsets.fromLTRB(listPadding, 5, listPadding, listPadding),
                             separatorBuilder: (_, _) => SizedBox(height: itemSpacing),
-                            itemCount: state.items.length,
-                            itemBuilder: (_, i) => _itemTile(state.items[i], useDesktopNav),
+                            itemCount: filteredItems.length,
+                            itemBuilder: (_, i) => _itemTile(filteredItems[i], useDesktopNav),
                           ),
                         ),
                       );
@@ -313,6 +348,87 @@ class _StocktakeHistoryDetailsScreenState
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(AppThemeColors colors, bool isDark, bool useDesktopNav) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final double uiScale = isTablet
+        ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
+        : 1.0;
+    final double actionSize = useDesktopNav ? 36 : (isTablet ? 48 : 42) * uiScale;
+    final double hintFontSize = useDesktopNav ? 12.0 : 13.0;
+    final double iconSize = useDesktopNav ? 18.0 : 20.0;
+    final double borderRadius = useDesktopNav ? 8.0 : 12.0;
+    final double horizontalPadding = useDesktopNav ? 12.0 : 15.0;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: useDesktopNav ? 800 : double.infinity),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+          child: SizedBox(
+            height: actionSize,
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              textAlignVertical: TextAlignVertical.center,
+              expands: true,
+              maxLines: null,
+              decoration: InputDecoration(
+                hintText: "Search barcode or description...",
+                hintStyle: TextStyle(
+                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                  fontSize: hintFontSize,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: isDark ? Colors.white70 : kPrimaryColor,
+                  size: iconSize,
+                ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _searchQuery = "";
+                            _searchController.clear();
+                          });
+                        },
+                        icon: Icon(
+                          Icons.clear,
+                          color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                          size: iconSize,
+                        ),
+                      )
+                    : null,
+                filled: true,
+                fillColor: isDark ? colors.surfaceAlt : colors.surface,
+                contentPadding: EdgeInsets.symmetric(horizontal: useDesktopNav ? 10 : 12),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  borderSide: BorderSide(
+                    color: isDark ? Colors.white38 : colors.divider,
+                    width: 1,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
+                ),
+              ),
+              style: TextStyle(
+                color: isDark ? Colors.white : colors.onSurface,
+                fontSize: hintFontSize,
+              ),
+            ),
           ),
         ),
       ),

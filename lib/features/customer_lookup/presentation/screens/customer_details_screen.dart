@@ -1734,7 +1734,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Container(
                 height: MediaQuery.of(context).size.height * 0.4,
                 decoration: BoxDecoration(
-                  gradient: isDark ? colors.heroGradient : kGColor,
+                  gradient: colors.heroGradient,
                 ),
               ),
 

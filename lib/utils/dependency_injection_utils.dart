@@ -249,6 +249,7 @@ Future<void> init() async {
     () => BatchCommitBloc(
       batchCommitStocktake: sl(),
       hasUnsyncedStocktakes: sl(),
+      discoverHost: sl(),
     ),
   );
   sl.registerFactory(() => ThumbnailBloc(fetchThumbnail: sl()));
