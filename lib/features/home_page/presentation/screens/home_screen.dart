@@ -1,4 +1,5 @@
 import 'dart:async';
+//import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
@@ -444,7 +445,47 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       );
     }
 
-    // Mobile layout: content + BottomNavigationBar
+    // Tablet layout: NavigationRail on left + content (no bottom nav)
+    if (isTablet) {
+      return Scaffold(
+        backgroundColor: kPrimaryColor,
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            color: Color.fromRGBO(28, 57, 83, 1),
+          ),
+          child: SafeArea(
+            child: Row(
+              children: [
+                // Compact Navigation Rail for tablets
+                _buildTabletNavigationRail(context, colors, isDark),
+                // Main content area
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Column(
+                        children: [
+                          const SizedBox(height: 8),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 64),
+                            child: AppBarSession(),
+                          ),
+                          Expanded(child: _buildHomeBody(context, useDesktopNav: false, isTabletWithRail: true)),
+                        ],
+                      ),
+                      syncWatcher(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Phone layout: content + BottomNavigationBar
     return Scaffold(
       extendBody: true,
       backgroundColor: kPrimaryColor,
@@ -462,7 +503,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             children: [
               Column(
                 children: [
-                  if (!isTablet) const SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   const AppBarSession(),
                   Expanded(child: _buildHomeBody(context, useDesktopNav: false)),
                 ],
@@ -471,6 +512,76 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Builds a compact NavigationRail for tablet layout (icons only, no extended labels)
+  Widget _buildTabletNavigationRail(
+    BuildContext context,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    return Container(
+      width: 90,
+      color: const Color.fromRGBO(109, 205, 251, 1), // Same as bottom nav bar
+      child: Column(
+        children: [
+          // App icon at the top - fills the nav bar width edge to edge
+          Image.asset(
+            "assets/images/appicon.png",
+            width: 90,
+            height: 110,
+            fit: BoxFit.cover,
+          ),
+          // Navigation items
+          Expanded(
+            child: NavigationRail(
+              selectedIndex: _selectedTabIndex,
+              onDestinationSelected: (index) => setState(() => _selectedTabIndex = index),
+              extended: false,
+              minWidth: 90,
+              groupAlignment: -0.4, // Slightly above center
+              backgroundColor: Colors.transparent,
+              selectedIconTheme: const IconThemeData(color: Colors.white, size: 24),
+              unselectedIconTheme: const IconThemeData(color: Colors.white70, size: 24),
+              indicatorColor: Colors.white.withOpacity(0.2),
+              labelType: NavigationRailLabelType.selected,
+              selectedLabelTextStyle: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+                fontSize: 11,
+              ),
+              destinations: const [
+                NavigationRailDestination(
+                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.home_rounded)),
+                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.home_rounded)),
+                  label: Text("Home"),
+                ),
+                NavigationRailDestination(
+                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.point_of_sale_outlined)),
+                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.point_of_sale_outlined)),
+                  label: Text("Transaction"),
+                ),
+                NavigationRailDestination(
+                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.inventory_2_outlined)),
+                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.inventory_2_outlined)),
+                  label: Text("Stock"),
+                ),
+                NavigationRailDestination(
+                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.people_outline)),
+                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.people_outline)),
+                  label: Text("Customers"),
+                ),
+                NavigationRailDestination(
+                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.more_horiz)),
+                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.more_horiz)),
+                  label: Text("More"),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -732,7 +843,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     );
   }
 
-  Widget _buildHomeBody(BuildContext context, {bool useDesktopNav = false}) {
+  Widget _buildHomeBody(BuildContext context, {bool useDesktopNav = false, bool isTabletWithRail = false}) {
     final colors = context.appColors;
     final bool isTablet = context.isTablet;
     final items = _filteredItemsForTab();
@@ -773,8 +884,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             : BorderRadius.zero,
         child: SingleChildScrollView(
           padding: EdgeInsets.only(
-            // Less bottom padding on desktop (no bottom nav)
-            bottom: useDesktopNav ? 24 : 80 + MediaQuery.of(context).padding.bottom,
+            // Less bottom padding on desktop/tablet with rail (no bottom nav)
+            bottom: (useDesktopNav || isTabletWithRail) ? 24 : 80 + MediaQuery.of(context).padding.bottom,
+            // Horizontal padding for tablet layout
+            left: isTabletWithRail ? 64 : 0,
+            right: isTabletWithRail ? 64 : 0,
           ),
           physics: const ClampingScrollPhysics(),
           child: Column(
@@ -802,8 +916,18 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 useDesktopNav: useDesktopNav,
               ),
             ),
-            if (isHomeTab && comingSoonItems.isNotEmpty)
-              _buildComingSoonSection(context, comingSoonItems),
+            if (isHomeTab && comingSoonItems.isNotEmpty) ...[
+              _buildSectionHeader(
+                "Information",
+                context,
+                icon: Icons.info_outline_rounded,
+              ),
+              _buildInformationGrid(
+                context,
+                comingSoonItems,
+                useDesktopNav: useDesktopNav,
+              ),
+            ],
             if (isTablet) const SizedBox(height: 6),
           ],
         ),
@@ -889,7 +1013,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                       context,
                       label: label,
                       icon: Icons.schedule,
-                      color: kThirdColor.withOpacity(0.9),
+                      color: kSecondaryColor,
                     );
                   },
                 ),
@@ -915,11 +1039,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         vertical: isTablet ? 8 : 5,
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white24,
+        border: Border(
+          top: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 1),
+          left: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 1),
+          right: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 0.42),
+          bottom: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 0.42),
         ),
+        color: const Color.fromRGBO(28, 57, 83, 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -977,7 +1104,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           const SizedBox(width: 10),
           Expanded(
             child: Container(
-              height: 1.5,
+              height: 0.8,
               color: Colors.white30,
             ),
           ),
@@ -993,49 +1120,34 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     bool compact = false,
     bool useDesktopNav = false,
   }) {
-    final bool isTablet = context.isTablet;
     final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
     // On desktop, use constrained max width for calculations
     final double effectiveWidth = useDesktopNav
         ? screenWidth.clamp(0, Breakpoints.maxContentWidth)
         : screenWidth;
     final bool isLargeFont = context.read<FontSizeCubit>().isLarge;
-    
-    // Adjust grid columns based on effective width
-    int crossAxisCount;
-    if (useDesktopNav) {
-      // Desktop: more columns for wider screens
-      if (effectiveWidth > 1000) {
-        crossAxisCount = 4;
-      } else if (effectiveWidth > 700) {
-        crossAxisCount = 3;
-      } else {
-        crossAxisCount = 2;
-      }
-    } else {
-      // Mobile/Tablet
-      crossAxisCount = isTablet ? 3 : 2;
-      if (screenWidth > 900) crossAxisCount = 4;
-      if (screenWidth < 360) crossAxisCount = 1;
-    }
+    final bool isTablet = effectiveWidth >= 600;
+    // Detect compact tablet (small height in landscape or smaller tablets)
+    final bool isCompactTablet = isTablet && screenHeight < 700;
 
-    final double spacing = isTablet || useDesktopNav ? 16 : 10;
-    final double mainSpacing = compact ? 0 : (isTablet || useDesktopNav ? 12 : 8);
-    final double horizontalPadding = isTablet || useDesktopNav ? 22 : 16;
-    final double availableWidth =
-        effectiveWidth - (horizontalPadding * 2) - (spacing * (crossAxisCount - 1));
-    final double itemWidth = availableWidth / crossAxisCount;
-    // Increase height for large font mode to prevent overflow
-    final double baseHeight = isTablet || useDesktopNav ? 130 : 90;
-    final double targetHeight = isLargeFont ? baseHeight * 1.15 : baseHeight;
-    final double childAspectRatio = itemWidth / targetHeight;
+    // Strict Responsive Rules: Tablet/Desktop (>= 600) gets 4 cols, Mobile (< 600) gets 2 cols.
+    final int crossAxisCount = isTablet ? 4 : 2;
+
+    final double spacing = isTablet ? 24 : 20;
+    final double mainSpacing = compact ? 0 : (isTablet ? 24 : 20);
+    final double horizontalPadding = isTablet ? 22 : 16;
+    // Square-ish tiles for the new Transaction-card look.
+    // Use wider aspect ratio on compact tablets to reduce height
+    final double childAspectRatio = isCompactTablet 
+        ? 1.25 
+        : (isTablet ? 1.15 : (isLargeFont ? 0.85 : 0.95));
 
     return Padding(
       key: key,
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: BlocBuilder<SessionCountsCubit, SessionCountsState>(
         builder: (context, sessionState) {
-          //final sessionCounts = sessionState.counts;
           return GridView.builder(
             padding: EdgeInsets.zero,
             shrinkWrap: true,
@@ -1049,7 +1161,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              return _buildActionTile(context, item, badgeCount: 0);
+              // Wire up the badge count dynamically
+              int badgeCount = _badgeCountForAction(item['action'] as String?, sessionState.counts);
+              return _buildActionTile(context, item, badgeCount: badgeCount);
             },
           );
         },
@@ -1057,275 +1171,295 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     );
   }
 
-  Widget _buildComingSoonSection(
+  Widget _buildInformationGrid(
     BuildContext context,
-    List<Map<String, dynamic>> comingSoonItems,
-  ) {
-    final colors = context.appColors;
-    final bool isTablet = context.isTablet;
+    List<Map<String, dynamic>> items, {
+    bool useDesktopNav = false,
+  }) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    // Calculate items per page based on available width
-    final double availableWidth = screenWidth - 44 - 32; // margins and padding
-    final double itemWidth = isTablet ? 80.0 : 70.0;
-    final int itemsPerPage = (availableWidth / itemWidth).floor().clamp(3, 7);
-    final int pageCount = (comingSoonItems.length / itemsPerPage).ceil();
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double effectiveWidth = useDesktopNav
+        ? screenWidth.clamp(0, Breakpoints.maxContentWidth)
+        : screenWidth;
+    final bool isLargeFont = context.read<FontSizeCubit>().isLarge;
+    final bool isTablet = effectiveWidth >= 600;
+    // Detect compact tablet (small height in landscape or smaller tablets)
+    final bool isCompactTablet = isTablet && screenHeight < 700;
 
-    // Simple consistent gap - same as section header top padding
-    final double topMargin = isTablet ? 50 : 30;
+    // Match action grid: Tablet/Desktop (>= 600) gets 3 cols, Mobile (< 600) gets 1 col.
+    final int crossAxisCount = isTablet ? 3 : 1;
+    // Match action card aspect ratio for phones to prevent overflow
+    final double childAspectRatio = isCompactTablet 
+        ? 1.8 
+        : (isTablet ? 1.7 : (isLargeFont ? 1.9 : 2.1));
+    final double spacing = isTablet ? 24 : 20;
+    final double horizontalPadding = isTablet ? 22 : 16;
 
-    return Container(
-      margin: EdgeInsets.fromLTRB(isTablet ? 22 : 16, topMargin, isTablet ? 22 : 16, 8),
-      padding: EdgeInsets.fromLTRB(
-        isTablet ? 14 : 12,
-        10,
-        isTablet ? 14 : 12,
-        14,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.white12,
-          width: 1,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+      child: GridView.builder(
+        padding: EdgeInsets.zero,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: spacing,
+          mainAxisSpacing: spacing,
+          childAspectRatio: childAspectRatio,
         ),
+        itemCount: items.length,
+        itemBuilder: (context, index) =>
+            _buildInformationTile(context, items[index]),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row with title
-          Row(
+    );
+  }
+
+
+
+Widget _buildActionTile(
+  BuildContext context,
+  Map<String, dynamic> item, {
+  int badgeCount = 0,
+}) {
+  final bool isTablet = MediaQuery.of(context).size.width > 600;
+  final Color itemColor = item['color'] ?? const Color(0xFF0078D4);
+
+  return Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: () {
+        _handleActionTap(item['action'] as String?);
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          // 1. The Border: Thicker on top/left, thinner on right/bottom
+          border: Border(
+            top: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
+            left: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
+            right: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
+            bottom: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
+          ),
+          // 2. The Glass Sweep: More blue, slightly brighter
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF42A5F5).withOpacity(0.40), // Deeper blue with more saturation
+              Colors.transparent,                        // Blends smoothly into background
+            ],
+            stops: const [0.0, 0.6], // Smooth fade out across the card
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 16 : 12,
+            vertical: isTablet ? 26 : 24,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(
-                Icons.upcoming_outlined,
-                size: isTablet ? 18 : 14,
-                color: Colors.white54,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                "More Actions",
-                style: getSmartTitle(
-                  fontSize: isTablet 
-                      ? (14 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(14.0, 18.0)
-                      : 14.0,
-                  color: Colors.white70,
-                ),
-              ),
-              const SizedBox(width: 4),
+              
+              // 3. The Icon (Standard physical drop shadow only)
               Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 6 : 4,
-                  vertical: 1,
-                ),
+                width: isTablet ? 70 : 52,
+                height: isTablet ? 70 : 52,
                 decoration: BoxDecoration(
-                  color: Colors.white10,
-                  borderRadius: BorderRadius.circular(4),
+                  color: itemColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
+                child: Icon(
+                  item['icon'] as IconData?,
+                  color: Colors.white,
+                  size: isTablet ? 38 : 28,
+                ),
+              ),
+
+              SizedBox(height: isTablet ? 20 : 12),
+
+              // Title Text
+              Flexible(
                 child: Text(
-                  "Coming Soon",
-                  style: TextStyle(
-                    fontSize: isTablet 
-                        ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
-                        : 12.0,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white54,
+                  item['title'] as String? ?? '',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:  TextStyle(
+                    color: Colors.white,
+                    fontSize: isTablet ? 18 : 16,
+                    //fontWeight: FontWeight.w500,
+                    letterSpacing: 0.2,
                   ),
                 ),
               ),
-              const Spacer(),
+
+              const SizedBox(height: 6),
+
+              // Subtitle Text
               Text(
-                isTablet ? "Under construction" : "In dev",
-                style: TextStyle(
-                  fontSize: isTablet 
-                      ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
-                      : 12.0,
+                item['subTitle'] as String? ?? '',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style:  TextStyle(
+                  color: Color(0xFF7A8B9E), // Muted grey-blue
+                  fontSize: isTablet ? 14 : 13,
                   fontWeight: FontWeight.w400,
-                  color: kPrimaryColor,
+                ),
+              ),
+
+              SizedBox(height: isTablet ? 28 : 12),
+
+              // 4. The Underline: Visible and centered
+              Container(
+                height: 1,
+                width: 200, 
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      Colors.white.withOpacity(0.20), // Visible peak in the center
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: isTablet ? 14 : 10),
-          // Carousel of circular icon buttons
-          _ComingSoonCarousel(
-            items: comingSoonItems,
-            itemsPerPage: itemsPerPage,
-            pageCount: pageCount,
-            isTablet: isTablet,
-            colors: colors,
-            onItemTap: _handleActionTap,
-          ),
-        ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildActionTile(
-    BuildContext context,
-    Map<String, dynamic> item, {
-    int badgeCount = 0,
-  }) {
-    //final colors = context.appColors;
-    final bool isTablet = context.isTablet;
-    final double scale = isTablet
-        ? (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)
-        : 1.0;
-    final double titleSize = isTablet ? (14 * scale).clamp(14.0, 18.0) : 14.0;
-    final double subTitleSize = isTablet
-        ? (12 * scale).clamp(12.0, 14.0)
-        : 12.0;
-    final double iconSize = isTablet ? 34.0 : 22.0;
+Widget _buildInformationTile(
+  BuildContext context,
+  Map<String, dynamic> item, {
+  int badgeCount = 0,
+}) {
+  final bool isTablet = MediaQuery.of(context).size.width > 600;
+  
+  // Use the same color as the app bar / main background
+  final Color cardColor = const Color.fromRGBO(28, 57, 83, 1);
 
-    final bool isComingSoon = item['comingSoon'] ?? false;
-    final Color itemColor = item['color'] ?? kPrimaryColor;
-    final Color titleColor = isComingSoon
-        ? Colors.grey.shade500
-        : Colors.white;
-    final Color subtitleColor = isComingSoon
-        ? Colors.grey.shade400
-        : Colors.white60;
-    final Color iconColor = isComingSoon ? Colors.grey.shade500 : itemColor;
-    final Color background = isComingSoon
-        ? Colors.white10
-        : Colors.white.withOpacity(0.08);
-
-    return InkWell(
-      onTap: () => _handleActionTap(item['action'] as String?),
-      borderRadius: BorderRadius.circular(10),
-      child: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isComingSoon
-                    ? Colors.transparent
-                    : Colors.white12,
-                width: 1,
-              ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                isTablet ? 12 : 10,
-                isTablet ? 16 : 10,
-                isTablet ? 10 : 8,
-                isTablet ? 16 : 10,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isTablet ? 8 : 6,
-                        vertical: isTablet ? 0 : 0,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
-                        border: Border.all(
-                          color: Colors.white12,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              item['title'],
-                              style: getSmartTitle(
-                                fontSize: titleSize,
-                                color: titleColor,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          SizedBox(height: isTablet ? 4 : 2),
-                          Text(
-                            item['subTitle'],
-                            style: TextStyle(
-                              fontSize: subTitleSize,
-                              fontWeight: FontWeight.w400,
-                              color: subtitleColor,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: isTablet ? 10 : 6),
-                  Container(
-                    padding: EdgeInsets.all(isTablet ? 6 : 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Icon(
-                      item['icon'],
-                      size: iconSize,
-                      color: iconColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+  return Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: () {
+        _handleActionTap(item['action'] as String?);
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          // 1. The Border: Blue color
+          border: Border(
+            top: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 1),
+            left: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 1),
+            right: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 0.42),
+            bottom: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 0.42),
           ),
-          Positioned(
-            top: 0,
-            bottom: 0,
-            left: 0,
-            child: Container(
-              width: 8,
-              decoration: BoxDecoration(
-                color: itemColor.withOpacity(isComingSoon ? 0.25 : 1.0),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(18),
-                  bottomLeft: Radius.circular(18),
-                ),
-              ),
-            ),
+          // 2. The Solid Background
+          color: cardColor,
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 16 : 12,
+            vertical: isTablet ? 26 : 12,
           ),
-          if (badgeCount > 0)
-            Positioned(
-              left: 12,
-              top: 10,
-              child: Container(
-                constraints: BoxConstraints(
-                  minWidth: isTablet ? 22 : 18,
-                  minHeight: isTablet ? 22 : 18,
-                ),
-                padding: EdgeInsets.all(isTablet ? 4 : 3),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              
+              // 3. The Icon: White background, dirty green icon
+              Container(
+                width: isTablet ? 70 : 52,
+                height: isTablet ? 70 : 52,
                 decoration: BoxDecoration(
-                  color: Colors.red,
+                  color: Colors.white, // Solid white background
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.red.withOpacity(0.25),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Text(
-                    badgeCount > 99 ? '99+' : badgeCount.toString(),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isTablet ? 11 : 11,
-                      fontWeight: FontWeight.w500,
-                    ),
+                child: Icon(
+                  item['icon'] as IconData?,
+                  color: cardColor, // Icon matches the card's background color
+                  size: isTablet ? 38 : 28,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Title Text (Kept styling exactly as provided)
+              Flexible(
+                child: Text(
+                  item['title'] as String? ?? '',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isTablet ? 18 : 16,
+                    letterSpacing: 0.2,
                   ),
                 ),
               ),
-            ),
-        ],
+
+              const SizedBox(height: 6),
+
+              // Subtitle Text (Kept styling exactly as provided)
+              Text(
+                item['subTitle'] as String? ?? '',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Color(0xFF7A8B9E), // Muted grey-blue
+                  fontSize: isTablet ? 14 : 13,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+
+              SizedBox(height: isTablet ? 16 : 12),
+
+              // 4. The Underline: Visible and centered (Kept exactly as provided)
+              Container(
+                height: 1,
+                width: 200, 
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      Colors.white.withOpacity(0.20), // Visible peak in the center
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBottomNav(BuildContext context) {
     return BottomNavigationBar(
@@ -1365,7 +1499,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       case 4:
         return "More";
       default:
-        return "Actions";
+        return "Transaction";
     }
   }
 
@@ -1700,36 +1834,36 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   final List<Map<String, dynamic>> _actionItems = [
     {
       "title": "Account Sales",
-      "subTitle": "Create account sale",
-      "icon": Icons.receipt_long_outlined,
-      "color": const Color.fromARGB(255, 210, 148, 172),
+      "subTitle": "Invoice Customers",
+      "icon": Icons.contact_page_outlined,
+      "color": const Color(0xFF0F52BA),
       "comingSoon": false,
       "action": "account_sales",
       "category": "sales",
     },
     {
       "title": "Sales Order",
-      "subTitle": "Create sales order",
+      "subTitle": "Create orders",
       "icon": Icons.shopping_cart_outlined,
-      "color": const Color.fromARGB(255, 44, 133, 211),
+      "color": const Color(0xFF00C4CC),
       "comingSoon": false,
       "action": "sales_order",
       "category": "sales",
     },
     {
       "title": "Quotes",
-      "subTitle": "Create quotation",
-      "icon": Icons.request_quote_outlined,
-      "color": Colors.orange.shade500,
+      "subTitle": "Issue Estimates",
+      "icon": Icons.edit_document,
+      "color": const Color(0xFF007AFF),
       "comingSoon": false,
       "action": "quotes",
       "category": "sales",
     },
     {
       "title": "Lay-bys",
-      "subTitle": "Create lay-by",
-      "icon": Icons.inventory_2_outlined,
-      "color": const Color.fromARGB(255, 152, 86, 165),
+      "subTitle": "Manage Lay-bys",
+      "icon": Icons.folder_open_rounded,
+      "color": const Color(0xFF788A9F),
       "comingSoon": false,
       "action": "lay_bys",
       "category": "sales",
@@ -1764,36 +1898,36 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     // Coming Soon items (show on Home and More only)
     {
       "title": "Sales",
-      "subTitle": "POS transactions",
-      "icon": Icons.point_of_sale_outlined,
-      "color": Colors.grey,
+      "subTitle": "Coming Soon",
+      "icon": Icons.insights_outlined,
+      "color": const Color(0xFF00C896),
       "comingSoon": true,
       "action": "sales",
       "category": "more",
     },
     {
       "title": "Goods Received",
-      "subTitle": "Receive stock",
-      "icon": Icons.local_shipping_outlined,
-      "color": Colors.grey,
+      "subTitle": "Coming Soon",
+      "icon": Icons.work_outline,
+      "color": const Color(0xFF4DB6AC),
       "comingSoon": true,
       "action": "coming_soon",
       "category": "more",
     },
     {
       "title": "Purchase Orders",
-      "subTitle": "Order stock",
-      "icon": Icons.shopping_bag_outlined,
-      "color": Colors.grey,
+      "subTitle": "Coming Soon",
+      "icon": Icons.local_offer_outlined,
+      "color": const Color(0xFF5C6BC0),
       "comingSoon": true,
       "action": "coming_soon",
       "category": "more",
     },
     {
       "title": "Return Goods",
-      "subTitle": "Return stock",
-      "icon": Icons.assignment_return_outlined,
-      "color": Colors.grey,
+      "subTitle": "Coming Soon",
+      "icon": Icons.move_to_inbox_outlined,
+      "color": const Color(0xFF1E3A8A),
       "comingSoon": true,
       "action": "coming_soon",
       "category": "more",

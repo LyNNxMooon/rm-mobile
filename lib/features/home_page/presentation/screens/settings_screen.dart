@@ -1401,7 +1401,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: colors.surfaceAlt.withOpacity(0.6),
+                color: colors.surfaceAlt,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1448,7 +1448,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildGlassContainer({required Widget child}) {
-    final colors = context.appColors;
     return ClipRRect(
       borderRadius: BorderRadius.circular(15),
       child: BackdropFilter(
@@ -1456,10 +1455,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
           decoration: BoxDecoration(
-            color: colors.glassFill,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: colors.glassBorder),
-            boxShadow: [BoxShadow(blurRadius: 20, color: colors.cardShadow)],
+            // Asymmetric border: Thicker on top/left, thinner on right/bottom
+            border: Border(
+              top: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
+              left: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
+              right: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
+              bottom: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
+            ),
+            // Glass gradient sweep
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF42A5F5).withOpacity(0.40),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.6],
+            ),
           ),
           child: child,
         ),
