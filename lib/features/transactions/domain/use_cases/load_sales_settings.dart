@@ -17,6 +17,8 @@ class SalesSettingsResult {
   final bool hideBarcode;
   final bool hideCategories;
   final bool hideTaxCode;
+  final bool finaliseButtonOnRight;
+  final bool finaliseInMenu;
 
   SalesSettingsResult({
     required this.scanIndividualUnits,
@@ -33,6 +35,8 @@ class SalesSettingsResult {
     required this.hideBarcode,
     required this.hideCategories,
     required this.hideTaxCode,
+    required this.finaliseButtonOnRight,
+    required this.finaliseInMenu,
   });
 }
 
@@ -82,6 +86,12 @@ class LoadSalesSettings {
     final hideTaxCode = await LocalDbDAO.instance.getAppConfig(
       kSalesHideTaxCodeKey,
     );
+    final finaliseButtonOnRight = await LocalDbDAO.instance.getAppConfig(
+      kSalesFinaliseButtonOnRightKey,
+    );
+    final finaliseInMenu = await LocalDbDAO.instance.getAppConfig(
+      kSalesFinaliseInMenuKey,
+    );
 
     if (oneDisplayLinePerItem == null) {
       await LocalDbDAO.instance.saveAppConfig(
@@ -107,6 +117,8 @@ class LoadSalesSettings {
       hideBarcode: hideBarcode == 'true',
       hideCategories: hideCategories == 'true',
       hideTaxCode: hideTaxCode == 'true',
+      finaliseButtonOnRight: finaliseButtonOnRight == 'true',
+      finaliseInMenu: finaliseInMenu == 'true',
     );
   }
 }

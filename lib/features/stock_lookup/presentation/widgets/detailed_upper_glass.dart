@@ -188,7 +188,7 @@ class _DetailedUpperGlassState extends State<DetailedUpperGlass> {
               ),
               SizedBox(height: rowGap),
               StockInfoRow(
-                image: 'assets/images/so.png',
+                image: 'assets/images/sales.png',
                 icon: Icons.event,
                 iconBgColor: Colors.teal,
                 label: 'Last Sale',
