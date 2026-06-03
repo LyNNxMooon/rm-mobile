@@ -1733,8 +1733,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               // Background Gradient Container (Top Half)
               Container(
                 height: MediaQuery.of(context).size.height * 0.4,
-                decoration: BoxDecoration(
-                  gradient: colors.heroGradient,
+                decoration: const BoxDecoration(
+                  color: Color.fromRGBO(7, 27, 54, 1),
                 ),
               ),
 
@@ -2133,7 +2133,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 ElevatedButton(
                   onPressed: () => _openCustomerTransactions(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: kPrimaryColor,
+                    backgroundColor: const Color.fromRGBO(52, 208, 255, 1),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                     shape: RoundedRectangleBorder(
@@ -2261,7 +2261,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: kPrimaryColor,
+          backgroundColor: const Color.fromRGBO(52, 208, 255, 1),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(

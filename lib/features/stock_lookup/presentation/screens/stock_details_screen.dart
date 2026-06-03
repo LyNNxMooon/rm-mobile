@@ -696,7 +696,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         child: Scaffold(
           extendBodyBehindAppBar: true,
           extendBody: true,
-          backgroundColor: const Color.fromRGBO(13, 27, 52, 1),
+          backgroundColor: const Color.fromRGBO(7, 27, 54, 1),
           body: SafeArea(
             bottom: false,
             top: false,
@@ -973,7 +973,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
       width: double.infinity,
       height: double.infinity,
       decoration: const BoxDecoration(
-        color: Color.fromRGBO(13, 27, 52, 1),
+        color: Color.fromRGBO(7, 27, 54, 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

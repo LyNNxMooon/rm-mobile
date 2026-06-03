@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
-import '../../../../constants/colors.dart';
+//import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
 import '../../../../constants/txt_styles.dart';
@@ -148,7 +148,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
       },
       child: Scaffold(
         body: Container(
-          decoration: BoxDecoration(gradient: colors.heroGradient),
+          decoration: const BoxDecoration(color: Color.fromRGBO(7, 27, 54, 1)),
           child: SafeArea(
             child: Column(
               children: [
@@ -276,10 +276,10 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                       return ElevatedButton(
                                         onPressed: loading ? null : _onSignIn,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: kPrimaryColor,
+                                          backgroundColor: const Color.fromRGBO(52, 208, 255, 1),
                                           foregroundColor: colors.onHero,
                                           disabledBackgroundColor:
-                                              kPrimaryColor.withOpacity(0.7),
+                                              const Color.fromRGBO(52, 208, 255, 0.7),
                                           disabledForegroundColor:
                                             (isDark ? Colors.white : colors.onHero)
                                               .withOpacity(0.8),

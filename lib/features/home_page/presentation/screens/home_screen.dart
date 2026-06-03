@@ -35,7 +35,7 @@ import '../BLoC/home_screen_events.dart';
 import '../BLoC/home_screen_states.dart';
 import '../BLoC/session_counts_cubit.dart';
 import '../BLoC/dashboard_style_cubit.dart';
-import '../BLoC/font_size_cubit.dart';
+//import '../BLoC/font_size_cubit.dart';
 import '../widgets/app_bar_session.dart';
 import '../widgets/network_pc_dialog.dart';
 import '../widgets/transaction_pulse_widget.dart';
@@ -421,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
-            color: Color.fromRGBO(28, 57, 83, 1),
+            color: Color.fromRGBO(12, 58, 85, 1),
           ),
           child: Row(
             children: [
@@ -453,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           width: double.infinity,
           height: double.infinity,
           decoration: const BoxDecoration(
-            color: Color.fromRGBO(28, 57, 83, 1),
+            color: Color.fromRGBO(12, 58, 85, 1),
           ),
           child: SafeArea(
             child: Row(
@@ -494,7 +494,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          color: Color.fromRGBO(28, 57, 83, 1),
+          color: Color.fromRGBO(12, 58, 85, 1),
         ),
         child: SafeArea(
           bottom: false,
@@ -524,7 +524,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   ) {
     return Container(
       width: 90,
-      color: const Color.fromRGBO(109, 205, 251, 1), // Same as bottom nav bar
+      color: const Color.fromRGBO(52, 208, 255, 1), // Same as bottom nav bar
       child: Column(
         children: [
           // App icon at the top - fills the nav bar width edge to edge
@@ -735,7 +735,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          color: Color.fromRGBO(28, 57, 83, 1),
+          color: Color.fromRGBO(12, 58, 85, 1),
         ),
         child: SafeArea(
           bottom: false,
@@ -865,7 +865,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           ? EdgeInsets.zero  // Padding handles the gap on desktop
           : const EdgeInsets.only(top: 12),
       decoration: BoxDecoration(
-        color: Color.fromRGBO(13, 27, 52, 1),
+        color: Color.fromRGBO(7, 27, 54, 1),
         // On desktop: rounded corners on all sides; on mobile: no rounding
         borderRadius: useDesktopNav
             ? BorderRadius.circular(10)
@@ -1041,12 +1041,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         border: Border(
-          top: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 1),
-          left: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 1),
-          right: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 0.42),
-          bottom: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 0.42),
+          top: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 1),
+          left: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 1),
+          right: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 0.42),
+          bottom: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 0.42),
         ),
-        color: const Color.fromRGBO(28, 57, 83, 1),
+        color: const Color.fromRGBO(12, 58, 85, 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1122,48 +1122,41 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
-    // On desktop, use constrained max width for calculations
-    final double effectiveWidth = useDesktopNav
-        ? screenWidth.clamp(0, Breakpoints.maxContentWidth)
-        : screenWidth;
-    final bool isLargeFont = context.read<FontSizeCubit>().isLarge;
-    final bool isTablet = effectiveWidth >= 600;
-    // Detect compact tablet (small height in landscape or smaller tablets)
-    final bool isCompactTablet = isTablet && screenHeight < 700;
+    final bool isTablet = screenWidth >= 600;
+    final bool isLandscape = screenWidth > screenHeight;
 
-    // Strict Responsive Rules: Tablet/Desktop (>= 600) gets 4 cols, Mobile (< 600) gets 2 cols.
-    final int crossAxisCount = isTablet ? 4 : 2;
+    // Responsive column counts:
+    // Tablet landscape: 4 cols, Tablet portrait: 3 cols, Mobile: 2 cols
+    final int crossAxisCount = isTablet 
+        ? (isLandscape ? 4 : 3) 
+        : 2;
 
     final double spacing = isTablet ? 24 : 20;
     final double mainSpacing = compact ? 0 : (isTablet ? 24 : 20);
     final double horizontalPadding = isTablet ? 22 : 16;
-    // Square-ish tiles for the new Transaction-card look.
-    // Use wider aspect ratio on compact tablets to reduce height
-    final double childAspectRatio = isCompactTablet 
-        ? 1.25 
-        : (isTablet ? 1.15 : (isLargeFont ? 0.85 : 0.95));
 
     return Padding(
       key: key,
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: BlocBuilder<SessionCountsCubit, SessionCountsState>(
         builder: (context, sessionState) {
-          return GridView.builder(
-            padding: EdgeInsets.zero,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: spacing,
-              mainAxisSpacing: mainSpacing,
-              childAspectRatio: childAspectRatio,
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              // Wire up the badge count dynamically
-              int badgeCount = _badgeCountForAction(item['action'] as String?, sessionState.counts);
-              return _buildActionTile(context, item, badgeCount: badgeCount);
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final double totalSpacing = spacing * (crossAxisCount - 1);
+              final double availableWidth = constraints.maxWidth - totalSpacing;
+              final double itemWidth = availableWidth / crossAxisCount;
+              
+              return Wrap(
+                spacing: spacing,
+                runSpacing: mainSpacing,
+                children: items.map((item) {
+                  int badgeCount = _badgeCountForAction(item['action'] as String?, sessionState.counts);
+                  return SizedBox(
+                    width: itemWidth,
+                    child: _buildActionTile(context, item, badgeCount: badgeCount),
+                  );
+                }).toList(),
+              );
             },
           );
         },
@@ -1178,38 +1171,36 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
-    final double effectiveWidth = useDesktopNav
-        ? screenWidth.clamp(0, Breakpoints.maxContentWidth)
-        : screenWidth;
-    final bool isLargeFont = context.read<FontSizeCubit>().isLarge;
-    final bool isTablet = effectiveWidth >= 600;
-    // Detect compact tablet (small height in landscape or smaller tablets)
-    final bool isCompactTablet = isTablet && screenHeight < 700;
+    final bool isTablet = screenWidth >= 600;
+    final bool isLandscape = screenWidth > screenHeight;
 
-    // Match action grid: Tablet/Desktop (>= 600) gets 3 cols, Mobile (< 600) gets 1 col.
-    final int crossAxisCount = isTablet ? 3 : 1;
-    // Match action card aspect ratio for phones to prevent overflow
-    final double childAspectRatio = isCompactTablet 
-        ? 1.8 
-        : (isTablet ? 1.7 : (isLargeFont ? 1.9 : 2.1));
+    // Responsive column counts:
+    // Tablet landscape: 3 cols, Tablet portrait: 2 cols, Mobile: 1 col
+    final int crossAxisCount = isTablet 
+        ? (isLandscape ? 3 : 2) 
+        : 1;
     final double spacing = isTablet ? 24 : 20;
     final double horizontalPadding = isTablet ? 22 : 16;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-      child: GridView.builder(
-        padding: EdgeInsets.zero,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: spacing,
-          mainAxisSpacing: spacing,
-          childAspectRatio: childAspectRatio,
-        ),
-        itemCount: items.length,
-        itemBuilder: (context, index) =>
-            _buildInformationTile(context, items[index]),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double totalSpacing = spacing * (crossAxisCount - 1);
+          final double availableWidth = constraints.maxWidth - totalSpacing;
+          final double itemWidth = availableWidth / crossAxisCount;
+          
+          return Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: items.map((item) {
+              return SizedBox(
+                width: itemWidth,
+                child: _buildInformationTile(context, item),
+              );
+            }).toList(),
+          );
+        },
       ),
     );
   }
@@ -1258,6 +1249,7 @@ Widget _buildActionTile(
             vertical: isTablet ? 26 : 24,
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -1287,18 +1279,16 @@ Widget _buildActionTile(
               SizedBox(height: isTablet ? 20 : 12),
 
               // Title Text
-              Flexible(
-                child: Text(
-                  item['title'] as String? ?? '',
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style:  TextStyle(
-                    color: Colors.white,
-                    fontSize: isTablet ? 18 : 16,
-                    //fontWeight: FontWeight.w500,
-                    letterSpacing: 0.2,
-                  ),
+              Text(
+                item['title'] as String? ?? '',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style:  TextStyle(
+                  color: Colors.white,
+                  fontSize: isTablet ? 18 : 16,
+                  //fontWeight: FontWeight.w500,
+                  letterSpacing: 0.2,
                 ),
               ),
 
@@ -1350,7 +1340,7 @@ Widget _buildInformationTile(
   final bool isTablet = MediaQuery.of(context).size.width > 600;
   
   // Use the same color as the app bar / main background
-  final Color cardColor = const Color.fromRGBO(28, 57, 83, 1);
+  final Color cardColor = const Color.fromRGBO(12, 58, 85, 1);
 
   return Material(
     color: Colors.transparent,
@@ -1364,10 +1354,10 @@ Widget _buildInformationTile(
           borderRadius: BorderRadius.circular(20),
           // 1. The Border: Blue color
           border: Border(
-            top: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 1),
-            left: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 1),
-            right: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 0.42),
-            bottom: BorderSide(color: const Color.fromRGBO(109, 205, 251, 1).withOpacity(0.5), width: 0.42),
+            top: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 1),
+            left: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 1),
+            right: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 0.42),
+            bottom: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 0.42),
           ),
           // 2. The Solid Background
           color: cardColor,
@@ -1378,6 +1368,7 @@ Widget _buildInformationTile(
             vertical: isTablet ? 26 : 12,
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -1407,17 +1398,15 @@ Widget _buildInformationTile(
               const SizedBox(height: 20),
 
               // Title Text (Kept styling exactly as provided)
-              Flexible(
-                child: Text(
-                  item['title'] as String? ?? '',
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: isTablet ? 18 : 16,
-                    letterSpacing: 0.2,
-                  ),
+              Text(
+                item['title'] as String? ?? '',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isTablet ? 18 : 16,
+                  letterSpacing: 0.2,
                 ),
               ),
 
@@ -1465,7 +1454,7 @@ Widget _buildInformationTile(
     return BottomNavigationBar(
       currentIndex: _selectedTabIndex,
       type: BottomNavigationBarType.fixed,
-      backgroundColor: Color.fromRGBO(109, 205, 251, 1),
+      backgroundColor: Color.fromRGBO(52, 208, 255, 1),
       selectedItemColor: Colors.white,
       unselectedItemColor: Colors.white70,
       onTap: (index) => setState(() => _selectedTabIndex = index),
@@ -1834,7 +1823,7 @@ Widget _buildInformationTile(
   final List<Map<String, dynamic>> _actionItems = [
     {
       "title": "Account Sales",
-      "subTitle": "Invoice Customers",
+      "subTitle": "Create Invoices",
       "icon": Icons.contact_page_outlined,
       "color": const Color(0xFF0F52BA),
       "comingSoon": false,
@@ -1843,7 +1832,7 @@ Widget _buildInformationTile(
     },
     {
       "title": "Sales Order",
-      "subTitle": "Create orders",
+      "subTitle": "Create Sales Orders",
       "icon": Icons.shopping_cart_outlined,
       "color": const Color(0xFF00C4CC),
       "comingSoon": false,
@@ -1852,7 +1841,7 @@ Widget _buildInformationTile(
     },
     {
       "title": "Quotes",
-      "subTitle": "Issue Estimates",
+      "subTitle": "Create Quotations",
       "icon": Icons.edit_document,
       "color": const Color(0xFF007AFF),
       "comingSoon": false,
@@ -1861,7 +1850,7 @@ Widget _buildInformationTile(
     },
     {
       "title": "Lay-bys",
-      "subTitle": "Manage Lay-bys",
+      "subTitle": "Create Lay-bys",
       "icon": Icons.folder_open_rounded,
       "color": const Color(0xFF788A9F),
       "comingSoon": false,
@@ -1869,11 +1858,48 @@ Widget _buildInformationTile(
       "category": "sales",
     },
     {
-      "title": "Stock Lookup",
+      "title": "Sales",
+      "subTitle": "Comming Soon",
+      "icon": Icons.insights_outlined,
+      "color": const Color(0xFF00C896),
+      "comingSoon": false,
+      "action": "coming_soon",
+      "category": "sales",
+    },
+    {
+      "title": "Goods Received",
+      "subTitle": "Comming Soon",
+      "icon": Icons.work_outline,
+      "color": const Color(0xFF4DB6AC),
+      "comingSoon": false,
+      "action": "coming_soon",
+      "category": "stock",
+    },
+    {
+      "title": "Purchase Orders",
+      "subTitle": "Comming Soon",
+      "icon": Icons.local_offer_outlined,
+      "color": const Color(0xFF5C6BC0),
+      "comingSoon": false,
+      "action": "coming_soon",
+      "category": "stock",
+    },
+    {
+      "title": "Return Goods",
+      "subTitle": "Comming Soon",
+      "icon": Icons.move_to_inbox_outlined,
+      "color": const Color(0xFF1E3A8A),
+      "comingSoon": false,
+      "action": "coming_soon",
+      "category": "stock",
+    },
+    // Information items (show in Information section on Home)
+    {
+      "title": "Stock-Lookup",
       "subTitle": "Search inventory",
       "icon": Icons.inventory_2_outlined,
       "color": kPrimaryColor,
-      "comingSoon": false,
+      "comingSoon": true,
       "action": "stock_lookup",
       "category": "stock",
     },
@@ -1882,7 +1908,7 @@ Widget _buildInformationTile(
       "subTitle": "Count inventory",
       "icon": Icons.fact_check_outlined,
       "color": Colors.teal,
-      "comingSoon": false,
+      "comingSoon": true,
       "action": "stocktake",
       "category": "stock",
     },
@@ -1891,50 +1917,13 @@ Widget _buildInformationTile(
       "subTitle": "Search customers",
       "icon": Icons.people_outline,
       "color": kPrimaryColor,
-      "comingSoon": false,
+      "comingSoon": true,
       "action": "customer_lookup",
       "category": "customers",
     },
-    // Coming Soon items (show on Home and More only)
-    {
-      "title": "Sales",
-      "subTitle": "Coming Soon",
-      "icon": Icons.insights_outlined,
-      "color": const Color(0xFF00C896),
-      "comingSoon": true,
-      "action": "sales",
-      "category": "more",
-    },
-    {
-      "title": "Goods Received",
-      "subTitle": "Coming Soon",
-      "icon": Icons.work_outline,
-      "color": const Color(0xFF4DB6AC),
-      "comingSoon": true,
-      "action": "coming_soon",
-      "category": "more",
-    },
-    {
-      "title": "Purchase Orders",
-      "subTitle": "Coming Soon",
-      "icon": Icons.local_offer_outlined,
-      "color": const Color(0xFF5C6BC0),
-      "comingSoon": true,
-      "action": "coming_soon",
-      "category": "more",
-    },
-    {
-      "title": "Return Goods",
-      "subTitle": "Coming Soon",
-      "icon": Icons.move_to_inbox_outlined,
-      "color": const Color(0xFF1E3A8A),
-      "comingSoon": true,
-      "action": "coming_soon",
-      "category": "more",
-    },
     {
       "title": "Suppliers",
-      "subTitle": "Manage suppliers",
+      "subTitle": "Comming Soon",
       "icon": Icons.business_outlined,
       "color": Colors.grey,
       "comingSoon": true,

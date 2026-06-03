@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/entities/vos/network_server_vo.dart';
 import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
-import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
+//import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/font_size_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
@@ -699,7 +699,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ],
       child: Scaffold(
         body: Container(
-          decoration: const BoxDecoration(color: Color.fromRGBO(13, 27, 52, 1)),
+          decoration: const BoxDecoration(color: Color.fromRGBO(7, 27, 54, 1)),
           child: SafeArea(
             child: Column(
               children: [
@@ -1192,26 +1192,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     isDark,
                                     (val) {
                                       context.read<ThemeCubit>().setDarkMode(val);
-                                    },
-                                  );
-                                },
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
-                              BlocBuilder<DashboardStyleCubit, String>(
-                                builder: (context, dashboardStyle) {
-                                  return _buildDropdownRow(
-                                    "Dashboard Style",
-                                    "Choose your preferred home screen layout",
-                                    dashboardStyle,
-                                    const ["pro", "default"],
-                                    const ["Pro (Modern)", "Default (Classic)"],
-                                    (val) {
-                                      if (val != null) {
-                                        context.read<DashboardStyleCubit>().setStyle(val);
-                                      }
                                     },
                                   );
                                 },
