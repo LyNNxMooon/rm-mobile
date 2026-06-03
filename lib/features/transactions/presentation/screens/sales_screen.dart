@@ -176,6 +176,8 @@ class _SalesScreenState extends State<SalesScreen>
   bool _hideBarcode = false;
   bool _hideCategories = false;
   bool _hideTaxCode = false;
+  bool _finaliseButtonOnRight = false;
+  bool _finaliseInMenu = false;
 
   // Payment amounts for each payment type
   final Map<String, double> _paymentAmounts = {};
@@ -207,6 +209,10 @@ class _SalesScreenState extends State<SalesScreen>
 
   late AnimationController _actionsAnimationController;
   late Animation<double> _actionsAnimation;
+
+  // Draggable action button position
+  Offset? _actionButtonOffset;
+  bool _isDraggingActionButton = false;
 
   /// Gets the survey label from AppGlobals.salesCustom or defaults to "Add Survey"
   String get _surveyLabel =>
@@ -766,7 +772,7 @@ class _SalesScreenState extends State<SalesScreen>
 
     if (ip.isEmpty) {
       if (mounted) {
-        _showNetworkPcDialog();
+        _promptOfflineThenShowNetworkDialog();
       }
       return;
     }
@@ -776,8 +782,70 @@ class _SalesScreenState extends State<SalesScreen>
       await discoverHost(ip, port);
     } catch (e) {
       if (mounted) {
-        _showNetworkPcDialog();
+        _promptOfflineThenShowNetworkDialog();
       }
+    }
+  }
+
+  /// Shows a confirmation prompt asking the user whether to reconnect or stay
+  /// offline. Only continues to the network PC dialog if the user opts to
+  /// reconnect. The prompt itself can be disabled in settings, in which case
+  /// the network PC dialog is shown directly (legacy behavior).
+  Future<void> _promptOfflineThenShowNetworkDialog() async {
+    if (!mounted) return;
+
+    // Read persistent setting; default ON when missing.
+    final raw = await LocalDbDAO.instance.getAppConfig(
+      kAutoRemindServerConnectionKey,
+    );
+    final bool autoRemind = raw == null || raw.isEmpty
+        ? true
+        : raw.toLowerCase() == "true";
+
+    if (!mounted) return;
+
+    if (!autoRemind) {
+      // User disabled the reminder; do not show anything.
+      return;
+    }
+
+    final colors = context.appColors;
+    final isDark = colors.isDark;
+
+    final bool? shouldReconnect = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StandardDialog(
+        title: "You are offline",
+        subtitle: "No connection to the server.",
+        colors: colors,
+        isDark: isDark,
+        showClose: false,
+        content: Text(
+          "Would you like to reconnect to the server now, or stay offline?",
+          style: TextStyle(
+            fontSize: 14,
+            color: isDark ? Colors.white70 : Colors.black87,
+          ),
+        ),
+        actions: [
+          DialogTextAction(
+            label: "Stay Offline",
+            style: DialogActionStyle.cancelOutline,
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+          ),
+          DialogTextAction(
+            label: "Reconnect to Server",
+            style: DialogActionStyle.primary,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    if (shouldReconnect == true) {
+      _showNetworkPcDialog();
     }
   }
 
@@ -1034,6 +1102,8 @@ class _SalesScreenState extends State<SalesScreen>
         _hideBarcode = settings.hideBarcode;
         _hideCategories = settings.hideCategories;
         _hideTaxCode = settings.hideTaxCode;
+        _finaliseButtonOnRight = settings.finaliseButtonOnRight;
+        _finaliseInMenu = settings.finaliseInMenu;
       });
     }
   }
@@ -1472,9 +1542,11 @@ class _SalesScreenState extends State<SalesScreen>
                   child: Scaffold(
                     backgroundColor: isDark ? colors.bg : kBgColor,
                     appBar: _buildAppBar(colors, isDark),
-                    body: SafeArea(
-                      child: Column(
-                        children: [
+                    body: Stack(
+                      children: [
+                        SafeArea(
+                          child: Column(
+                            children: [
                           // Top Section: Customer, Staff, Date
                           SalesTopHeader(
                             isIncTax: _isIncTax,
@@ -1588,8 +1660,12 @@ class _SalesScreenState extends State<SalesScreen>
                           // Hide on tablet landscape when keyboard is visible to prevent overflow
                           if (!(isTablet && isLandscape && isKeyboardVisible))
                             _buildBottomSummary(colors, isDark, isTablet, useDesktopNav),
-                        ],
-                      ),
+                            ],
+                          ),
+                        ),
+                        // Floating draggable action button
+                        _buildDraggableActionsButton(colors, isDark, isTablet, useDesktopNav),
+                      ],
                     ),
                   ),
                 ),
@@ -2981,25 +3057,89 @@ class _SalesScreenState extends State<SalesScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Actions Button and Finalise Button (left column)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Actions Button - offset upward
-                        Transform.translate(
-                          offset: Offset(0, useDesktopNav ? -4 : (isTablet ? -8 : -6)),
-                          child: _buildActionsButton(colors, isDark, isTablet, useDesktopNav),
+                    // Left side - either Finalise button or Totals based on setting
+                    if (!_finaliseButtonOnRight)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Keep the finalise slot visible to maintain layout;
+                          // hide it when included in the menu
+                          Visibility(
+                            visible: !_finaliseInMenu,
+                            maintainSize: true,
+                            maintainAnimation: true,
+                            maintainState: true,
+                            child: _buildFinaliseButton(colors, isDark, isTablet, useDesktopNav),
+                          ),
+                        ],
+                      )
+                    else
+                      Transform.translate(
+                        offset: Offset(useDesktopNav ? 5 : (isTablet ? 10 : 0), 0),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: useDesktopNav ? 150 : (isTablet ? 200 : 110),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "${isTablet ? 'Subtotal' : 'Sub'}: ${FormattingUtils.formatCurrencyWithDecimals(_displaySubtotal, 2)}",
+                                style: TextStyle(
+                                  color: colors.onSurfaceMuted,
+                                  fontSize: labelFontSize,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: useDesktopNav ? 4 : (isTablet ? 6 : 8)),
+                              Text(
+                                "${isTablet ? 'Discount' : 'Dis'}: ${FormattingUtils.formatCurrencyWithDecimals(_discount, 2)}",
+                                style: TextStyle(
+                                  color: _discount > 0
+                                      ? kPrimaryColor
+                                      : colors.onSurfaceMuted,
+                                  fontSize: labelFontSize,
+                                  fontWeight: _discount > 0
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: useDesktopNav ? 4 : (isTablet ? 6 : 8)),
+                              Text(
+                                "Rounding: ${FormattingUtils.formatCurrencyWithDecimals(_rounding, 2)}",
+                                style: TextStyle(
+                                  color: colors.onSurfaceMuted,
+                                  fontSize: labelFontSize,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: useDesktopNav ? 8 : (isTablet ? 14 : 22)),
+                              Transform.translate(
+                                offset: Offset(0, useDesktopNav ? 0 : (isTablet ? 0 : -8)),
+                                child: Text(
+                                  FormattingUtils.formatCurrencyWithDecimals(
+                                    _displayTotal,
+                                    2,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: totalFontSize,
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                    letterSpacing: -0.5,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        SizedBox(height: useDesktopNav ? 8 : 12),
-                        // Finalise Button
-                        _buildFinaliseButton(colors, isDark, isTablet, useDesktopNav),
-                      ],
-                    ),
+                      ),
 
                     SizedBox(width: useDesktopNav ? 20 : (isTablet ? 38 : 5)),
 
-                    // Balance display
+                    // Balance display (center)
                     Expanded(
                       child: Transform.translate(
                         offset: Offset(useDesktopNav ? -16 : (isTablet ? -32 : 0), 0),
@@ -3076,67 +3216,83 @@ class _SalesScreenState extends State<SalesScreen>
 
                     SizedBox(width: isTablet ? 0 : 5),
 
-                    Transform.translate(
-                      offset: Offset(useDesktopNav ? -5 : (isTablet ? -10 : 0), 0),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: useDesktopNav ? 150 : (isTablet ? 200 : 110),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              "${isTablet ? 'Subtotal' : 'Sub'}: ${FormattingUtils.formatCurrencyWithDecimals(_displaySubtotal, 2)}",
-                              style: TextStyle(
-                                color: colors.onSurfaceMuted,
-                                fontSize: labelFontSize,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: useDesktopNav ? 4 : (isTablet ? 6 : 8)),
-                            Text(
-                              "${isTablet ? 'Discount' : 'Dis'}: ${FormattingUtils.formatCurrencyWithDecimals(_discount, 2)}",
-                              style: TextStyle(
-                                color: _discount > 0
-                                    ? kPrimaryColor
-                                    : colors.onSurfaceMuted,
-                                fontSize: labelFontSize,
-                                fontWeight: _discount > 0
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: useDesktopNav ? 4 : (isTablet ? 6 : 8)),
-                            Text(
-                              "Rounding: ${FormattingUtils.formatCurrencyWithDecimals(_rounding, 2)}",
-                              style: TextStyle(
-                                color: colors.onSurfaceMuted,
-                                fontSize: labelFontSize,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: useDesktopNav ? 8 : (isTablet ? 14 : 22)),
-                            Transform.translate(
-                              offset: Offset(0, useDesktopNav ? 0 : (isTablet ? 0 : -8)),
-                              child: Text(
-                                FormattingUtils.formatCurrencyWithDecimals(
-                                  _displayTotal,
-                                  2,
-                                ),
+                    // Right side - either Totals or Finalise button based on setting
+                    if (_finaliseButtonOnRight)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Visibility(
+                            visible: !_finaliseInMenu,
+                            maintainSize: true,
+                            maintainAnimation: true,
+                            maintainState: true,
+                            child: _buildFinaliseButton(colors, isDark, isTablet, useDesktopNav),
+                          ),
+                        ],
+                      )
+                    else
+                      Transform.translate(
+                        offset: Offset(useDesktopNav ? -5 : (isTablet ? -10 : 0), 0),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: useDesktopNav ? 150 : (isTablet ? 200 : 110),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                "${isTablet ? 'Subtotal' : 'Sub'}: ${FormattingUtils.formatCurrencyWithDecimals(_displaySubtotal, 2)}",
                                 style: TextStyle(
-                                  fontSize: totalFontSize,
-                                  fontWeight: FontWeight.w900,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                  letterSpacing: -0.5,
+                                  color: colors.onSurfaceMuted,
+                                  fontSize: labelFontSize,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                              SizedBox(height: useDesktopNav ? 4 : (isTablet ? 6 : 8)),
+                              Text(
+                                "${isTablet ? 'Discount' : 'Dis'}: ${FormattingUtils.formatCurrencyWithDecimals(_discount, 2)}",
+                                style: TextStyle(
+                                  color: _discount > 0
+                                      ? kPrimaryColor
+                                      : colors.onSurfaceMuted,
+                                  fontSize: labelFontSize,
+                                  fontWeight: _discount > 0
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: useDesktopNav ? 4 : (isTablet ? 6 : 8)),
+                              Text(
+                                "Rounding: ${FormattingUtils.formatCurrencyWithDecimals(_rounding, 2)}",
+                                style: TextStyle(
+                                  color: colors.onSurfaceMuted,
+                                  fontSize: labelFontSize,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: useDesktopNav ? 8 : (isTablet ? 14 : 22)),
+                              Transform.translate(
+                                offset: Offset(0, useDesktopNav ? 0 : (isTablet ? 0 : -8)),
+                                child: Text(
+                                  FormattingUtils.formatCurrencyWithDecimals(
+                                    _displayTotal,
+                                    2,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: totalFontSize,
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                    letterSpacing: -0.5,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -5477,6 +5633,54 @@ class _SalesScreenState extends State<SalesScreen>
                             colors,
                           ),
                         ]),
+                        const SizedBox(height: 16),
+
+                        // Layout Section
+                        _buildSettingsGroupHeader(
+                          'Layout',
+                          Icons.dashboard_customize_outlined,
+                          isDark,
+                        ),
+                        _buildSettingsGroupContainer(isDark, colors, [
+                          _buildSettingsSwitch(
+                            'Finalise button on right side',
+                            _finaliseButtonOnRight,
+                            (v) {
+                              setDialogState(
+                                () => _finaliseButtonOnRight = v,
+                              );
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesFinaliseButtonOnRightKey,
+                                value: v,
+                              );
+                            },
+                            isDark,
+                            colors,
+                          ),
+                          Divider(
+                            height: 1,
+                            color: isDark
+                                ? Colors.white12
+                                : Colors.grey.shade200,
+                          ),
+                          _buildSettingsSwitch(
+                            'Include Finalise button in menu',
+                            _finaliseInMenu,
+                            (v) {
+                              setDialogState(
+                                () => _finaliseInMenu = v,
+                              );
+                              setState(() {});
+                              _salesBloc.saveSalesSetting(
+                                key: kSalesFinaliseInMenuKey,
+                                value: v,
+                              );
+                            },
+                            isDark,
+                            colors,
+                          ),
+                        ]),
                       ],
                     ),
                   ),
@@ -6294,15 +6498,31 @@ class _SalesScreenState extends State<SalesScreen>
     AppThemeColors colors,
     bool isDark,
   ) {
-    final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay =
-        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
-    final buttonPosition = button.localToGlobal(Offset.zero, ancestor: overlay);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = context.isTablet;
+    final useDesktopNav = context.useDesktopNav;
+    final buttonSize = useDesktopNav ? 50.0 : (isTablet ? 70.0 : 50.0);
+    final defaultBottom = useDesktopNav ? 85.0 : (isTablet ? 100.0 : 90.0);
+    final defaultLeft = 12.0;
+    
+    // App bar height for coordinate conversion (button is in body Stack, dialog uses full screen)
+    final appBarHeight = kToolbarHeight + MediaQuery.of(context).padding.top;
+    
+    // Calculate button position (use dragged offset or default)
+    final double buttonLeft = _actionButtonOffset?.dx ?? defaultLeft;
+    // When dragged, offset is relative to body (below app bar), so add app bar height for full screen coords
+    final double buttonTop = _actionButtonOffset != null
+        ? _actionButtonOffset!.dy + appBarHeight
+        : (screenHeight - defaultBottom - buttonSize - MediaQuery.of(context).padding.bottom);
 
     bool surveyExpanded = false;
     _surveyController.text = _surveyValue;
-    final isTablet = context.isTablet;
     final gridWidth = isTablet ? 440.0 : 360.0;
+    
+    // Calculate menu position - just above the button
+    final double menuLeft = buttonLeft.clamp(0, screenWidth - gridWidth);
+    final double menuBottom = screenHeight - buttonTop - 1;
 
     showGeneralDialog(
       context: context,
@@ -6325,11 +6545,8 @@ class _SalesScreenState extends State<SalesScreen>
             return Stack(
               children: [
                 Positioned(
-                  left: 12,
-                  bottom:
-                      MediaQuery.of(context).size.height -
-                      buttonPosition.dy +
-                      8,
+                  left: menuLeft,
+                  bottom: menuBottom,
                   child: Material(
                     color: Colors.transparent,
                     child: AnimatedBuilder(
@@ -6469,6 +6686,33 @@ class _SalesScreenState extends State<SalesScreen>
                                 ),
                               ],
                             ),
+                            // Finalise button - shown when "Include Finalise button in menu" setting is enabled
+                            if (_finaliseInMenu) ...[
+                              const SizedBox(height: 10),
+                              Builder(
+                                builder: (context) {
+                                  final isSales = widget.title == "Sales";
+                                  final requiresCustomer = !isSales && _selectedCustomer == null;
+                                  final isFinaliseDisabled = _cartItems.isEmpty || requiresCustomer;
+                                  return SizedBox(
+                                    width: double.infinity,
+                                    child: _buildGridActionTile(
+                                      context,
+                                      colors,
+                                      isDark,
+                                      "Finalise",
+                                      tileColor: isFinaliseDisabled
+                                          ? Colors.grey.shade600
+                                          : const Color(0xFF00C896),
+                                      onTap: isFinaliseDisabled ? () {} : () {
+                                        Navigator.pop(context);
+                                        _showFinaliseDialog();
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -6488,6 +6732,50 @@ class _SalesScreenState extends State<SalesScreen>
         });
       }
     });
+  }
+
+  Widget _buildDraggableActionsButton(
+    AppThemeColors colors,
+    bool isDark,
+    bool isTablet,
+    bool useDesktopNav,
+  ) {
+    final size = useDesktopNav ? 50.0 : (isTablet ? 70.0 : 50.0);
+    
+    // Default position: bottom left, above the finalise button area
+    final defaultBottom = useDesktopNav ? 85.0 : (isTablet ? 100.0 : 90.0);
+    final defaultLeft = 12.0;
+    
+    return Positioned(
+      left: _actionButtonOffset?.dx ?? defaultLeft,
+      bottom: _actionButtonOffset == null 
+          ? defaultBottom 
+          : null,
+      top: _actionButtonOffset?.dy,
+      child: GestureDetector(
+        onPanStart: (_) {
+          setState(() => _isDraggingActionButton = true);
+        },
+        onPanUpdate: (details) {
+          setState(() {
+            final currentOffset = _actionButtonOffset ?? 
+                Offset(defaultLeft, MediaQuery.of(context).size.height - defaultBottom - size - MediaQuery.of(context).padding.bottom);
+            _actionButtonOffset = Offset(
+              (currentOffset.dx + details.delta.dx).clamp(0, MediaQuery.of(context).size.width - size),
+              (currentOffset.dy + details.delta.dy).clamp(0, MediaQuery.of(context).size.height - size - MediaQuery.of(context).padding.bottom),
+            );
+          });
+        },
+        onPanEnd: (_) {
+          setState(() => _isDraggingActionButton = false);
+        },
+        child: AnimatedScale(
+          scale: _isDraggingActionButton ? 1.1 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          child: _buildActionsButton(colors, isDark, isTablet, useDesktopNav),
+        ),
+      ),
+    );
   }
 
   Widget _buildActionsButton(
@@ -6655,6 +6943,7 @@ class _SalesScreenState extends State<SalesScreen>
     bool isSurvey = false,
     bool surveyExpanded = false,
     Function(bool)? onSurveyExpandChanged,
+    VoidCallback? onTap,
   }) {
     final isTablet = context.isTablet;
     // When tileColor is set (Save/Clear Session), use white for icon and text
@@ -6674,7 +6963,7 @@ class _SalesScreenState extends State<SalesScreen>
     }
 
     return InkWell(
-      onTap: () => _handleGridActionTap(context, colors, isDark, item),
+      onTap: onTap ?? () => _handleGridActionTap(context, colors, isDark, item),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: EdgeInsets.symmetric(
