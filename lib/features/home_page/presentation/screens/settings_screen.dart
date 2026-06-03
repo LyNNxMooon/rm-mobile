@@ -26,6 +26,8 @@ import '../../../../constants/modern_dialog_styles.dart';
 import '../../../../constants/standard_dialog.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../local_db/local_db_dao.dart';
+import '../../../../local_db/sqlite/sqlite_constants.dart';
 import '../../../../utils/dialog_size_utils.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/responsive_utils.dart';
@@ -48,6 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   double retentionDays = 30;
   bool backupToLan = true;
+  bool _autoRemindServerConnection = true;
   String _cashDrawerIdentifier = "A";
 
   final TextEditingController _manualIpController = TextEditingController();
@@ -90,6 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context.read<SettingsBloc>().add(CheckAutoBackupNowEvent());
     });
     context.read<SettingsBloc>().add(LoadCashDrawerIdentifierEvent());
+    _loadAutoRemindServerConnection();
   }
 
   @override
@@ -99,6 +103,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _manualCodeController.dispose();
     _manualPortController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAutoRemindServerConnection() async {
+    final raw = await LocalDbDAO.instance.getAppConfig(
+      kAutoRemindServerConnectionKey,
+    );
+    final bool value = raw == null || raw.isEmpty
+        ? true
+        : raw.toLowerCase() == "true";
+    if (!mounted) return;
+    setState(() => _autoRemindServerConnection = value);
+  }
+
+  Future<void> _saveAutoRemindServerConnection(bool value) async {
+    setState(() => _autoRemindServerConnection = value);
+    await LocalDbDAO.instance.saveAppConfig(
+      kAutoRemindServerConnectionKey,
+      value.toString(),
+    );
   }
 
   void _showError(BuildContext context, String message) {
@@ -722,121 +745,134 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                             _buildSectionTitle("Server Info"),
                         _buildGlassContainer(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 15,
-                              vertical: 12,
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                  vertical: 12,
+                                ),
+                                child: Column(
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: kPrimaryColor.withOpacity(0.5),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons.dns_outlined,
-                                        size: 20,
-                                        color: context.appColors.isDark
-                                            ? Colors.white
-                                            : context.appColors.onHero,
-                                      ),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: kPrimaryColor.withOpacity(0.5),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            Icons.dns_outlined,
+                                            size: 20,
+                                            color: context.appColors.isDark
+                                                ? Colors.white
+                                                : context.appColors.onHero,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 15),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "Server Name",
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: context.appColors.isDark
+                                                      ? Colors.white70
+                                                      : context.appColors.onHero,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                (AppGlobals.instance.hostName ?? "").isEmpty
+                                                    ? "Not connected"
+                                                    : AppGlobals.instance.hostName!,
+                                                style: getSmartTitle(
+                                                  fontSize: 14,
+                                                  color: context.appColors.isDark
+                                                      ? Colors.white
+                                                      : context.appColors.onHero,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 15),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            "Server Name",
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: context.appColors.isDark
-                                                  ? Colors.white70
-                                                  : context.appColors.onHero,
-                                            ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: kPrimaryColor.withOpacity(0.5),
+                                            borderRadius: BorderRadius.circular(8),
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            (AppGlobals.instance.hostName ?? "").isEmpty
-                                                ? "Not connected"
-                                                : AppGlobals.instance.hostName!,
-                                            style: getSmartTitle(
-                                              fontSize: 14,
-                                              color: context.appColors.isDark
-                                                  ? Colors.white
-                                                  : context.appColors.onHero,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                                          child: Icon(
+                                            Icons.cloud_outlined,
+                                            size: 20,
+                                            color: context.appColors.isDark
+                                                ? Colors.white
+                                                : context.appColors.onHero,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        const SizedBox(width: 15),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "Server IP",
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: context.appColors.isDark
+                                                      ? Colors.white70
+                                                      : context.appColors.onHero,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                (AppGlobals.instance.currentHostIp ?? "").isEmpty
+                                                    ? "Not connected"
+                                                    : AppGlobals.instance.currentHostIp!,
+                                                style: getSmartTitle(
+                                                  fontSize: 14,
+                                                  color: context.appColors.isDark
+                                                      ? Colors.white
+                                                      : context.appColors.onHero,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: kPrimaryColor.withOpacity(0.5),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons.cloud_outlined,
-                                        size: 20,
-                                        color: context.appColors.isDark
-                                            ? Colors.white
-                                            : context.appColors.onHero,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 15),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            "Server IP",
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: context.appColors.isDark
-                                                  ? Colors.white70
-                                                  : context.appColors.onHero,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            (AppGlobals.instance.currentHostIp ?? "").isEmpty
-                                                ? "Not connected"
-                                                : AppGlobals.instance.currentHostIp!,
-                                            style: getSmartTitle(
-                                              fontSize: 14,
-                                              color: context.appColors.isDark
-                                                  ? Colors.white
-                                                  : context.appColors.onHero,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15),
+                                child: Divider(height: 1, thickness: 0.5),
+                              ),
+                              _buildSwitchRow(
+                                "Auto Remind Server Connection When Offline",
+                                "Prompt to reconnect to the server when you are offline on transaction screens",
+                                _autoRemindServerConnection,
+                                _saveAutoRemindServerConnection,
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 20),
-
-                            _buildSectionTitle("Shopfront"),
+                        _buildSectionTitle("Shopfront"),
                         _buildGlassContainer(
                           child: Column(
                             children: [

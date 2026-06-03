@@ -261,10 +261,17 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
   }
 
   bool _isValidEmail(String email) {
+    if (email.contains(' ')) return false;
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
-    return emailRegex.hasMatch(email);
+    // Allow batched emails separated by ',' or ';'
+    final parts = email.split(RegExp(r'[,;]'));
+    for (final part in parts) {
+      if (part.isEmpty) return false;
+      if (!emailRegex.hasMatch(part)) return false;
+    }
+    return true;
   }
 
   double get _totalPaid =>

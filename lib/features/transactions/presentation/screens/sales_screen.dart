@@ -772,7 +772,7 @@ class _SalesScreenState extends State<SalesScreen>
 
     if (ip.isEmpty) {
       if (mounted) {
-        _showNetworkPcDialog();
+        _promptOfflineThenShowNetworkDialog();
       }
       return;
     }
@@ -782,8 +782,70 @@ class _SalesScreenState extends State<SalesScreen>
       await discoverHost(ip, port);
     } catch (e) {
       if (mounted) {
-        _showNetworkPcDialog();
+        _promptOfflineThenShowNetworkDialog();
       }
+    }
+  }
+
+  /// Shows a confirmation prompt asking the user whether to reconnect or stay
+  /// offline. Only continues to the network PC dialog if the user opts to
+  /// reconnect. The prompt itself can be disabled in settings, in which case
+  /// the network PC dialog is shown directly (legacy behavior).
+  Future<void> _promptOfflineThenShowNetworkDialog() async {
+    if (!mounted) return;
+
+    // Read persistent setting; default ON when missing.
+    final raw = await LocalDbDAO.instance.getAppConfig(
+      kAutoRemindServerConnectionKey,
+    );
+    final bool autoRemind = raw == null || raw.isEmpty
+        ? true
+        : raw.toLowerCase() == "true";
+
+    if (!mounted) return;
+
+    if (!autoRemind) {
+      // User disabled the reminder; do not show anything.
+      return;
+    }
+
+    final colors = context.appColors;
+    final isDark = colors.isDark;
+
+    final bool? shouldReconnect = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StandardDialog(
+        title: "You are offline",
+        subtitle: "No connection to the server.",
+        colors: colors,
+        isDark: isDark,
+        showClose: false,
+        content: Text(
+          "Would you like to reconnect to the server now, or stay offline?",
+          style: TextStyle(
+            fontSize: 14,
+            color: isDark ? Colors.white70 : Colors.black87,
+          ),
+        ),
+        actions: [
+          DialogTextAction(
+            label: "Stay Offline",
+            style: DialogActionStyle.cancelOutline,
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+          ),
+          DialogTextAction(
+            label: "Reconnect to Server",
+            style: DialogActionStyle.primary,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    if (shouldReconnect == true) {
+      _showNetworkPcDialog();
     }
   }
 
@@ -2996,15 +3058,23 @@ class _SalesScreenState extends State<SalesScreen>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Left side - either Finalise button or Totals based on setting
-                    if (!_finaliseButtonOnRight && !_finaliseInMenu)
+                    if (!_finaliseButtonOnRight)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          _buildFinaliseButton(colors, isDark, isTablet, useDesktopNav),
+                          // Keep the finalise slot visible to maintain layout;
+                          // hide it when included in the menu
+                          Visibility(
+                            visible: !_finaliseInMenu,
+                            maintainSize: true,
+                            maintainAnimation: true,
+                            maintainState: true,
+                            child: _buildFinaliseButton(colors, isDark, isTablet, useDesktopNav),
+                          ),
                         ],
                       )
-                    else if (_finaliseButtonOnRight)
+                    else
                       Transform.translate(
                         offset: Offset(useDesktopNav ? 5 : (isTablet ? 10 : 0), 0),
                         child: ConstrainedBox(
@@ -3072,7 +3142,7 @@ class _SalesScreenState extends State<SalesScreen>
                     // Balance display (center)
                     Expanded(
                       child: Transform.translate(
-                        offset: Offset(_finaliseInMenu && !_finaliseButtonOnRight ? 0 : (useDesktopNav ? -16 : (isTablet ? -32 : 0)), 0),
+                        offset: Offset(useDesktopNav ? -16 : (isTablet ? -32 : 0), 0),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 5),
                           child: Column(
@@ -3152,8 +3222,13 @@ class _SalesScreenState extends State<SalesScreen>
                         crossAxisAlignment: CrossAxisAlignment.end,
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          if (!_finaliseInMenu)
-                            _buildFinaliseButton(colors, isDark, isTablet, useDesktopNav),
+                          Visibility(
+                            visible: !_finaliseInMenu,
+                            maintainSize: true,
+                            maintainAnimation: true,
+                            maintainState: true,
+                            child: _buildFinaliseButton(colors, isDark, isTablet, useDesktopNav),
+                          ),
                         ],
                       )
                     else
@@ -6619,21 +6694,20 @@ class _SalesScreenState extends State<SalesScreen>
                                   final isSales = widget.title == "Sales";
                                   final requiresCustomer = !isSales && _selectedCustomer == null;
                                   final isFinaliseDisabled = _cartItems.isEmpty || requiresCustomer;
-                                  return Opacity(
-                                    opacity: isFinaliseDisabled ? 0.4 : 1.0,
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      child: _buildGridActionTile(
-                                        context,
-                                        colors,
-                                        isDark,
-                                        "Finalise",
-                                        tileColor: const Color(0xFF00C896),
-                                        onTap: isFinaliseDisabled ? () {} : () {
-                                          Navigator.pop(context);
-                                          _showFinaliseDialog();
-                                        },
-                                      ),
+                                  return SizedBox(
+                                    width: double.infinity,
+                                    child: _buildGridActionTile(
+                                      context,
+                                      colors,
+                                      isDark,
+                                      "Finalise",
+                                      tileColor: isFinaliseDisabled
+                                          ? Colors.grey.shade600
+                                          : const Color(0xFF00C896),
+                                      onTap: isFinaliseDisabled ? () {} : () {
+                                        Navigator.pop(context);
+                                        _showFinaliseDialog();
+                                      },
                                     ),
                                   );
                                 },
