@@ -1191,7 +1191,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromRGBO(109, 205, 251, 1),
+          backgroundColor: const Color.fromRGBO(52, 208, 255, 1),
           foregroundColor: colors.onHero,
           padding: EdgeInsets.symmetric(vertical: verticalPadding),
           shape: RoundedRectangleBorder(
@@ -1315,8 +1315,8 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
             // Background Gradient Container (Top Half)
             Container(
               height: MediaQuery.of(context).size.height * 0.4,
-              decoration: BoxDecoration(
-                gradient: colors.heroGradient,
+              decoration: const BoxDecoration(
+                color: Color.fromRGBO(7, 27, 54, 1),
               ),
             ),
 

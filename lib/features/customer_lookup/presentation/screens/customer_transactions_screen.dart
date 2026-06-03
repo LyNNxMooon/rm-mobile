@@ -152,8 +152,8 @@ class _CustomerTransactionsScreenState
         preferredSize: const Size.fromHeight(120.0), // Custom height for Appbar + Tabbar
         child: AppBar(
           flexibleSpace: Container(
-            decoration: BoxDecoration(
-              gradient: colors.heroGradient,
+            decoration: const BoxDecoration(
+              color: Color.fromRGBO(7, 27, 54, 1),
             ),
           ),
           elevation: 0,
