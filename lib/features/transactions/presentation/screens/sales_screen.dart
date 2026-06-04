@@ -56,6 +56,7 @@ import '../../../../utils/internet_connection_utils.dart';
 import '../../../../entities/vos/delivery_info_vo.dart';
 import '../../../../utils/responsive_utils.dart';
 import 'delivery_details_screen.dart';
+import 'finalise_picker_screen.dart';
 import '../../../stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dart';
 
@@ -178,6 +179,11 @@ class _SalesScreenState extends State<SalesScreen>
   bool _hideTaxCode = false;
   bool _finaliseButtonOnRight = false;
   bool _finaliseInMenu = false;
+
+  /// The transaction type currently being committed. Defaults to
+  /// [SalesScreen.title] but is overridden when the user picks a type from
+  /// [FinalisePickerScreen] on the unified "Sales" entry.
+  late String _activeTransactionType;
 
   // Payment amounts for each payment type
   final Map<String, double> _paymentAmounts = {};
@@ -712,6 +718,7 @@ class _SalesScreenState extends State<SalesScreen>
   @override
   void initState() {
     super.initState();
+    _activeTransactionType = widget.title;
     _salesBloc = context.read<SalesBloc>();
     _scannerController = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
@@ -1561,7 +1568,7 @@ class _SalesScreenState extends State<SalesScreen>
                                 ? _buildCustomerDisplayName(_selectedCustomer!)
                                 : null,
                             customerGrade: _selectedCustomer?.grade,
-                            autoFocusCustomer: widget.title != "Sales",
+                            autoFocusCustomer: true,
                             onCustomerSearch: (query) {
                               _salesBloc.add(SearchCustomer(query: query));
                             },
@@ -3304,11 +3311,28 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Future<void> _showFinaliseDialog() async {
-    final isAccountSales = widget.title == "Account Sales";
-    final isSalesOrder = widget.title == "Sales Order";
-    final isQuotes = widget.title == "Quotes";
-    final isLayby = widget.title == "Lay-bys";
-    final isSales = widget.title == "Sales";
+    // For the unified "Sales" entry, intercept with a picker that lets the
+    // user choose the transaction type before continuing the commit flow.
+    if (widget.title == "Sales") {
+      final picked = await FinalisePickerScreen.show(
+        context,
+        isAccountCustomer: _selectedCustomer?.account ?? false,
+      );
+      if (!mounted) return;
+      if (picked == null || picked.isEmpty) {
+        _activeTransactionType = widget.title;
+        return;
+      }
+      _activeTransactionType = picked;
+    } else {
+      _activeTransactionType = widget.title;
+    }
+
+    final isAccountSales = _activeTransactionType == "Account Sales";
+    final isSalesOrder = _activeTransactionType == "Sales Order";
+    final isQuotes = _activeTransactionType == "Quotes";
+    final isLayby = _activeTransactionType == "Lay-bys";
+    final isSales = _activeTransactionType == "Sales";
 
     // Auto-charge sale check - only for Account Sales
     if (isAccountSales && AppGlobals.instance.autoChargeSale) {
@@ -3508,7 +3532,7 @@ class _SalesScreenState extends State<SalesScreen>
       initialPaymentAmounts: Map.from(_paymentAmounts),
       promptForEmail: _promptForEmailAtSale,
       showPayments: isSales,
-      title: widget.title,
+      title: _activeTransactionType,
     );
 
     if (result == null) {
@@ -3568,7 +3592,7 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Future<bool> _sendAccountInvoice({required bool includeEmailAudit}) async {
-    if (widget.title != "Account Sales") return true;
+    if (_activeTransactionType != "Account Sales") return true;
 
     if (_selectedCustomer == null) {
       _showAccountSalesError("Please select a customer for Account Sales.");
@@ -3604,7 +3628,7 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Future<bool> _sendSalesOrder({required bool includeEmailAudit}) async {
-    if (widget.title != "Sales Order") return true;
+    if (_activeTransactionType != "Sales Order") return true;
 
     if (_selectedCustomer == null) {
       _showAccountSalesError("Please select a customer for Sales Order.");
@@ -3638,7 +3662,7 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Future<bool> _sendQuote({required bool includeEmailAudit}) async {
-    if (widget.title != "Quotes") return true;
+    if (_activeTransactionType != "Quotes") return true;
 
     if (_selectedCustomer == null) {
       _showAccountSalesError("Please select a customer for Quote.");
@@ -3672,7 +3696,7 @@ class _SalesScreenState extends State<SalesScreen>
   }
 
   Future<bool> _sendLayby({required bool includeEmailAudit}) async {
-    if (widget.title != "Lay-bys") return true;
+    if (_activeTransactionType != "Lay-bys") return true;
 
     if (_selectedCustomer == null) {
       _showAccountSalesError("Please select a customer for Lay-by.");
@@ -3825,7 +3849,7 @@ class _SalesScreenState extends State<SalesScreen>
 
     // For Account Sales, use customer's owner_id (fallback to logged-in staff if no owner)
     final int? staffId =
-        widget.title == 'Account Sales' && _selectedCustomer != null
+        _activeTransactionType == 'Account Sales' && _selectedCustomer != null
         ? (_selectedCustomer!.ownerId > 0
               ? _selectedCustomer!.ownerId
               : AppGlobals.instance.staffId)
@@ -4329,6 +4353,7 @@ class _SalesScreenState extends State<SalesScreen>
       _surveyController.clear();
       _commentValue = '';
       _lastSessionUpdatedAt = null;
+      _activeTransactionType = widget.title;
     });
 
     _runPostSaleDeltaSync();
@@ -6572,9 +6597,6 @@ class _SalesScreenState extends State<SalesScreen>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Switch Transaction - Full width with border
-                            _buildSwitchTransactionTile(context, colors, isDark, isTablet),
-                            const SizedBox(height: 10),
                             // Row 1: Sales Customer | Add Discount
                             Row(
                               children: [
@@ -7119,271 +7141,6 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
-  Widget _buildSwitchTransactionTile(
-    BuildContext context,
-    AppThemeColors colors,
-    bool isDark,
-    bool isTablet,
-  ) {
-    return InkWell(
-      onTap: () {
-        Navigator.of(context).pop();
-        setState(() {
-          _showActions = false;
-          _actionsAnimationController.reverse();
-        });
-        Future.microtask(() {
-          if (mounted) {
-            _showSwitchTransactionConfirmDialog(colors, isDark);
-          }
-        });
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 16 : 14,
-          vertical: isTablet ? 14 : 12,
-        ),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2733) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: kPrimaryColor,
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: kPrimaryColor.withOpacity(isDark ? 0.3 : 0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.swap_horiz_rounded,
-              size: isTablet ? 24 : 22,
-              color: kPrimaryColor,
-            ),
-            SizedBox(width: isTablet ? 12 : 10),
-            Text(
-              "Switch Transaction",
-              style: TextStyle(
-                color: kPrimaryColor,
-                fontWeight: FontWeight.w700,
-                fontSize: isTablet ? 15 : 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showSwitchTransactionConfirmDialog(AppThemeColors colors, bool isDark) {
-    final bool useDesktopNav = context.useDesktopNav;
-    final bool isTablet = context.isTablet;
-    
-    showDialog(
-      context: context,
-      builder: (ctx) => StandardDialog(
-        title: "Switch Transaction",
-        colors: colors,
-        isDark: isDark,
-        maxWidth: useDesktopNav ? 400 : (isTablet ? 450 : double.infinity),
-        onClose: () => Navigator.pop(ctx),
-        content: Text(
-          "Are you sure you want to switch this transaction to a different type? All current items will be transferred.",
-          style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
-        ),
-        actions: [
-          DialogTextAction(
-            label: "Cancel",
-            style: DialogActionStyle.cancelOutline,
-            onPressed: () => Navigator.pop(ctx),
-          ),
-          DialogTextAction(
-            label: "Yes, Switch",
-            style: DialogActionStyle.primary,
-            onPressed: () {
-              Navigator.pop(ctx);
-              _showTransactionTypePickerDialog(colors, isDark);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showTransactionTypePickerDialog(AppThemeColors colors, bool isDark) {
-    final bool useDesktopNav = context.useDesktopNav;
-    final bool isTablet = context.isTablet;
-    
-    // Determine available transaction types based on current type
-    // Note: "Sales" is excluded - only Account Sales, Sales Order, Quotes, Lay-bys can be switched
-    final List<Map<String, dynamic>> availableTypes = [];
-    
-    if (widget.title != "Account Sales") {
-      availableTypes.add({
-        "title": "Account Sales",
-        "icon": Icons.receipt_long_outlined,
-        "color": const Color.fromARGB(255, 210, 148, 172),
-      });
-    }
-    if (widget.title != "Sales Order") {
-      availableTypes.add({
-        "title": "Sales Order",
-        "icon": Icons.shopping_cart_outlined,
-        "color": const Color.fromARGB(255, 44, 133, 211),
-      });
-    }
-    if (widget.title != "Quotes") {
-      availableTypes.add({
-        "title": "Quotes",
-        "icon": Icons.request_quote_outlined,
-        "color": Colors.orange,
-      });
-    }
-    if (widget.title != "Lay-bys") {
-      availableTypes.add({
-        "title": "Lay-bys",
-        "icon": Icons.inventory_2_outlined,
-        "color": const Color.fromARGB(255, 152, 86, 165),
-      });
-    }
-    
-    showDialog(
-      context: context,
-      builder: (ctx) => StandardDialog(
-        title: "Select Transaction Type",
-        subtitle: "Choose where to transfer this transaction",
-        colors: colors,
-        isDark: isDark,
-        maxWidth: useDesktopNav ? 420 : (isTablet ? 480 : double.infinity),
-        onClose: () => Navigator.pop(ctx),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: availableTypes.map((type) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: InkWell(
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _switchToTransaction(
-                    type["title"] as String,
-                    type["color"] as Color,
-                    type["icon"] as IconData,
-                  );
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: isDark ? colors.surfaceAlt : Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: (type["color"] as Color).withOpacity(0.5),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: (type["color"] as Color).withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          type["icon"] as IconData,
-                          color: type["color"] as Color,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Text(
-                          type["title"] as String,
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 16,
-                        color: colors.onSurfaceMuted,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-        actions: [
-          DialogTextAction(
-            label: "Cancel",
-            style: DialogActionStyle.cancelOutline,
-            onPressed: () => Navigator.pop(ctx),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _switchToTransaction(String title, Color themeColor, IconData icon) async {
-    // Capture current cart data before navigation
-    final cartItems = List<CartItemVO>.from(_cartItems);
-    final customer = _selectedCustomer;
-    final discount = _discountValue;
-    final comment = _commentValue;
-    final survey = _surveyValue;
-    final delivery = _deliveryInfo;
-    
-    // Delete current session from database to prevent duplicates
-    if (_currentSessionId != null) {
-      await _salesBloc.deleteSaleSession(sessionId: _currentSessionId!);
-    }
-    
-    // Clear current cart to prevent auto-save on dispose
-    _salesBloc.add(ClearCart());
-    _currentSessionId = null;
-    
-    if (!mounted) return;
-    
-    // Navigate to new transaction screen with the data
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => BlocProvider(
-          create: (_) {
-            final bloc = di.sl<SalesBloc>();
-            // Load cart items directly into the bloc state
-            bloc.add(LoadCartItems(items: cartItems));
-            // Set customer if exists
-            if (customer != null) {
-              bloc.add(SelectCustomer(customer: customer));
-            }
-            return bloc;
-          },
-          child: _SwitchTransactionWrapper(
-            title: title,
-            themeColor: themeColor,
-            icon: icon,
-            discount: discount,
-            comment: comment,
-            survey: survey,
-            delivery: delivery,
-            customer: customer,
-          ),
-        ),
-      ),
-    );
-  }
-
   void _handleGridActionTap(
     BuildContext context,
     AppThemeColors colors,
@@ -7569,47 +7326,6 @@ class _SalesScreenState extends State<SalesScreen>
       totalGp: double.parse(totals.totalGp.toStringAsFixed(4)),
       colors: colors,
       isDark: isDark,
-    );
-  }
-}
-
-/// Wrapper widget to pass preserved data to SalesScreen when switching transaction types
-class _SwitchTransactionWrapper extends StatefulWidget {
-  final String title;
-  final Color themeColor;
-  final IconData icon;
-  final double discount;
-  final String comment;
-  final String survey;
-  final DeliveryInfoVO? delivery;
-  final CustomerVO? customer;
-
-  const _SwitchTransactionWrapper({
-    required this.title,
-    required this.themeColor,
-    required this.icon,
-    required this.discount,
-    required this.comment,
-    required this.survey,
-    this.delivery,
-    this.customer,
-  });
-
-  @override
-  State<_SwitchTransactionWrapper> createState() => _SwitchTransactionWrapperState();
-}
-
-class _SwitchTransactionWrapperState extends State<_SwitchTransactionWrapper> {
-  @override
-  Widget build(BuildContext context) {
-    return SalesScreen(
-      title: widget.title,
-      themeColor: widget.themeColor,
-      icon: widget.icon,
-      initialDiscount: widget.discount,
-      initialComment: widget.comment,
-      initialSurvey: widget.survey,
-      initialDelivery: widget.delivery,
     );
   }
 }

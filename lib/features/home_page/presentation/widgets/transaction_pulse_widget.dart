@@ -32,17 +32,11 @@ class TransactionCategory {
 /// A dynamic widget that displays pending transaction counts across categories
 /// Shows intelligent states based on data availability
 class TransactionPulseWidget extends StatelessWidget {
-  final VoidCallback? onInvoiceTap;
-  final VoidCallback? onSalesOrderTap;
-  final VoidCallback? onQuoteTap;
-  final VoidCallback? onLaybyTap;
+  final VoidCallback? onSalesTap;
 
   const TransactionPulseWidget({
     super.key,
-    this.onInvoiceTap,
-    this.onSalesOrderTap,
-    this.onQuoteTap,
-    this.onLaybyTap,
+    this.onSalesTap,
   });
 
   @override
@@ -95,51 +89,23 @@ class TransactionPulseWidget extends StatelessWidget {
     Map<String, int> counts,
     Map<String, SessionSummary> summaries,
   ) {
-    final invoiceSummary = summaries['Account Sales'];
-    final salesOrderSummary = summaries['Sales Order'];
-    final quoteSummary = summaries['Quotes'];
-    final laybySummary = summaries['Lay-bys'];
+    final salesSummary = summaries['Sales'];
+    final int salesCount = (counts['Sales'] ?? 0) +
+        (counts['Account Sales'] ?? 0) +
+        (counts['Sales Order'] ?? 0) +
+        (counts['Quotes'] ?? 0) +
+        (counts['Lay-bys'] ?? 0);
 
     return [
       TransactionCategory(
-        key: 'Account Sales',
-        label: 'Invoices',
-        pendingLabel: 'Invoices',
-        icon: Icons.receipt_long_outlined,
-        color: const Color.fromARGB(255, 210, 148, 172), // Pink - matches grid card
-        count: counts['Account Sales'] ?? 0,
-        analysisLine1: _formatTotalValue(invoiceSummary?.totalValue),
-        analysisLine2: _formatSummaryDetails(invoiceSummary, 'invoice'),
-      ),
-      TransactionCategory(
-        key: 'Sales Order',
-        label: 'Sales Orders',
-        pendingLabel: 'Sales Orders',
-        icon: Icons.shopping_cart_outlined,
-        color: const Color.fromARGB(255, 44, 133, 211), // Blue - matches grid card
-        count: counts['Sales Order'] ?? 0,
-        analysisLine1: _formatTotalValue(salesOrderSummary?.totalValue),
-        analysisLine2: _formatSummaryDetails(salesOrderSummary, 'order'),
-      ),
-      TransactionCategory(
-        key: 'Quotes',
-        label: 'Quotes',
-        pendingLabel: 'Quotes',
-        icon: Icons.request_quote_outlined,
-        color: Colors.orange.shade500, // Orange - matches grid card
-        count: counts['Quotes'] ?? 0,
-        analysisLine1: _formatTotalValue(quoteSummary?.totalValue),
-        analysisLine2: _formatSummaryDetails(quoteSummary, 'quote'),
-      ),
-      TransactionCategory(
-        key: 'Lay-bys',
-        label: 'Lay-bys',
-        pendingLabel: 'Lay-bys',
-        icon: Icons.inventory_2_outlined, // Matches grid card icon
-        color: const Color.fromARGB(255, 152, 86, 165), // Purple - matches grid card
-        count: counts['Lay-bys'] ?? 0,
-        analysisLine1: _formatTotalValue(laybySummary?.totalValue),
-        analysisLine2: _formatSummaryDetails(laybySummary, 'layby'),
+        key: 'Sales',
+        label: 'Sales',
+        pendingLabel: 'Sales',
+        icon: Icons.insights_outlined,
+        color: const Color(0xFF00C8B3),
+        count: salesCount,
+        analysisLine1: _formatTotalValue(salesSummary?.totalValue),
+        analysisLine2: _formatSummaryDetails(salesSummary, 'sale'),
       ),
     ];
   }
@@ -321,7 +287,7 @@ class TransactionPulseWidget extends StatelessWidget {
                                 "Pending Transaction Activity",
                                 style: getSmartTitle(
                                   fontSize: titleSize,
-                                  color: Colors.white70,
+                                  color: kSecondaryColor,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -359,7 +325,7 @@ class TransactionPulseWidget extends StatelessWidget {
                             "Pending Transaction Activity",
                             style: getSmartTitle(
                               fontSize: titleSize,
-                              color: Colors.white70,
+                              color: kSecondaryColor,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -499,13 +465,7 @@ class TransactionPulseWidget extends StatelessWidget {
     TransactionCategory category, {
     required bool isCompact,
   }) {
-    final VoidCallback? onTap = switch (category.key) {
-      'Account Sales' => onInvoiceTap,
-      'Sales Order' => onSalesOrderTap,
-      'Quotes' => onQuoteTap,
-      'Lay-bys' => onLaybyTap,
-      _ => null,
-    };
+    final VoidCallback? onTap = category.key == 'Sales' ? onSalesTap : null;
 
     return InkWell(
       onTap: onTap,
@@ -540,7 +500,7 @@ class TransactionPulseWidget extends StatelessWidget {
                 child: Icon(
                   category.icon,
                   color: Colors.white,
-                  size: isTablet ? 30 : 18,
+                  size: isTablet ? 28 : 18,
                 ),
               ),
             ),

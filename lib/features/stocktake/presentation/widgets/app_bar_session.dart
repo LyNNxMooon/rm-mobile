@@ -12,10 +12,14 @@ class StocktakeAppbarSession extends StatefulWidget {
     super.key,
     required this.onTorchToggle,
     required this.isTorchOn,
+    required this.alertRepeatingCounts,
+    required this.onToggleAlertRepeatingCounts,
   });
 
   final VoidCallback onTorchToggle;
   final bool isTorchOn;
+  final bool alertRepeatingCounts;
+  final VoidCallback onToggleAlertRepeatingCounts;
 
   @override
   State<StocktakeAppbarSession> createState() => _StocktakeAppbarSessionState();
@@ -65,6 +69,40 @@ class _StocktakeAppbarSessionState extends State<StocktakeAppbarSession> {
                   size: 24,
                 ),
                 onPressed: widget.onTorchToggle,
+              ),
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert,
+                  color: colors.onSurface,
+                  size: 22,
+                ),
+                onSelected: (value) {
+                  if (value == 'alert_repeat') {
+                    widget.onToggleAlertRepeatingCounts();
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'alert_repeat',
+                    child: Row(
+                      children: [
+                        Icon(
+                          widget.alertRepeatingCounts
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          size: 20,
+                          color: widget.alertRepeatingCounts
+                              ? kPrimaryColor
+                              : Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        const Flexible(
+                          child: Text('Alert repeating counted stocks'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

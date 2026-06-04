@@ -30,22 +30,22 @@ class _CustomStocktakeBtnState extends State<CustomStocktakeBtn> {
     return ElevatedButton.icon(
       onPressed: widget.function,
       style: ElevatedButton.styleFrom(
-        backgroundColor: baseColor.withOpacity(0.22),
-        foregroundColor: strongColor,
+        backgroundColor: baseColor,
+        foregroundColor: Colors.white,
         shadowColor: strongColor.withOpacity(0.15),
         minimumSize: const Size(100, 35),
         padding: EdgeInsets.symmetric(
           horizontal: isTablet ? 16 : 12,
           vertical: isTablet ? 8 : 4,
         ),
-        side: BorderSide(color: strongColor, width: 2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 2,
       ),
-      icon: Icon(widget.icon, size: isTablet ? 20 : 18),
+      icon: Icon(widget.icon, size: isTablet ? 20 : 18, color: Colors.white),
       label: Text(
         widget.name,
         style: TextStyle(
+          color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: isTablet ? 15 : 13,
         ),

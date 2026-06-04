@@ -487,6 +487,52 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<Map<String, dynamic>?> getExistingStocktakeCount({
+    required int stockId,
+    required String shopfront,
+  }) async {
+    try {
+      final db = _database!;
+
+      // 1. Item currently counted (uncommitted) in this session
+      final counted = await db.query(
+        'Stocktake',
+        columns: ['quantity'],
+        where: 'stock_id = ? AND shopfront = ?',
+        whereArgs: [stockId, shopfront],
+        limit: 1,
+      );
+      if (counted.isNotEmpty) {
+        return {'source': 'counted', 'quantity': counted.first['quantity']};
+      }
+
+      // 2. Item sent to shopfront (committed to history) within the last 24 hours
+      final String cutoff = DateTime.now()
+          .subtract(const Duration(hours: 24))
+          .toIso8601String();
+      final history = await db.rawQuery(
+        '''
+        SELECT i.quantity AS quantity
+        FROM StocktakeHistoryItems i
+        JOIN StocktakeHistorySession s ON i.session_id = s.session_id
+        WHERE i.stock_id = ? AND i.shopfront = ? AND s.created_at >= ?
+        ORDER BY s.created_at DESC
+        LIMIT 1
+        ''',
+        [stockId, shopfront, cutoff],
+      );
+      if (history.isNotEmpty) {
+        return {'source': 'history', 'quantity': history.first['quantity']};
+      }
+
+      return null;
+    } catch (error) {
+      logger.e('Error checking existing stocktake count from local db: $error');
+      return null;
+    }
+  }
+
   // ===========================================================================
   // SECTION 4: STOCK MASTER DATA (Stock Screen / Stock Search)
   // ===========================================================================

@@ -393,18 +393,16 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   static const List<AdaptiveNavItem> _navigationItems = [
     AdaptiveNavItem(icon: Icons.home_rounded, label: "Home"),
     AdaptiveNavItem(icon: Icons.point_of_sale_outlined, label: "Transaction"),
-    AdaptiveNavItem(icon: Icons.inventory_2_outlined, label: "Stock"),
-    AdaptiveNavItem(icon: Icons.people_outline, label: "Customers"),
-    AdaptiveNavItem(icon: Icons.more_horiz, label: "More"),
+    AdaptiveNavItem(icon: Icons.info_outline_rounded, label: "Information"),
+    AdaptiveNavItem(icon: Icons.inventory_2_outlined, label: "Stock Mgt"),
   ];
 
   /// Desktop-specific navigation items (includes Connect to server and Settings)
   static const List<AdaptiveNavItem> _desktopNavigationItems = [
     AdaptiveNavItem(icon: Icons.home_rounded, label: "Home"),
     AdaptiveNavItem(icon: Icons.point_of_sale_outlined, label: "Transaction"),
-    AdaptiveNavItem(icon: Icons.inventory_2_outlined, label: "Stock"),
-    AdaptiveNavItem(icon: Icons.people_outline, label: "Customers"),
-    AdaptiveNavItem(icon: Icons.more_horiz, label: "More"),
+    AdaptiveNavItem(icon: Icons.info_outline_rounded, label: "Information"),
+    AdaptiveNavItem(icon: Icons.inventory_2_outlined, label: "Stock Mgt"),
   ];
 
   /// Builds the Pro style layout with adaptive navigation
@@ -564,19 +562,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   label: Text("Transaction"),
                 ),
                 NavigationRailDestination(
+                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.info_outline_rounded)),
+                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.info_outline_rounded)),
+                  label: Text("Information"),
+                ),
+                NavigationRailDestination(
                   icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.inventory_2_outlined)),
                   selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.inventory_2_outlined)),
-                  label: Text("Stock"),
-                ),
-                NavigationRailDestination(
-                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.people_outline)),
-                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.people_outline)),
-                  label: Text("Customers"),
-                ),
-                NavigationRailDestination(
-                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.more_horiz)),
-                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.more_horiz)),
-                  label: Text("More"),
+                  label: Text("Stock Mgt"),
                 ),
               ],
             ),
@@ -897,10 +890,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             _buildGreetingHeader(context),
             if (isHomeTab)
               TransactionPulseWidget(
-                onInvoiceTap: () => _handleActionTap('account_sales'),
-                onSalesOrderTap: () => _handleActionTap('sales_order'),
-                onQuoteTap: () => _handleActionTap('quotes'),
-                onLaybyTap: () => _handleActionTap('lay_bys'),
+                onSalesTap: () => _handleActionTap('sales'),
               ),
             _buildSectionHeader(
               _tabTitleForIndex(_selectedTabIndex),
@@ -1071,9 +1061,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     BuildContext context, {
     bool compact = false,
     IconData? icon,
+    Color? color,
   }) {
     //final colors = context.appColors;
     final bool isTablet = context.isTablet;
+    final Color titleColor = color ?? Colors.white;
     final EdgeInsets padding = compact
         ? EdgeInsets.symmetric(horizontal: isTablet ? 22 : 16)
         : EdgeInsets.fromLTRB(
@@ -1090,7 +1082,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             Icon(
               icon,
               size: isTablet ? 20 : 18,
-              color: Colors.white70,
+              color: titleColor.withOpacity(0.7),
             ),
             const SizedBox(width: 8),
           ],
@@ -1098,7 +1090,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             title,
             style: getSmartTitle(
               fontSize: isTablet ? 18 : 18,
-              color: Colors.white,
+              color: titleColor,
             ).copyWith(height: compact ? 1.0 : null),
           ),
           const SizedBox(width: 10),
@@ -1256,8 +1248,8 @@ Widget _buildActionTile(
               
               // 3. The Icon (Standard physical drop shadow only)
               Container(
-                width: isTablet ? 70 : 52,
-                height: isTablet ? 70 : 52,
+                width: isTablet ? 66 : 52,
+                height: isTablet ? 66 : 52,
                 decoration: BoxDecoration(
                   color: itemColor,
                   shape: BoxShape.circle,
@@ -1272,7 +1264,7 @@ Widget _buildActionTile(
                 child: Icon(
                   item['icon'] as IconData?,
                   color: Colors.white,
-                  size: isTablet ? 38 : 28,
+                  size: isTablet ? 36 : 28,
                 ),
               ),
 
@@ -1375,8 +1367,8 @@ Widget _buildInformationTile(
               
               // 3. The Icon: White background, dirty green icon
               Container(
-                width: isTablet ? 70 : 52,
-                height: isTablet ? 70 : 52,
+                width: isTablet ? 66 : 52,
+                height: isTablet ? 66 : 52,
                 decoration: BoxDecoration(
                   color: Colors.white, // Solid white background
                   shape: BoxShape.circle,
@@ -1391,7 +1383,7 @@ Widget _buildInformationTile(
                 child: Icon(
                   item['icon'] as IconData?,
                   color: cardColor, // Icon matches the card's background color
-                  size: isTablet ? 38 : 28,
+                  size: isTablet ? 36 : 28,
                 ),
               ),
 
@@ -1465,14 +1457,13 @@ Widget _buildInformationTile(
           label: "Transaction",
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.inventory_2_outlined),
-          label: "Stock Management",
+          icon: Icon(Icons.info_outline_rounded),
+          label: "Information",
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.people_outline),
-          label: "Customers",
+          icon: Icon(Icons.inventory_2_outlined),
+          label: "Stock Mgt",
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: "More"),
       ],
     );
   }
@@ -1482,11 +1473,9 @@ Widget _buildInformationTile(
       case 1:
         return "Transaction";
       case 2:
-        return "Stock Management";
+        return "Information";
       case 3:
-        return "Customers";
-      case 4:
-        return "More";
+        return "Stock Management";
       default:
         return "Transaction";
     }
@@ -1497,11 +1486,9 @@ Widget _buildInformationTile(
       case 1:
         return Icons.point_of_sale_outlined;
       case 2:
-        return Icons.inventory_2_outlined;
+        return Icons.info_outline_rounded;
       case 3:
-        return Icons.people_outline;
-      case 4:
-        return Icons.more_horiz;
+        return Icons.inventory_2_outlined;
       default:
         return Icons.apps_rounded;
     }
@@ -1657,38 +1644,30 @@ Widget _buildInformationTile(
 
   int _badgeCountForAction(String? action, Map<String, int> sessionCounts) {
     if (action == null) return 0;
-    String? sessionType;
     switch (action) {
+      case 'sales':
+        return (sessionCounts['Account Sales'] ?? 0) +
+            (sessionCounts['Sales Order'] ?? 0) +
+            (sessionCounts['Quotes'] ?? 0) +
+            (sessionCounts['Lay-bys'] ?? 0);
       case 'account_sales':
-        sessionType = 'Account Sales';
-        break;
+        return sessionCounts['Account Sales'] ?? 0;
       case 'sales_order':
-        sessionType = 'Sales Order';
-        break;
+        return sessionCounts['Sales Order'] ?? 0;
       case 'quotes':
-        sessionType = 'Quotes';
-        break;
+        return sessionCounts['Quotes'] ?? 0;
       case 'lay_bys':
-        sessionType = 'Lay-bys';
-        break;
+        return sessionCounts['Lay-bys'] ?? 0;
     }
-    return sessionType != null ? (sessionCounts[sessionType] ?? 0) : 0;
+    return 0;
   }
 
   List<Map<String, dynamic>> _filteredItemsForTab() {
     if (_selectedTabIndex == 0) return _actionItems;
-    if (_selectedTabIndex == 4) {
-      return _actionItems
-          .where(
-            (item) =>
-                (item['category'] == 'more') || (item['comingSoon'] == true),
-          )
-          .toList();
-    }
     final String category = switch (_selectedTabIndex) {
-      1 => 'sales',
-      2 => 'stock',
-      3 => 'customers',
+      1 => 'transaction',
+      2 => 'information',
+      3 => 'stockmgt',
       _ => 'all',
     };
     return _actionItems.where((item) => item['category'] == category).toList();
@@ -1739,7 +1718,7 @@ Widget _buildInformationTile(
       if (_blockTransactionsIfSyncing(context)) return;
       _navigateToTransactionScreen(
         title: "Sales",
-        themeColor: Colors.green,
+        themeColor: const Color(0xFF388E3C),
         icon: Icons.point_of_sale_outlined,
       );
       return;
@@ -1822,76 +1801,76 @@ Widget _buildInformationTile(
 
   final List<Map<String, dynamic>> _actionItems = [
     {
-      "title": "Account Sales",
-      "subTitle": "Create Invoices",
-      "icon": Icons.contact_page_outlined,
-      "color": const Color(0xFF0F52BA),
-      "comingSoon": false,
-      "action": "account_sales",
-      "category": "sales",
-    },
-    {
-      "title": "Sales Order",
-      "subTitle": "Create Sales Orders",
-      "icon": Icons.shopping_cart_outlined,
-      "color": const Color(0xFF00C4CC),
-      "comingSoon": false,
-      "action": "sales_order",
-      "category": "sales",
-    },
-    {
-      "title": "Quotes",
-      "subTitle": "Create Quotations",
-      "icon": Icons.edit_document,
-      "color": const Color(0xFF007AFF),
-      "comingSoon": false,
-      "action": "quotes",
-      "category": "sales",
-    },
-    {
-      "title": "Lay-bys",
-      "subTitle": "Create Lay-bys",
-      "icon": Icons.folder_open_rounded,
-      "color": const Color(0xFF788A9F),
-      "comingSoon": false,
-      "action": "lay_bys",
-      "category": "sales",
-    },
-    {
       "title": "Sales",
-      "subTitle": "Comming Soon",
+      "subTitle": "Create Sales",
       "icon": Icons.insights_outlined,
-      "color": const Color(0xFF00C896),
+      "color": const Color(0xFF00C8B3),
       "comingSoon": false,
-      "action": "coming_soon",
-      "category": "sales",
+      "action": "sales",
+      "category": "transaction",
     },
     {
       "title": "Goods Received",
       "subTitle": "Comming Soon",
       "icon": Icons.work_outline,
-      "color": const Color(0xFF4DB6AC),
+      "color": const Color(0xFF00C0E8),
       "comingSoon": false,
       "action": "coming_soon",
-      "category": "stock",
+      "category": "transaction",
+    },
+    {
+      "title": "Returned Goods",
+      "subTitle": "Comming Soon",
+      "icon": Icons.move_to_inbox_outlined,
+      "color": const Color(0xFFD9534F),
+      "comingSoon": false,
+      "action": "coming_soon",
+      "category": "transaction",
     },
     {
       "title": "Purchase Orders",
       "subTitle": "Comming Soon",
       "icon": Icons.local_offer_outlined,
-      "color": const Color(0xFF5C6BC0),
+      "color": const Color(0xFFF2920C),
       "comingSoon": false,
       "action": "coming_soon",
-      "category": "stock",
+      "category": "transaction",
     },
     {
-      "title": "Return Goods",
+      "title": "Debtor Payments",
       "subTitle": "Comming Soon",
-      "icon": Icons.move_to_inbox_outlined,
-      "color": const Color(0xFF1E3A8A),
+      "icon": Icons.account_balance_wallet_outlined,
+      "color": const Color(0xFFC76185),
       "comingSoon": false,
       "action": "coming_soon",
-      "category": "stock",
+      "category": "transaction",
+    },
+    {
+      "title": "Lay-by Payments",
+      "subTitle": "Comming Soon",
+      "icon": Icons.savings_outlined,
+      "color": const Color(0xFF3448BC),
+      "comingSoon": false,
+      "action": "coming_soon",
+      "category": "transaction",
+    },
+    {
+      "title": "SO Payments",
+      "subTitle": "Comming Soon",
+      "icon": Icons.payments_outlined,
+      "color": const Color(0xFF015A9F),
+      "comingSoon": false,
+      "action": "coming_soon",
+      "category": "transaction",
+    },
+    {
+      "title": "Quote Converter",
+      "subTitle": "Comming Soon",
+      "icon": Icons.swap_horiz_outlined,
+      "color": const Color(0xFFE8B30B),
+      "comingSoon": false,
+      "action": "coming_soon",
+      "category": "transaction",
     },
     // Information items (show in Information section on Home)
     {
@@ -1901,16 +1880,16 @@ Widget _buildInformationTile(
       "color": kPrimaryColor,
       "comingSoon": true,
       "action": "stock_lookup",
-      "category": "stock",
+      "category": "information",
     },
     {
       "title": "Stocktake",
       "subTitle": "Count inventory",
       "icon": Icons.fact_check_outlined,
-      "color": Colors.teal,
+      "color": const Color(0xFF41A9B9),
       "comingSoon": true,
       "action": "stocktake",
-      "category": "stock",
+      "category": "stockmgt",
     },
     {
       "title": "Customers",
@@ -1919,7 +1898,7 @@ Widget _buildInformationTile(
       "color": kPrimaryColor,
       "comingSoon": true,
       "action": "customer_lookup",
-      "category": "customers",
+      "category": "information",
     },
     {
       "title": "Suppliers",
@@ -1928,7 +1907,7 @@ Widget _buildInformationTile(
       "color": Colors.grey,
       "comingSoon": true,
       "action": "coming_soon",
-      "category": "more",
+      "category": "information",
     },
   ];
 
