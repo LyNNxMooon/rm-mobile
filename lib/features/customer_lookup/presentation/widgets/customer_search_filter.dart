@@ -45,6 +45,9 @@ class CustomerSearchFilterBar extends StatelessWidget {
         Expanded(
           child: TextField(
             onChanged: onChanged,
+            // Disable autocorrect and predictive text
+            autocorrect: false,
+            enableSuggestions: false,
             style: TextStyle(
               color: isDark ? Colors.white : colors.onSurface,
               fontSize: fontSize,

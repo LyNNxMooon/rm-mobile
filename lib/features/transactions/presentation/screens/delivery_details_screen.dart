@@ -707,6 +707,9 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
         controller: _customerSearchController,
         autofocus: true,
         scrollPhysics: const ClampingScrollPhysics(),
+        // Disable autocorrect and predictive text
+        autocorrect: false,
+        enableSuggestions: false,
         style: TextStyle(
           color: isDark ? Colors.white : Colors.black87,
           fontSize: 14,

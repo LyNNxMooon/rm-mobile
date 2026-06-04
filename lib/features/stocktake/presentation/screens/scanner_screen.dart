@@ -681,6 +681,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
             controller: _bcController,
             focusNode: txtFieldFocusNode,
             scrollPhysics: const ClampingScrollPhysics(),
+            // Disable autocorrect and predictive text
+            autocorrect: false,
+            enableSuggestions: false,
             style: TextStyle(
               color: isDark ? Colors.white : Colors.black87,
               fontSize: 12,
@@ -858,6 +861,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
             controller: _bcController,
             focusNode: txtFieldFocusNode,
             scrollPhysics: const ClampingScrollPhysics(),
+            // Disable autocorrect and predictive text
+            autocorrect: false,
+            enableSuggestions: false,
             style: TextStyle(
               color: isDark ? Colors.white : Colors.black87,
               fontSize: 12,
@@ -2157,6 +2163,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       controller: _bcController,
                       focusNode: txtFieldFocusNode,
                       scrollPhysics: const ClampingScrollPhysics(),
+                      // Disable autocorrect and predictive text
+                      autocorrect: false,
+                      enableSuggestions: false,
                       style: TextStyle(
                         color: isDark ? Colors.white : Colors.black87,
                         fontSize: 14,

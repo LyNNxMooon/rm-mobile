@@ -45,6 +45,9 @@ class SearchFilterBar extends StatelessWidget {
             child: TextField(
               onChanged: onChanged,
               onTap: onSearchFocus,
+              // Disable autocorrect and predictive text
+              autocorrect: false,
+              enableSuggestions: false,
               style: TextStyle(
                 color: isDark ? Colors.white : colors.onSurface,
                 fontSize: 12,
@@ -83,6 +86,9 @@ class SearchFilterBar extends StatelessWidget {
             child: TextField(
               onChanged: onChanged,
               onTap: onSearchFocus,
+              // Disable autocorrect and predictive text
+              autocorrect: false,
+              enableSuggestions: false,
               style: TextStyle(
                 color: isDark ? Colors.white : colors.onSurface,
                 fontSize: 14,
@@ -138,6 +144,9 @@ class SearchFilterBar extends StatelessWidget {
           child: TextField(
             onChanged: onChanged,
             onTap: onSearchFocus,
+            // Disable autocorrect and predictive text
+            autocorrect: false,
+            enableSuggestions: false,
             style: TextStyle(
               color: isDark ? Colors.white : colors.onSurface,
               fontSize: 14,

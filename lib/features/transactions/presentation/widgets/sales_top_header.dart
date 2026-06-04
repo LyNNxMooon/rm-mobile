@@ -346,6 +346,9 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
               child: TextField(
                 controller: _searchController,
                 focusNode: _searchFocusNode,
+                // Disable autocorrect and predictive text
+                autocorrect: false,
+                enableSuggestions: false,
                 style: TextStyle(
                   fontSize: useDesktopNav ? 13 : 14,
                   color: isDark ? Colors.white : Colors.black87,
