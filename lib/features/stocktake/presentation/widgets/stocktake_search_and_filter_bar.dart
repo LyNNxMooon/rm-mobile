@@ -44,6 +44,9 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
                   height: actionSize,
                   child: TextField(
                     onChanged: onChanged,
+                    // Disable autocorrect and predictive text
+                    autocorrect: false,
+                    enableSuggestions: false,
                     textAlignVertical: TextAlignVertical.center,
                     expands: true,
                     maxLines: null,

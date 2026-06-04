@@ -89,6 +89,10 @@ abstract class LocalDbDAO {
     required String shopfront,
   });
   Future<int> getHistoryRetentionDays();
+  Future<Map<String, dynamic>?> getExistingStocktakeCount({
+    required int stockId,
+    required String shopfront,
+  });
   Future<StockVO?> getStockByIDSearch(String query, String shopfront);
   Future<StockVO?> getStockById(int stockId, String shopfront);
   Future<StockVO?> getStockByIdAnyShopfront(int stockId);

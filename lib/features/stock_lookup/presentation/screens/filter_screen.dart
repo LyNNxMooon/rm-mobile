@@ -483,6 +483,9 @@ class _FilterScreenState extends State<FilterScreen> {
             Expanded(
               child: TextField(
                 onChanged: (value) => setState(() => _searchQuery = value),
+                // Disable autocorrect and predictive text
+                autocorrect: false,
+                enableSuggestions: false,
                 style: TextStyle(
                   color: isDark ? Colors.white : colors.onSurface,
                   fontSize: (isTablet ? 16 : 14) * uiScale,

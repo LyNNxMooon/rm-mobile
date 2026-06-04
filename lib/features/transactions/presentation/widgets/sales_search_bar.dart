@@ -116,6 +116,9 @@ class _SalesSearchBarState extends State<SalesSearchBar> {
                 child: TextField(
                   controller: widget.searchController,
                   focusNode: widget.searchFocusNode,
+                  // Disable autocorrect and predictive text
+                  autocorrect: false,
+                  enableSuggestions: false,
                   style: TextStyle(
                     color: isDark ? Colors.white : Colors.black87,
                     fontSize: useDesktopNav ? 13 : 14,

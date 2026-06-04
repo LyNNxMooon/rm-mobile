@@ -167,6 +167,7 @@ const String kSalesHideTaxCodeKey = "sales_hide_tax_code";
 const String kSalesFinaliseButtonOnRightKey = "sales_finalise_button_on_right";
 const String kSalesFinaliseInMenuKey = "sales_finalise_in_menu";
 const String kAutoRemindServerConnectionKey = "auto_remind_server_connection";
+const String kStocktakeAlertRepeatedCountsKey = "stocktake_alert_repeated_counts";
 
 const customersTableCreationQuery = '''
   CREATE TABLE Customers (

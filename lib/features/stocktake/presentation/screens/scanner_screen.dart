@@ -27,6 +27,8 @@ import 'package:rmmobile/features/stocktake/presentation/widgets/stocktake_quest
 import 'package:rmmobile/features/stock_lookup/presentation/screens/stock_lookup_screen.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/responsive_utils.dart';
+import 'package:rmmobile/local_db/local_db_dao.dart';
+import 'package:rmmobile/local_db/sqlite/sqlite_constants.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
@@ -89,6 +91,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
   // Selected items for deletion
   final Set<int> _selectedStockIds = {};
 
+  // "Alert repeating counted stocks" setting (persistent, default off)
+  bool _alertRepeatingCounts = false;
+
   // Helper to handle saving the count
   void _submitCount() {
     if (countingStock == null) {
@@ -103,6 +108,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     final qtyText = qtyController.text.trim();
     if (qtyText.isEmpty) return;
+
+    _runRepeatCheckThen(() => _continueSubmitCount(qtyText));
+  }
+
+  void _continueSubmitCount(String qtyText) {
+    if (countingStock == null) return;
 
     if (countingStock!.barcode == qtyText) {
       showDialog(
@@ -198,6 +209,75 @@ class _ScannerScreenState extends State<ScannerScreen> {
         context.read<StocktakeLimitBloc>().add(FetchStocktakeLimitEvent());
       }
     });
+
+    _loadAlertRepeatingCountsSetting();
+  }
+
+  Future<void> _loadAlertRepeatingCountsSetting() async {
+    final String? value = await LocalDbDAO.instance.getAppConfig(
+      kStocktakeAlertRepeatedCountsKey,
+    );
+    if (!mounted) return;
+    setState(() {
+      _alertRepeatingCounts = value == "true";
+    });
+  }
+
+  void _toggleAlertRepeatingCounts() {
+    final bool newValue = !_alertRepeatingCounts;
+    setState(() => _alertRepeatingCounts = newValue);
+    LocalDbDAO.instance.saveAppConfig(
+      kStocktakeAlertRepeatedCountsKey,
+      newValue.toString(),
+    );
+  }
+
+  /// When the "Alert repeating counted stocks" setting is on, checks whether the
+  /// currently selected stock was already counted (in this session) or sent to
+  /// the shopfront within the last 24 hours. If so, prompts the user before
+  /// continuing; otherwise proceeds immediately.
+  Future<void> _runRepeatCheckThen(
+    VoidCallback proceed, {
+    VoidCallback? onCancel,
+  }) async {
+    final StockVO? stock = countingStock;
+    if (stock == null || !_alertRepeatingCounts) {
+      proceed();
+      return;
+    }
+
+    final Map<String, dynamic>? info = await LocalDbDAO.instance
+        .getExistingStocktakeCount(
+          stockId: stock.stockID.toInt(),
+          shopfront: AppGlobals.instance.shopfront ?? "",
+        );
+    if (!mounted) return;
+
+    if (info == null) {
+      proceed();
+      return;
+    }
+
+    final bool fromHistory = info['source'] == 'history';
+    final String source = fromHistory ? 'sent to the shopfront' : 'counted';
+    final num qty = info['quantity'] as num;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StocktakeQuestionDialog(
+        title: "RetailManager Question",
+        message:
+            "This item has already been $source with a count of $qty. Are you sure you want to count it again?",
+        onYesPressed: () {
+          Navigator.of(dialogContext).pop();
+          proceed();
+        },
+        onNoPressed: () {
+          Navigator.of(dialogContext).pop();
+          onCancel?.call();
+        },
+      ),
+    );
   }
 
   void _onFocusChange() {
@@ -601,6 +681,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
             controller: _bcController,
             focusNode: txtFieldFocusNode,
             scrollPhysics: const ClampingScrollPhysics(),
+            // Disable autocorrect and predictive text
+            autocorrect: false,
+            enableSuggestions: false,
             style: TextStyle(
               color: isDark ? Colors.white : Colors.black87,
               fontSize: 12,
@@ -709,7 +792,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 disabledForegroundColor: colors.onSurfaceMuted,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
               ),
-              child: const Text("Save Count", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              child: const Text("Save Count", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
             ),
           ),
           const SizedBox(height: 12),
@@ -720,16 +803,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
             child: BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
               builder: (context, state) {
                 final count = state is StocktakeListLoaded ? state.totalCount : 0;
-                return OutlinedButton.icon(
+                return ElevatedButton.icon(
                   onPressed: () => context.navigateToNext(const StockTakeListScreen()),
-                  icon: const Icon(Icons.list, size: 16),
+                  icon: const Icon(Icons.list, size: 16, color: Colors.white),
                   label: Text(
                     count > 0 ? "View List ($count)" : "View List",
-                    style: const TextStyle(fontSize: 12),
+                    style: const TextStyle(fontSize: 12, color: Colors.white),
                   ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: kPrimaryColor,
-                    side: const BorderSide(color: kPrimaryColor),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                   ),
                 );
@@ -778,6 +861,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
             controller: _bcController,
             focusNode: txtFieldFocusNode,
             scrollPhysics: const ClampingScrollPhysics(),
+            // Disable autocorrect and predictive text
+            autocorrect: false,
+            enableSuggestions: false,
             style: TextStyle(
               color: isDark ? Colors.white : Colors.black87,
               fontSize: 12,
@@ -1496,12 +1582,22 @@ class _ScannerScreenState extends State<ScannerScreen> {
         final barcode = state.stock.barcode;
         if (_lastAutoBarcode == barcode) {
           ++_autoQty;
+          qtyController.text = _autoQty.toString();
+          _submitAutoCount();
         } else {
           _lastAutoBarcode = barcode;
           _autoQty = 1;
+          qtyController.text = _autoQty.toString();
+          // First scan of this barcode this run: alert if already counted/sent.
+          _runRepeatCheckThen(
+            _submitAutoCount,
+            onCancel: () {
+              _lastAutoBarcode = null;
+              _autoQty = 0;
+              qtyController.clear();
+            },
+          );
         }
-        qtyController.text = _autoQty.toString();
-        _submitAutoCount();
       }
     }
   }
@@ -1588,6 +1684,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                     });
                                   },
                                   isTorchOn: isTorchOn,
+                                  alertRepeatingCounts: _alertRepeatingCounts,
+                                  onToggleAlertRepeatingCounts:
+                                      _toggleAlertRepeatingCounts,
                                 ),
 
                                 Padding(
@@ -1722,13 +1821,23 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
                                           if (_lastAutoBarcode == barcode) {
                                             ++_autoQty;
+                                            qtyController.text =
+                                                _autoQty.toString();
+                                            _submitAutoCount();
                                           } else {
                                             _lastAutoBarcode = barcode;
                                             _autoQty = 1;
+                                            qtyController.text =
+                                                _autoQty.toString();
+                                            _runRepeatCheckThen(
+                                              _submitAutoCount,
+                                              onCancel: () {
+                                                _lastAutoBarcode = null;
+                                                _autoQty = 0;
+                                                qtyController.clear();
+                                              },
+                                            );
                                           }
-
-                                          qtyController.text = _autoQty.toString();
-                                          _submitAutoCount();
                                         }
                                       }
                                     },
@@ -2054,6 +2163,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       controller: _bcController,
                       focusNode: txtFieldFocusNode,
                       scrollPhysics: const ClampingScrollPhysics(),
+                      // Disable autocorrect and predictive text
+                      autocorrect: false,
+                      enableSuggestions: false,
                       style: TextStyle(
                         color: isDark ? Colors.white : Colors.black87,
                         fontSize: 14,

@@ -380,6 +380,9 @@ class _StocktakeHistoryDetailsScreenState
                   _searchQuery = value;
                 });
               },
+              // Disable autocorrect and predictive text
+              autocorrect: false,
+              enableSuggestions: false,
               textAlignVertical: TextAlignVertical.center,
               expands: true,
               maxLines: null,

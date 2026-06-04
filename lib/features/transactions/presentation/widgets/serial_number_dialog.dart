@@ -526,6 +526,9 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
                 Expanded(
                   child: TextField(
                     controller: _searchController,
+                    // Disable autocorrect and predictive text
+                    autocorrect: false,
+                    enableSuggestions: false,
                     style: TextStyle(
                       fontSize: (isLargeLayout ? 14 : 13) * uiScale,
                       color: isDark ? Colors.white : Colors.black87,
