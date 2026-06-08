@@ -310,13 +310,13 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
     final double rightLabelWidth = useDesktopNav ? 80.0 : (isTablet ? 45.0 : 35.0);
 
     return Scaffold(
-      backgroundColor: isDark ? colors.bg : Colors.grey.shade50,
+      backgroundColor: isDark ? Colors.black : Colors.grey.shade50,
       appBar: AppBar(
         title: const Text(
           "Delivery Details",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        backgroundColor: isDark ? colors.surfaceAlt : Colors.white,
+        backgroundColor: isDark ? Colors.black : Colors.white,
         foregroundColor: isDark ? Colors.white : Colors.black87,
         elevation: 0,
         centerTitle: true,
@@ -628,7 +628,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? colors.surfaceAlt : Colors.white,
+              color: isDark ? Colors.black : Colors.white,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -718,7 +718,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
           hintText: "Search customer...",
           hintStyle: TextStyle(color: colors.onSurfaceMuted, fontSize: 13),
           filled: true,
-          fillColor: isDark ? const Color(0xFF1E2733) : Colors.grey.shade50,
+          fillColor: isDark ? const Color(0xFF212121) : Colors.grey.shade50,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 0,
@@ -789,7 +789,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
         decoration: BoxDecoration(
           color: isDisabled
               ? (isDark ? Colors.white10 : Colors.grey.shade200)
-              : (isDark ? const Color(0xFF1E2733) : Colors.grey.shade50),
+              : (isDark ? const Color(0xFF212121) : Colors.grey.shade50),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: isDark ? Colors.white24 : Colors.grey.shade300,
@@ -848,7 +848,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: enabled
-                  ? (isDark ? const Color(0xFF1E2733) : Colors.grey.shade50)
+                  ? (isDark ? const Color(0xFF212121) : Colors.grey.shade50)
                   : (isDark ? Colors.white10 : Colors.grey.shade200),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
@@ -940,7 +940,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
           filled: true,
           fillColor: readOnly
               ? (isDark ? Colors.white10 : Colors.grey.shade200)
-              : (isDark ? const Color(0xFF1E2733) : Colors.grey.shade50),
+              : (isDark ? const Color(0xFF212121) : Colors.grey.shade50),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 0,
@@ -999,7 +999,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
         height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2733) : Colors.grey.shade50,
+          color: isDark ? const Color(0xFF212121) : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: isDark ? Colors.white24 : Colors.grey.shade300,

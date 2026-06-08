@@ -1181,14 +1181,25 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           final double totalSpacing = spacing * (crossAxisCount - 1);
           final double availableWidth = constraints.maxWidth - totalSpacing;
           final double itemWidth = availableWidth / crossAxisCount;
-          
+
+          // Cards that share the continuous blue->white icon gradient (exclude Suppliers)
+          final List<Map<String, dynamic>> gradientItems = items
+              .where((item) => item['title'] != 'Suppliers')
+              .toList();
+
           return Wrap(
             spacing: spacing,
             runSpacing: spacing,
             children: items.map((item) {
+              final int gradientIndex = gradientItems.indexOf(item);
               return SizedBox(
                 width: itemWidth,
-                child: _buildInformationTile(context, item),
+                child: _buildInformationTile(
+                  context,
+                  item,
+                  gradientIndex: gradientIndex,
+                  gradientTotal: gradientItems.length,
+                ),
               );
             }).toList(),
           );
@@ -1328,11 +1339,21 @@ Widget _buildInformationTile(
   BuildContext context,
   Map<String, dynamic> item, {
   int badgeCount = 0,
+  int gradientIndex = -1,
+  int gradientTotal = 0,
 }) {
   final bool isTablet = MediaQuery.of(context).size.width > 600;
   
   // Use the same color as the app bar / main background
   final Color cardColor = const Color.fromRGBO(12, 58, 85, 1);
+
+  // Progressive solid blue per icon: first lighter, second more, third fully blue
+  final bool useIconGradient = gradientIndex >= 0 && gradientTotal > 0;
+  // Raise the floor so every icon leans more blue (first still lighter than the rest)
+  final Color iconBgColor = useIconGradient
+      ? Color.lerp(Colors.white, kPrimaryColor,
+          0.55 + (0.45 * ((gradientIndex + 1) / gradientTotal)))!
+      : Colors.white;
 
   return Material(
     color: Colors.transparent,
@@ -1365,12 +1386,12 @@ Widget _buildInformationTile(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               
-              // 3. The Icon: White background, dirty green icon
+              // 3. The Icon: progressive solid blue background, white icon
               Container(
                 width: isTablet ? 66 : 52,
                 height: isTablet ? 66 : 52,
                 decoration: BoxDecoration(
-                  color: Colors.white, // Solid white background
+                  color: iconBgColor,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -1382,7 +1403,7 @@ Widget _buildInformationTile(
                 ),
                 child: Icon(
                   item['icon'] as IconData?,
-                  color: cardColor, // Icon matches the card's background color
+                  color: useIconGradient ? Colors.white : cardColor,
                   size: isTablet ? 36 : 28,
                 ),
               ),

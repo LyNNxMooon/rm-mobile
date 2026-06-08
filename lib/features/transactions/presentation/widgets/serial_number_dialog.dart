@@ -191,7 +191,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
 
     return Dialog(
       insetPadding: EdgeInsets.symmetric(horizontal: useDesktopNav ? 40 : 15),
-      backgroundColor: isDark ? colors.surface : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF212121) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SizedBox(
         width: dialogWidth,
@@ -300,7 +300,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: (isLargeLayout ? 16 : 12) * uiScale),
       decoration: BoxDecoration(
-        color: isDark ? colors.surfaceAlt : Colors.grey.shade50,
+        color: isDark ? const Color(0xFF212121) : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark ? Colors.white12 : Colors.grey.shade300,
@@ -495,7 +495,7 @@ class _SerialNumberDialogState extends State<SerialNumberDialog> {
     return Container(
       padding: EdgeInsets.all((isLargeLayout ? 16 : 12) * uiScale),
       decoration: BoxDecoration(
-        color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
+        color: isDark ? const Color(0xFF212121) : Colors.grey.shade100,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(12),
           bottomRight: Radius.circular(12),

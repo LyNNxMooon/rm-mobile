@@ -134,7 +134,7 @@ class _PricingDialogState extends State<PricingDialog> {
         ),
         padding: EdgeInsets.all(useDesktopNav ? 16 : (isTablet ? 24 : 18)),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2733) : Colors.white,
+          color: isDark ? const Color(0xFF212121) : Colors.white,
           borderRadius: BorderRadius.circular(useDesktopNav ? 12 : 16),
           boxShadow: [
             BoxShadow(

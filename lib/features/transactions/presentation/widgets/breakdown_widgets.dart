@@ -40,7 +40,7 @@ class TaxBreakdownWidget extends StatelessWidget {
         vertical: isTablet ? 20 : 16,
       ),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2733) : Colors.grey.shade100,
+        color: isDark ? const Color(0xFF212121) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark ? Colors.white12 : Colors.grey.shade300,
@@ -137,7 +137,7 @@ class ProfitBreakdownWidget extends StatelessWidget {
         vertical: isTablet ? 20 : 16,
       ),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2733) : Colors.grey.shade100,
+        color: isDark ? const Color(0xFF212121) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark ? Colors.white12 : Colors.grey.shade300,

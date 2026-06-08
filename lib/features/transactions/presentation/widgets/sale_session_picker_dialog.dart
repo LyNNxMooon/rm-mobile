@@ -117,7 +117,7 @@ class SaleSessionPickerDialog extends StatelessWidget {
                   padding: EdgeInsets.all(useWideLayout ? 10 : 8),
                   decoration: BoxDecoration(
                     color: iconColor,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(60),
                   ),
                   child: Icon(
                     icon,

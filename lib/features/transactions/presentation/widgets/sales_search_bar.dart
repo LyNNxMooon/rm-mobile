@@ -68,7 +68,7 @@ class _SalesSearchBarState extends State<SalesSearchBar> {
         : (isActive ? kPrimaryColor.withOpacity(0.8) : kPrimaryColor.withOpacity(0.55));
     final Color background = isActive
         ? kPrimaryColor.withOpacity(isDark ? 0.25 : 0.18)
-        : (isDark ? colors.surfaceAlt : kPrimaryColor.withOpacity(0.08));
+        : (isDark ? const Color(0xFF212121) : kPrimaryColor.withOpacity(0.08));
 
     return InkWell(
       onTap: onTap,
@@ -100,7 +100,7 @@ class _SalesSearchBarState extends State<SalesSearchBar> {
       child: Container(
         height: containerHeight,
         decoration: BoxDecoration(
-          color: isDark ? colors.surface : Colors.white,
+          color: isDark ? Colors.black : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: _isFocused

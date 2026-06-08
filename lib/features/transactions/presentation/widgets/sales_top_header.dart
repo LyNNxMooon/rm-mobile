@@ -145,7 +145,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
         : (isMuted ? Colors.grey.shade400 : kPrimaryColor.withOpacity(0.55));
     final Color background = isMuted
         ? (isDark ? colors.surface : Colors.grey.shade100)
-        : (isDark ? colors.surfaceAlt : kPrimaryColor.withOpacity(0.08));
+        : (isDark ? const Color(0xFF212121) : kPrimaryColor.withOpacity(0.08));
 
     return InkWell(
       onTap: onTap,
@@ -178,7 +178,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     return Container(
       padding: EdgeInsets.fromLTRB(12, isTablet ? 8 : 5, 12, isTablet ? 8 : 5),
       decoration: BoxDecoration(
-        color: isDark ? colors.surfaceAlt : Colors.white,
+        color: isDark ? const Color(0xFF212121) : Colors.white,
         border: Border(
           bottom: BorderSide(
             color: isDark ? Colors.white12 : Colors.grey.shade200,
@@ -231,7 +231,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     return Container(
       height: isTablet ? 34 : 24,
       decoration: BoxDecoration(
-        color: isDark ? colors.surface : Colors.grey.shade100,
+        color: isDark ? Colors.black : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(isTablet ? 17 : 12),
         border: Border.all(
           color: isDark ? Colors.white12 : Colors.grey.shade300,
@@ -287,7 +287,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
       decoration: BoxDecoration(
-        color: isDark ? colors.surface.withOpacity(0.8) : Colors.grey.shade100,
+        color: isDark ? Colors.black : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark ? Colors.white24 : Colors.grey.shade300,
@@ -330,7 +330,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     return Container(
       height: containerHeight,
       decoration: BoxDecoration(
-        color: isDark ? colors.surface : Colors.white,
+        color: isDark ? Colors.black : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: _isSearchFocused
@@ -437,7 +437,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     return Container(
       height: containerHeight,
       decoration: BoxDecoration(
-        color: isDark ? colors.surface : Colors.white,
+        color: isDark ? Colors.black : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5),

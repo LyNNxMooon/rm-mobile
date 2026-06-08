@@ -324,7 +324,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
             margin: const EdgeInsets.all(12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              color: isDark ? const Color(0xFF212121) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -924,6 +924,13 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
           scrollPhysics: const ClampingScrollPhysics(),
+          maxLength: 250,
+          buildCounter: (
+            context, {
+            required currentLength,
+            required isFocused,
+            maxLength,
+          }) => null,
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black87,
             fontSize: 15,

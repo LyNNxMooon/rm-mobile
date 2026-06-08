@@ -40,7 +40,7 @@ class StockDetailsDialog extends StatelessWidget {
             maxHeight: availableHeight - 48,
           ),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E2733) : Colors.white,
+            color: isDark ? const Color(0xFF212121) : Colors.white,
             borderRadius: BorderRadius.circular(dialogBorderRadius),
             boxShadow: [
               BoxShadow(
