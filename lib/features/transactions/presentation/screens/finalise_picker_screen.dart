@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../../constants/colors.dart';
@@ -203,7 +205,13 @@ class _FinalisePickerScreenState extends State<FinalisePickerScreen> {
                 isDark: isDark,
                 isTablet: isTablet && !useDesktopNav,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: isDark ? Colors.white12 : Colors.black12,
+              ),
+              const SizedBox(height: 32),
               _OptionalActionsSection(
                 isTablet: isTablet && !useDesktopNav,
                 isDark: isDark,
@@ -219,25 +227,39 @@ class _FinalisePickerScreenState extends State<FinalisePickerScreen> {
                 titleSize: (isTablet && !useDesktopNav) ? 18 : 16,
                 expandChild: false,
                 isDark: isDark,
-                child: GridView.count(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  crossAxisCount: useDesktopNav
-                      ? 4
-                      : (isTablet ? (isLandscape ? 4 : 3) : 2),
-                  mainAxisSpacing: isTablet ? 16 : 12,
-                  crossAxisSpacing: isTablet ? 16 : 12,
-                  childAspectRatio: useDesktopNav
-                      ? 2.6
-                      : (isTablet ? (isLandscape ? 3.3 : 2.6) : 2.4),
-                  children: types
-                      .map((t) => _TypeCard(
-                            type: t,
-                            isDark: isDark,
-                            isTablet: isTablet && !useDesktopNav,
-                            onTap: () => _handleTypeTap(context, t.value),
-                          ))
-                      .toList(),
+                child: ValueListenableBuilder<FinaliseStep>(
+                  valueListenable: _stepController,
+                  builder: (context, step, child) {
+                    final bool editing = step == FinaliseStep.itemsLoaded;
+                    return IgnorePointer(
+                      ignoring: editing,
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 200),
+                        opacity: editing ? 0.4 : 1.0,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: GridView.count(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    crossAxisCount: useDesktopNav
+                        ? 4
+                        : (isTablet ? (isLandscape ? 4 : 3) : 2),
+                    mainAxisSpacing: isTablet ? 16 : 12,
+                    crossAxisSpacing: isTablet ? 16 : 12,
+                    childAspectRatio: useDesktopNav
+                        ? 2.6
+                        : (isTablet ? (isLandscape ? 3.3 : 2.6) : 2.4),
+                    children: types
+                        .map((t) => _TypeCard(
+                              type: t,
+                              isDark: isDark,
+                              isTablet: isTablet && !useDesktopNav,
+                              onTap: () => _handleTypeTap(context, t.value),
+                            ))
+                        .toList(),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -452,12 +474,12 @@ class _FinaliseStepperState extends State<_FinaliseStepper>
     super.initState();
     _fillController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 600),
     );
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1100),
-    )..repeat(reverse: true);
+      duration: const Duration(milliseconds: 800),
+    )..repeat();
     // Animate the line splashing into the initial step on first load.
     final initialTarget = _targetFor(widget.controller.value);
     _fillAnim = Tween<double>(begin: 0.0, end: initialTarget).animate(
@@ -567,82 +589,63 @@ class _FinaliseStepperState extends State<_FinaliseStepper>
   }
 
   Widget _tick(bool active) {
-    final double size = widget.isTablet ? 30 : 26;
+    final double size = widget.isTablet ? 22 : 18;
+    final double outer = size + (widget.isTablet ? 10 : 8);
     final Color inactiveBorder =
         widget.isDark ? Colors.white30 : Colors.black26;
     return Container(
-      width: size,
-      height: size,
+      width: outer,
+      height: outer,
       alignment: Alignment.center,
+      // Outer outlined ring layer.
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: active ? _accent : Colors.transparent,
         border: Border.all(
-          color: active ? _accent : inactiveBorder,
-          width: 2,
+          color: active
+              ? _accent.withOpacity(0.5)
+              : inactiveBorder.withOpacity(0.6),
+          width: 1.5,
         ),
       ),
-      child: Icon(
-        Icons.check_rounded,
-        size: size * 0.6,
-        color: active ? Colors.black : Colors.transparent,
+      child: Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: active ? _accent : Colors.transparent,
+          border: Border.all(
+            color: active ? _accent : inactiveBorder,
+            width: 2,
+          ),
+        ),
+        child: Icon(
+          Icons.check_rounded,
+          size: size * 0.6,
+          color: active ? Colors.black : Colors.transparent,
+        ),
       ),
     );
   }
 
   Widget _line(double fraction, {required bool pulse}) {
-    final Color track = widget.isDark ? Colors.white12 : Colors.black12;
+    final Color track = widget.isDark ? Colors.white24 : Colors.black26;
     final double f = fraction.clamp(0.0, 1.0);
-    final double pulseScale = pulse ? (0.7 + 0.5 * _pulseController.value) : 1.0;
+    final bool animating = _fillController.isAnimating || pulse;
     return Expanded(
-      child: SizedBox(
-        height: 14,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              height: 4,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: track,
-                borderRadius: BorderRadius.circular(4),
-              ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: SizedBox(
+          height: 22,
+          child: CustomPaint(
+            painter: _LiquidLinePainter(
+              fraction: f,
+              animating: animating,
+              phase: _pulseController.value,
+              fillColor: _accent,
+              trackColor: track,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: FractionallySizedBox(
-                  widthFactor: f,
-                  child: Container(
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: _accent,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (f > 0.02 && f < 0.985)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Align(
-                  alignment: Alignment(f * 2 - 1, 0),
-                  child: Transform.scale(
-                    scale: pulseScale,
-                    child: Container(
-                      width: 11,
-                      height: 11,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _accent,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );
@@ -688,6 +691,94 @@ class _FinaliseStepperState extends State<_FinaliseStepper>
       },
     );
   }
+}
+
+/// Paints the connecting line. When idle the track is a dotted line. While a
+/// step transition is in progress the filled portion becomes a continuous
+/// liquid bar whose wavy surface flows toward the next point, like water
+/// streaming along the line.
+class _LiquidLinePainter extends CustomPainter {
+  final double fraction;
+  final bool animating;
+  final double phase; // 0..1 repeating
+  final Color fillColor;
+  final Color trackColor;
+
+  _LiquidLinePainter({
+    required this.fraction,
+    required this.animating,
+    required this.phase,
+    required this.fillColor,
+    required this.trackColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double cy = size.height / 2;
+    final double w = size.width;
+    final double headX = (fraction.clamp(0.0, 1.0)) * w;
+
+    const double dotR = 2.0;
+    const double gap = 3.5;
+    final double stepX = dotR * 2 + gap;
+    final Paint dot = Paint()..style = PaintingStyle.fill;
+
+    if (!animating) {
+      // Idle: dotted track. Green dots up to the fill head, faint dots beyond.
+      for (double x = dotR; x <= w; x += stepX) {
+        dot.color = x <= headX ? fillColor : trackColor;
+        canvas.drawCircle(Offset(x, cy), dotR, dot);
+      }
+      return;
+    }
+
+    // Animating: faint dots only for the not-yet-reached portion.
+    for (double x = headX + stepX; x <= w; x += stepX) {
+      dot.color = trackColor;
+      canvas.drawCircle(Offset(x, cy), dotR, dot);
+    }
+
+    if (headX <= 0.5) return;
+
+    // Continuous liquid bar from start to the leading head, with a wavy
+    // surface that flows forward.
+    const double barH = 6.0;
+    const double amp = 0.8; // wave amplitude
+    final double topBase = cy - barH / 2;
+    final double botBase = cy + barH / 2;
+    final double travel = phase * 2 * math.pi; // flow offset
+
+    final Path liquid = Path()..moveTo(0, topBase);
+    const double dx = 2.0;
+    // Top surface, rippling toward the head.
+    for (double x = 0; x <= headX; x += dx) {
+      final double k = x / 18.0;
+      final double y = topBase + math.sin(k - travel) * amp;
+      liquid.lineTo(x, y);
+    }
+    // Rounded leading head.
+    liquid.lineTo(headX, botBase);
+    // Bottom surface back to the start.
+    for (double x = headX; x >= 0; x -= dx) {
+      final double k = x / 18.0;
+      final double y = botBase + math.sin(k - travel + math.pi) * amp;
+      liquid.lineTo(x, y);
+    }
+    liquid.close();
+
+    final Paint body = Paint()
+      ..style = PaintingStyle.fill
+      ..color = fillColor;
+    canvas.drawPath(liquid, body);
+  }
+
+  @override
+  bool shouldRepaint(covariant _LiquidLinePainter old) =>
+      old.fraction != fraction ||
+      old.animating != animating ||
+      old.phase != phase ||
+      old.fillColor != fillColor ||
+      old.trackColor != trackColor;
 }
 
 class _OptionalActionsSection extends StatefulWidget {

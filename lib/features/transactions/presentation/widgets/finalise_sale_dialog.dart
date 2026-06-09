@@ -849,10 +849,11 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
   }
 
   Widget _buildEmailForm(AppThemeColors colors, bool isDark, bool isTablet) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         // Customer Info
         Container(
           padding: const EdgeInsets.all(12),
@@ -974,6 +975,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
         ),
         const SizedBox(height: 24),
       ],
+      ),
     );
   }
 
