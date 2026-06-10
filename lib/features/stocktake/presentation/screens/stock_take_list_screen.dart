@@ -98,6 +98,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final bool isDark = colors.isDark;
     return BlocListener<StocktakeDeleteBloc, StocktakeDeleteStates>(
       listener: (context, state) {
         if (state is StocktakeDeleted) {
@@ -116,7 +117,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: colors.bg,
+        backgroundColor: isDark ? Colors.black : Colors.white,
         floatingActionButton: _buildSubmitFAB(),
         body: SafeArea(
           child: Column(
@@ -364,7 +365,6 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
   Widget _buildItemsList() {
     final bool useDesktopNav = context.useDesktopNav;
     final double listPadding = useDesktopNav ? 12.0 : 15.0;
-    final double itemSpacing = useDesktopNav ? 5.0 : 7.0;
 
     return BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
       builder: (context, state) {
@@ -395,7 +395,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
               child: AnimationLimiter(
                 child: ListView.separated(
                   padding: EdgeInsets.fromLTRB(listPadding, 0, listPadding, 80),
-                  separatorBuilder: (_, _) => SizedBox(height: itemSpacing),
+                  separatorBuilder: (_, _) => _buildFadedDivider(),
                   physics: const BouncingScrollPhysics(),
                   itemCount: state.stocktakeList.length,
                   itemBuilder: (context, index) =>
@@ -484,20 +484,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                   horizontal: tilePaddingH,
                   vertical: tilePaddingV,
                 ),
-                decoration: BoxDecoration(
-                  color: isDark ? colors.surfaceAlt : colors.surface,
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  border: isDark
-                      ? Border.all(color: Colors.white30, width: 1)
-                      : null,
-                  boxShadow: [
-                    BoxShadow(
-                      color: colors.cardShadow,
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
+                decoration: const BoxDecoration(color: Colors.transparent),
                 child: Row(
                   children: [
                     Icon(
@@ -511,14 +498,33 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            stock.description,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: getSmartTitle(
-                              color: isDark ? Colors.white : colors.onSurface,
-                              fontSize: titleFontSize,
-                            ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  stock.description,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: getSmartTitle(
+                                    color: isDark
+                                        ? Colors.white
+                                        : colors.onSurface,
+                                    fontSize: titleFontSize,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: useDesktopNav ? 8 : 10),
+                              Text(
+                                "Count: ${_formatQty(stock.quantity)}",
+                                style: getSmartTitle(
+                                  color: isDark
+                                      ? Colors.white
+                                      : colors.onSurface,
+                                  fontSize: titleFontSize,
+                                ),
+                              ),
+                            ],
                           ),
                           SizedBox(height: useDesktopNav ? 1 : 2),
                           Wrap(
@@ -557,8 +563,6 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                         ],
                       ),
                     ),
-                    SizedBox(width: useDesktopNav ? 8 : 10),
-                    _buildQtyBadge(stock.quantity, useDesktopNav),
                   ],
                 ),
               ),
@@ -569,38 +573,37 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     );
   }
 
-  Widget _buildQtyBadge(num qty, bool useDesktopNav) {
-    String formattedQty;
-
-    if (qty % 1 == 0) {
-      // It's an integer (e.g. 5.0 -> "5")
-      formattedQty = qty.toInt().toString();
-    } else {
-      // It's a decimal. Limit to 4 decimal places and remove trailing zeros.
-      // e.g. 5.123456 -> "5.1235"
-      // e.g. 5.5000 -> "5.5"
-      formattedQty = qty.toStringAsFixed(4);
-      // Remove trailing zeros and unnecessary decimal point
-      formattedQty = formattedQty.replaceAll(RegExp(r"([.]*0+)(?!.*\d)"), "");
-    }
-
+  Widget _buildFadedDivider() {
+    final bool isDark = context.appColors.isDark;
+    final Color lineColor = isDark ? Colors.white : Colors.black;
+    final double opacity = isDark ? 0.2 : 0.25;
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: useDesktopNav ? 8 : 10,
-        vertical: useDesktopNav ? 3 : 4,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      height: 0.5,
       decoration: BoxDecoration(
-        color: kPrimaryColor.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
-      ),
-      child: Text(
-        "Counted: $formattedQty",
-        style: TextStyle(
-          fontSize: useDesktopNav ? 11.0 : 12.5,
-          fontWeight: FontWeight.w900,
-          color: kPrimaryColor,
+        gradient: LinearGradient(
+          colors: [
+            Colors.transparent,
+            lineColor.withOpacity(opacity),
+            lineColor.withOpacity(opacity),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.2, 0.8, 1.0],
         ),
       ),
     );
+  }
+
+  String _formatQty(num qty) {
+    if (qty % 1 == 0) {
+      // It's an integer (e.g. 5.0 -> "5")
+      return qty.toInt().toString();
+    }
+    // It's a decimal. Limit to 4 decimal places and remove trailing zeros.
+    // e.g. 5.123456 -> "5.1235"
+    // e.g. 5.5000 -> "5.5"
+    String formattedQty = qty.toStringAsFixed(4);
+    // Remove trailing zeros and unnecessary decimal point
+    return formattedQty.replaceAll(RegExp(r"([.]*0+)(?!.*\d)"), "");
   }
 }

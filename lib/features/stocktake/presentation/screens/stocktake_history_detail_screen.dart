@@ -40,6 +40,8 @@ class _StocktakeHistoryDetailsScreenState
     extends State<StocktakeHistoryDetailsScreen> {
   String _searchQuery = "";
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _searchFocused = false;
   Future<String?> _exportSessionToExcel({
     required StocktakeHistorySessionRow session,
     required List<CountedStockVO> items,
@@ -137,6 +139,11 @@ class _StocktakeHistoryDetailsScreenState
   @override
   void initState() {
     super.initState();
+    _searchFocusNode.addListener(() {
+      if (_searchFocused != _searchFocusNode.hasFocus) {
+        setState(() => _searchFocused = _searchFocusNode.hasFocus);
+      }
+    });
     context.read<StocktakeHistoryBloc>().add(
       LoadHistoryItemsEvent(widget.session.sessionId),
     );
@@ -145,6 +152,7 @@ class _StocktakeHistoryDetailsScreenState
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -175,7 +183,6 @@ class _StocktakeHistoryDetailsScreenState
     final double backIconSize = useDesktopNav ? 16.0 : 18.0;
     final double topPadding = useDesktopNav ? 12.0 : 15.0;
     final double listPadding = useDesktopNav ? 12.0 : 15.0;
-    final double itemSpacing = useDesktopNav ? 5.0 : 7.0;
 
     return WillPopScope(
       onWillPop: () async {
@@ -185,7 +192,7 @@ class _StocktakeHistoryDetailsScreenState
         return true; // allow pop
       },
       child: Scaffold(
-        backgroundColor: colors.bg,
+        backgroundColor: isDark ? Colors.black : Colors.white,
         body: SafeArea(
           child: Column(
             children: [
@@ -336,7 +343,7 @@ class _StocktakeHistoryDetailsScreenState
                           constraints: BoxConstraints(maxWidth: useDesktopNav ? 800 : double.infinity),
                           child: ListView.separated(
                             padding: EdgeInsets.fromLTRB(listPadding, 5, listPadding, listPadding),
-                            separatorBuilder: (_, _) => SizedBox(height: itemSpacing),
+                            separatorBuilder: (_, _) => _buildFadedDivider(),
                             itemCount: filteredItems.length,
                             itemBuilder: (_, i) => _itemTile(filteredItems[i], useDesktopNav),
                           ),
@@ -360,10 +367,9 @@ class _StocktakeHistoryDetailsScreenState
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double actionSize = useDesktopNav ? 36 : (isTablet ? 48 : 42) * uiScale;
+    final double containerHeight = useDesktopNav ? 36 : (isTablet ? 46 : 40) * uiScale;
     final double hintFontSize = useDesktopNav ? 12.0 : 13.0;
     final double iconSize = useDesktopNav ? 18.0 : 20.0;
-    final double borderRadius = useDesktopNav ? 8.0 : 12.0;
     final double horizontalPadding = useDesktopNav ? 12.0 : 15.0;
 
     return Center(
@@ -371,65 +377,67 @@ class _StocktakeHistoryDetailsScreenState
         constraints: BoxConstraints(maxWidth: useDesktopNav ? 800 : double.infinity),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-          child: SizedBox(
-            height: actionSize,
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-              // Disable autocorrect and predictive text
-              autocorrect: false,
-              enableSuggestions: false,
-              textAlignVertical: TextAlignVertical.center,
-              expands: true,
-              maxLines: null,
-              decoration: InputDecoration(
-                hintText: "Search barcode or description...",
-                hintStyle: TextStyle(
-                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+          child: Container(
+            height: containerHeight,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black : Colors.white,
+              borderRadius: BorderRadius.circular(containerHeight / 2),
+              border: Border.all(
+                color: _searchFocused
+                    ? kPrimaryColor
+                    : (isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5)),
+                width: _searchFocused ? 2 : 1,
+              ),
+            ),
+            child: Center(
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                // Disable autocorrect and predictive text
+                autocorrect: false,
+                enableSuggestions: false,
+                textAlignVertical: TextAlignVertical.center,
+                style: TextStyle(
+                  color: isDark ? Colors.white : colors.onSurface,
                   fontSize: hintFontSize,
                 ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: isDark ? Colors.white70 : kPrimaryColor,
-                  size: iconSize,
-                ),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _searchQuery = "";
-                            _searchController.clear();
-                          });
-                        },
-                        icon: Icon(
-                          Icons.clear,
-                          color: isDark ? Colors.white70 : colors.onSurfaceMuted,
-                          size: iconSize,
-                        ),
-                      )
-                    : null,
-                filled: true,
-                fillColor: isDark ? colors.surfaceAlt : colors.surface,
-                contentPadding: EdgeInsets.symmetric(horizontal: useDesktopNav ? 10 : 12),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  borderSide: BorderSide(
-                    color: isDark ? Colors.white38 : colors.divider,
-                    width: 1,
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: "Search barcode or description...",
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                    fontSize: hintFontSize,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: isDark ? Colors.white70 : kPrimaryColor,
+                    size: iconSize,
+                  ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _searchQuery = "";
+                              _searchController.clear();
+                            });
+                          },
+                          icon: Icon(
+                            Icons.clear,
+                            color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                            size: iconSize,
+                          ),
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: useDesktopNav ? 10 : 12,
                   ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
-                ),
-              ),
-              style: TextStyle(
-                color: isDark ? Colors.white : colors.onSurface,
-                fontSize: hintFontSize,
               ),
             ),
           ),
@@ -449,7 +457,6 @@ class _StocktakeHistoryDetailsScreenState
     final double barcodeFontSize = useDesktopNav ? 11.0 : 12.0;
     final double qtyFontSize = useDesktopNav ? 12.0 : 14.0;
     final double iconSize = useDesktopNav ? 16.0 : 18.0;
-    final double borderRadius = useDesktopNav ? 8.0 : 10.0;
 
     return InkWell(
       onTap: () {
@@ -465,20 +472,7 @@ class _StocktakeHistoryDetailsScreenState
       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: tilePaddingH, vertical: tilePaddingV),
-        decoration: BoxDecoration(
-          color: isDark ? colors.surfaceAlt : colors.surface,
-          borderRadius: BorderRadius.circular(borderRadius),
-          border: isDark
-              ? Border.all(color: Colors.white30, width: 1)
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: colors.cardShadow,
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+        decoration: const BoxDecoration(color: Colors.transparent),
         child: Row(
           children: [
             Icon(
@@ -513,25 +507,35 @@ class _StocktakeHistoryDetailsScreenState
               ),
             ),
             SizedBox(width: useDesktopNav ? 8 : 10),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: useDesktopNav ? 8 : 10,
-                vertical: useDesktopNav ? 3 : 4,
-              ),
-              decoration: BoxDecoration(
-                color: kPrimaryColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
-              ),
-              child: Text(
-                stock.quantity.toString(),
-                style: TextStyle(
-                  fontSize: qtyFontSize,
-                  fontWeight: FontWeight.w900,
-                  color: kPrimaryColor,
-                ),
+            Text(
+              stock.quantity.toString(),
+              style: getSmartTitle(
+                color: Colors.white,
+                fontSize: qtyFontSize,
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFadedDivider() {
+    final bool isDark = context.appColors.isDark;
+    final Color lineColor = isDark ? Colors.white : Colors.black;
+    final double opacity = isDark ? 0.2 : 0.25;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      height: 0.5,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.transparent,
+            lineColor.withOpacity(opacity),
+            lineColor.withOpacity(opacity),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.2, 0.8, 1.0],
         ),
       ),
     );

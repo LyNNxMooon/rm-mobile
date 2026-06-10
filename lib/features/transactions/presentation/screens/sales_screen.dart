@@ -1554,7 +1554,7 @@ class _SalesScreenState extends State<SalesScreen>
                     }
                   },
                   child: Scaffold(
-                    backgroundColor: isDark ? Colors.black : kBgColor,
+                    backgroundColor: isDark ? Colors.black : const Color(0xFFFBF7F0),
                     appBar: _buildAppBar(colors, isDark),
                     body: Stack(
                       children: [

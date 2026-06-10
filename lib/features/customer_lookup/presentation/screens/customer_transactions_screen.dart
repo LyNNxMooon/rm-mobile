@@ -168,27 +168,31 @@ class _CustomerTransactionsScreenState
           title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Transactions',
-                    style: TextStyle(
-                      color: isDark ? Colors.white : Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Transactions',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  Text(
-                    widget.customer.displayName,
-                    style: TextStyle(
-                      color: (isDark ? Colors.white : Colors.white).withOpacity(0.8),
-                      fontSize: 13,
-                      fontWeight: FontWeight.normal,
+                    Text(
+                      widget.customer.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: (isDark ? Colors.white : Colors.white).withOpacity(0.8),
+                        fontSize: 13,
+                        fontWeight: FontWeight.normal,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(width: 12),
               // Page Size Dropdown

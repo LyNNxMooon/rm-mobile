@@ -170,9 +170,8 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                           width: double.infinity,
                           height: logoHeight,
                           child: Image.asset(
-                            Theme.of(context).brightness == Brightness.dark
-                                ? "assets/images/trademark_dark.png"
-                                : "assets/images/trademark.png",
+                  
+                                 "assets/images/trademark.png",
                             fit: BoxFit.contain,
                           ),
                         ),

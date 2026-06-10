@@ -163,7 +163,7 @@ class _FinalisePickerScreenState extends State<FinalisePickerScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: isDark ? Colors.black : kBgColor,
+      backgroundColor: isDark ? Colors.black : Colors.white,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: const Color(0xFF9CE5A6),

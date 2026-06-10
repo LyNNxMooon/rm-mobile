@@ -153,11 +153,20 @@ class _StocktakeListAppBarState extends State<StocktakeListAppBar> {
           ),
         ),
         SizedBox(height: useDesktopNav ? 3 : 5),
-        Divider(
-          indent: useDesktopNav ? 12 : 15,
-          endIndent: useDesktopNav ? 12 : 15,
-          thickness: 0.5,
-          color: isDark ? Colors.white : kGreyColor,
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: useDesktopNav ? 12 : 15),
+          height: 0.5,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.transparent,
+                (isDark ? Colors.white : Colors.black).withOpacity(isDark ? 0.2 : 0.25),
+                (isDark ? Colors.white : Colors.black).withOpacity(isDark ? 0.2 : 0.25),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.2, 0.8, 1.0],
+            ),
+          ),
         ),
       ],
     );
