@@ -138,31 +138,28 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     required Color iconColor,
     bool isMuted = false,
   }) {
-    final double height = isTablet ? 36 : 32;
-    final double width = isTablet ? 42 : 38;
-    final Color borderColor = isDark
-        ? Colors.white24
-        : (isMuted ? Colors.grey.shade400 : kPrimaryColor.withOpacity(0.55));
-    final Color background = isMuted
-        ? (isDark ? colors.surface : Colors.grey.shade100)
-        : (isDark ? colors.surfaceAlt : kPrimaryColor.withOpacity(0.08));
+    final double size = isTablet ? 40 : 36;
+    final Color background =
+        isDark ? Colors.black : kPrimaryColor.withOpacity(0.10);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: width,
-        height: height,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: borderColor),
-        ),
-        child: Icon(
-          icon,
-          size: isTablet ? 22 : 20,
-          color: iconColor,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: background,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: isTablet ? 22 : 20,
+            color: iconColor,
+          ),
         ),
       ),
     );
@@ -178,7 +175,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     return Container(
       padding: EdgeInsets.fromLTRB(12, isTablet ? 8 : 5, 12, isTablet ? 8 : 5),
       decoration: BoxDecoration(
-        color: isDark ? colors.surfaceAlt : Colors.white,
+        color: isDark ? const Color(0xFF212121) : Colors.white,
         border: Border(
           bottom: BorderSide(
             color: isDark ? Colors.white12 : Colors.grey.shade200,
@@ -231,7 +228,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     return Container(
       height: isTablet ? 34 : 24,
       decoration: BoxDecoration(
-        color: isDark ? colors.surface : Colors.grey.shade100,
+        color: isDark ? Colors.black : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(isTablet ? 17 : 12),
         border: Border.all(
           color: isDark ? Colors.white12 : Colors.grey.shade300,
@@ -287,7 +284,7 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
       decoration: BoxDecoration(
-        color: isDark ? colors.surface.withOpacity(0.8) : Colors.grey.shade100,
+        color: isDark ? Colors.black : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark ? Colors.white24 : Colors.grey.shade300,
@@ -326,22 +323,22 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
   Widget _buildCustomerSearchField(AppThemeColors colors, bool isDark, bool isTablet) {
     final bool useDesktopNav = context.useDesktopNav;
     final double containerHeight = useDesktopNav ? 36 : (isTablet ? 46 : 40);
-    
-    return Container(
-      height: containerHeight,
-      decoration: BoxDecoration(
-        color: isDark ? colors.surface : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: _isSearchFocused
-              ? kPrimaryColor
-              : (isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5)),
-          width: _isSearchFocused ? 2 : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
+
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: containerHeight,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black : Colors.white,
+              borderRadius: BorderRadius.circular(containerHeight / 2),
+              border: Border.all(
+                color: _isSearchFocused
+                    ? kPrimaryColor
+                    : (isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5)),
+                width: _isSearchFocused ? 2 : 1,
+              ),
+            ),
             child: Center(
               child: TextField(
                 controller: _searchController,
@@ -384,158 +381,154 @@ class _SalesTopHeaderState extends State<SalesTopHeader> {
               ),
             ),
           ),
-          // Close button (only show if customer is selected, allowing to cancel search)
-          if (widget.hasCustomer)
-            Padding(
-              padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
-              child: _buildFieldIconButton(
-                isTablet: isTablet,
-                isDark: isDark,
-                colors: colors,
-                icon: Icons.close,
-                onTap: _exitSearchMode,
-                iconColor: colors.onSurfaceMuted,
-                isMuted: true,
-              ),
-            ),
-          // Go to Customer Lookup button (only show when no customer)
-          if (!widget.hasCustomer && widget.onGoToCustomerLookup != null)
-            Padding(
-              padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
-              child: _buildFieldIconButton(
-                isTablet: isTablet,
-                isDark: isDark,
-                colors: colors,
-                icon: Icons.double_arrow_rounded,
-                onTap: widget.onGoToCustomerLookup!,
-                iconColor: kPrimaryColor,
-              ),
-            ),
-          if (!widget.hasCustomer && widget.onCreateCustomer != null) ...[
-            SizedBox(width: isTablet ? 10 : 8),
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _buildFieldIconButton(
-                isTablet: isTablet,
-                isDark: isDark,
-                colors: colors,
-                icon: Icons.add_circle,
-                onTap: widget.onCreateCustomer!,
-                iconColor: kPrimaryColor,
-              ),
-            ),
-          ],
+        ),
+        // Close button (only show if customer is selected, allowing to cancel search)
+        if (widget.hasCustomer) ...[
+          SizedBox(width: isTablet ? 10 : 8),
+          _buildFieldIconButton(
+            isTablet: isTablet,
+            isDark: isDark,
+            colors: colors,
+            icon: Icons.close,
+            onTap: _exitSearchMode,
+            iconColor: colors.onSurfaceMuted,
+            isMuted: true,
+          ),
         ],
-      ),
+        // Go to Customer Lookup button (only show when no customer)
+        if (!widget.hasCustomer && widget.onGoToCustomerLookup != null) ...[
+          SizedBox(width: isTablet ? 10 : 8),
+          _buildFieldIconButton(
+            isTablet: isTablet,
+            isDark: isDark,
+            colors: colors,
+            icon: Icons.double_arrow_rounded,
+            onTap: widget.onGoToCustomerLookup!,
+            iconColor: kPrimaryColor,
+          ),
+        ],
+        if (!widget.hasCustomer && widget.onCreateCustomer != null) ...[
+          SizedBox(width: isTablet ? 10 : 8),
+          _buildFieldIconButton(
+            isTablet: isTablet,
+            isDark: isDark,
+            colors: colors,
+            icon: Icons.add_circle,
+            onTap: widget.onCreateCustomer!,
+            iconColor: kPrimaryColor,
+          ),
+        ],
+      ],
     );
   }
 
   Widget _buildCustomerSelector(AppThemeColors colors, bool isDark, bool isTablet) {
     final bool useDesktopNav = context.useDesktopNav;
     final double containerHeight = useDesktopNav ? 36 : (isTablet ? 46 : 40);
-    
-    return Container(
-      height: containerHeight,
-      decoration: BoxDecoration(
-        color: isDark ? colors.surface : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5),
+
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: containerHeight,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black : Colors.white,
+              borderRadius: BorderRadius.circular(containerHeight / 2),
+              border: Border.all(
+                color: isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Person icon
+                Padding(
+                  padding: const EdgeInsets.only(left: 12, right: 8),
+                  child: Icon(
+                    Icons.person,
+                    size: useDesktopNav ? 18 : 22,
+                    color: kPrimaryColor,
+                  ),
+                ),
+                // Customer info (display only - tap X to clear and add new customer)
+                Expanded(
+                  child: Container(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "${widget.customerBarcode ?? ''} | ${widget.customerName ?? ''}",
+                      style: TextStyle(
+                        fontSize: useDesktopNav ? 13 : 14,
+                        color: isDark ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                // Customer grade badge
+                if (widget.customerGrade != null)
+                  Container(
+                    margin: EdgeInsets.only(right: isTablet ? 8 : 6),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: useDesktopNav ? 6 : (isTablet ? 10 : 8),
+                      vertical: useDesktopNav ? 2 : (isTablet ? 4 : 3),
+                    ),
+                    decoration: BoxDecoration(
+                      color: kPrimaryColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: kPrimaryColor.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "\$ ",
+                          style: TextStyle(
+                            fontSize: useDesktopNav ? 11 : (isTablet ? 14 : 12),
+                            fontWeight: FontWeight.w900,
+                            color: kPrimaryColor,
+                          ),
+                        ),
+                        Text(
+                          _gradeLabel(widget.customerGrade!),
+                          style: TextStyle(
+                            fontSize: useDesktopNav ? 10 : (isTablet ? 13 : 11),
+                            fontWeight: FontWeight.w700,
+                            color: kPrimaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          // Person icon
-          Padding(
-            padding: const EdgeInsets.only(left: 12, right: 8),
-            child: Icon(
-              Icons.person,
-              size: useDesktopNav ? 18 : 22,
-              color: kPrimaryColor,
-            ),
-          ),
-          // Customer info (display only - tap X to clear and add new customer)
-          Expanded(
-            child: Container(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "${widget.customerBarcode ?? ''} | ${widget.customerName ?? ''}",
-                style: TextStyle(
-                  fontSize: useDesktopNav ? 13 : 14,
-                  color: isDark ? Colors.white : Colors.black87,
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-          // Customer grade badge
-          if (widget.customerGrade != null)
-            Container(
-              margin: EdgeInsets.only(right: isTablet ? 8 : 6),
-              padding: EdgeInsets.symmetric(
-                horizontal: useDesktopNav ? 6 : (isTablet ? 10 : 8),
-                vertical: useDesktopNav ? 2 : (isTablet ? 4 : 3),
-              ),
-              decoration: BoxDecoration(
-                color: kPrimaryColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: kPrimaryColor.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "\$ ",
-                    style: TextStyle(
-                      fontSize: useDesktopNav ? 11 : (isTablet ? 14 : 12),
-                      fontWeight: FontWeight.w900,
-                      color: kPrimaryColor,
-                    ),
-                  ),
-                  Text(
-                    _gradeLabel(widget.customerGrade!),
-                    style: TextStyle(
-                      fontSize: useDesktopNav ? 10 : (isTablet ? 13 : 11),
-                      fontWeight: FontWeight.w700,
-                      color: kPrimaryColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          // View transactions button
-          Padding(
-            padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
-            child: _buildFieldIconButton(
-              isTablet: isTablet,
-              isDark: isDark,
-              colors: colors,
-              icon: Icons.receipt_long_outlined,
-              onTap: widget.onViewCustomerTransactions ?? () {},
-              iconColor: kPrimaryColor,
-            ),
-          ),
-          // Clear button
-          SizedBox(width: isTablet ? 10 : 8),
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: _buildFieldIconButton(
-              isTablet: isTablet,
-              isDark: isDark,
-              colors: colors,
-              icon: Icons.close,
-              onTap: widget.onCustomerClear ?? () {},
-              iconColor: colors.onSurfaceMuted,
-              isMuted: true,
-            ),
-          ),
-        ],
-      ),
+        // View transactions button
+        SizedBox(width: isTablet ? 10 : 8),
+        _buildFieldIconButton(
+          isTablet: isTablet,
+          isDark: isDark,
+          colors: colors,
+          icon: Icons.receipt_long_outlined,
+          onTap: widget.onViewCustomerTransactions ?? () {},
+          iconColor: kPrimaryColor,
+        ),
+        // Clear button
+        SizedBox(width: isTablet ? 10 : 8),
+        _buildFieldIconButton(
+          isTablet: isTablet,
+          isDark: isDark,
+          colors: colors,
+          icon: Icons.close,
+          onTap: widget.onCustomerClear ?? () {},
+          iconColor: colors.onSurfaceMuted,
+          isMuted: true,
+        ),
+      ],
     );
   }
 

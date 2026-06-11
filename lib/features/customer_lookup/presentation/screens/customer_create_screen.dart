@@ -822,8 +822,10 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
         borderRadius: BorderRadius.circular(borderRadius),
         // Adding a subtle stroke to give that "solid card" look from modern UI
         border: Border.all(
-          color: isDark ? Colors.white54 : const Color(0xFFC9B9A6),
-          width: 0.57,
+          color: isDark
+              ? Colors.white.withOpacity(0.12)
+              : const Color(0xFFC9B9A6).withOpacity(0.45),
+          width: 0.5,
         ),
         boxShadow: [
           BoxShadow(

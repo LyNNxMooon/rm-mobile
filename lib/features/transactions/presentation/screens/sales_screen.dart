@@ -2,6 +2,8 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:decimal/decimal.dart';
@@ -216,9 +218,13 @@ class _SalesScreenState extends State<SalesScreen>
   late AnimationController _actionsAnimationController;
   late Animation<double> _actionsAnimation;
 
-  // Draggable action button position
-  Offset? _actionButtonOffset;
-  bool _isDraggingActionButton = false;
+  // Draggable action button position (shared with the floating button widget
+  // via a ValueNotifier so dragging never rebuilds the whole screen).
+  final ValueNotifier<Offset?> _actionButtonOffset =
+      ValueNotifier<Offset?>(null);
+  // Key on the floating button so the actions menu can read its real on-screen
+  // position (robust against MediaQuery padding differences between contexts).
+  final GlobalKey _actionButtonKey = GlobalKey();
 
   /// Gets the survey label from AppGlobals.salesCustom or defaults to "Add Survey"
   String get _surveyLabel =>
@@ -1124,6 +1130,7 @@ class _SalesScreenState extends State<SalesScreen>
     _discountController.dispose();
     _searchFocusNode.dispose();
     _actionsAnimationController.dispose();
+    _actionButtonOffset.dispose();
     _scannerController.dispose();
     _audioPlayer.dispose();
     super.dispose();
@@ -1547,7 +1554,7 @@ class _SalesScreenState extends State<SalesScreen>
                     }
                   },
                   child: Scaffold(
-                    backgroundColor: isDark ? colors.bg : kBgColor,
+                    backgroundColor: isDark ? Colors.black : const Color(0xFFFBF7F0),
                     appBar: _buildAppBar(colors, isDark),
                     body: Stack(
                       children: [
@@ -1707,7 +1714,7 @@ class _SalesScreenState extends State<SalesScreen>
     return AppBar(
       elevation: 0,
       toolbarHeight: 40,
-      backgroundColor: widget.themeColor,
+      backgroundColor: const Color(0xFF3FD45D),
       centerTitle: true,
       leadingWidth: 40,
       leading: IconButton(
@@ -2001,9 +2008,10 @@ class _SalesScreenState extends State<SalesScreen>
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final item = _cartItems[index];
+                final bool isLast = index == _cartItems.length - 1;
                 return Padding(
                   padding: EdgeInsets.only(
-                    bottom: index < _cartItems.length - 1
+                    bottom: !isLast
                         ? (_isCompactView ? 0 : (useDesktopNav ? 2 : 4))
                         : 0,
                   ),
@@ -2013,12 +2021,17 @@ class _SalesScreenState extends State<SalesScreen>
                     child: SlideAnimation(
                       verticalOffset: 20.0,
                       child: FadeInAnimation(
-                        child: _buildCartTileWithEditMode(
-                          item,
-                          index,
-                          colors,
-                          isDark,
-                          isTablet,
+                        child: Column(
+                          children: [
+                            _buildCartTileWithEditMode(
+                              item,
+                              index,
+                              colors,
+                              isDark,
+                              isTablet,
+                            ),
+                            if (!isLast) _buildCartFadedDivider(colors, isDark),
+                          ],
                         ),
                       ),
                     ),
@@ -2154,10 +2167,10 @@ class _SalesScreenState extends State<SalesScreen>
     // Desktop uses more columns and higher aspect ratio for compact tiles
     final int crossAxisCount = useDesktopNav ? 3 : 2;
     final double childAspectRatio = useDesktopNav
-        ? 5.5
+        ? 6.6
         : (isLandscape
-            ? (isMediumTablet ? 5.5 : (isLargeTablet ? 5.8 : 5.2))
-            : (isMediumTablet ? 3.4 : (isLargeTablet ? 4.0 : 3.2)));
+            ? (isMediumTablet ? 6.2 : (isLargeTablet ? 6.5 : 6.0))
+            : (isMediumTablet ? 4.0 : (isLargeTablet ? 4.5 : 3.9)));
 
     return AnimationLimiter(
       child: GridView.builder(
@@ -2171,7 +2184,7 @@ class _SalesScreenState extends State<SalesScreen>
         ),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: crossAxisCount,
-          mainAxisSpacing: useDesktopNav ? 6 : 10,
+          mainAxisSpacing: useDesktopNav ? 2 : 4,
           crossAxisSpacing: useDesktopNav ? 6 : 10,
           childAspectRatio: childAspectRatio,
         ),
@@ -2184,7 +2197,15 @@ class _SalesScreenState extends State<SalesScreen>
             columnCount: crossAxisCount,
             child: ScaleAnimation(
               child: FadeInAnimation(
-                child: _buildCartGridTile(item, index, colors, isDark, uiScale),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: _buildCartGridTile(
+                          item, index, colors, isDark, uiScale),
+                    ),
+                    _buildCartFadedDivider(colors, isDark),
+                  ],
+                ),
               ),
             ),
           );
@@ -2327,12 +2348,12 @@ class _SalesScreenState extends State<SalesScreen>
     final bool isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
     final bool isLargeTablet = !isMediumTablet && !useDesktopNav;
-    // Desktop uses smaller thumbnail, tablet uses larger
+    // Circular thumbnail sized to fit comfortably within the grid tile height
     final double thumbnailSize = useDesktopNav
-        ? 90
+        ? 76
         : (isLandscape
-            ? (isMediumTablet ? 115 : (isLargeTablet ? 140 : 125))
-            : (isMediumTablet ? 95 : (isLargeTablet ? 130 : 105)));
+            ? (isMediumTablet ? 96 : (isLargeTablet ? 108 : 100))
+            : (isMediumTablet ? 100 : (isLargeTablet ? 116 : 98)));
     final double displayPrice = _isIncTax ? item.incPrice : item.exPrice;
     final double displayExt = _isIncTax ? item.extension : item.extensionEx;
 
@@ -2364,37 +2385,22 @@ class _SalesScreenState extends State<SalesScreen>
           _salesBloc.add(RemoveCartItem(index: index));
         },
         child: Container(
-          decoration: BoxDecoration(
-            color: isDark
-                ? Color.lerp(colors.surface, Colors.white, 0.06)
-                : kSecondaryColor,
-            borderRadius: BorderRadius.circular(10),
-            border: isDark
-                ? Border.all(color: Colors.white.withOpacity(0.18))
-                : null,
-            boxShadow: [
-              BoxShadow(
-                color: isDark
-                    ? Colors.black.withOpacity(0.35)
-                    : kThirdColor.withOpacity(0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
+          decoration: const BoxDecoration(
+            color: Colors.transparent,
           ),
           child: Row(
             children: [
-              // Thumbnail
+              // Thumbnail (circular)
               Container(
                 width: thumbnailSize,
-                height: double.infinity,
-                margin: const EdgeInsets.all(8),
+                height: thumbnailSize,
+                margin: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
+                  shape: BoxShape.circle,
                   color: isDark ? colors.surface : Colors.white,
-                  borderRadius: BorderRadius.circular(6),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
+                child: ClipOval(
                   child: item.stock?.imageUrl != null
                       ? Image.network(
                           item.stock!.imageUrl!,
@@ -2425,7 +2431,7 @@ class _SalesScreenState extends State<SalesScreen>
                           item.description,
                           style: TextStyle(
                             fontSize: descFontSize,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500,
                             color: isDark ? Colors.white : kThirdColor,
                           ),
                           maxLines: 1,
@@ -2502,7 +2508,7 @@ class _SalesScreenState extends State<SalesScreen>
                                 ),
                                 style: TextStyle(
                                   fontSize: extFontSize,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w500,
                                   color: isDark ? Colors.white : Colors.black87,
                                 ),
                               ),
@@ -2971,6 +2977,26 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
+  Widget _buildCartFadedDivider(AppThemeColors colors, bool isDark) {
+    final Color lineColor = isDark ? Colors.white : Colors.black;
+    final double opacity = isDark ? 0.2 : 0.25;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 15),
+      height: 0.5,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.transparent,
+            lineColor.withOpacity(opacity),
+            lineColor.withOpacity(opacity),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.2, 0.8, 1.0],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMobileCartTile(
     CartItemVO item,
     int index,
@@ -3038,7 +3064,7 @@ class _SalesScreenState extends State<SalesScreen>
     
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2733) : Colors.white,
+        color: isDark ? const Color(0xFF212121) : Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
@@ -3310,24 +3336,54 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
+  /// When non-null, finalise dialogs and alerts are shown using this context
+  /// so they render above the Finalise picker instead of the sales screen.
+  BuildContext? _finaliseDialogContext;
+  BuildContext get _finaliseHost => _finaliseDialogContext ?? context;
+
   Future<void> _showFinaliseDialog() async {
     // For the unified "Sales" entry, intercept with a picker that lets the
-    // user choose the transaction type before continuing the commit flow.
+    // user choose the transaction type. All validation prompts and the
+    // FinaliseSaleDialog are shown on top of the picker (via onFinaliseType)
+    // so the user is never bounced back to the sales screen mid-flow. The
+    // picker only closes once the flow asks for it.
     if (widget.title == "Sales") {
       final picked = await FinalisePickerScreen.show(
         context,
         isAccountCustomer: _selectedCustomer?.account ?? false,
+        onFinaliseType: (pickerContext, type, stepController) async {
+          _activeTransactionType = type;
+          return _runFinaliseFlow(pickerContext, stepController: stepController);
+        },
+        onOptionalAction: (pickerContext, action) {
+          final colors = pickerContext.appColors;
+          final isDark = colors.isDark;
+          _handleFinaliseOptionalAction(pickerContext, action, colors, isDark);
+        },
       );
       if (!mounted) return;
       if (picked == null || picked.isEmpty) {
         _activeTransactionType = widget.title;
-        return;
       }
-      _activeTransactionType = picked;
-    } else {
-      _activeTransactionType = widget.title;
+      return;
     }
 
+    _activeTransactionType = widget.title;
+    await _runFinaliseFlow(context);
+  }
+
+  /// Runs the full finalise flow (validation prompts, the FinaliseSaleDialog
+  /// and the commit/send step). All dialogs and alerts are rendered using
+  /// [dialogContext] so they appear above whatever screen initiated the flow
+  /// (the Finalise picker for the unified Sales entry). Returns `true` when the
+  /// picker should be closed (sale committed, or an auto-charge item was added
+  /// and the cart needs to be recalculated).
+  Future<bool> _runFinaliseFlow(
+    BuildContext dialogContext, {
+    FinaliseStepController? stepController,
+  }) async {
+    _finaliseDialogContext = dialogContext;
+    try {
     final isAccountSales = _activeTransactionType == "Account Sales";
     final isSalesOrder = _activeTransactionType == "Sales Order";
     final isQuotes = _activeTransactionType == "Quotes";
@@ -3364,7 +3420,7 @@ class _SalesScreenState extends State<SalesScreen>
             final bool useDesktopNav = context.useDesktopNav;
             final bool isTabletSize = context.isTablet;
             await showDialog<void>(
-              context: context,
+              context: _finaliseHost,
               builder: (ctx) {
                 return StandardDialog(
                   title: "RetailManager Warning",
@@ -3409,8 +3465,8 @@ class _SalesScreenState extends State<SalesScreen>
 
             _salesBloc.add(AddCartItemDirect(cartItem: cartItem));
 
-            // Return - user must click Finalise again after recalculation
-            return;
+            // Close the picker so the user can recalculate and finalise again.
+            return true;
           }
         }
       }
@@ -3428,7 +3484,7 @@ class _SalesScreenState extends State<SalesScreen>
 
     if (hasIncompleteSerials && !isQuotes) {
       final shouldContinue = await showDialog<bool>(
-        context: context,
+        context: _finaliseHost,
         builder: (ctx) {
           final colors = context.appColors;
           final isDark = colors.isDark;
@@ -3463,7 +3519,7 @@ class _SalesScreenState extends State<SalesScreen>
         },
       );
       if (shouldContinue != true) {
-        return;
+        return false;
       }
     }
 
@@ -3471,7 +3527,7 @@ class _SalesScreenState extends State<SalesScreen>
     final totals = _calculatedTotals;
     if (totals.totalGp < 0) {
       final shouldContinue = await showDialog<bool>(
-        context: context,
+        context: _finaliseHost,
         builder: (ctx) {
           final colors = context.appColors;
           final isDark = colors.isDark;
@@ -3506,7 +3562,7 @@ class _SalesScreenState extends State<SalesScreen>
         },
       );
       if (shouldContinue != true) {
-        return;
+        return false;
       }
     }
 
@@ -3516,17 +3572,17 @@ class _SalesScreenState extends State<SalesScreen>
       if (outOfStockItems.isNotEmpty) {
         final colors = context.appColors;
         OutOfStockFinaliseDialog.show(
-          context: context,
+          context: _finaliseHost,
           outOfStockItems: outOfStockItems,
           colors: colors,
           isDark: colors.isDark,
         );
-        return;
+        return false;
       }
     }
 
     final result = await FinaliseSaleDialog.show(
-      context: context,
+      context: _finaliseHost,
       customer: _selectedCustomer,
       total: _total,
       initialPaymentAmounts: Map.from(_paymentAmounts),
@@ -3536,7 +3592,7 @@ class _SalesScreenState extends State<SalesScreen>
     );
 
     if (result == null) {
-      return;
+      return false;
     }
 
     // Always update payment amounts from dialog (even on cancel)
@@ -3548,8 +3604,13 @@ class _SalesScreenState extends State<SalesScreen>
     }
 
     if (result.result == FinaliseSaleResult.cancelled) {
-      return;
+      return false;
     }
+
+    // Commit confirmed: show "Processing" on the step indicator (the picker
+    // stays open and drives the indicator instead of bouncing to the sales
+    // screen).
+    stepController?.setProcessing();
 
     if (isAccountSales || isSalesOrder || isQuotes || isLayby) {
       _setFinaliseProcessing(true);
@@ -3568,7 +3629,8 @@ class _SalesScreenState extends State<SalesScreen>
           final enteredEmail = result.emailData?.email.trim() ?? '';
           final updated = await _maybeUpdateCustomerEmail(enteredEmail);
           if (!updated) {
-            return;
+            stepController?.revertToOptionsSaved();
+            return false;
           }
         }
 
@@ -3580,7 +3642,8 @@ class _SalesScreenState extends State<SalesScreen>
             ? await _sendLayby(includeEmailAudit: includeEmailAudit)
             : await _sendAccountInvoice(includeEmailAudit: includeEmailAudit);
         if (!sent) {
-          return;
+          stepController?.revertToOptionsSaved();
+          return false;
         }
       } finally {
         _setFinaliseProcessing(false);
@@ -3589,6 +3652,17 @@ class _SalesScreenState extends State<SalesScreen>
 
     // Clear everything
     _clearSale();
+
+    // Reach the final tick ("Successfully completed") and hold briefly so the
+    // user sees it before the picker closes.
+    if (stepController != null) {
+      stepController.setCompleted();
+      await Future.delayed(const Duration(milliseconds: 1300));
+    }
+    return true;
+    } finally {
+      _finaliseDialogContext = null;
+    }
   }
 
   Future<bool> _sendAccountInvoice({required bool includeEmailAudit}) async {
@@ -3615,11 +3689,7 @@ class _SalesScreenState extends State<SalesScreen>
         return false;
       }
 
-      _showAccountSalesSuccess(
-        response.message.isNotEmpty
-            ? response.message
-            : "Account invoice sent.",
-      );
+      // Success is now reflected by the finalise step indicator.
       return true;
     } catch (error) {
       _showAccountSalesError("Failed to send account invoice: $error");
@@ -3651,9 +3721,7 @@ class _SalesScreenState extends State<SalesScreen>
         return false;
       }
 
-      _showAccountSalesSuccess(
-        response.message.isNotEmpty ? response.message : "Sales order sent.",
-      );
+      // Success is now reflected by the finalise step indicator.
       return true;
     } catch (error) {
       _showAccountSalesError("Failed to send sales order: $error");
@@ -3685,9 +3753,7 @@ class _SalesScreenState extends State<SalesScreen>
         return false;
       }
 
-      _showAccountSalesSuccess(
-        response.message.isNotEmpty ? response.message : "Quote sent.",
-      );
+      // Success is now reflected by the finalise step indicator.
       return true;
     } catch (error) {
       _showAccountSalesError("Failed to send quote: $error");
@@ -3719,9 +3785,7 @@ class _SalesScreenState extends State<SalesScreen>
         return false;
       }
 
-      _showAccountSalesSuccess(
-        response.message.isNotEmpty ? response.message : "Lay-by sent.",
-      );
+      // Success is now reflected by the finalise step indicator.
       return true;
     } catch (error) {
       _showAccountSalesError("Failed to send lay-by: $error");
@@ -4252,28 +4316,12 @@ class _SalesScreenState extends State<SalesScreen>
     final colors = context.appColors;
     final isDark = colors.isDark;
     AlertInfo.show(
-      context: context,
+      context: _finaliseHost,
       text: message,
       typeInfo: TypeInfo.error,
       backgroundColor: isDark ? colors.surface : kSecondaryColor,
       iconColor: kErrorColor,
       textColor: kErrorColor,
-      position: MessagePosition.top,
-      padding: 70,
-    );
-  }
-
-  void _showAccountSalesSuccess(String message) {
-    if (!mounted) return;
-    final colors = context.appColors;
-    final isDark = colors.isDark;
-    AlertInfo.show(
-      context: context,
-      text: message,
-      typeInfo: TypeInfo.success,
-      backgroundColor: isDark ? colors.surface : kSecondaryColor,
-      iconColor: kPrimaryColor,
-      textColor: kPrimaryColor,
       position: MessagePosition.top,
       padding: 70,
     );
@@ -4611,7 +4659,7 @@ class _SalesScreenState extends State<SalesScreen>
         vertical: isTablet ? 14 : 10,
       ),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2733) : Colors.white,
+        color: isDark ? const Color(0xFF212121) : Colors.white,
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
@@ -4893,7 +4941,7 @@ class _SalesScreenState extends State<SalesScreen>
                   width: dialogWidth,
                   padding: EdgeInsets.all(dialogPadding),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                    color: isDark ? const Color(0xFF212121) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -5055,7 +5103,7 @@ class _SalesScreenState extends State<SalesScreen>
                   width: dialogWidth,
                   padding: EdgeInsets.all(dialogPadding),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                    color: isDark ? const Color(0xFF212121) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -5846,7 +5894,7 @@ class _SalesScreenState extends State<SalesScreen>
               width: dialogWidth,
               padding: EdgeInsets.all(dialogPadding),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                color: isDark ? const Color(0xFF212121) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -5920,7 +5968,7 @@ class _SalesScreenState extends State<SalesScreen>
               width: dialogWidth,
               padding: EdgeInsets.all(dialogPadding),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                color: isDark ? const Color(0xFF212121) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -6075,7 +6123,7 @@ class _SalesScreenState extends State<SalesScreen>
                       width: dialogWidth,
                       padding: EdgeInsets.all(dialogPadding),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                        color: isDark ? const Color(0xFF212121) : Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
@@ -6527,19 +6575,27 @@ class _SalesScreenState extends State<SalesScreen>
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = context.isTablet;
     final useDesktopNav = context.useDesktopNav;
-    final buttonSize = useDesktopNav ? 50.0 : (isTablet ? 70.0 : 50.0);
+    final buttonSize = useDesktopNav ? 42.0 : (isTablet ? 58.0 : 42.0);
     final defaultBottom = useDesktopNav ? 85.0 : (isTablet ? 100.0 : 90.0);
     final defaultLeft = 12.0;
-    
-    // App bar height for coordinate conversion (button is in body Stack, dialog uses full screen)
-    final appBarHeight = kToolbarHeight + MediaQuery.of(context).padding.top;
-    
-    // Calculate button position (use dragged offset or default)
-    final double buttonLeft = _actionButtonOffset?.dx ?? defaultLeft;
-    // When dragged, offset is relative to body (below app bar), so add app bar height for full screen coords
-    final double buttonTop = _actionButtonOffset != null
-        ? _actionButtonOffset!.dy + appBarHeight
-        : (screenHeight - defaultBottom - buttonSize - MediaQuery.of(context).padding.bottom);
+
+    // Read the button's real global position so the menu always anchors to it,
+    // regardless of drag state or MediaQuery padding differences.
+    double buttonLeft;
+    double buttonTop;
+    final renderObject = _actionButtonKey.currentContext?.findRenderObject();
+    if (renderObject is RenderBox && renderObject.hasSize) {
+      final topLeft = renderObject.localToGlobal(Offset.zero);
+      buttonLeft = topLeft.dx;
+      buttonTop = topLeft.dy;
+    } else {
+      // Fallback to default position if the button hasn't been laid out yet.
+      buttonLeft = defaultLeft;
+      buttonTop = screenHeight -
+          defaultBottom -
+          buttonSize -
+          MediaQuery.of(context).padding.bottom;
+    }
 
     bool surveyExpanded = false;
     _surveyController.text = _surveyValue;
@@ -6725,7 +6781,7 @@ class _SalesScreenState extends State<SalesScreen>
                                       "Finalise",
                                       tileColor: isFinaliseDisabled
                                           ? Colors.grey.shade600
-                                          : const Color(0xFF00C896),
+                                          : Colors.green.shade600,
                                       onTap: isFinaliseDisabled ? () {} : () {
                                         Navigator.pop(context);
                                         _showFinaliseDialog();
@@ -6762,102 +6818,31 @@ class _SalesScreenState extends State<SalesScreen>
     bool isTablet,
     bool useDesktopNav,
   ) {
-    final size = useDesktopNav ? 50.0 : (isTablet ? 70.0 : 50.0);
-    
+    final size = useDesktopNav ? 42.0 : (isTablet ? 58.0 : 42.0);
+    final iconSize = useDesktopNav ? 24.0 : (isTablet ? 34.0 : 24.0);
+
     // Default position: bottom left, above the finalise button area
     final defaultBottom = useDesktopNav ? 85.0 : (isTablet ? 100.0 : 90.0);
-    final defaultLeft = 12.0;
-    
-    return Positioned(
-      left: _actionButtonOffset?.dx ?? defaultLeft,
-      bottom: _actionButtonOffset == null 
-          ? defaultBottom 
-          : null,
-      top: _actionButtonOffset?.dy,
-      child: GestureDetector(
-        onPanStart: (_) {
-          setState(() => _isDraggingActionButton = true);
-        },
-        onPanUpdate: (details) {
-          setState(() {
-            final currentOffset = _actionButtonOffset ?? 
-                Offset(defaultLeft, MediaQuery.of(context).size.height - defaultBottom - size - MediaQuery.of(context).padding.bottom);
-            _actionButtonOffset = Offset(
-              (currentOffset.dx + details.delta.dx).clamp(0, MediaQuery.of(context).size.width - size),
-              (currentOffset.dy + details.delta.dy).clamp(0, MediaQuery.of(context).size.height - size - MediaQuery.of(context).padding.bottom),
-            );
-          });
-        },
-        onPanEnd: (_) {
-          setState(() => _isDraggingActionButton = false);
-        },
-        child: AnimatedScale(
-          scale: _isDraggingActionButton ? 1.1 : 1.0,
-          duration: const Duration(milliseconds: 150),
-          child: _buildActionsButton(colors, isDark, isTablet, useDesktopNav),
-        ),
-      ),
-    );
-  }
+    const defaultLeft = 12.0;
 
-  Widget _buildActionsButton(
-    AppThemeColors colors,
-    bool isDark,
-    bool isTablet,
-    bool useDesktopNav,
-  ) {
-    // Desktop uses smaller size (but not too small)
-    final size = useDesktopNav ? 50.0 : (isTablet ? 70.0 : 50.0);
-    final iconSize = useDesktopNav ? 24.0 : (isTablet ? 34.0 : 24.0);
-    
-    return Builder(
-      builder: (context) => GestureDetector(
-        onTap: () {
-          setState(() {
-            _showActions = !_showActions;
-            if (_showActions) {
-              _actionsAnimationController.forward();
-              _showActionsMenu(context, colors, isDark);
-            } else {
-              _actionsAnimationController.reverse();
-            }
-          });
-        },
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: isDark ? colors.surfaceAlt : Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isDark ? Colors.white30 : Colors.grey.shade400,
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isDark
-                    ? Colors.black.withOpacity(0.5)
-                    : Colors.black.withOpacity(0.15),
-                blurRadius: 12,
-                spreadRadius: 1,
-                offset: const Offset(0, 4),
-              ),
-              if (!isDark)
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  blurRadius: 6,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 2),
-                ),
-            ],
-          ),
-          child: Icon(
-            Icons.menu,
-            color: kPrimaryColor,
-            size: iconSize,
-          ),
-        ),
-      ),
+    return _GlowingDraggableActionButton(
+      size: size,
+      iconSize: iconSize,
+      defaultLeft: defaultLeft,
+      defaultBottom: defaultBottom,
+      offsetNotifier: _actionButtonOffset,
+      buttonKey: _actionButtonKey,
+      onTap: () {
+        setState(() {
+          _showActions = !_showActions;
+          if (_showActions) {
+            _actionsAnimationController.forward();
+            _showActionsMenu(context, colors, isDark);
+          } else {
+            _actionsAnimationController.reverse();
+          }
+        });
+      },
     );
   }
 
@@ -6993,7 +6978,7 @@ class _SalesScreenState extends State<SalesScreen>
           vertical: isTablet ? 16 : 14,
         ),
         decoration: BoxDecoration(
-          color: tileColor ?? (isDark ? const Color(0xFF1E2733) : Colors.white),
+          color: tileColor ?? (isDark ? const Color(0xFF212121) : Colors.white),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -7082,7 +7067,7 @@ class _SalesScreenState extends State<SalesScreen>
           vertical: isTablet ? 16 : 14,
         ),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2733) : Colors.white,
+          color: isDark ? const Color(0xFF212121) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -7139,6 +7124,63 @@ class _SalesScreenState extends State<SalesScreen>
         ),
       ),
     );
+  }
+
+  /// Handles an optional action picked from the Finalise picker
+  /// (Survey/Comment/Delivery/Discount). The picker route is already popped,
+  /// so this does NOT pop a route — it just invokes the matching handler.
+  /// Handles an optional action picked from the Finalise picker
+  /// (Survey/Comment/Delivery/Discount). The picker stays open, so all dialogs
+  /// are shown using [dialogContext] (the picker's context) and render above
+  /// it instead of bouncing back to the sales screen.
+  void _handleFinaliseOptionalAction(
+    BuildContext dialogContext,
+    String action,
+    AppThemeColors colors,
+    bool isDark,
+  ) {
+    if (action == "Survey") {
+      _showSalesCustomerDialog(dialogContext, colors, isDark);
+    } else if (action == "Comment") {
+      _showCommentDialog(dialogContext, colors, isDark);
+    } else if (action == "Discount") {
+      _showDiscountDialog(dialogContext, colors, isDark);
+    } else if (action == "Delivery") {
+      if (_selectedCustomer == null) {
+        AlertInfo.show(
+          context: dialogContext,
+          text: "Please select a customer before adding delivery details",
+          typeInfo: TypeInfo.warning,
+          backgroundColor: isDark ? colors.surface : kSecondaryColor,
+          iconColor: Colors.orange,
+          textColor: Colors.orange,
+          position: MessagePosition.top,
+          padding: 70,
+        );
+        return;
+      }
+      Future.microtask(() async {
+        if (!dialogContext.mounted) return;
+        final result = await Navigator.of(dialogContext).push<DeliveryInfoVO>(
+          MaterialPageRoute(
+            builder: (ctx) => DeliveryDetailsScreen(
+              initialCustomer: _selectedCustomer,
+              existingDelivery: _deliveryInfo,
+            ),
+          ),
+        );
+        if (result != null && mounted) {
+          setState(() {
+            _deliveryInfo = result;
+            _committedDeliveryAddress = DeliveryAddressData.fromDeliveryInfo(
+              result,
+              companyName: _selectedCustomer?.company,
+            );
+          });
+          _saveCurrentSession();
+        }
+      });
+    }
   }
 
   void _handleGridActionTap(
@@ -7326,6 +7368,197 @@ class _SalesScreenState extends State<SalesScreen>
       totalGp: double.parse(totals.totalGp.toStringAsFixed(4)),
       colors: colors,
       isDark: isDark,
+    );
+  }
+}
+
+/// Floating, draggable actions button with a dynamic "breathing" glow.
+///
+/// Kept as a self-contained [StatefulWidget] so that dragging and the glow
+/// animation only rebuild this widget instead of the whole sales screen,
+/// which keeps the drag gesture buttery smooth.
+class _GlowingDraggableActionButton extends StatefulWidget {
+  const _GlowingDraggableActionButton({
+    required this.size,
+    required this.iconSize,
+    required this.defaultLeft,
+    required this.defaultBottom,
+    required this.offsetNotifier,
+    required this.buttonKey,
+    required this.onTap,
+  });
+
+  final double size;
+  final double iconSize;
+  final double defaultLeft;
+  final double defaultBottom;
+  final ValueNotifier<Offset?> offsetNotifier;
+  final GlobalKey buttonKey;
+  final VoidCallback onTap;
+
+  @override
+  State<_GlowingDraggableActionButton> createState() =>
+      _GlowingDraggableActionButtonState();
+}
+
+class _GlowingDraggableActionButtonState
+    extends State<_GlowingDraggableActionButton>
+    with SingleTickerProviderStateMixin {
+  bool _isDragging = false;
+  late final AnimationController _glowController;
+
+  @override
+  void initState() {
+    super.initState();
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _glowController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final size = widget.size;
+    final defaultTop =
+        media.size.height - widget.defaultBottom - size - media.padding.bottom;
+
+    return ValueListenableBuilder<Offset?>(
+      valueListenable: widget.offsetNotifier,
+      builder: (context, offset, _) {
+        return Positioned(
+          left: offset?.dx ?? widget.defaultLeft,
+          bottom: offset == null ? widget.defaultBottom : null,
+          top: offset?.dy,
+          child: GestureDetector(
+            key: widget.buttonKey,
+            onTap: widget.onTap,
+            onPanStart: (_) => setState(() => _isDragging = true),
+            onPanUpdate: (details) {
+              final current =
+                  widget.offsetNotifier.value ?? Offset(widget.defaultLeft, defaultTop);
+              widget.offsetNotifier.value = Offset(
+                (current.dx + details.delta.dx)
+                    .clamp(0.0, media.size.width - size),
+                (current.dy + details.delta.dy)
+                    .clamp(0.0, media.size.height - size - media.padding.bottom),
+              );
+            },
+            onPanEnd: (_) => setState(() => _isDragging = false),
+            child: AnimatedScale(
+              scale: _isDragging ? 1.12 : 1.0,
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOut,
+              child: AnimatedBuilder(
+                animation: _glowController,
+                builder: (context, child) {
+                  final angle = _glowController.value * 2 * math.pi;
+                  // Continuous AI-style sweep that loops seamlessly (first and
+                  // last colors match) so there is no transparent gap where the
+                  // ends meet.
+                  const sweepColors = [
+                    Color(0xFF00E5FF), // cyan
+                    Color(0xFF2979FF), // deep blue
+                    Color(0xFF7C4DFF), // purple
+                    Color(0xFFE040FB), // magenta
+                    Color(0xFFFFAB00), // orange/amber
+                    Color(0xFF00E5FF), // back to cyan (seamless loop)
+                  ];
+                  const sweepStops = [
+                    0.0,
+                    0.2,
+                    0.4,
+                    0.6,
+                    0.8,
+                    1.0,
+                  ];
+                  final radius = size * 0.34; // rounded square
+                  // The aura sits a little larger than the button so the
+                  // blurred light peeks out tightly around the edges.
+                  final auraSize = size + 4;
+                  final auraRadius = auraSize * 0.34;
+                  return SizedBox(
+                    width: auraSize,
+                    height: auraSize,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.center,
+                      children: [
+                        // BOTTOM LAYER: rotating SweepGradient aura, blurred and
+                        // faded so it reads as a soft shadow-like light behind
+                        // the button rather than a solid colored line.
+                        Opacity(
+                          opacity: 0.65,
+                          child: ImageFiltered(
+                            imageFilter:
+                                ui.ImageFilter.blur(sigmaX: 4.5, sigmaY: 4.5),
+                            child: Container(
+                              width: auraSize,
+                              height: auraSize,
+                              decoration: BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.circular(auraRadius),
+                                gradient: SweepGradient(
+                                  transform: GradientRotation(angle),
+                                  colors: sweepColors,
+                                  stops: sweepStops,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Core with the navy gradient bg, sitting on top of the
+                        // aura so only the blurred light shows around the edges.
+                        Container(
+                          width: size,
+                          height: size,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color.fromRGBO(9, 38, 58, 1),
+                                Color.fromRGBO(4, 19, 34, 1),
+                                Color.fromRGBO(1, 7, 14, 1),
+                              ],
+                              stops: [0.0, 0.55, 1.0],
+                            ),
+                            borderRadius: BorderRadius.circular(radius),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.08),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.40),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: child,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: Icon(
+                  Icons.menu,
+                  color: Colors.white,
+                  size: widget.iconSize,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -144,7 +144,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: isDark ? colors.bg : kBgColor,
+      backgroundColor: isDark ? colors.bg : Colors.white,
       body: SafeArea(
         child: Stack(
           children: [
@@ -155,11 +155,22 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                 const SizedBox(height: 5),
                 const PendingCustomerUpdatesTile(),
                
-                Divider(
-                  indent: horizontalPadding,
-                  endIndent: horizontalPadding,
-                  thickness: 0.5,
-                  color: isDark ? Colors.white38 : kGreyColor,
+                Container(
+                  margin: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  height: 0.5,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        (isDark ? Colors.white : Colors.black)
+                            .withOpacity(isDark ? 0.2 : 0.25),
+                        (isDark ? Colors.white : Colors.black)
+                            .withOpacity(isDark ? 0.2 : 0.25),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.2, 0.8, 1.0],
+                    ),
+                  ),
                 ),
                 const CustomerSyncInfoWidget(),
                 BlocBuilder<CustomerListBloc, CustomerListState>(
@@ -548,11 +559,9 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     return Expanded(
       child: BlocBuilder<CustomerListBloc, CustomerListState>(
         builder: (context, state) {
-          final bool isTablet = context.isTablet;
           final bool useDesktopNav = context.useDesktopNav;
           final double listHorizontalPadding = useDesktopNav ? 10 : 15;
           final double listBottomPadding = useDesktopNav ? 80 : 100;
-          final double itemSeparator = useDesktopNav ? 5 : (isTablet ? 10 : 7);
 
           if (state is CustomerListLoading) {
             return loadingWidget();
@@ -568,32 +577,58 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                 : state.currentQuery;
 
             return AnimationLimiter(
-              child: ListView.separated(
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.only(left: listHorizontalPadding, right: listHorizontalPadding, top: 0, bottom: listBottomPadding),
-                itemCount: state.hasReachedMax
-                    ? state.customers.length
-                    : state.customers.length + 1,
-                separatorBuilder: (ctx, i) => SizedBox(height: itemSeparator),
-                itemBuilder: (context, index) {
-                  if (index >= state.customers.length) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: CupertinoActivityIndicator(),
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(context).copyWith(
+                  dragDevices: {
+                    ui.PointerDeviceKind.touch,
+                    ui.PointerDeviceKind.mouse,
+                    ui.PointerDeviceKind.stylus,
+                    ui.PointerDeviceKind.trackpad,
+                  },
+                ),
+                child: ListView.separated(
+                  controller: _scrollController,
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.only(left: listHorizontalPadding, right: listHorizontalPadding, top: 0, bottom: listBottomPadding),
+                  itemCount: state.hasReachedMax
+                      ? state.customers.length
+                      : state.customers.length + 1,
+                  separatorBuilder: (ctx, i) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    height: 0.5,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          (context.appColors.isDark ? Colors.white : Colors.black)
+                              .withOpacity(context.appColors.isDark ? 0.2 : 0.25),
+                          (context.appColors.isDark ? Colors.white : Colors.black)
+                              .withOpacity(context.appColors.isDark ? 0.2 : 0.25),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.2, 0.8, 1.0],
                       ),
+                    ),
+                  ),
+                  itemBuilder: (context, index) {
+                    if (index >= state.customers.length) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CupertinoActivityIndicator(),
+                        ),
+                      );
+                    }
+                    final customer = state.customers[index];
+                    final matchedField = state.matchedFields[customer.customerId];
+                    return _buildCustomerTile(
+                      customer,
+                      index,
+                      query: effectiveQuery,
+                      matchedField: matchedField,
                     );
-                  }
-                  final customer = state.customers[index];
-                  final matchedField = state.matchedFields[customer.customerId];
-                  return _buildCustomerTile(
-                    customer,
-                    index,
-                    query: effectiveQuery,
-                    matchedField: matchedField,
-                  );
-                },
+                  },
+                ),
               ),
             );
           }
@@ -704,7 +739,7 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double thumbnailSize = useDesktopNav ? 32 : (isLargeTablet ? 52 : isTablet ? 44 : 36) * uiScale;
+    final double thumbnailSize = useDesktopNav ? 38 : (isLargeTablet ? 60 : isTablet ? 52 : 44) * uiScale;
     final double tileHorizontalPadding = useDesktopNav ? 10 : (isTablet ? 16 : 15) * uiScale;
     final double accountIconSize = useDesktopNav ? 14 : (isLargeTablet ? 22 : isTablet ? 19 : 16) * uiScale;
     final double accountIconPadding = useDesktopNav ? 5 : (isLargeTablet ? 9 : isTablet ? 7 : 6) * uiScale;
@@ -776,7 +811,6 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
     final double infoLabelFontSize = useDesktopNav ? 10 : (isTablet ? 9.5 : 12) * textUiScale;
     final double infoValueFontSize = useDesktopNav ? 10 : (isTablet ? 14 : 12) * textUiScale;
     final double infoIconSize = useDesktopNav ? 10 : (isTablet ? 13 : 12) * textUiScale;
-    final double tileBorderRadius = useDesktopNav ? 8 : 10;
 
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(
@@ -800,24 +834,8 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                 }
               },
               child: Container(
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Color.lerp(colors.surface, Colors.white, 0.06)
-                      : colors.surface,
-                  borderRadius: BorderRadius.all(Radius.circular(tileBorderRadius)),
-                  border: isDark
-                      ? Border.all(color: Colors.white12)
-                      : null,
-                  boxShadow: [
-                    BoxShadow(
-                      color: isDark
-                          ? Colors.black.withOpacity(0.35)
-                          : colors.cardShadow,
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                      spreadRadius: 0,
-                    ),
-                  ],
+                decoration: const BoxDecoration(
+                  color: Colors.transparent,
                 ),
                 padding: EdgeInsets.symmetric(
                   horizontal: tileHorizontalPadding,
@@ -930,17 +948,8 @@ class _CustomerLookupScreenState extends State<CustomerLookupScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Container(
+                    Padding(
                       padding: EdgeInsets.all(accountIconPadding),
-                      decoration: BoxDecoration(
-                        color: (customer.account
-                                ? Colors.green
-                                : (isDark
-                                    ? Colors.white70
-                                    : Colors.blueGrey[700]!))
-                            .withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(useDesktopNav ? 6 : (isTablet ? 10 : 8)),
-                      ),
                       child: Icon(
                         Icons.person,
                         color: customer.account

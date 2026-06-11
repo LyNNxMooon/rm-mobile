@@ -62,27 +62,26 @@ class _SalesSearchBarState extends State<SalesSearchBar> {
     required Color iconColor,
     bool isActive = false,
   }) {
-    final double size = isTablet ? 38 : 34;
-    final Color borderColor = isDark
-        ? Colors.white30
-        : (isActive ? kPrimaryColor.withOpacity(0.8) : kPrimaryColor.withOpacity(0.55));
+    final double size = isTablet ? 44 : 40;
     final Color background = isActive
         ? kPrimaryColor.withOpacity(isDark ? 0.25 : 0.18)
-        : (isDark ? colors.surfaceAlt : kPrimaryColor.withOpacity(0.08));
+        : (isDark ? const Color(0xFF212121) : kPrimaryColor.withOpacity(0.08));
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: size + 6,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: borderColor),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: background,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: iconColor, size: isTablet ? 22 : 20),
         ),
-        child: Icon(icon, color: iconColor, size: isTablet ? 22 : 20),
       ),
     );
   }
@@ -97,21 +96,21 @@ class _SalesSearchBarState extends State<SalesSearchBar> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Container(
-        height: containerHeight,
-        decoration: BoxDecoration(
-          color: isDark ? colors.surface : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: _isFocused
-                ? kPrimaryColor
-                : (isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5)),
-            width: _isFocused ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: containerHeight,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.black : Colors.white,
+                borderRadius: BorderRadius.circular(containerHeight / 2),
+                border: Border.all(
+                  color: _isFocused
+                      ? kPrimaryColor
+                      : (isDark ? Colors.white24 : kPrimaryColor.withOpacity(0.5)),
+                  width: _isFocused ? 2 : 1,
+                ),
+              ),
               child: Center(
                 child: TextField(
                   controller: widget.searchController,
@@ -127,7 +126,7 @@ class _SalesSearchBarState extends State<SalesSearchBar> {
                   decoration: InputDecoration(
                     hintText: 'Scan barcode or type to search',
                     hintStyle: TextStyle(
-                      color: colors.onSurfaceMuted, 
+                      color: colors.onSurfaceMuted,
                       fontSize: useDesktopNav ? 12 : 13,
                     ),
                     border: InputBorder.none,
@@ -146,50 +145,46 @@ class _SalesSearchBarState extends State<SalesSearchBar> {
                 ),
               ),
             ),
-            // Torch toggle (only visible when scanner is open)
-            if (widget.showScanner && widget.onTorchToggle != null) ...[
-              Padding(
-                padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
-                child: _buildIconButton(
-                  isTablet: isTablet,
-                  isDark: isDark,
-                  colors: colors,
-                  icon: widget.isTorchOn ? Icons.flash_on : Icons.flash_off,
-                  onTap: widget.onTorchToggle!,
-                  iconColor: widget.isTorchOn ? Colors.amber : colors.onSurfaceMuted,
-                  isActive: widget.isTorchOn,
-                ),
-              ),
-            ],
-            // Scanner toggle (hidden on desktop where scanner is not available)
-            if (widget.onScannerToggle != null)
-              Padding(
-                padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
-                child: _buildIconButton(
-                  isTablet: isTablet,
-                  isDark: isDark,
-                  colors: colors,
-                  icon: Icons.qr_code_scanner,
-                  onTap: widget.onScannerToggle!,
-                  iconColor: widget.showScanner ? Colors.green : kPrimaryColor,
-                  isActive: widget.showScanner,
-                ),
-              ),
-            // Go to Stock Lookup button
-            if (widget.onGoToStockLookup != null)
-              Padding(
-                padding: EdgeInsets.only(left: isTablet ? 10 : 8, right: 8),
-                child: _buildIconButton(
-                  isTablet: isTablet,
-                  isDark: isDark,
-                  colors: colors,
-                  icon: Icons.double_arrow_rounded,
-                  onTap: widget.onGoToStockLookup!,
-                  iconColor: kPrimaryColor,
-                ),
-              ),
+          ),
+          // Torch toggle (only visible when scanner is open)
+          if (widget.showScanner && widget.onTorchToggle != null) ...[
+            SizedBox(width: isTablet ? 10 : 8),
+            _buildIconButton(
+              isTablet: isTablet,
+              isDark: isDark,
+              colors: colors,
+              icon: widget.isTorchOn ? Icons.flash_on : Icons.flash_off,
+              onTap: widget.onTorchToggle!,
+              iconColor: widget.isTorchOn ? Colors.amber : colors.onSurfaceMuted,
+              isActive: widget.isTorchOn,
+            ),
           ],
-        ),
+          // Scanner toggle (hidden on desktop where scanner is not available)
+          if (widget.onScannerToggle != null) ...[
+            SizedBox(width: isTablet ? 10 : 8),
+            _buildIconButton(
+              isTablet: isTablet,
+              isDark: isDark,
+              colors: colors,
+              icon: Icons.qr_code_scanner,
+              onTap: widget.onScannerToggle!,
+              iconColor: widget.showScanner ? Colors.green : kPrimaryColor,
+              isActive: widget.showScanner,
+            ),
+          ],
+          // Go to Stock Lookup button
+          if (widget.onGoToStockLookup != null) ...[
+            SizedBox(width: isTablet ? 10 : 8),
+            _buildIconButton(
+              isTablet: isTablet,
+              isDark: isDark,
+              colors: colors,
+              icon: Icons.double_arrow_rounded,
+              onTap: widget.onGoToStockLookup!,
+              iconColor: kPrimaryColor,
+            ),
+          ],
+        ],
       ),
     );
   }

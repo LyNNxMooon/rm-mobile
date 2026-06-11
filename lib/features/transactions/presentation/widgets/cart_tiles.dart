@@ -480,11 +480,10 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                 height: thumbnailSize,
                 margin: EdgeInsets.only(right: useDesktopNav ? 6 : (isTablet ? 10 : 8)),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(6),
+                  shape: BoxShape.circle,
                   color: widget.isDark ? widget.colors.surface : Colors.white,
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
+                child: ClipOval(
                   child: widget.item.stock?.imageUrl != null &&
                           widget.item.stock!.imageUrl!.trim().isNotEmpty
                       ? CachedNetworkImage(
@@ -1264,7 +1263,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
               width: isTablet ? 500 : MediaQuery.of(context).size.width * 0.85,
               padding: EdgeInsets.all(isTablet ? 28 : 24),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E2733) : Colors.white,
+                color: isDark ? const Color(0xFF212121) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -1409,29 +1408,12 @@ class MobileCartTile extends StatelessWidget {
     final double extFontSize = useDesktopNav ? 12 : 14;
     
     // Desktop-specific sizing
-    final double verticalPadding = useDesktopNav ? 0 : 8;
-    final double thumbnailSize = useDesktopNav ? 36 : 38;
+    final double verticalPadding = useDesktopNav ? 0 : 4;
+    final double thumbnailSize = useDesktopNav ? 36 : 44;
     
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: verticalPadding),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Color.lerp(colors.surface, Colors.white, 0.06)
-            : kSecondaryColor,
-        borderRadius: BorderRadius.circular(10),
-        border: isDark
-            ? Border.all(color: Colors.white.withOpacity(0.18))
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.35)
-                : kThirdColor.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      color: Colors.transparent,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -1441,11 +1423,10 @@ class MobileCartTile extends StatelessWidget {
             height: thumbnailSize,
             margin: const EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(6),
+              shape: BoxShape.circle,
               color: isDark ? colors.surface : Colors.white,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
+            child: ClipOval(
               child: item.stock?.imageUrl != null &&
                       item.stock!.imageUrl!.trim().isNotEmpty
                   ? CachedNetworkImage(
@@ -1484,7 +1465,7 @@ class MobileCartTile extends StatelessWidget {
                   item.description,
                   style: TextStyle(
                     fontSize: descFontSize,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
                   maxLines: 2,
@@ -1562,7 +1543,7 @@ class MobileCartTile extends StatelessWidget {
                     ),
                     style: TextStyle(
                       fontSize: extFontSize,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w500,
                       color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
@@ -1579,7 +1560,7 @@ class MobileCartTile extends StatelessWidget {
                     item.description,
                     style: TextStyle(
                       fontSize: descFontSize,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       color: isDark ? Colors.white : Colors.black87,
                     ),
                     maxLines: 1,
@@ -1637,7 +1618,7 @@ class MobileCartTile extends StatelessWidget {
                       ),
                       style: TextStyle(
                         fontSize: extFontSize,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w500,
                         color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
@@ -1720,29 +1701,12 @@ class TabletCartTile extends StatelessWidget {
     final double extFontSize = useDesktopNav ? 12 : 15;
     
     // Desktop-specific sizing
-    final double verticalPadding = useDesktopNav ? 6 : 8;
-    final double thumbnailSize = useDesktopNav ? 36 : 45;
+    final double verticalPadding = useDesktopNav ? 6 : 4;
+    final double thumbnailSize = useDesktopNav ? 36 : 52;
     
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: verticalPadding),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Color.lerp(colors.surface, Colors.white, 0.06)
-            : kSecondaryColor,
-        borderRadius: BorderRadius.circular(10),
-        border: isDark
-            ? Border.all(color: Colors.white.withOpacity(0.18))
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.35)
-                : kThirdColor.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      color: Colors.transparent,
       child: Row(
         children: [
           // Thumbnail Image
@@ -1751,11 +1715,10 @@ class TabletCartTile extends StatelessWidget {
             height: thumbnailSize,
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(6),
+              shape: BoxShape.circle,
               color: isDark ? colors.surface : Colors.white,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
+            child: ClipOval(
               child: item.stock?.imageUrl != null &&
                       item.stock!.imageUrl!.trim().isNotEmpty
                   ? CachedNetworkImage(
@@ -1795,7 +1758,7 @@ class TabletCartTile extends StatelessWidget {
                 child: Text(
                   item.description,
                   style: TextStyle(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                     color: isDark ? Colors.white : Colors.black87,
                     fontSize: descFontSize,
                   ),
@@ -1901,7 +1864,7 @@ class TabletCartTile extends StatelessWidget {
                 ),
                 textAlign: TextAlign.right,
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w500,
                   fontSize: extFontSize,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
@@ -1926,7 +1889,7 @@ class TabletCartTile extends StatelessWidget {
               child: Text(
                 item.description,
                 style: TextStyle(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                   color: isDark ? Colors.white : Colors.black87,
                   fontSize: descFontSize,
                 ),
@@ -1989,7 +1952,7 @@ class TabletCartTile extends StatelessWidget {
                 ),
                 textAlign: TextAlign.right,
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w500,
                   fontSize: extFontSize,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
@@ -2164,7 +2127,7 @@ class CompactCartTile extends StatelessWidget {
           ),
           Divider(
             height: 1,
-            thickness: 1,
+            thickness: 0.5,
             color: isDark ? Colors.white24 : Colors.grey.shade400,
           ),
         ],
@@ -2243,7 +2206,7 @@ class CompactCartTile extends StatelessWidget {
         ),
         Divider(
           height: 1,
-          thickness: 1,
+          thickness: 0.5,
           color: isDark ? Colors.white24 : Colors.grey.shade400,
         ),
       ],

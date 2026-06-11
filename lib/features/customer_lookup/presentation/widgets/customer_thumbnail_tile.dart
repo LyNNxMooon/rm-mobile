@@ -49,7 +49,7 @@ class CustomerThumbnailTile extends StatelessWidget {
       "${customer.givenNames} ${customer.surname}".trim();
     final String initials =
       _getInitials(nameForInitials.isEmpty ? customer.displayName : nameForInitials);
-    final double fontSize = isTablet ? 14.0 : (size * 0.47).clamp(12.0, 30.0);
+    final double fontSize = isTablet ? 12.5 : (size * 0.4).clamp(10.5, 26.0);
     return Container(
       alignment: Alignment.center,
       color: Colors.transparent,
@@ -58,19 +58,14 @@ class CustomerThumbnailTile extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          // Subtle vertical gradient matching the provided image reference
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              isDark ? const Color(0xFFF2F2F2) : Colors.grey[400]!,
-              isDark ? const Color(0xFFCFCFCF) : Colors.grey[500]!,
-              if (isDark) const Color(0xFFB0B0B0),
-            ],
-            stops: isDark ? const [0.0, 0.55, 1.0] : null,
-          ),
+          // Faint fill that adapts to theme
+          color: isDark
+              ? Colors.white.withOpacity(0.08)
+              : Colors.black.withOpacity(0.05),
           border: Border.all(
-            color: isDark ? colors.divider : Colors.grey.withOpacity(0.2),
+            color: isDark
+                ? Colors.white.withOpacity(0.25)
+                : Colors.black.withOpacity(0.18),
             width: 1,
           ),
         ),
@@ -78,8 +73,8 @@ class CustomerThumbnailTile extends StatelessWidget {
         child: Text(
           initials,
           style: TextStyle(
-            color: isDark ? Colors.black : Colors.white,
-            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black,
+            fontWeight: FontWeight.w600,
             fontSize: fontSize,
             letterSpacing: 0.5,
           ),

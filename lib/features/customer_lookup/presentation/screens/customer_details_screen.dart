@@ -1389,8 +1389,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           color: isDark ? colors.surface : Colors.white,
                           borderRadius: BorderRadius.circular(cardBorderRadius),
                           border: Border.all(
-                            color: isDark ? Colors.white24 : Colors.grey.shade200,
-                            width: 1.5,
+                            color: isDark
+                                ? Colors.white.withOpacity(0.1)
+                                : Colors.grey.shade200.withOpacity(0.6),
+                            width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
@@ -1505,10 +1507,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             ],
 
                             SizedBox(height: sectionSpacer),
-                            Divider(
-                              height: 1,
-                              color: isDark ? Colors.white24 : null,
-                            ),
+                            _buildFadedDivider(),
                             SizedBox(height: sectionSpacer),
 
                             // Contact Info within this address
@@ -2054,10 +2053,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ),
 
           const SizedBox(height: 16),
-          Divider(
-            height: 1,
-            color: isDark ? Colors.white54 : Colors.grey.shade400,
-          ),
+          _buildFadedDivider(),
           const SizedBox(height: 12),
 
           if (isEditing) ...[
@@ -2432,9 +2428,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 ],
               ),
               if (widget.customer.addresses.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: _buildFadedDivider(),
                 ),
                 InkWell(
                   onTap: () => _showSecondaryAddressesDialog(),
@@ -3065,9 +3061,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               if (onEditTap != null)
                 InkWell(
                   onTap: onEditTap,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Padding(
-                    padding: EdgeInsets.all(iconPadding),
+                  borderRadius: BorderRadius.circular(40),
+                  child: Container(
+                    padding: EdgeInsets.all(iconPadding + 2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: (isEditing ? Colors.green : kPrimaryColor)
+                          .withOpacity(isDark ? 0.18 : 0.1),
+                    ),
                     child: isSaving
                         ? SizedBox(
                             width: _editIconSize(context, 22),
@@ -3076,7 +3077,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           )
                         : Icon(
                             isEditing ? Icons.save_rounded : Icons.edit,
-                            size: _editIconSize(context, 24),
+                            size: _editIconSize(context, 18),
                             color: isEditing ? Colors.green : kPrimaryColor,
                           ),
                   ),
@@ -3086,6 +3087,28 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           SizedBox(height: spacerHeight),
           ...children,
         ],
+      ),
+    );
+  }
+
+  Widget _buildFadedDivider() {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final Color lineColor = isDark ? Colors.white : Colors.black;
+    final double opacity = isDark ? 0.2 : 0.25;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      height: 0.5,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.transparent,
+            lineColor.withOpacity(opacity),
+            lineColor.withOpacity(opacity),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.2, 0.8, 1.0],
+        ),
       ),
     );
   }
@@ -3104,8 +3127,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         borderRadius: BorderRadius.circular(borderRadius),
         // Adding a subtle stroke to give that "solid card" look from modern UI
         border: Border.all(
-          color: isDark ? Colors.white54 : const Color(0xFFC9B9A6),
-          width: 0.57,
+          color: isDark
+              ? Colors.white.withOpacity(0.12)
+              : const Color(0xFFC9B9A6).withOpacity(0.45),
+          width: 0.5,
         ),
         boxShadow: [
           BoxShadow(

@@ -324,7 +324,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
             margin: const EdgeInsets.all(12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2733) : Colors.white,
+              color: isDark ? const Color(0xFF212121) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -849,10 +849,11 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
   }
 
   Widget _buildEmailForm(AppThemeColors colors, bool isDark, bool isTablet) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         // Customer Info
         Container(
           padding: const EdgeInsets.all(12),
@@ -924,6 +925,13 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
           scrollPhysics: const ClampingScrollPhysics(),
+          maxLength: 250,
+          buildCounter: (
+            context, {
+            required currentLength,
+            required isFocused,
+            maxLength,
+          }) => null,
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black87,
             fontSize: 15,
@@ -967,6 +975,7 @@ class _FinaliseSaleDialogState extends State<FinaliseSaleDialog> {
         ),
         const SizedBox(height: 24),
       ],
+      ),
     );
   }
 

@@ -1,7 +1,5 @@
-import 'dart:ui'; // Required for blur effect
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rmmobile/constants/colors.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import '../../../../constants/theme_colors.dart';
 //import '../../../../constants/txt_styles.dart';
@@ -37,7 +35,7 @@ class AppBarSession extends StatelessWidget {
     final isLargeTablet = context.isLargeTablet;
 
     // Responsive Sizing
-    final double networkIconSize = isLargeTablet ? 42 : isTablet ? 32 : 22;
+    final double networkIconSize = isLargeTablet ? 40 : isTablet ? 30 : 22;
     final double settingsIconSize = isLargeTablet ? 32 : isTablet ? 30 : 22;
     //final double glassPadding = isTablet ? 12.0 : 11.0;
     final double horizontalPadding = isTablet ? 22 : 16;
@@ -48,95 +46,97 @@ class AppBarSession extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // --- LEFT SIDE: LOGO ---
-          Image.asset(
-            "assets/images/trademark.png",
-            height: isTablet ? 38 : 30,
-            fit: BoxFit.contain,
-          ),
-
-          const SizedBox(width: 20),
-
-          // --- RIGHT SIDE: ACTIONS (Frosted Action Group) ---
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
-                decoration: BoxDecoration(
-                  // Darker glass fill for dark mode to match drawer
-                  color: isDark
-                      ? Colors.black.withOpacity(0.13)
-                      : colors.glassFill,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.15)
-                        : colors.glassBorder,
-                    width: isDark ? 1.5 : 0.5,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Network/Wifi Button
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          if (_isSyncInProgress(context)) {
-                            _showSyncBlockedMessage(context);
-                            return;
-                          }
-                          context.read<FetchingNetworkServerBloc>().add(FetchNetworkServerEvent());
-                          showDialog(
-                            context: context,
-                            builder: (context) => const NetworkPcDialog(),
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Icon(
-                            Icons.laptop_mac_sharp,
-                            size: networkIconSize,
-                            color: isDark ? Colors.white : colors.onHero,
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    // Spacing for tablets
-                    if (isTablet) const SizedBox(width: 8),
-                    
-                    // Vertical Divider
-                    Container(
-                      height: 24,
-                      width: 1,
-                      color: kSecondaryColor,
-                    ),
-                    
-                    // Spacing for tablets
-                    if (isTablet) const SizedBox(width: 8),
-
-                    // Settings Button
-                    IconButton(
-                      iconSize: settingsIconSize,
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () {
-                        context.navigateToNext(const SettingsScreen());
-                      },
-                      icon: Icon(
-                        Icons.settings_outlined,
-                        color: isDark ? Colors.white : colors.onHero,
-                      ),
-                    ),
-                  ],
-                ),
+          Flexible(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Image.asset(
+                "assets/images/trademark.png",
+                height: isTablet ? 38 : 30,
+                fit: BoxFit.contain,
               ),
             ),
           ),
+
+          const SizedBox(width: 12),
+
+          // --- RIGHT SIDE: ACTIONS (faint circular icon buttons) ---
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Network/Wifi Button
+              _CircleIconButton(
+                icon: Icons.laptop_mac_sharp,
+                iconSize: networkIconSize,
+                isDark: isDark,
+                color: isDark ? Colors.white : colors.onHero,
+                onTap: () {
+                  if (_isSyncInProgress(context)) {
+                    _showSyncBlockedMessage(context);
+                    return;
+                  }
+                  context
+                      .read<FetchingNetworkServerBloc>()
+                      .add(FetchNetworkServerEvent());
+                  showDialog(
+                    context: context,
+                    builder: (context) => const NetworkPcDialog(),
+                  );
+                },
+              ),
+
+              const SizedBox(width: 10),
+
+              // Settings Button
+              _CircleIconButton(
+                icon: Icons.settings_outlined,
+                iconSize: settingsIconSize,
+                isDark: isDark,
+                color: isDark ? Colors.white : colors.onHero,
+                onTap: () {
+                  context.navigateToNext(const SettingsScreen());
+                },
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  final IconData icon;
+  final double iconSize;
+  final bool isDark;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _CircleIconButton({
+    required this.icon,
+    required this.iconSize,
+    required this.isDark,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isDark
+          ? Colors.white.withOpacity(0.08)
+          : Colors.white.withOpacity(0.18),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Icon(
+            icon,
+            size: iconSize,
+            color: color,
+          ),
+        ),
       ),
     );
   }

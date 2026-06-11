@@ -203,7 +203,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: isDark ? colors.bg : kBgColor,
+      backgroundColor: isDark ? Colors.black : Colors.white,
       body: SafeArea(
         child: useDesktopNav
             ? _buildDesktopLayout(colors, isDark)
@@ -379,11 +379,26 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
             StockLookupAppbar(showBackArrow: widget.showBackArrow),
             SizedBox(height: isDesktop ? 2 : 5),
             const PendingStockUpdatesTile(),
-            Divider(
-              indent: 15,
-              endIndent: 15,
-              thickness: 0.5,
-              color: isDark ? Colors.white30 : kGreyColor,
+            Builder(
+              builder: (_) {
+                final Color lineColor = isDark ? Colors.white : Colors.black;
+                final double opacity = isDark ? 0.2 : 0.25;
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 15),
+                  height: 0.5,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        lineColor.withOpacity(opacity),
+                        lineColor.withOpacity(opacity),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.2, 0.8, 1.0],
+                    ),
+                  ),
+                );
+              },
             ),
             const SyncInfoWidget(), // Added const
             // Chip states and Count Text
@@ -804,6 +819,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
           final bool isTablet = context.isTablet;
           final bool useDesktopNav = context.useDesktopNav;
           final bool useGridLayout = useDesktopNav || isTablet;
+          final bool isDark = context.appColors.isDark;
           
           if (state is StockListLoading) {
             return loadingWidget();
@@ -829,8 +845,24 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 itemCount: state.hasReachedMax
                     ? state.stocks.length
                     : state.stocks.length + 1,
-                separatorBuilder: (ctx, i) =>
-                    SizedBox(height: useDesktopNav ? 5 : (useGridLayout ? 10 : 7)),
+                separatorBuilder: (ctx, i) {
+                  final Color lineColor = isDark ? Colors.white : Colors.black;
+                  final double opacity = isDark ? 0.2 : 0.25;
+                  return Container(
+                    height: 0.5,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          lineColor.withOpacity(opacity),
+                          lineColor.withOpacity(opacity),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.2, 0.8, 1.0],
+                      ),
+                    ),
+                  );
+                },
                 itemBuilder: (context, index) {
                   if (index >= state.stocks.length) {
                     return const Center(
@@ -1082,44 +1114,30 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               }
             },
             child: Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Color.lerp(colors.surface, Colors.white, 0.06)
-                    : kSecondaryColor,
-                borderRadius: BorderRadius.circular(12),
-                border: isDark
-                    ? Border.all(color: Colors.white.withOpacity(0.18))
-                    : null,
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? Colors.black.withOpacity(0.35)
-                        : kThirdColor.withOpacity(0.08),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
+              color: Colors.transparent,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Thumbnail
                   Expanded(
                     flex: 13,
-                    child: Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withOpacity(0.05)
-                            : kBgColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Hero(
-                          tag: 'stock_image_${stock.stockID}',
-                          child: StockThumbnailTile(stock: stock),
+                    child: Center(
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: Container(
+                          margin: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isDark
+                                ? colors.surface
+                                : Colors.white,
+                          ),
+                          child: ClipOval(
+                            child: Hero(
+                              tag: 'stock_image_${stock.stockID}',
+                              child: StockThumbnailTile(stock: stock),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -1267,41 +1285,21 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         }
       },
       child: Container(
-        decoration: BoxDecoration(
-          color: isDark
-              ? Color.lerp(colors.surface, Colors.white, 0.06)
-              : kSecondaryColor,
-          borderRadius: BorderRadius.circular(12),
-          border: isDark
-              ? Border.all(color: Colors.white.withOpacity(0.18))
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? Colors.black.withOpacity(0.35)
-                  : kThirdColor.withOpacity(0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+        color: Colors.transparent,
         child: Column(
           mainAxisSize: MainAxisSize.min, // Allow content-based height
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Thumbnail with fixed height based on card width
+            // Thumbnail - circular
             Container(
-              width: double.infinity,
+              width: thumbnailHeight,
               height: thumbnailHeight,
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : kBgColor,
-                borderRadius: BorderRadius.circular(8),
+                shape: BoxShape.circle,
+                color: isDark ? colors.surface : Colors.white,
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+              child: ClipOval(
                 child: Hero(
                   tag: 'stock_image_${stock.stockID}',
                   child: StockThumbnailTile(stock: stock),
@@ -1402,7 +1400,6 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final String trimmedQuery = query.trim();
     final String lowerQuery = trimmedQuery.toLowerCase();
     final bool hasQuery = trimmedQuery.isNotEmpty;
-    final bool isMediumTablet = context.isMediumTablet;
 
     bool matchesQuery(String? value) {
       if (!hasQuery || value == null) return false;
@@ -1418,9 +1415,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final bool hasMultipleHits = hasQuery && (showCustom1 || showCustom2);
     
     // Thumbnail width: larger in search mode to balance the layout
-    final double thumbnailWidth = hasQuery
-        ? (isMediumTablet ? 75 : 120)  // Larger in search mode
-        : (isMediumTablet ? 60 : 100); // Normal mode
+// Normal mode
 
     // Large tablets use fixed sizes to match list view
     final double descFontSize = isLargeTablet ? 14 : 13 * uiScale;
@@ -1447,47 +1442,35 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
               }
             },
             child: Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Color.lerp(colors.surface, Colors.white, 0.06)
-                    : kSecondaryColor,
-                borderRadius: BorderRadius.circular(12),
-                border: isDark
-                    ? Border.all(color: Colors.white.withOpacity(0.18))
-                    : null,
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? Colors.black.withOpacity(0.35)
-                        : kThirdColor.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
+              color: Colors.transparent,
+              child: Column(
                 children: [
-                  // Thumbnail on the left - fixed width
-                  Container(
-                    width: thumbnailWidth,
-                    height: double.infinity,
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.05) : kBgColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Hero(
-                        tag: 'stock_image_${stock.stockID}',
-                        child: StockThumbnailTile(stock: stock),
-                      ),
-                    ),
-                  ),
-
-                  // Description & Barcode on the right
                   Expanded(
-                    child: ClipRect(
+                    child: Row(
+                      children: [
+                        // Thumbnail on the left - circular
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isDark ? colors.surface : Colors.white,
+                              ),
+                              child: ClipOval(
+                                child: Hero(
+                                  tag: 'stock_image_${stock.stockID}',
+                                  child: StockThumbnailTile(stock: stock),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Description & Barcode on the right
+                        Expanded(
+                          child: ClipRect(
                       child: Padding(
                         padding: const EdgeInsets.only(
                           left: 6,
@@ -1580,6 +1563,26 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 ],
               ),
             ),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              height: 0.5,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    (isDark ? Colors.white : Colors.black)
+                        .withOpacity(isDark ? 0.2 : 0.25),
+                    (isDark ? Colors.white : Colors.black)
+                        .withOpacity(isDark ? 0.2 : 0.25),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.2, 0.8, 1.0],
+                ),
+              ),
+            ),
+              ],
+            ),
+            ),
           ),
         ),
       ),
@@ -1664,7 +1667,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
         : 1.0;
     
     // Desktop-specific smaller sizes
-    final double thumbnailSize = useDesktopNav ? 32 : ((isTablet ? 44 : 36) * uiScale);
+    final double thumbnailSize = useDesktopNav ? 38 : ((isTablet ? 52 : 44) * uiScale);
     final double tileHorizontalPadding = useDesktopNav ? 12 : ((isTablet ? 16 : 15) * uiScale);
 
     final String trimmedQuery = query.trim();
@@ -1695,7 +1698,6 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
     final double barcodeFontSize = useDesktopNav ? 11 : (13 * textUiScale);
     final double customLabelFontSize = useDesktopNav ? 10 : 12;
     final double customValueFontSize = useDesktopNav ? 10 : (12 * textUiScale);
-    final double qtyFontSize = useDesktopNav ? 10 : 12;
     final double rowSpacing = useDesktopNav ? 2 : (isTablet ? 4 : 3);
 
     return RepaintBoundary(
@@ -1718,25 +1720,7 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                 }
               },
               child: Container(
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Color.lerp(colors.surface, Colors.white, 0.06)
-                      : kSecondaryColor,
-                  borderRadius: BorderRadius.all(Radius.circular(useDesktopNav ? 8 : 10)),
-                  border: isDark
-                      ? Border.all(color: Colors.white.withOpacity(0.18))
-                      : null,
-                  boxShadow: [
-                    BoxShadow(
-                      color: isDark
-                          ? Colors.black.withOpacity(0.35)
-                          : kThirdColor.withOpacity(0.05),
-                      blurRadius: useDesktopNav ? 6 : 10,
-                      offset: const Offset(0, 4),
-                      spreadRadius: 0,
-                    ),
-                  ],
-                ),
+                color: Colors.transparent,
                 padding: EdgeInsets.symmetric(
                   horizontal: tileHorizontalPadding,
                   vertical: tileVerticalPadding,
@@ -1750,10 +1734,10 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                       width: thumbnailSize,
                       height: thumbnailSize,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(useDesktopNav ? 5 : (isTablet ? 8 : 6)),
+                        shape: BoxShape.circle,
+                        color: isDark ? colors.surface : Colors.white,
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(useDesktopNav ? 5 : (isTablet ? 8 : 6)),
+                      child: ClipOval(
                         child: Hero(
                           tag: 'stock_image_${stock.stockID}',
                           child: StockThumbnailTile(stock: stock),
@@ -1866,45 +1850,50 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                     ),
 
                     SizedBox(width: useDesktopNav ? 6 : 8), // Gap before quantity
-                    // QUANTITY
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: useDesktopNav ? 6 : 8,
-                        vertical: useDesktopNav ? 1 : 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: stock.quantity > 0
-                            ? Colors.blue.withOpacity(0.1)
-                            : stock.quantity == 0
-                            ? Colors.yellow.withOpacity(0.4)
-                            : Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(useDesktopNav ? 6 : 8),
-                      ),
-                      child: Text(
-                        () {
-                          String qtyString = (stock.quantity % 1 == 0)
-                              ? stock.quantity.toInt().toString()
-                              : double.parse(
-                                  stock.quantity.toStringAsFixed(2),
-                                ).toString();
+                    // QUANTITY - matches description font, with a small
+                    // stock-level dot at the top-left.
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(left: useDesktopNav ? 6 : 7),
+                          child: Text(
+                            () {
+                              String qtyString = (stock.quantity % 1 == 0)
+                                  ? stock.quantity.toInt().toString()
+                                  : double.parse(
+                                      stock.quantity.toStringAsFixed(2),
+                                    ).toString();
 
-                          if (qtyString.length > 7) {
-                            return "${qtyString.substring(0, 7)}..";
-                          }
-                          return qtyString;
-                        }(),
-                        style: TextStyle(
-                          fontSize: qtyFontSize,
-                          fontWeight: FontWeight.w900,
-                          color: stock.quantity > 0
-                              ? kPrimaryColor
-                              : stock.quantity == 0
-                              ? (isDark ? colors.onSurface : kThirdColor)
-                              : kErrorColor,
-                          letterSpacing: -0.5,
+                              if (qtyString.length > 7) {
+                                return "${qtyString.substring(0, 7)}..";
+                              }
+                              return qtyString;
+                            }(),
+                            style: getSmartTitle(
+                              color: isDark ? Colors.white : kThirdColor,
+                              fontSize: descFontSize,
+                            ),
+                            maxLines: 1,
+                          ),
                         ),
-                        maxLines: 1,
-                      ),
+                        Positioned(
+                          left: 0,
+                          top: -2,
+                          child: Container(
+                            width: useDesktopNav ? 3 : 4,
+                            height: useDesktopNav ? 3 : 4,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: stock.quantity > 0
+                                  ? const Color(0xFF4CAF50)
+                                  : stock.quantity == 0
+                                  ? const Color(0xFFFFC107)
+                                  : const Color(0xFFF44336),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     // Chevron arrow for selection mode - tapping goes to details
                     if (widget.selectionMode) ...[

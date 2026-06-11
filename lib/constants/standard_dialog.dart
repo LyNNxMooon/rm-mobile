@@ -252,7 +252,7 @@ class StandardDialog extends StatelessWidget {
         ),
         padding: padding,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2733) : Colors.white,
+          color: isDark ? const Color(0xFF212121) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(

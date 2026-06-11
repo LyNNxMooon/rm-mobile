@@ -38,10 +38,9 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
     final double backIconSize = useDesktopNav ? 16.0 : 18.0;
     final double topPadding = useDesktopNav ? 12.0 : 15.0;
     final double listPadding = useDesktopNav ? 12.0 : 15.0;
-    final double itemSpacing = useDesktopNav ? 5.0 : 7.0;
 
     return Scaffold(
-      backgroundColor: colors.bg,
+      backgroundColor: isDark ? Colors.black : Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -183,7 +182,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                         child: AnimationLimiter(
                           child: ListView.separated(
                             padding: EdgeInsets.fromLTRB(listPadding, 5, listPadding, listPadding),
-                            separatorBuilder: (_, _) => SizedBox(height: itemSpacing),
+                            separatorBuilder: (_, _) => _buildFadedDivider(),
                             itemCount: state.sessions.length,
                             itemBuilder: (_, i) =>
                                 _sessionTile(state.sessions[i], i, useDesktopNav),
@@ -234,20 +233,7 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
             },
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: tilePaddingH, vertical: tilePaddingV),
-              decoration: BoxDecoration(
-                color: isDark ? colors.surfaceAlt : colors.surface,
-                borderRadius: BorderRadius.circular(borderRadius),
-                border: isDark
-                    ? Border.all(color: Colors.white30, width: 1)
-                    : null,
-                boxShadow: [
-                  BoxShadow(
-                    color: colors.cardShadow,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
+              decoration: const BoxDecoration(color: Colors.transparent),
               child: Row(
                 children: [
                   Container(
@@ -293,6 +279,27 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFadedDivider() {
+    final bool isDark = context.appColors.isDark;
+    final Color lineColor = isDark ? Colors.white : Colors.black;
+    final double opacity = isDark ? 0.2 : 0.25;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      height: 0.5,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.transparent,
+            lineColor.withOpacity(opacity),
+            lineColor.withOpacity(opacity),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.2, 0.8, 1.0],
         ),
       ),
     );

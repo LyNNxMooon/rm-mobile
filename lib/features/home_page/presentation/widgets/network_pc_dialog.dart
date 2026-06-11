@@ -32,7 +32,9 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
   NetworkServerVO? _selectedPc;
   int _selectedPort = _defaultAgentPort;
   bool _isPairFlowLoading = false;
-  int _pairAttempts = 0;
+  final ValueNotifier<int> _pairAttempts = ValueNotifier(0);
+  final ValueNotifier<String?> _pairError = ValueNotifier(null);
+  final GlobalKey<_OtpCodeInputState> _otpKey = GlobalKey<_OtpCodeInputState>();
   bool _isPairCodeDialogOpen = false;
   bool _isManualConnectionFlow = false;
   final TextEditingController _connectCodeController = TextEditingController();
@@ -44,6 +46,8 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
   void dispose() {
     _connectCodeController.dispose();
     _manualPortController.dispose();
+    _pairAttempts.dispose();
+    _pairError.dispose();
     super.dispose();
   }
 
@@ -182,16 +186,9 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                         width: double.infinity,
                         child: Container(
                           decoration: BoxDecoration(
-                            gradient: ModernDialogStyles.headerGradient,
+                            color: kPrimaryColor,
                             borderRadius: BorderRadius.circular(
                                 ModernDialogStyles.buttonRadius),
-                            boxShadow: [
-                              BoxShadow(
-                                color: kPrimaryColor.withOpacity(0.35),
-                                blurRadius: 14,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
                           ),
                           child: Material(
                             color: Colors.transparent,
@@ -254,12 +251,12 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
   void _showPairCodeDialog(BuildContext context, String pairCode) {
     _connectCodeController.clear();
-    _pairAttempts = 0;
+    _pairAttempts.value = 0;
+    _pairError.value = null;
     _isPairCodeDialogOpen = true;
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool useDesktopNav = context.useDesktopNav;
-    final double inputFontSize = useDesktopNav ? 13.0 : 15.0;
     final double buttonFontSize = useDesktopNav ? 13.0 : 15.0;
     final double iconSize = useDesktopNav ? 18.0 : 20.0;
     final double hintFontSize = useDesktopNav ? 13.0 : 15.0;
@@ -268,7 +265,7 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
 
     showDialog(
       context: context,
-      builder: (_) => Dialog(
+      builder: (dialogCtx) => Dialog(
         insetPadding: dialogInsetPadding(context),
         shape: ModernDialogStyles.dialogShape,
         elevation: 0,
@@ -279,129 +276,142 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const ModernDialogHeader(
+              ModernDialogHeader(
                 title: "Pair With Host",
                 icon: Icons.link_rounded,
                 subtitle: "Enter the code shown on the host",
+                trailing: IconButton(
+                  onPressed: () {
+                    _isPairCodeDialogOpen = false;
+                    Navigator.of(dialogCtx).pop();
+                  },
+                  icon: Icon(
+                    Icons.close_rounded,
+                    color: isDark ? Colors.white70 : kPrimaryColor,
+                  ),
+                  tooltip: "Close",
+                ),
               ),
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "The code is displayed on the AAAPOS RMMobile Service Hub Server.\nEnter that code below to continue.",
-                          style: Theme.of(context).inputDecorationTheme.hintStyle ??
-                              TextStyle(
-                                fontSize: hintFontSize,
-                                color: colors.onSurfaceMuted,
-                              ),
+                      Text(
+                        "Enter the 6-digit code displayed on the AAAPOS RMMobile Service Hub Server to continue.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: hintFontSize,
+                          height: 1.4,
+                          color: isDark
+                              ? Colors.white.withOpacity(0.7)
+                              : colors.onSurfaceMuted,
                         ),
                       ),
-                      const SizedBox(height: 20),
-                    // Input section
-                    TextField(
-                      controller: _connectCodeController,
-                      textAlignVertical: TextAlignVertical.center,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : colors.onSurface,
-                        fontSize: inputFontSize,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      decoration: ModernDialogStyles.inputDecoration(
-                        context,
-                        hintText: "Enter Host Code",
-                        prefixIcon: Icons.keyboard_alt_outlined,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: BlocBuilder<PairDeviceBloc, PairDeviceStates>(
-                        builder: (context, pairState) {
-                          final isLoading = pairState is PairingDevice;
-                          return Container(
-                            decoration: BoxDecoration(
-                              gradient: ModernDialogStyles.headerGradient,
-                              borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: kPrimaryColor.withOpacity(0.35),
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: isLoading
-                                    ? null
-                                    : () {
-                                        if (_selectedPc == null) return;
-
-                                        final pairingCode = _connectCodeController.text.trim();
-                                        if (pairingCode.isEmpty) {
-                                          _showError(context, "Please enter pairing code.");
-                                          return;
-                                        }
-
-                                        context.read<PairDeviceBloc>().add(
-                                          PairDeviceEvent(
-                                            ip: _selectedPc!.ipAddress,
-                                            hostName: _selectedPc!.hostName ?? "Unknown-Server",
-                                            port: _selectedPort,
-                                            pairingCode: pairingCode,
-                                            isTablet: context.isTablet,
-                                          ),
-                                        );
-                                      },
-                                borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(vertical: useDesktopNav ? 12 : 16),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: isLoading
-                                        ? [
-                                            SizedBox(
-                                              height: iconSize,
-                                              width: iconSize,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2.5,
-                                                valueColor: AlwaysStoppedAnimation<Color>(
-                                                  Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          ]
-                                        : [
-                                            Icon(
-                                              Icons.link_rounded,
-                                              color: Colors.white,
-                                              size: iconSize,
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              "Connect",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: buttonFontSize,
-                                                fontWeight: FontWeight.w600,
-                                                letterSpacing: 0.2,
-                                              ),
-                                            ),
-                                          ],
-                                  ),
-                                ),
-                              ),
+                      const SizedBox(height: 36),
+                      // OTP cube fields
+                      _OtpCodeInput(
+                        key: _otpKey,
+                        length: 6,
+                        onChanged: (code) {
+                          _connectCodeController.text = code;
+                          if (_pairError.value != null) {
+                            _pairError.value = null;
+                          }
+                        },
+                        onCompleted: (code) {
+                          _connectCodeController.text = code;
+                          if (_selectedPc == null) return;
+                          context.read<PairDeviceBloc>().add(
+                            PairDeviceEvent(
+                              ip: _selectedPc!.ipAddress,
+                              hostName:
+                                  _selectedPc!.hostName ?? "Unknown-Server",
+                              port: _selectedPort,
+                              pairingCode: code,
+                              isTablet: context.isTablet,
                             ),
                           );
                         },
                       ),
-                    ),
+                      const SizedBox(height: 28),
+                      // Attempts / error feedback below the fields
+                      ValueListenableBuilder<int>(
+                        valueListenable: _pairAttempts,
+                        builder: (context, attempts, _) {
+                          return ValueListenableBuilder<String?>(
+                            valueListenable: _pairError,
+                            builder: (context, error, _) {
+                              final remaining = _maxPairAttempts - attempts;
+                              if (error == null && attempts == 0) {
+                                return const SizedBox(height: 4);
+                              }
+                              return Column(
+                                children: [
+                                  if (error != null)
+                                    Text(
+                                      error,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: hintFontSize - 1,
+                                        fontWeight: FontWeight.w400,
+                                        color: kErrorColor,
+                                      ),
+                                    ),
+                                  if (attempts > 0) ...[
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      "$remaining attempt${remaining == 1 ? '' : 's'} remaining",
+                                      style: TextStyle(
+                                        fontSize: hintFontSize - 2,
+                                        fontWeight: FontWeight.w400,
+                                        color: remaining <= 1
+                                            ? kErrorColor
+                                            : colors.onSurfaceMuted,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // Loading indicator while pairing (auto-connects on code completion)
+                      BlocBuilder<PairDeviceBloc, PairDeviceStates>(
+                        builder: (context, pairState) {
+                          if (pairState is! PairingDevice) {
+                            return const SizedBox.shrink();
+                          }
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                height: iconSize,
+                                width: iconSize,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    kPrimaryColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                "Connecting...",
+                                style: TextStyle(
+                                  color: colors.onSurfaceMuted,
+                                  fontSize: buttonFontSize,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                   ],
                 ),
               ),)
@@ -535,10 +545,9 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
             }
 
             if (state is PairDeviceError) {
-              _pairAttempts++;
-              final attemptsRemaining = _maxPairAttempts - _pairAttempts;
-              
-              if (_pairAttempts >= _maxPairAttempts) {
+              _pairAttempts.value++;
+
+              if (_pairAttempts.value >= _maxPairAttempts) {
                 // Close the pair code dialog after max attempts
                 if (_isPairCodeDialogOpen) {
                   _isPairCodeDialogOpen = false;
@@ -546,7 +555,9 @@ class _NetworkPcDialogState extends State<NetworkPcDialog> {
                   _showError(context, "Maximum attempts reached. Please tap the server again to get a new code.");
                 }
               } else {
-                _showError(context, "${state.message}\n$attemptsRemaining attempt${attemptsRemaining == 1 ? '' : 's'} remaining.");
+                // Show feedback inside the dialog (below the code fields)
+                _pairError.value = state.message;
+                _otpKey.currentState?.clear();
               }
             }
           },
@@ -983,15 +994,8 @@ class _ManualConnectionDialogContentState extends State<_ManualConnectionDialogC
                       width: double.infinity,
                       child: Container(
                         decoration: BoxDecoration(
-                          gradient: ModernDialogStyles.headerGradient,
+                          color: kPrimaryColor,
                           borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
-                          boxShadow: [
-                            BoxShadow(
-                              color: kPrimaryColor.withOpacity(0.35),
-                              blurRadius: 14,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
                         ),
                         child: Material(
                           color: Colors.transparent,
@@ -1032,6 +1036,200 @@ class _ManualConnectionDialogContentState extends State<_ManualConnectionDialogC
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Professional segmented verification-code input (6 cube fields).
+class _OtpCodeInput extends StatefulWidget {
+  const _OtpCodeInput({
+    super.key,
+    this.length = 6,
+    this.onChanged,
+    this.onCompleted,
+  });
+
+  final int length;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onCompleted;
+
+  @override
+  State<_OtpCodeInput> createState() => _OtpCodeInputState();
+}
+
+class _OtpCodeInputState extends State<_OtpCodeInput> {
+  late final List<TextEditingController> _controllers;
+  late final List<FocusNode> _focusNodes;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers =
+        List.generate(widget.length, (_) => TextEditingController());
+    _focusNodes = List.generate(widget.length, (_) => FocusNode());
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
+    super.dispose();
+  }
+
+  /// Clears all fields and refocuses the first one.
+  void clear() {
+    for (final c in _controllers) {
+      c.clear();
+    }
+    if (mounted) {
+      FocusScope.of(context).requestFocus(_focusNodes.first);
+      setState(() {});
+    }
+    widget.onChanged?.call("");
+  }
+
+  String get _code => _controllers.map((c) => c.text).join();
+
+  void _notify() {
+    final code = _code;
+    widget.onChanged?.call(code);
+    if (code.length == widget.length && !code.contains(' ')) {
+      widget.onCompleted?.call(code);
+    }
+  }
+
+  void _onChanged(int index, String value) {
+    // Handle paste of full code into a single field
+    if (value.length > 1) {
+      final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+      for (int i = 0; i < widget.length; i++) {
+        _controllers[i].text = i < digits.length ? digits[i] : '';
+      }
+      final next = digits.length >= widget.length
+          ? widget.length - 1
+          : digits.length;
+      FocusScope.of(context).requestFocus(_focusNodes[next]);
+      setState(() {});
+      _notify();
+      return;
+    }
+
+    if (value.isNotEmpty) {
+      if (index < widget.length - 1) {
+        FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
+      } else {
+        _focusNodes[index].unfocus();
+      }
+    }
+    setState(() {});
+    _notify();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final bool isDark = colors.isDark;
+    final bool useDesktopNav = context.useDesktopNav;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Horizontal gap between each cube.
+        final double gap = useDesktopNav ? 8 : 8;
+        final double maxBoxWidth = useDesktopNav ? 44 : 50;
+        // Fit all boxes within the available width to avoid overflow.
+        final double available = constraints.maxWidth;
+        final double rawWidth =
+            (available - gap * (widget.length - 1)) / widget.length;
+        final double boxWidth = rawWidth.clamp(34.0, maxBoxWidth);
+        final double boxHeight = boxWidth * 1.18;
+        final double fontSize = (boxWidth * 0.42).clamp(16.0, 22.0);
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(widget.length, (index) {
+            final bool hasValue = _controllers[index].text.isNotEmpty;
+            return Padding(
+              padding: EdgeInsets.only(
+                right: index == widget.length - 1 ? 0 : gap,
+              ),
+              child: SizedBox(
+                width: boxWidth,
+                height: boxHeight,
+                child: KeyboardListener(
+                  focusNode: FocusNode(skipTraversal: true),
+                  onKeyEvent: (event) {
+                    if (event is KeyDownEvent &&
+                        event.logicalKey == LogicalKeyboardKey.backspace &&
+                        _controllers[index].text.isEmpty &&
+                        index > 0) {
+                      _controllers[index - 1].clear();
+                      FocusScope.of(context)
+                          .requestFocus(_focusNodes[index - 1]);
+                      setState(() {});
+                      _notify();
+                    }
+                  },
+                  child: TextField(
+                    controller: _controllers[index],
+                    focusNode: _focusNodes[index],
+                    onChanged: (value) => _onChanged(index, value),
+                    onTap: () {
+                      _controllers[index].selection =
+                          TextSelection.collapsed(
+                        offset: _controllers[index].text.length,
+                      );
+                      setState(() {});
+                    },
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    maxLength: widget.length,
+                    showCursor: true,
+                    cursorColor: kPrimaryColor,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    style: TextStyle(
+                      color: isDark ? Colors.white : colors.onSurface,
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    decoration: InputDecoration(
+                      counterText: "",
+                      filled: true,
+                      fillColor: isDark
+                          ? Colors.white.withOpacity(0.06)
+                          : const Color(0xFFF5F7FA),
+                      contentPadding: EdgeInsets.zero,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: hasValue
+                              ? kPrimaryColor.withOpacity(0.6)
+                              : (isDark
+                                  ? Colors.white.withOpacity(0.12)
+                                  : Colors.black.withOpacity(0.08)),
+                          width: 1.5,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: kPrimaryColor,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }

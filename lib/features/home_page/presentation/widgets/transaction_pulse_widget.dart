@@ -347,22 +347,21 @@ class TransactionPulseWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? 8 : 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: kPrimaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
+                  width: isTablet ? 32 : 28,
+                  height: isTablet ? 32 : 28,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
                   ),
                   child: Text(
-                    "Pending: ${_totalPending(activeCategories)}",
+                    "${_totalPending(activeCategories)}",
                     style: TextStyle(
                       fontSize: isTablet 
                           ? (12 * (MediaQuery.of(context).size.shortestSide / 768).clamp(0.9, 1.25)).clamp(12.0, 14.0)
                           : 12.0,
-                      fontWeight: FontWeight.w600,
-                      color: kPrimaryColor,
+                      fontWeight: FontWeight.w800,
+                      color: const Color.fromRGBO(12, 58, 85, 1),
                     ),
                   ),
                 ),

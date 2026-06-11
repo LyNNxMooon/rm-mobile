@@ -261,7 +261,7 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final Color textColor = isDark ? colors.onSurface : kThirdColor;
-    final Color surface = isDark ? colors.surfaceAlt : Colors.white;
+    final Color surface = isDark ? const Color(0xFF212121) : Colors.white;
     final Color surfaceAlt = isDark ? colors.surfaceAlt : Colors.grey[100]!;
     final Color divider = isDark ? colors.divider : Colors.grey[300]!;
     final media = MediaQuery.of(context);

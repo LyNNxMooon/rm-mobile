@@ -6,7 +6,7 @@ import 'package:rmmobile/utils/responsive_utils.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 
-class StocktakeSearchAndFilterBar extends StatelessWidget {
+class StocktakeSearchAndFilterBar extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onFilterTap;
 
@@ -15,6 +15,32 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
     this.onChanged,
     this.onFilterTap,
   });
+
+  @override
+  State<StocktakeSearchAndFilterBar> createState() =>
+      _StocktakeSearchAndFilterBarState();
+}
+
+class _StocktakeSearchAndFilterBarState
+    extends State<StocktakeSearchAndFilterBar> {
+  final FocusNode _focusNode = FocusNode();
+  bool _focused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (_focused != _focusNode.hasFocus) {
+        setState(() => _focused = _focusNode.hasFocus);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +52,9 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
     final double uiScale = isTablet
         ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
         : 1.0;
-    final double actionSize = useDesktopNav ? 36 : (isTablet ? 48 : 42) * uiScale;
+    final double containerHeight = useDesktopNav ? 36 : (isTablet ? 46 : 40) * uiScale;
     final double hintFontSize = useDesktopNav ? 12.0 : 13.0;
     final double iconSize = useDesktopNav ? 18.0 : 20.0;
-    final double borderRadius = useDesktopNav ? 8.0 : 12.0;
     final double horizontalPadding = useDesktopNav ? 12.0 : 15.0;
 
     return Center(
@@ -40,45 +65,49 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: SizedBox(
-                  height: actionSize,
-                  child: TextField(
-                    onChanged: onChanged,
-                    // Disable autocorrect and predictive text
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    textAlignVertical: TextAlignVertical.center,
-                    expands: true,
-                    maxLines: null,
-                    decoration: InputDecoration(
-                      hintText: "Search barcode or description...",
-                      hintStyle: TextStyle(
-                        color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                child: Container(
+                  height: containerHeight,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.black : Colors.white,
+                    borderRadius: BorderRadius.circular(containerHeight / 2),
+                    border: Border.all(
+                      color: _focused
+                          ? kPrimaryColor
+                          : (isDark
+                              ? Colors.white24
+                              : kPrimaryColor.withOpacity(0.5)),
+                      width: _focused ? 2 : 1,
+                    ),
+                  ),
+                  child: Center(
+                    child: TextField(
+                      focusNode: _focusNode,
+                      onChanged: widget.onChanged,
+                      // Disable autocorrect and predictive text
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      textAlignVertical: TextAlignVertical.center,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : colors.onSurface,
                         fontSize: hintFontSize,
                       ),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: isDark ? Colors.white70 : kPrimaryColor,
-                        size: iconSize,
-                      ),
-                      filled: true,
-                      fillColor: isDark ? colors.surfaceAlt : colors.surface,
-                      contentPadding: EdgeInsets.symmetric(horizontal: useDesktopNav ? 10 : 12),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(borderRadius),
-                        borderSide: BorderSide(
-                          color: isDark ? Colors.white38 : colors.divider,
-                          width: 1,
+                      decoration: InputDecoration(
+                        isDense: true,
+                        hintText: "Search barcode or description...",
+                        hintStyle: TextStyle(
+                          color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                          fontSize: hintFontSize,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: isDark ? Colors.white70 : kPrimaryColor,
+                          size: iconSize,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: useDesktopNav ? 10 : 12,
                         ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(borderRadius),
-                        borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
-                      ),
-                    ),
-                    style: TextStyle(
-                      color: isDark ? Colors.white : colors.onSurface,
-                      fontSize: hintFontSize,
                     ),
                   ),
                 ),
@@ -86,34 +115,28 @@ class StocktakeSearchAndFilterBar extends StatelessWidget {
 
               // History icon - only on mobile/tablet, not on desktop
               if (!useDesktopNav) ...[
-                SizedBox(width: 8),
-                SizedBox(
-                  height: actionSize,
-                  width: actionSize,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? colors.surfaceAlt : colors.surface,
-                      borderRadius: BorderRadius.circular(borderRadius),
-                      border: Border.all(
-                        color: isDark ? Colors.white38 : colors.divider,
-                        width: 1,
+                SizedBox(width: isTablet ? 10 : 8),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      context.navigateToNext(const StocktakeHistoryScreen());
+                    },
+                    customBorder: const CircleBorder(),
+                    child: Container(
+                      width: containerHeight,
+                      height: containerHeight,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isDark
+                            ? const Color(0xFF212121)
+                            : kPrimaryColor.withOpacity(0.08),
                       ),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(borderRadius),
-                      child: InkWell(
-                        onTap: () {
-                          context.navigateToNext(const StocktakeHistoryScreen());
-                        },
-                        borderRadius: BorderRadius.circular(borderRadius),
-                        child: Center(
-                          child: Icon(
-                            Icons.history,
-                            color: isDark ? Colors.white70 : colors.onSurface,
-                            size: iconSize,
-                          ),
-                        ),
+                      child: Icon(
+                        Icons.history,
+                        color: kPrimaryColor,
+                        size: isTablet ? 22 : 20,
                       ),
                     ),
                   ),

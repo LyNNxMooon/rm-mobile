@@ -428,17 +428,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         width: double.infinity,
                         child: Container(
                           decoration: BoxDecoration(
-                            gradient: ModernDialogStyles.headerGradient,
+                            color: kPrimaryColor,
                             borderRadius: BorderRadius.circular(
                               ModernDialogStyles.buttonRadius,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: kPrimaryColor.withOpacity(0.35),
-                                blurRadius: 14,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
                           ),
                           child: Material(
                             color: Colors.transparent,
@@ -758,9 +751,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: kPrimaryColor.withOpacity(0.5),
-                                            borderRadius: BorderRadius.circular(8),
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFF38BDF8),
+                                            shape: BoxShape.circle,
                                           ),
                                           child: Icon(
                                             Icons.dns_outlined,
@@ -809,9 +802,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: kPrimaryColor.withOpacity(0.5),
-                                            borderRadius: BorderRadius.circular(8),
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFF38BDF8),
+                                            shape: BoxShape.circle,
                                           ),
                                           child: Icon(
                                             Icons.cloud_outlined,
@@ -858,10 +851,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ],
                                 ),
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
+                              _buildFadedDivider(),
                               _buildSwitchRow(
                                 "Auto Remind Server Connection When Offline",
                                 "Prompt to reconnect to the server when you are offline on transaction screens",
@@ -885,9 +875,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.withOpacity(0.5),
-                                        borderRadius: BorderRadius.circular(8),
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF38BDF8),
+                                        shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         Icons.storefront_outlined,
@@ -1110,10 +1100,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ],
                                 ),
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
+                              _buildFadedDivider(),
                               _buildCashDrawerDropdown(),
                               Padding(
                                 padding: const EdgeInsets.only(
@@ -1140,10 +1127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ],
                                 ),
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
+                              _buildFadedDivider(),
                               _buildForceFullSyncTile(),
                               Padding(
                                 padding: const EdgeInsets.only(
@@ -1185,19 +1169,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 "Staff ID",
                                 AppGlobals.instance.staffNo ?? "-",
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
+                              _buildFadedDivider(),
                               _buildInfoRow(
                                 Icons.person_outline,
                                 "Staff Name",
                                 AppGlobals.instance.staffName ?? "-",
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
+                              _buildFadedDivider(),
                               _buildInfoRow(
                                 Icons.groups_2_outlined,
                                 "Staff Group",
@@ -1232,10 +1210,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   );
                                 },
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
+                              _buildFadedDivider(),
                               BlocBuilder<FontSizeCubit, String>(
                                 builder: (context, fontSize) {
                                   return _buildDropdownRow(
@@ -1263,10 +1238,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Column(
                             children: [
                               _buildSliderRow(),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
+                              _buildFadedDivider(),
                               _buildSwitchRow(
                                 "Auto Backup Stocktake To Server",
                                 "Automatically save current stocktake backup every 24 hours",
@@ -1298,22 +1270,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 Icons.settings_ethernet_outlined,
                                 "Manual Connection",
                                 "Connect with host IP and pairing code",
-                                const Color.fromARGB(255, 34, 255, 5),
+                                const Color(0xFF2E7D32),
                                 () {
                                   if (_blockIfSyncing(context)) return;
                                   _showManualConnectionDialog(context);
                                 },
                                 titleColor: Colors.white,
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
+                              _buildFadedDivider(),
                               _buildActionRow(
                                 Icons.restore_page_outlined,
                                 "Restore Stocktake",
                                 "Recover backed up stocktake from server",
-                                const Color.fromARGB(255, 40, 248, 255),
+                                const Color(0xFF0E7490),
                                 () {
                                   if (_blockIfSyncing(context)) return;
                                   context.read<BackupRestoreBloc>().add(
@@ -1326,10 +1295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 },
                                 titleColor: Colors.white,
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
+                              _buildFadedDivider(),
                               _buildActionRow(
                                 Icons.delete_forever_outlined,
                                 "Delete All Current Stocktake",
@@ -1355,19 +1321,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 Icons.storage_outlined,
                                 "Export Database",
                                 "Share the database file for support",
-                                Colors.orange,
+                                const Color(0xFFB45309),
                                 () => _exportAndShareDatabase(context),
                                 titleColor: Colors.white,
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                child: Divider(height: 1, thickness: 0.5),
-                              ),
+                              _buildFadedDivider(),
                               _buildActionRow(
                                 Icons.download_outlined,
                                 "Import Database",
                                 "Restore a fixed database from support",
-                                Colors.teal,
+                                const Color(0xFF0F766E),
                                 () => _importDatabase(context),
                                 titleColor: Colors.white,
                               ),
@@ -1479,18 +1442,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
               right: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
               bottom: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
             ),
-            // Glass gradient sweep
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF42A5F5).withOpacity(0.40),
-                Colors.transparent,
-              ],
-              stops: const [0.0, 0.6],
-            ),
+            // Subtle uniform glass fill (no corner shine)
+            color: Colors.transparent,
           ),
           child: child,
+        ),
+      ),
+    );
+  }
+
+  // Thin divider: ~60% visible in the middle, gradually fading toward the edges
+  Widget _buildFadedDivider() {
+    final colors = context.appColors;
+    final Color lineColor =
+        colors.isDark ? Colors.white : colors.onHero;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 15),
+      height: 1,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.transparent,
+            lineColor.withOpacity(0.2),
+            lineColor.withOpacity(0.2),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.2, 0.8, 1.0],
         ),
       ),
     );
@@ -1513,9 +1490,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(8),
+              decoration: const BoxDecoration(
+                color: Color(0xFF38BDF8),
+                shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
@@ -1568,9 +1545,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(8),
+            decoration: const BoxDecoration(
+              color: Color(0xFF38BDF8),
+              shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.point_of_sale_outlined,
@@ -1702,9 +1679,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(8),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF34D399),
+                        shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.sync,
@@ -2108,8 +2085,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(8),
+                color: color,
+                shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
