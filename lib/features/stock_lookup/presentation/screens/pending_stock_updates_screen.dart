@@ -101,11 +101,9 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
     final double subtitleFontSize = useDesktopNav ? 11.0 : 12.5;
     final double buttonFontSize = useDesktopNav ? 11.0 : 14.0;
     final double buttonVerticalPadding = useDesktopNav ? 8.0 : 12.0;
-    final double buttonRadius = useDesktopNav ? 8.0 : 10.0;
-    final double itemSpacing = useDesktopNav ? 6.0 : 8.0;
 
     return Scaffold(
-      backgroundColor: isDark ? colors.bg : kBgColor,
+      backgroundColor: isDark ? Colors.black : Colors.white,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, size: useDesktopNav ? 20 : 24),
@@ -120,7 +118,7 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
             fontSize: titleFontSize,
           ),
         ),
-        backgroundColor: isDark ? colors.bg : kBgColor,
+        backgroundColor: isDark ? Colors.black : Colors.white,
         foregroundColor: colors.onSurface,
         elevation: 0,
       ),
@@ -172,8 +170,26 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
                             vertical: useDesktopNav ? 6 : 8,
                           ),
                           itemCount: _updates.length,
-                          separatorBuilder: (context, index) =>
-                              SizedBox(height: itemSpacing),
+                          separatorBuilder: (context, index) {
+                            final Color lineColor =
+                                isDark ? Colors.white : Colors.black;
+                            final double opacity = isDark ? 0.2 : 0.25;
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              height: 0.5,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    lineColor.withOpacity(opacity),
+                                    lineColor.withOpacity(opacity),
+                                    Colors.transparent,
+                                  ],
+                                  stops: const [0.0, 0.2, 0.8, 1.0],
+                                ),
+                              ),
+                            );
+                          },
                           itemBuilder: (context, index) {
                             final update = _updates[index];
                             final stock = _stockFromPendingPayload(update);
@@ -252,9 +268,7 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
                             side: BorderSide(
                               color: kErrorColor.withOpacity(0.6),
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(buttonRadius),
-                            ),
+                            shape: const StadiumBorder(),
                           ),
                           child: Text(
                             "Delete All",
@@ -294,9 +308,7 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
                                   backgroundColor: kPrimaryColor,
                                   foregroundColor: colors.onHero,
                                   padding: EdgeInsets.symmetric(vertical: buttonVerticalPadding),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(buttonRadius),
-                                  ),
+                                  shape: const StadiumBorder(),
                                 ),
                                 child: Text(
                                   "Send",
@@ -310,9 +322,7 @@ class _PendingStockUpdatesScreenState extends State<PendingStockUpdatesScreen> {
                                   side: BorderSide(
                                     color: kPrimaryColor.withOpacity(0.4),
                                   ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(buttonRadius),
-                                  ),
+                                  shape: const StadiumBorder(),
                                 ),
                                 child: Text(
                                   "Close",
@@ -393,7 +403,6 @@ class _PendingStockTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
     final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
@@ -417,24 +426,8 @@ class _PendingStockTile extends StatelessWidget {
     final bool canNavigate = onTap != null;
 
     final tile = Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? Color.lerp(colors.surface, Colors.white, 0.06)
-            : colors.surface,
-        borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
-        border: isDark
-            ? Border.all(color: Colors.white.withOpacity(0.18))
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.35)
-                : colors.cardShadow,
-            blurRadius: useDesktopNav ? 6 : 10,
-            offset: Offset(0, useDesktopNav ? 2 : 4),
-            spreadRadius: 0,
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
       ),
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
       child: Row(
@@ -442,11 +435,10 @@ class _PendingStockTile extends StatelessWidget {
           Container(
             width: thumbnailSize,
             height: thumbnailSize,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(useDesktopNav ? 5 : (isTablet ? 8 : 6)),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(useDesktopNav ? 5 : (isTablet ? 8 : 6)),
+            child: ClipOval(
               child: stock == null
                   ? Container(
                       color: kPrimaryColor.withOpacity(0.1),

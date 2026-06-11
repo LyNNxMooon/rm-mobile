@@ -139,7 +139,7 @@ class _PendingCustomerQueueScreenState
     final double bottomButtonPadding = useDesktopNav ? 12 : 18;
 
     return Scaffold(
-      backgroundColor: isDark ? colors.bg : kBgColor,
+      backgroundColor: isDark ? colors.bg : Colors.white,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, size: useDesktopNav ? 20 : 24),
@@ -153,7 +153,7 @@ class _PendingCustomerQueueScreenState
             fontSize: titleFontSize,
           ),
         ),
-        backgroundColor: isDark ? colors.bg : kBgColor,
+        backgroundColor: isDark ? colors.bg : Colors.white,
         foregroundColor: colors.onSurface,
         elevation: 0,
       ),
@@ -208,8 +208,26 @@ class _PendingCustomerQueueScreenState
                             vertical: itemSpacing,
                           ),
                           itemCount: entries.length,
-                          separatorBuilder: (context, index) =>
-                              SizedBox(height: itemSpacing),
+                          separatorBuilder: (context, index) {
+                            final Color lineColor =
+                                isDark ? Colors.white : Colors.black;
+                            final double opacity = isDark ? 0.2 : 0.25;
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              height: 0.5,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    lineColor.withOpacity(opacity),
+                                    lineColor.withOpacity(opacity),
+                                    Colors.transparent,
+                                  ],
+                                  stops: const [0.0, 0.2, 0.8, 1.0],
+                                ),
+                              ),
+                            );
+                          },
                           itemBuilder: (context, index) {
                             final entry = entries[index];
                             final bool isCreation = entry.isCreation;
@@ -337,9 +355,7 @@ class _PendingCustomerQueueScreenState
                             side: BorderSide(
                               color: kErrorColor.withOpacity(0.6),
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                            shape: const StadiumBorder(),
                           ),
                           child: const Text(
                             "Delete All",
@@ -370,9 +386,7 @@ class _PendingCustomerQueueScreenState
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: kPrimaryColor,
                                   foregroundColor: colors.onHero,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                                  shape: const StadiumBorder(),
                                 ),
                                 child: const Text("Send"),
                               )
@@ -382,9 +396,7 @@ class _PendingCustomerQueueScreenState
                                   side: BorderSide(
                                     color: kPrimaryColor.withOpacity(0.4),
                                   ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                                  shape: const StadiumBorder(),
                                 ),
                                 child: const Text(
                                   "Close",
@@ -517,7 +529,6 @@ class _PendingCustomerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final bool isDark = colors.isDark;
     final bool useDesktopNav = context.useDesktopNav;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
@@ -540,24 +551,8 @@ class _PendingCustomerTile extends StatelessWidget {
     final bool canNavigate = onTap != null;
 
     final tile = Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? Color.lerp(colors.surface, Colors.white, 0.06)
-            : colors.surface,
-        borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
-        border: isDark
-            ? Border.all(color: Colors.white.withOpacity(0.18))
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.35)
-                : colors.cardShadow,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
       ),
       padding: EdgeInsets.symmetric(horizontal: tilePaddingH, vertical: tilePaddingV),
       child: Row(
@@ -565,8 +560,8 @@ class _PendingCustomerTile extends StatelessWidget {
           Container(
             width: thumbnailSize,
             height: thumbnailSize,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(useDesktopNav ? 5 : isTablet ? 8 : 6),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
             ),
             child: ClipOval(
               child: customer == null
@@ -689,7 +684,6 @@ class _PendingCustomerCreationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final bool isDark = colors.isDark;
     final bool useDesktopNav = context.useDesktopNav;
     final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
@@ -711,24 +705,8 @@ class _PendingCustomerCreationTile extends StatelessWidget {
     final bool canNavigate = onTap != null;
 
     final tile = Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? Color.lerp(colors.surface, Colors.white, 0.06)
-            : colors.surface,
-        borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
-        border: isDark
-            ? Border.all(color: Colors.white.withOpacity(0.18))
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.35)
-                : colors.cardShadow,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
       ),
       padding: EdgeInsets.symmetric(horizontal: tilePaddingH, vertical: tilePaddingV),
       child: Row(
@@ -736,8 +714,8 @@ class _PendingCustomerCreationTile extends StatelessWidget {
           Container(
             width: thumbnailSize,
             height: thumbnailSize,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(useDesktopNav ? 5 : isTablet ? 8 : 6),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
             ),
             child: ClipOval(
               child: Container(

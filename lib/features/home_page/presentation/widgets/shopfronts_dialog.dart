@@ -586,15 +586,8 @@ class _ShopfrontsDialogState extends State<ShopfrontsDialog> {
             width: double.infinity,
             child: Container(
               decoration: BoxDecoration(
-                gradient: ModernDialogStyles.headerGradient,
+                color: kPrimaryColor,
                 borderRadius: BorderRadius.circular(ModernDialogStyles.buttonRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: kPrimaryColor.withOpacity(0.35),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
               ),
               child: Material(
                 color: Colors.transparent,

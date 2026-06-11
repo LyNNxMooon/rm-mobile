@@ -1881,8 +1881,8 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
                           left: 0,
                           top: -2,
                           child: Container(
-                            width: useDesktopNav ? 5 : 6,
-                            height: useDesktopNav ? 5 : 6,
+                            width: useDesktopNav ? 3 : 4,
+                            height: useDesktopNav ? 3 : 4,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: stock.quantity > 0
