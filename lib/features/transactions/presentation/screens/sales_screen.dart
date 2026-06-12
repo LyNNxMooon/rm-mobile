@@ -1843,10 +1843,13 @@ class _SalesScreenState extends State<SalesScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.shopping_cart_outlined,
-                      size: 60,
-                      color: colors.onSurfaceMuted.withOpacity(0.5),
+                    Image.asset(
+                      isDark
+                          ? 'assets/images/listempty-dark.png'
+                          : 'assets/images/listempty-light.png',
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -1859,7 +1862,7 @@ class _SalesScreenState extends State<SalesScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Scan an item to begin.",
+                      "Add an item to begin.",
                       style: TextStyle(
                         fontSize: 13,
                         color: colors.onSurfaceMuted.withOpacity(0.7),

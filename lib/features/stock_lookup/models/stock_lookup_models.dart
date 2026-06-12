@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:rmmobile/entities/response/paginated_stock_response.dart';
 import 'package:rmmobile/entities/response/picture_upload_response.dart';
 import 'package:rmmobile/entities/response/stock_update_response.dart';
+import 'package:rmmobile/entities/response/stock_activity_response.dart';
 import 'package:rmmobile/entities/vos/search_mode.dart';
 import 'package:rmmobile/entities/vos/stock_vo.dart';
 import 'package:rmmobile/entities/vos/pricing_rules.dart';
@@ -365,6 +366,43 @@ class StockLookupModels implements StockLookupRepo {
       }
 
       return stock;
+    } catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<StockActivityResponse> fetchStockActivity({
+    required int stockId,
+  }) async {
+    try {
+      final String resolvedIp =
+          (await LocalDbDAO.instance.getHostIpAddress() ?? "").trim();
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+              5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+
+      if (resolvedIp.isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty) {
+        throw Exception(
+          "Missing host/shopfront setup. Please reconnect to a host and shopfront.",
+        );
+      }
+
+      final body = <String, dynamic>{"stock_id": stockId};
+
+      return await DataAgentImpl.instance.fetchStockActivity(
+        resolvedIp,
+        resolvedPort,
+        resolvedShopfrontId,
+        resolvedApiKey,
+        body,
+      );
     } catch (error) {
       return Future.error(error);
     }

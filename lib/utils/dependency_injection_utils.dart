@@ -78,11 +78,13 @@ import '../features/stock_lookup/domain/use_cases/send_pending_stock_updates.dar
 import '../features/stock_lookup/domain/use_cases/delete_pending_stock_updates.dart';
 import '../features/stock_lookup/domain/use_cases/update_single_stock.dart';
 import '../features/stock_lookup/domain/use_cases/resolve_package_component_stock.dart';
+import '../features/stock_lookup/domain/use_cases/fetch_stock_activity.dart';
 import '../features/stock_lookup/domain/use_cases/get_shopfront_name.dart' as stock_lookup;
 import '../features/stock_lookup/domain/use_cases/seed_stock_sync_timestamp.dart';
 import '../features/stock_lookup/models/stock_lookup_models.dart';
 import '../features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import '../features/stock_lookup/presentation/BLoC/package_component_bloc.dart';
+import '../features/stock_lookup/presentation/BLoC/stock_activity_bloc.dart';
 import '../features/customer_lookup/domain/repositories/customer_lookup_repo.dart';
 import '../features/customer_lookup/domain/use_cases/fetch_customer_data.dart';
 import '../features/customer_lookup/domain/use_cases/fetch_customer_transactions.dart';
@@ -215,6 +217,7 @@ Future<void> init() async {
   sl.registerFactory(
     () => PackageComponentBloc(resolvePackageComponentStock: sl()),
   );
+  sl.registerFactory(() => StockActivityBloc(fetchStockActivity: sl()));
   sl.registerFactory(() => FilterOptionsBloc(getFilterOptions: sl()));
   sl.registerFactory(() => FetchCustomerBloc(fetchCustomerData: sl()));
   sl.registerFactory(() => CustomerListBloc(getPaginatedCustomers: sl()));
@@ -426,6 +429,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => FetchThumbnail(sl()));
   sl.registerLazySingleton(() => FetchFullImage(sl()));
   sl.registerLazySingleton(() => ResolvePackageComponentStock(sl()));
+  sl.registerLazySingleton(() => FetchStockActivity(sl()));
   sl.registerLazySingleton(() => FetchStocktakeHistorySessions());
   sl.registerLazySingleton(() => FetchStocktakeHistoryItems());
   sl.registerLazySingleton(() => LoadRetentionDays(sl()));

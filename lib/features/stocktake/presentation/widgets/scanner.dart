@@ -152,15 +152,7 @@ class _ScannerState extends State<Scanner> {
           border: Border.all(
             color: isDark ? Colors.white38 : Colors.grey.shade400,
           ),
-          boxShadow: isDark
-              ? null
-              : [
-                  BoxShadow(
-                    color: kThirdColor.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          //
         ),
         child: Center(
           child: SingleChildScrollView(
@@ -174,7 +166,7 @@ class _ScannerState extends State<Scanner> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Scanner Area",
+                  "Tap here to turn your scanner on.",
                   style: TextStyle(
                     fontSize: 14,
                     color: colors.onSurfaceMuted,
@@ -182,7 +174,7 @@ class _ScannerState extends State<Scanner> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "Camera preview will appear here",
+                  "Your camera is turned off to preserve battery.",
                   style: TextStyle(
                     fontSize: 12,
                     color: colors.onSurfaceMuted.withOpacity(0.7),

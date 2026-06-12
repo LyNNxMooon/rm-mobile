@@ -12,6 +12,7 @@ import 'package:rmmobile/features/onboarding/presentation/BLoC/onboarding_bloc.d
 //import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/BLoC/package_component_bloc.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_activity_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
@@ -142,6 +143,9 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<StockListBloc>(create: (_) => sl<StockListBloc>()),
         BlocProvider<PackageComponentBloc>(
           create: (_) => sl<PackageComponentBloc>(),
+        ),
+        BlocProvider<StockActivityBloc>(
+          create: (_) => sl<StockActivityBloc>(),
         ),
         BlocProvider<FilterOptionsBloc>(create: (_) => sl<FilterOptionsBloc>()),
         BlocProvider<FetchCustomerBloc>(create: (_) => sl<FetchCustomerBloc>()),

@@ -18,6 +18,8 @@ const kEndPointForStockIds =
     "/shopfronts/{$kPathParamForShopfrontId}/stock/ids";
 const kEndPointForShopfrontStockUpdate =
     "/shopfronts/{$kPathParamForShopfrontId}/stock/update";
+const kEndPointForStockActivity =
+    "/shopfronts/{$kPathParamForShopfrontId}/stock/activity";
 const kEndPointForCustomerLookup = "/shopfronts/{$kPathParamForShopfrontId}/customers";
 const kEndPointForCustomerMetadata =
     "/shopfronts/{$kPathParamForShopfrontId}/customers/metadata";

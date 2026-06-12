@@ -25,6 +25,7 @@ import 'package:rmmobile/entities/response/stocktake_commit_response.dart';
 import 'package:rmmobile/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmmobile/entities/response/stocktake_limit_response.dart';
 import 'package:rmmobile/entities/response/stock_update_response.dart';
+import 'package:rmmobile/entities/response/stock_activity_response.dart';
 import 'package:rmmobile/entities/response/validate_response.dart';
 import 'package:rmmobile/entities/response/security_groups_response.dart';
 import 'package:rmmobile/entities/response/staff_detail_response.dart';
@@ -324,6 +325,30 @@ class DataAgentImpl implements DataAgent {
       );
     } on Exception catch (error) {
       logger.e('Error updating shopfront stock from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<StockActivityResponse> fetchStockActivity(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .fetchStockActivity(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
+    } on Exception catch (error) {
+      logger.e('Error fetching stock activity from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }

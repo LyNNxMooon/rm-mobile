@@ -510,7 +510,7 @@ class _StocktakeHistoryDetailsScreenState
             Text(
               stock.quantity.toString(),
               style: getSmartTitle(
-                color: Colors.white,
+                color: isDark ? Colors.white : colors.onSurface,
                 fontSize: qtyFontSize,
               ),
             ),

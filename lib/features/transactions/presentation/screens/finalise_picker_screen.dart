@@ -328,11 +328,13 @@ class _FinalisePickerScreenState extends State<FinalisePickerScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.payments_outlined,
-                  size: 48,
-                  color: fg.withOpacity(0.7),
-                  fontWeight: FontWeight.w400,
+                Image.asset(
+                  isDark
+                      ? 'assets/images/comming-dark.png'
+                      : 'assets/images/comming-light.png',
+                  width: 70,
+                  height: 70,
+                  fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 12),
                 Text(
