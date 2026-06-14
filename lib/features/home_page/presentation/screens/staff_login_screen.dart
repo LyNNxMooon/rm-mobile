@@ -147,6 +147,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
         }
       },
       child: Scaffold(
+        backgroundColor: const Color.fromRGBO(7, 27, 54, 1),
         body: Container(
           decoration: const BoxDecoration(color: Color.fromRGBO(7, 27, 54, 1)),
           child: SafeArea(

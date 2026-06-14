@@ -849,6 +849,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     final comingSoonItems = isHomeTab
         ? items.where((item) => item['comingSoon'] == true).toList()
         : <Map<String, dynamic>>[];
+    final informationItems = comingSoonItems
+        .where((item) => item['category'] != 'stockmgt')
+        .toList();
+    final stockMgtItems = comingSoonItems
+        .where((item) => item['category'] == 'stockmgt')
+        .toList();
 
     // Build the main content
     Widget content = Container(
@@ -906,7 +912,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 useDesktopNav: useDesktopNav,
               ),
             ),
-            if (isHomeTab && comingSoonItems.isNotEmpty) ...[
+            if (isHomeTab && informationItems.isNotEmpty) ...[
               _buildSectionHeader(
                 "Information",
                 context,
@@ -914,7 +920,19 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               ),
               _buildInformationGrid(
                 context,
-                comingSoonItems,
+                informationItems,
+                useDesktopNav: useDesktopNav,
+              ),
+            ],
+            if (isHomeTab && stockMgtItems.isNotEmpty) ...[
+              _buildSectionHeader(
+                "Stock Management",
+                context,
+                icon: Icons.inventory_2_outlined,
+              ),
+              _buildInformationGrid(
+                context,
+                stockMgtItems,
                 useDesktopNav: useDesktopNav,
               ),
             ],
@@ -1895,7 +1913,7 @@ Widget _buildInformationTile(
     },
     // Information items (show in Information section on Home)
     {
-      "title": "Stock-Lookup",
+      "title": "Stock",
       "subTitle": "Search inventory",
       "icon": Icons.inventory_2_outlined,
       "color": kPrimaryColor,

@@ -3144,7 +3144,7 @@ class _SalesScreenState extends State<SalesScreen>
                               ),
                               SizedBox(height: useDesktopNav ? 4 : (isTablet ? 6 : 8)),
                               Text(
-                                "Rounding: ${FormattingUtils.formatCurrencyWithDecimals(_rounding, 2)}",
+                                "${isTablet ? 'Rounding' : 'Rnd'}: ${FormattingUtils.formatCurrencyWithDecimals(_rounding, 2)}",
                                 style: TextStyle(
                                   color: colors.onSurfaceMuted,
                                   fontSize: labelFontSize,
@@ -3301,7 +3301,7 @@ class _SalesScreenState extends State<SalesScreen>
                               ),
                               SizedBox(height: useDesktopNav ? 4 : (isTablet ? 6 : 8)),
                               Text(
-                                "Rounding: ${FormattingUtils.formatCurrencyWithDecimals(_rounding, 2)}",
+                                "${isTablet ? 'Rounding' : 'Rnd'}: ${FormattingUtils.formatCurrencyWithDecimals(_rounding, 2)}",
                                 style: TextStyle(
                                   color: colors.onSurfaceMuted,
                                   fontSize: labelFontSize,

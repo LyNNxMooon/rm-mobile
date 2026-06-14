@@ -38,6 +38,10 @@ class StockVO {
   final num laybyQuantity;
   @JsonKey(name: 'salesorder_qty')
   final num salesOrderQuantity;
+  @JsonKey(name: 'purchaseorder_qty')
+  final num purchaseOrderQuantity;
+  @JsonKey(name: 'cso_qty')
+  final num csoQuantity;
   @JsonKey(name: 'date_created')
   final String dateCreated;
   @JsonKey(name: 'order_threshold')
@@ -217,6 +221,8 @@ class StockVO {
     required this.quantity,
     required this.laybyQuantity,
     required this.salesOrderQuantity,
+    required this.purchaseOrderQuantity,
+    required this.csoQuantity,
     required this.dateCreated,
     required this.orderThreshold,
     required this.orderQuantity,

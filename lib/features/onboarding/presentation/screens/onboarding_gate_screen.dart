@@ -244,9 +244,8 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
     final double logoCardGap = useDesktopLayout ? 28 : 36;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(gradient: context.appColors.heroGradient),
-        child: SafeArea(
+      backgroundColor: const Color.fromRGBO(7, 27, 54, 1),
+      body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
@@ -376,8 +375,8 @@ class _WelcomeScreenState extends State<_WelcomeScreen>
             ),
           ),
         ),
-      ),
-    );
+      );
+  
   }
 }
 
@@ -432,13 +431,13 @@ class _TermsScreenState extends State<_TermsScreen> {
     final colors = context.appColors;
     // Desktop: 50px gap on all sides; mobile: smaller padding
     final double padding = _isDesktop ? 50.0 : 18.0;
+    final bool isTablet = context.isTablet;
 
     return PopScope(
       canPop: false,
       child: Scaffold(
-        body: Container(
-          decoration: BoxDecoration(gradient: context.appColors.heroGradient),
-          child: Padding(
+        backgroundColor: Colors.white,
+        body: Padding(
             padding: EdgeInsets.all(padding),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(_isDesktop ? 10 : 16),
@@ -535,9 +534,9 @@ class _TermsScreenState extends State<_TermsScreen> {
                           Checkbox(
                             value: _isAgreed,
                             activeColor: kPrimaryColor,
-                            checkColor: colors.onHero,
+                            checkColor: Colors.white,
                             side: BorderSide(
-                              color: colors.onHero.withOpacity(0.85),
+                              color: Colors.black.withOpacity(0.85),
                             ),
                             onChanged: (v) {
                               setState(() => _isAgreed = v ?? false);
@@ -549,7 +548,7 @@ class _TermsScreenState extends State<_TermsScreen> {
                               child: Text(
                                 "I agree to the Terms & Conditions and Privacy Policy.",
                                 style: TextStyle(
-                                  color: colors.onHero.withOpacity(0.95),
+                                  color: Colors.black.withOpacity(0.95),
                                   fontSize: 13,
                                 ),
                               ),
@@ -566,12 +565,12 @@ class _TermsScreenState extends State<_TermsScreen> {
                               child: OutlinedButton(
                                 onPressed: widget.onDecline,
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: colors.onHero,
+                                  foregroundColor: Colors.black,
                                   minimumSize: const Size(double.infinity, 40),
                                   padding: EdgeInsets.zero,
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   side: BorderSide(
-                                    color: colors.onHero.withOpacity(0.7),
+                                    color: Colors.black.withOpacity(0.7),
                                   ),
                                   textStyle: const TextStyle(
                                     fontSize: 16,
@@ -588,7 +587,7 @@ class _TermsScreenState extends State<_TermsScreen> {
                                     maxLines: 1,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: colors.onHero,
+                                      color: Colors.black,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -637,6 +636,7 @@ class _TermsScreenState extends State<_TermsScreen> {
                           ),
                         ],
                       ),
+                      SizedBox(height: isTablet ? 28 : 0),
                     ],
                   ),
                 ),
@@ -644,7 +644,7 @@ class _TermsScreenState extends State<_TermsScreen> {
             ),
           ),
         ),
-      ),
-    );
+      );
+    
   }
 }

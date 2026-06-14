@@ -349,6 +349,7 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
           onPressed: isCommitting ? null : _handleSendToRM,
           elevation: isCommitting ? 0 : 4,
           backgroundColor: isCommitting ? colors.onSurfaceMuted : kPrimaryColor,
+          shape: const StadiumBorder(),
           label: Text(
             isCommitting ? "Sending..." : "Send to shopfront",
             style: TextStyle(

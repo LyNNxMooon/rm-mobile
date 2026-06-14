@@ -21,6 +21,8 @@ const stocksTableCreationQuery = '''
     quantity REAL,
     layby_qty REAL,
     salesorder_qty REAL,
+    purchaseorder_qty REAL,
+    cso_qty REAL,
     date_created TEXT,
     order_threshold REAL,
     order_quantity REAL,

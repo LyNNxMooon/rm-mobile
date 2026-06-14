@@ -72,9 +72,31 @@ class _StockActivityScreenState extends State<StockActivityScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      "Showing stock activities from Non-Archived data.",
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
-        toolbarHeight: 56,
+        toolbarHeight: 84,
       ),
       body: BlocBuilder<StockActivityBloc, StockActivityState>(
         builder: (context, state) {
