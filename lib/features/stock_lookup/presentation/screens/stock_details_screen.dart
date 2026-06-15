@@ -65,9 +65,23 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   int _descriptionCharLimit = 40; // Default limit, changes to 100 for RM 14+
 
   late final LanguageToolController _descriptionController;
+  late final TextEditingController _descriptionEditController;
   late final TextEditingController _custom1Controller;
   late final TextEditingController _custom2Controller;
+  late final TextEditingController _longDescController;
+  late final TextEditingController _incRrpController;
+  late final TextEditingController _exRrpController;
+  final FocusNode _incRrpFocus = FocusNode();
+  final FocusNode _exRrpFocus = FocusNode();
+  bool _isEditing = false;
   List<FocusNode> _priceFocusNodes = [];
+
+  // Mutable copies of the editable text fields so the read-only display can
+  // reflect the latest saved values immediately after the user taps save.
+  late String _displayDescription;
+  late String _displayCustom1;
+  late String _displayCustom2;
+  late String _displayLongDesc;
 
   @override
   void initState() {
@@ -76,6 +90,16 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     _descriptionController = LanguageToolController();
     _descriptionController.text = widget.stock.description;
     _descriptionController.addListener(_enforceDescriptionLimit);
+
+    // Plain controller used for inline editing (LanguageToolController injects
+    // tappable recognizers into its spans, which is illegal inside an editable
+    // TextField and throws a semantics assertion).
+    _descriptionEditController = TextEditingController(
+      text: widget.stock.description,
+    );
+    _descriptionEditController.addListener(
+      () => _enforceCharLimit(_descriptionEditController, _descriptionCharLimit),
+    );
 
     _custom1Controller = TextEditingController(
       text: widget.stock.custom1 ?? "",
@@ -86,6 +110,24 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
       text: widget.stock.custom2 ?? "",
     );
     _custom2Controller.addListener(() => _enforceCharLimit(_custom2Controller, 50));
+
+    _longDescController = TextEditingController(
+      text: widget.stock.longDescription ?? "",
+    );
+
+    _displayDescription = widget.stock.description;
+    _displayCustom1 = widget.stock.custom1 ?? "";
+    _displayCustom2 = widget.stock.custom2 ?? "";
+    _displayLongDesc = widget.stock.longDescription ?? "";
+
+    _incRrpController = TextEditingController(
+      text: widget.stock.sell.toStringAsFixed(4),
+    );
+    _exRrpController = TextEditingController(
+      text: widget.stock.sell.toStringAsFixed(4),
+    );
+    _incRrpController.addListener(_onIncRrpChanged);
+    _exRrpController.addListener(_onExRrpChanged);
     // Old setup disabled:
     // final pic = widget.stock.pictureFileName;
     // if (pic != null && pic.isNotEmpty) {
@@ -143,6 +185,44 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     }
   }
 
+  /// When the Inc RRP field is edited, reflect the value into the Ex RRP field
+  /// (and internal state) using the sell tax percentage.
+  void _onIncRrpChanged() {
+    if (!_incRrpFocus.hasFocus) return;
+    final text = _incRrpController.text;
+    if (text.isEmpty) return;
+    final double incVal = double.tryParse(text) ?? 0.0;
+    final double exVal = sellTaxPercentage > 0
+        ? TaxCalculationUtils.calculateExclusivePrice(incVal, sellTaxPercentage)
+        : incVal;
+    sell = incVal;
+    exSell = exVal;
+    _exRrpController.text = exVal.toStringAsFixed(4);
+  }
+
+  /// When the Ex RRP field is edited, reflect the value into the Inc RRP field
+  /// (and internal state) using the sell tax percentage.
+  void _onExRrpChanged() {
+    if (!_exRrpFocus.hasFocus) return;
+    final text = _exRrpController.text;
+    if (text.isEmpty) return;
+    final double exVal = double.tryParse(text) ?? 0.0;
+    final double incVal = sellTaxPercentage > 0
+        ? TaxCalculationUtils.calculateInclusivePrice(exVal, sellTaxPercentage)
+        : exVal;
+    exSell = exVal;
+    sell = incVal;
+    _incRrpController.text = incVal.toStringAsFixed(4);
+  }
+
+  /// Keeps the Inc/Ex RRP edit controllers in sync with the current [sell] /
+  /// [exSell] state. Skipped while the user is actively editing the fields.
+  void _syncRrpControllers() {
+    if (_incRrpFocus.hasFocus || _exRrpFocus.hasFocus) return;
+    _incRrpController.text = sell.toStringAsFixed(4);
+    _exRrpController.text = exSell.toStringAsFixed(4);
+  }
+
   Future<void> _calculateTaxAsync() async {
     try {
       // Check if server provides pre-calculated values for all prices
@@ -178,6 +258,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
             costTaxType = costResult.taxType;
             _taxLoaded = true;
           });
+          _syncRrpControllers();
         }
         return;
       }
@@ -220,6 +301,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
           _taxLoaded = true;
         });
+        _syncRrpControllers();
       }
     } catch (e) {
       logger.e('Error calculating tax: $e');
@@ -567,8 +649,14 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   @override
   void dispose() {
     _descriptionController.dispose();
+    _descriptionEditController.dispose();
     _custom1Controller.dispose();
     _custom2Controller.dispose();
+    _longDescController.dispose();
+    _incRrpController.dispose();
+    _exRrpController.dispose();
+    _incRrpFocus.dispose();
+    _exRrpFocus.dispose();
     super.dispose();
   }
 
@@ -838,31 +926,43 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           horizontal: cardHorizontalPadding,
                         ),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             ConstrainedBox(
                               constraints: BoxConstraints(
                                 maxWidth: screenWidth * 0.55,
                               ),
-                              child: Text(
-                                widget.stock.description,
-                                textAlign: TextAlign.right,
-                                softWrap: true,
-                                style: TextStyle(
-                                  fontSize: useDesktopNav ? 22 : 24,
-                                  fontWeight: FontWeight.w300,
-                                  color: isDark ? Colors.white : kThirdColor,
-                                ),
-                              ),
+                              child: _isEditing
+                                  ? _buildUnderlineField(
+                                      controller: _descriptionEditController,
+                                      textColor: isDark ? Colors.white : kThirdColor,
+                                      fontSize: useDesktopNav ? 22 : 24,
+                                      fontWeight: FontWeight.w300,
+                                      textAlign: TextAlign.right,
+                                      maxLines: null,
+                                    )
+                                  : Text(
+                                      _displayDescription,
+                                      textAlign: TextAlign.start,
+                                      softWrap: true,
+                                      style: TextStyle(
+                                        fontSize: useDesktopNav ? 22 : 24,
+                                        fontWeight: FontWeight.w300,
+                                        color: isDark ? Colors.white : kThirdColor,
+                                      ),
+                                    ),
                             ),
                              const SizedBox(width: 12),
-                            Text(
-                              _formatPrice(sell),
-                              style: TextStyle(
-                                fontSize: useDesktopNav ? 18 : 16,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white : kThirdColor,
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6.0),
+                              child: Text(
+                                _formatPrice(sell),
+                                style: TextStyle(
+                                  fontSize: useDesktopNav ? 18 : 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : kThirdColor,
+                                ),
                               ),
                             ),
                            
@@ -1046,7 +1146,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         ),
                       ),
 
-                      if ((widget.stock.longDescription ?? "").trim().isNotEmpty) ...[
+                      if (_isEditing || _displayLongDesc.trim().isNotEmpty) ...[
                         SizedBox(height: sectionGap),
                         Padding(
                           padding: EdgeInsets.symmetric(
@@ -1067,13 +1167,20 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              Text(
-                                widget.stock.longDescription!.trim(),
-                                style: TextStyle(
-                                  fontSize: useDesktopNav ? 13 : 14,
-                                  color: isDark ? Colors.white : kThirdColor,
-                                ),
-                              ),
+                              _isEditing
+                                  ? _buildUnderlineField(
+                                      controller: _longDescController,
+                                      textColor: isDark ? Colors.white : kThirdColor,
+                                      fontSize: useDesktopNav ? 13 : 14,
+                                      maxLines: null,
+                                    )
+                                  : Text(
+                                      _displayLongDesc.trim(),
+                                      style: TextStyle(
+                                        fontSize: useDesktopNav ? 13 : 14,
+                                        color: isDark ? Colors.white : kThirdColor,
+                                      ),
+                                    ),
                             ],
                           ),
                         ),
@@ -1163,8 +1270,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         ),
                       ),
 
-                      if ((widget.stock.custom1 ?? "").trim().isNotEmpty ||
-                          (widget.stock.custom2 ?? "").trim().isNotEmpty) ...[
+                      if (_isEditing ||
+                          _displayCustom1.trim().isNotEmpty ||
+                          _displayCustom2.trim().isNotEmpty) ...[
                       SizedBox(height: sectionGap * 1.8),
 
                       Padding(
@@ -1207,16 +1315,22 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Flexible(
-                              child: Text(
-                                (widget.stock.custom1 ?? "").trim().isNotEmpty
-                                    ? widget.stock.custom1!.trim()
-                                    : "N / A ",
-                                textAlign: TextAlign.start,
-                                style: TextStyle(
-                                  fontSize: useDesktopNav ? 14 : 15,
-                                  color: isDark ? Colors.white : kThirdColor,
-                                ),
-                              ),
+                              child: _isEditing
+                                  ? _buildUnderlineField(
+                                      controller: _custom1Controller,
+                                      textColor: isDark ? Colors.white : kThirdColor,
+                                      fontSize: useDesktopNav ? 14 : 15,
+                                    )
+                                  : Text(
+                                      _displayCustom1.trim().isNotEmpty
+                                          ? _displayCustom1.trim()
+                                          : "N / A ",
+                                      textAlign: TextAlign.start,
+                                      style: TextStyle(
+                                        fontSize: useDesktopNav ? 14 : 15,
+                                        color: isDark ? Colors.white : kThirdColor,
+                                      ),
+                                    ),
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1229,16 +1343,22 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                               ),
                             ),
                             Flexible(
-                              child: Text(
-                                (widget.stock.custom2 ?? "").trim().isNotEmpty
-                                    ? widget.stock.custom2!.trim()
-                                    : "N / A",
-                                textAlign: TextAlign.start,
-                                style: TextStyle(
-                                  fontSize: useDesktopNav ? 14 : 14.5,
-                                  color: isDark ? Colors.white : kThirdColor,
-                                ),
-                              ),
+                              child: _isEditing
+                                  ? _buildUnderlineField(
+                                      controller: _custom2Controller,
+                                      textColor: isDark ? Colors.white : kThirdColor,
+                                      fontSize: useDesktopNav ? 14 : 14.5,
+                                    )
+                                  : Text(
+                                      _displayCustom2.trim().isNotEmpty
+                                          ? _displayCustom2.trim()
+                                          : "N / A",
+                                      textAlign: TextAlign.start,
+                                      style: TextStyle(
+                                        fontSize: useDesktopNav ? 14 : 14.5,
+                                        color: isDark ? Colors.white : kThirdColor,
+                                      ),
+                                    ),
                             ),
                           ],
                         ),
@@ -1385,6 +1505,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                     labelColor: labelColor,
                                     fontSize: rowFontSize,
                                     labelFontSize: labelFontSize,
+                                    editableSales: _isEditing && !lockSellPrice && !isPackage,
+                                    salesEditController: _exRrpController,
+                                    salesEditFocus: _exRrpFocus,
                                   ),
                                   _buildTaxPriceRow(
                                     label: "I N C   T A X",
@@ -1396,6 +1519,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                     labelColor: labelColor,
                                     fontSize: rowFontSize,
                                     labelFontSize: labelFontSize,
+                                    editableSales: _isEditing && !lockSellPrice && !isPackage,
+                                    salesEditController: _incRrpController,
+                                    salesEditFocus: _incRrpFocus,
                                   ),
                                 ],
                               );
@@ -1504,15 +1630,23 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Description (RRP removed)
-          Text(
-            widget.stock.description,
-            softWrap: true,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w300,
-              color: isDark ? Colors.white : kThirdColor,
-            ),
-          ),
+          _isEditing
+              ? _buildUnderlineField(
+                  controller: _descriptionEditController,
+                  textColor: isDark ? Colors.white : kThirdColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w300,
+                  maxLines: null,
+                )
+              : Text(
+                  _displayDescription,
+                  softWrap: true,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w300,
+                    color: isDark ? Colors.white : kThirdColor,
+                  ),
+                ),
 
           SizedBox(height: sectionGap * 0.4),
 
@@ -1655,7 +1789,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
             ],
           ),
 
-          if ((widget.stock.longDescription ?? "").trim().isNotEmpty) ...[
+          if (_isEditing || _displayLongDesc.trim().isNotEmpty) ...[
             SizedBox(height: sectionGap),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1672,13 +1806,20 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  widget.stock.longDescription!.trim(),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.white : kThirdColor,
-                  ),
-                ),
+                _isEditing
+                    ? _buildUnderlineField(
+                        controller: _longDescController,
+                        textColor: isDark ? Colors.white : kThirdColor,
+                        fontSize: 14,
+                        maxLines: null,
+                      )
+                    : Text(
+                        _displayLongDesc.trim(),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white : kThirdColor,
+                        ),
+                      ),
               ],
             ),
           ],
@@ -1759,8 +1900,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
     // ----- Custom session (shown in the right half, below Tax & Prices) -----
     final Widget customSection =
-        ((widget.stock.custom1 ?? "").trim().isNotEmpty ||
-                (widget.stock.custom2 ?? "").trim().isNotEmpty)
+        (_isEditing ||
+                _displayCustom1.trim().isNotEmpty ||
+                _displayCustom2.trim().isNotEmpty)
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1795,15 +1937,21 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Flexible(
-                          child: Text(
-                            (widget.stock.custom1 ?? "").trim().isNotEmpty
-                                ? widget.stock.custom1!.trim()
-                                : "N / A ",
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: isDark ? Colors.white : kThirdColor,
-                            ),
-                          ),
+                          child: _isEditing
+                              ? _buildUnderlineField(
+                                  controller: _custom1Controller,
+                                  textColor: isDark ? Colors.white : kThirdColor,
+                                  fontSize: 15,
+                                )
+                              : Text(
+                                  _displayCustom1.trim().isNotEmpty
+                                      ? _displayCustom1.trim()
+                                      : "N / A ",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: isDark ? Colors.white : kThirdColor,
+                                  ),
+                                ),
                         ),
                         Padding(
                           padding:
@@ -1817,15 +1965,21 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           ),
                         ),
                         Flexible(
-                          child: Text(
-                            (widget.stock.custom2 ?? "").trim().isNotEmpty
-                                ? widget.stock.custom2!.trim()
-                                : "N / A",
-                            style: TextStyle(
-                              fontSize: 14.5,
-                              color: isDark ? Colors.white : kThirdColor,
-                            ),
-                          ),
+                          child: _isEditing
+                              ? _buildUnderlineField(
+                                  controller: _custom2Controller,
+                                  textColor: isDark ? Colors.white : kThirdColor,
+                                  fontSize: 14.5,
+                                )
+                              : Text(
+                                  _displayCustom2.trim().isNotEmpty
+                                      ? _displayCustom2.trim()
+                                      : "N / A",
+                                  style: TextStyle(
+                                    fontSize: 14.5,
+                                    color: isDark ? Colors.white : kThirdColor,
+                                  ),
+                                ),
                         ),
                       ],
                     ),
@@ -1972,6 +2126,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   labelColor: labelColor,
                   fontSize: rowFontSize,
                   labelFontSize: labelFontSize,
+                  editableSales: _isEditing && !lockSellPrice && !isPackage,
+                  salesEditController: _exRrpController,
+                  salesEditFocus: _exRrpFocus,
                 ),
                 _buildTaxPriceRow(
                   label: "I N C   T A X",
@@ -1982,6 +2139,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   labelColor: labelColor,
                   fontSize: rowFontSize,
                   labelFontSize: labelFontSize,
+                  editableSales: _isEditing && !lockSellPrice && !isPackage,
+                  salesEditController: _incRrpController,
+                  salesEditFocus: _incRrpFocus,
                 ),
               ],
             ),
@@ -2406,6 +2566,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
           exSell = result;
         }
       });
+      _syncRrpControllers();
     }
   }
 
@@ -2433,13 +2594,42 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     );
   }
 
+  /// Resolves the sell value to send to the server based on the sell tax type.
+  /// When [sellTaxType] != 0 the server stores the tax-inclusive price; when it
+  /// is 0 the server stores the tax-exclusive price. Mirrors the logic used by
+  /// the lower-glass pricing editor so updates round-trip correctly after sync.
+  double _resolveEditedSellValue() {
+    final bool expectsInclusive = sellTaxType != 0;
+
+    final double? incValue = double.tryParse(_incRrpController.text.trim());
+    final double? exValue = double.tryParse(_exRrpController.text.trim());
+
+    if (expectsInclusive) {
+      if (incValue != null) return incValue;
+      if (exValue == null) return sell;
+      if (sellTaxPercentage <= 0) return exValue;
+      return TaxCalculationUtils.calculateInclusivePrice(
+        exValue,
+        sellTaxPercentage,
+      );
+    }
+
+    if (exValue != null) return exValue;
+    if (incValue == null) return exSell;
+    if (sellTaxPercentage <= 0) return incValue;
+    return TaxCalculationUtils.calculateExclusivePrice(
+      incValue,
+      sellTaxPercentage,
+    );
+  }
+
   /// Submits pricing rules update
   void _submitPricingUpdate(PricingRules rules) {
     context.read<StockUpdateBloc>().add(
       SubmitStockUpdateEvent(
         stockId: widget.stock.stockID.toInt(),
-        description: _descriptionController.text,
-        sell: sell,
+        description: _descriptionEditController.text,
+        sell: _resolveEditedSellValue(),
         custom1: _custom1Controller.text.trim().isNotEmpty ? _custom1Controller.text.trim() : null,
         custom2: _custom2Controller.text.trim().isNotEmpty ? _custom2Controller.text.trim() : null,
         pricingRules: rules,
@@ -2452,12 +2642,49 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     context.read<StockUpdateBloc>().add(
       SubmitStockUpdateEvent(
         stockId: widget.stock.stockID.toInt(),
-        description: _descriptionController.text,
-        sell: sell,
+        description: _descriptionEditController.text,
+        sell: _resolveEditedSellValue(),
         custom1: _custom1Controller.text.trim().isNotEmpty ? _custom1Controller.text.trim() : null,
         custom2: _custom2Controller.text.trim().isNotEmpty ? _custom2Controller.text.trim() : null,
+        longDesc: _longDescController.text.trim().isNotEmpty ? _longDescController.text.trim() : null,
       ),
     );
+  }
+
+  /// Toggles edit mode. When leaving edit mode, resolves the edited Inc/Ex RRP
+  /// values into [sell] / [exSell] and submits the stock update.
+  void _toggleEditMode() {
+    if (_isEditing) {
+      // The Inc/Ex listeners keep [sell]/[exSell] in sync as the user types.
+      // Do a final parse as a safeguard before submitting.
+      final double? incVal = double.tryParse(_incRrpController.text.trim());
+      final double? exVal = double.tryParse(_exRrpController.text.trim());
+      if (incVal != null) {
+        sell = incVal;
+        exSell = sellTaxPercentage > 0
+            ? TaxCalculationUtils.calculateExclusivePrice(incVal, sellTaxPercentage)
+            : incVal;
+      } else if (exVal != null) {
+        exSell = exVal;
+        sell = sellTaxPercentage > 0
+            ? TaxCalculationUtils.calculateInclusivePrice(exVal, sellTaxPercentage)
+            : exVal;
+      }
+      _submitStockUpdate();
+      FocusScope.of(context).unfocus();
+      setState(() {
+        _isEditing = false;
+        _displayDescription = _descriptionEditController.text;
+        _displayCustom1 = _custom1Controller.text;
+        _displayCustom2 = _custom2Controller.text;
+        _displayLongDesc = _longDescController.text;
+      });
+      _syncRrpControllers();
+    } else {
+      setState(() {
+        _isEditing = true;
+      });
+    }
   }
 
   String _formatQty(num value) {
@@ -2560,6 +2787,44 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   }
 
   /// Builds a single row of the Tax & Prices table (label | cost | sales)
+  /// Plain underline text field (no box) used for inline editing of stock fields.
+  Widget _buildUnderlineField({
+    required TextEditingController controller,
+    FocusNode? focusNode,
+    required Color textColor,
+    required double fontSize,
+    FontWeight fontWeight = FontWeight.w500,
+    TextAlign textAlign = TextAlign.start,
+    TextInputType? keyboardType,
+    int? maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      textAlign: textAlign,
+      scribbleEnabled: false,
+      stylusHandwritingEnabled: false,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      cursorColor: kPrimaryColor,
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: textColor,
+      ),
+      decoration: InputDecoration(
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(vertical: 4),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: textColor.withOpacity(0.4), width: 1),
+        ),
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTaxPriceRow({
     required String label,
     required String costValue,
@@ -2570,6 +2835,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     required double fontSize,
     required double labelFontSize,
     bool isHeader = false,
+    bool editableSales = false,
+    TextEditingController? salesEditController,
+    FocusNode? salesEditFocus,
   }) {
     final TextStyle labelStyle = TextStyle(
       fontSize: labelFontSize,
@@ -2620,11 +2888,22 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
               child: Center(
-                child: Text(
-                  salesValue,
-                  textAlign: TextAlign.center,
-                  style: valueStyle,
-                ),
+                child: editableSales && salesEditController != null
+                    ? _buildUnderlineField(
+                        controller: salesEditController,
+                        focusNode: salesEditFocus,
+                        textColor: textColor,
+                        fontSize: fontSize,
+                        textAlign: TextAlign.center,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      )
+                    : Text(
+                        salesValue,
+                        textAlign: TextAlign.center,
+                        style: valueStyle,
+                      ),
               ),
             ),
           ),
@@ -2699,9 +2978,15 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                     onTap: _onCameraTap,
                   ),
                   SizedBox(width: useDesktopNav ? 10 : 12),
-                  _buildCircularIcon(
-                    icon: Icons.edit_outlined,
-                    onTap: () {},
+                  BlocBuilder<StockUpdateBloc, StockUpdateState>(
+                    builder: (context, state) {
+                      final bool isUpdating = state is StockUpdateLoading;
+                      return _buildCircularIcon(
+                        icon: _isEditing ? Icons.save_outlined : Icons.edit_outlined,
+                        onTap: isUpdating ? () {} : _toggleEditMode,
+                        loading: isUpdating,
+                      );
+                    },
                   ),
                 ],
               ),
@@ -2715,6 +3000,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   Widget _buildCircularIcon({
     required IconData icon,
     required VoidCallback onTap,
+    bool loading = false,
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
@@ -2738,11 +3024,22 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
             ),
           ],
         ),
-        child: Icon(
-          icon,
-          color: isDark ? colors.onSurface : kThirdColor,
-          size: iconSize,
-        ),
+        child: loading
+            ? Center(
+                child: SizedBox(
+                  width: iconSize,
+                  height: iconSize,
+                  child: CupertinoActivityIndicator(
+                    radius: iconSize / 2.4,
+                    color: isDark ? colors.onSurface : kThirdColor,
+                  ),
+                ),
+              )
+            : Icon(
+                icon,
+                color: isDark ? colors.onSurface : kThirdColor,
+                size: iconSize,
+              ),
       ),
     );
   }

@@ -69,6 +69,7 @@ class SubmitStockUpdateEvent extends StockUpdateEvent {
   final double sell;
   final String? custom1;
   final String? custom2;
+  final String? longDesc;
   final PricingRules? pricingRules;
 
   SubmitStockUpdateEvent({
@@ -77,6 +78,7 @@ class SubmitStockUpdateEvent extends StockUpdateEvent {
     required this.sell,
     this.custom1,
     this.custom2,
+    this.longDesc,
     this.pricingRules,
   });
 }

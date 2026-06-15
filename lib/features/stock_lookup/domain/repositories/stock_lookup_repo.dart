@@ -84,6 +84,7 @@ abstract class StockLookupRepo {
     required double sell,
     String? custom1,
     String? custom2,
+    String? longDesc,
     PricingRules? pricingRules,
   });
 

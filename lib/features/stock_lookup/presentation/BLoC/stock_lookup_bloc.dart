@@ -351,6 +351,7 @@ class StockUpdateBloc extends Bloc<StockUpdateEvent, StockUpdateState> {
         sell: event.sell,
         custom1: event.custom1,
         custom2: event.custom2,
+        longDesc: event.longDesc,
         pricingRules: event.pricingRules,
       );
       if (response.success) {

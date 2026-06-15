@@ -16,6 +16,7 @@ class UpdateSingleStock {
     required double sell,
     String? custom1,
     String? custom2,
+    String? longDesc,
     PricingRules? pricingRules,
   }) async {
     try {
@@ -41,6 +42,7 @@ class UpdateSingleStock {
         sell: sell,
         custom1: custom1,
         custom2: custom2,
+        longDesc: longDesc,
         pricingRules: pricingRules,
       );
 
@@ -60,6 +62,7 @@ class UpdateSingleStock {
         'sell': sell,
         if (custom1 != null) 'custom1': custom1,
         if (custom2 != null) 'custom2': custom2,
+        if (longDesc != null) 'longdesc': longDesc,
         if (pricingRules != null) 'pricing_rules': pricingRules.toJson(),
         'date_modified': DateTime.now().toIso8601String(),
       };
@@ -91,6 +94,7 @@ class UpdateSingleStock {
               sell: sell,
               custom1: custom1,
               custom2: custom2,
+              longDesc: longDesc,
               pricingRules: pricingRules,
             );
             if (response.success) {

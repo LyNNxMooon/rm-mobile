@@ -512,6 +512,7 @@ class StockLookupModels implements StockLookupRepo {
     required double sell,
     String? custom1,
     String? custom2,
+    String? longDesc,
     PricingRules? pricingRules,
   }) async {
     try {
@@ -528,6 +529,9 @@ class StockLookupModels implements StockLookupRepo {
       }
       if (custom2 != null) {
         itemData["custom2"] = custom2;
+      }
+      if (longDesc != null) {
+        itemData["longdesc"] = longDesc;
       }
       if (pricingRules != null) {
         itemData["pricing_rules"] = pricingRules.toJson();

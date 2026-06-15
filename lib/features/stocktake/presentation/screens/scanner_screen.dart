@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:alert_info/alert_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -32,6 +33,7 @@ import 'package:rmmobile/local_db/sqlite/sqlite_constants.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 import '../../../../constants/txt_styles.dart';
+import '../../../../constants/images.dart';
 import '../../../../utils/enums.dart';
 import '../../../../utils/global_var_utils.dart';
 import '../../../../utils/tax_calculation_utils.dart';
@@ -1667,6 +1669,59 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
+                      final bool isTabletLandscape = isTablet && isLandscape;
+
+                      final Widget scanModeSelector = ScanModeSelector(
+                        vertical: isTabletLandscape,
+                        fontSize: isTabletLandscape ? 16 : 12.5,
+                        onModeChanged: (newMode) {
+                          setState(() {
+                            isManualCount = (newMode == ScanMode.manualCount);
+
+                            qtyController.clear();
+                            _bcController.clear();
+                            countingStock = null;
+                            _lastAutoBarcode = null;
+                            _autoQty = 0;
+                            context.read<ScannerBloc>().add(
+                              ResetStocktakeEvent(ScannerInitial()),
+                            );
+                          });
+                        },
+                      );
+
+                      final Widget scannerWidget = Scanner(
+                        constraints: constraints,
+                        controller: scannerController,
+                        isScan: isScan,
+                        isManualCount: isManualCount,
+                        horizontalPadding: cardHorizontalPadding,
+                        onStartScan: () {
+                          if (!isScan) {
+                            _toggleScan();
+                          }
+                        },
+                        onStopScan: () {
+                          if (isScan) {
+                            _toggleScan();
+                          }
+                        },
+                        onScan: (String barcode) {
+                          print('📷 BARCODE SCANNED: $barcode');
+                          context.read<ScannerBloc>().add(
+                            FetchStockDetails(barcode: barcode),
+                          );
+
+                          if (isManualCount) {
+                            qtyFocusNode.requestFocus();
+                            qtyController.selection = TextSelection(
+                              baseOffset: 0,
+                              extentOffset: qtyController.text.length,
+                            );
+                          }
+                        },
+                      );
+
                       return SingleChildScrollView(
                         physics: const ClampingScrollPhysics(),
                         child: ConstrainedBox(
@@ -1689,63 +1744,66 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                       _toggleAlertRepeatingCounts,
                                 ),
 
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    left: cardHorizontalPadding,
-                                    right: cardHorizontalPadding,
-                                    bottom: isTablet ? 15.0 : 10.0,
-                                    top: isTablet ? 15.0 : 5.0,
+                                if (isTabletLandscape) ...[
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      left: cardHorizontalPadding,
+                                      right: cardHorizontalPadding,
+                                      bottom: isTablet ? 15.0 : 10.0,
+                                      top: isTablet ? 15.0 : 5.0,
+                                    ),
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isTablet ? 20.0 : 12.0,
+                                      ),
+                                      child: Builder(
+                                        builder: (context) {
+                                          final double gap =
+                                              isTablet ? 20.0 : 12.0;
+                                          final double innerPad =
+                                              isTablet ? 20.0 : 12.0;
+                                          final double rowWidth =
+                                              constraints.maxWidth -
+                                                  2 * cardHorizontalPadding -
+                                                  2 * innerPad;
+                                          final double columnWidth =
+                                              (rowWidth - 2 * gap) / 3;
+                                          final double cameraWidth =
+                                              columnWidth * 2 + gap;
+                                          return IntrinsicHeight(
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.stretch,
+                                              children: [
+                                                SizedBox(
+                                                  width: cameraWidth,
+                                                  child: scannerWidget,
+                                                ),
+                                                SizedBox(width: gap + 22),
+                                                Expanded(
+                                                  child: scanModeSelector,
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
                                   ),
-                                  child: ScanModeSelector(
-                                    onModeChanged: (newMode) {
-                                      setState(() {
-                                        isManualCount =
-                                            (newMode == ScanMode.manualCount);
-
-                                        qtyController.clear();
-                                        _bcController.clear();
-                                        countingStock = null;
-                                        _lastAutoBarcode = null;
-                                        _autoQty = 0;
-                                        context.read<ScannerBloc>().add(
-                                          ResetStocktakeEvent(ScannerInitial()),
-                                        );
-                                      });
-                                    },
+                                ] else ...[
+                                  if (isTablet) SizedBox(height: 40),
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      left: cardHorizontalPadding,
+                                      right: cardHorizontalPadding,
+                                      bottom: isTablet ? 15.0 : 10.0,
+                                      top: isTablet ? 15.0 : 5.0,
+                                    ),
+                                    child: scanModeSelector,
                                   ),
-                                ),
-
-                                Scanner(
-                                  constraints: constraints,
-                                  controller: scannerController,
-                                  isScan: isScan,
-                                  isManualCount: isManualCount,
-                                  horizontalPadding: cardHorizontalPadding,
-                                  onStartScan: () {
-                                    if (!isScan) {
-                                      _toggleScan();
-                                    }
-                                  },
-                                  onStopScan: () {
-                                    if (isScan) {
-                                      _toggleScan();
-                                    }
-                                  },
-                                  onScan: (String barcode) {
-                                    print('📷 BARCODE SCANNED: $barcode');
-                                    context.read<ScannerBloc>().add(
-                                      FetchStockDetails(barcode: barcode),
-                                    );
-
-                                    if (isManualCount) {
-                                      qtyFocusNode.requestFocus();
-                                      qtyController.selection = TextSelection(
-                                        baseOffset: 0,
-                                        extentOffset: qtyController.text.length,
-                                      );
-                                    }
-                                  },
-                                ),
+                                  if (isTablet) SizedBox(height: 56),
+                                  scannerWidget,
+                                ],
 
                                 Expanded(
                                   child: BlocConsumer<ScannerBloc, ScannerStates>(
@@ -1914,6 +1972,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     final media = MediaQuery.of(context);
     final bool isTablet = media.size.shortestSide >= 600;
     final bool isPortrait = media.orientation == Orientation.portrait;
+    final bool isTabletLandscape = isTablet && !isPortrait;
     //final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
     //final double uiScale = isTablet
     //    ? (1.0 + ((textScale - 1.0) * 0.35)).clamp(1.0, 1.2)
@@ -2035,6 +2094,237 @@ class _ScannerScreenState extends State<ScannerScreen> {
       painter: _VerticalDottedLinePainter(color: colors.divider),
     );
 
+    final Widget productImage = Builder(
+      builder: (context) {
+        final String imageUrl = (stock?.imageUrl ?? "").trim();
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: AspectRatio(
+            aspectRatio: 16 / 11,
+            child: Container(
+              color: isDark ? colors.surfaceAlt : Colors.grey.shade100,
+              child: imageUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (_, _) => Image.asset(
+                        overviewPlaceholder,
+                        fit: BoxFit.contain,
+                      ),
+                      errorWidget: (_, _, _) => Image.asset(
+                        overviewPlaceholder,
+                        fit: BoxFit.contain,
+                      ),
+                    )
+                  : Image.asset(
+                      overviewPlaceholder,
+                      fit: BoxFit.contain,
+                    ),
+            ),
+          ),
+        );
+      },
+    );
+
+    final Widget searchField = Padding(
+      padding: EdgeInsets.only(
+        top: isTablet ? 28 : 22,
+        bottom: 0,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _bcController,
+              focusNode: txtFieldFocusNode,
+              scrollPhysics: const ClampingScrollPhysics(),
+              // Disable autocorrect and predictive text
+              autocorrect: false,
+              enableSuggestions: false,
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+                fontSize: 14,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search Stock',
+                hintStyle: TextStyle(
+                  color: colors.onSurfaceMuted,
+                  fontSize: 13,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(100),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? Colors.white24
+                        : kPrimaryColor.withOpacity(0.5),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(100),
+                  borderSide: const BorderSide(
+                    color: kPrimaryColor,
+                    width: 2,
+                  ),
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(100),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? Colors.white24
+                        : kPrimaryColor.withOpacity(0.2),
+                  ),
+                ),
+                filled: true,
+                fillColor: isDark ? Colors.black : Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                suffixIcon: IconButton(
+                  onPressed: () async {
+                    StockVO? selectedStock;
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StockLookupScreen(
+                          showBackArrow: true,
+                          selectionMode: true,
+                          onStockSelected: (stock) {
+                            selectedStock = stock;
+                          },
+                        ),
+                      ),
+                    );
+                    if (selectedStock != null && mounted) {
+                      setState(() {
+                        countingStock = selectedStock;
+                        _bcController.text = selectedStock!.barcode;
+                      });
+                      context.read<ScannerBloc>().add(
+                        SelectDuplicateStock(selected: selectedStock!),
+                      );
+                      qtyFocusNode.requestFocus();
+                      qtyController.selection = TextSelection(
+                        baseOffset: 0,
+                        extentOffset: qtyController.text.length,
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.double_arrow_rounded),
+                  color: kPrimaryColor,
+                  iconSize: 22,
+                ),
+              ),
+              onSubmitted: (value) {
+                final trimmed = value.trim();
+                if (trimmed.isNotEmpty) {
+                  context.read<ScannerBloc>().add(
+                    FetchStockDetails(barcode: trimmed),
+                  );
+                }
+                qtyFocusNode.requestFocus();
+                qtyController.selection = TextSelection(
+                  baseOffset: 0,
+                  extentOffset: qtyController.text.length,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final Widget qtyField = Padding(
+      padding: EdgeInsets.only(
+        top: isTablet ? 0 : 0,
+        bottom: 0,
+      ),
+      child: TextField(
+        controller: qtyController,
+        focusNode: qtyFocusNode,
+        scrollPhysics: const ClampingScrollPhysics(),
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.black87,
+          fontSize: 14,
+        ),
+        decoration: InputDecoration(
+          hintText: "Count Qty",
+          hintStyle: TextStyle(
+            color: colors.onSurfaceMuted,
+            fontSize: 13,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(100),
+            borderSide: BorderSide(
+              color: isDark
+                  ? Colors.white24
+                  : kPrimaryColor.withOpacity(0.5),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(100),
+            borderSide: const BorderSide(
+              color: kPrimaryColor,
+              width: 2,
+            ),
+          ),
+          disabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(100),
+            borderSide: BorderSide(
+              color: isDark
+                  ? Colors.white24
+                  : kPrimaryColor.withOpacity(0.2),
+            ),
+          ),
+          filled: true,
+          fillColor: isDark ? Colors.black : Colors.white,
+        ),
+        keyboardType: const TextInputType.numberWithOptions(
+          decimal: true,
+        ),
+        enabled: isManualCount,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (value) {
+          _submitCount();
+
+          if (!isScan) {
+            txtFieldFocusNode.requestFocus();
+            _bcController.selection = TextSelection(
+              baseOffset: 0,
+              extentOffset: _bcController.text.length,
+            );
+          }
+        },
+      ),
+    );
+
+    final Widget listButton =
+        BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
+      builder: (context, state) {
+        final count = state is StocktakeListLoaded ? state.totalCount : 0;
+        return CustomStocktakeBtn(
+          function: () {
+            context.navigateToNext(const StockTakeListScreen());
+          },
+          icon: Icons.list,
+          bgColor: kPrimaryColor,
+          name: count > 0 ? "LIST ($count)" : "LIST",
+        );
+      },
+    );
+
+    final Widget scanButton = CustomStocktakeBtn(
+      function: () {
+        _toggleScan();
+      },
+      icon: Icons.qr_code_scanner,
+      bgColor: isScan ? Colors.redAccent : Colors.lightGreen,
+      name: isScan ? "STOP" : "SCAN",
+    );
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: 20,
@@ -2055,6 +2345,34 @@ class _ScannerScreenState extends State<ScannerScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (isTabletLandscape && stock != null) ...[
+                  // IMAGE COLUMN (tablet landscape only)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: Text(
+                              "IMAGE",
+                              textAlign: TextAlign.center,
+                              style: sectionLabelStyle,
+                            ),
+                          ),
+                          SizedBox(height: isTablet ? 28 : 22),
+                          Expanded(
+                            child: Center(child: productImage),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: isTablet ? 20 : 12),
+                  verticalDottedSeparator,
+                  SizedBox(width: isTablet ? 20 : 12),
+                ],
                 // LEFT HALF - Stock Details
                 Expanded(
                   child: Padding(
@@ -2100,34 +2418,41 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         ),
                         SizedBox(height: isTablet ? 28 : 22),
                         if (stock == null)
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                              vertical: isTablet ? 24 : 16,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  isDark
-                                      ? "assets/images/listempty-dark.png"
-                                      : "assets/images/listempty-light.png",
-                                  width: isTablet ? 100 : 90,
-                                  height: isTablet ? 100 : 90,
-                                  fit: BoxFit.contain,
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  "No stock is selected",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: isTablet ? 16 : 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: isDark
-                                        ? colors.onSurfaceMuted
-                                        : Colors.grey.shade600,
+                          Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: isTablet ? 24 : 16,
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Image.asset(
+                                    isDark
+                                        ? "assets/images/listempty-dark.png"
+                                        : "assets/images/listempty-light.png",
+                                    width: isTablet && isPortrait
+                                        ? 130
+                                        : (isTablet ? 100 : 90),
+                                    height: isTablet && isPortrait
+                                        ? 130
+                                        : (isTablet ? 100 : 90),
+                                    fit: BoxFit.contain,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    "No stock is selected",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: isTablet ? 16 : 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? colors.onSurfaceMuted
+                                          : Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           )
                         else
@@ -2162,7 +2487,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     ),
                   ),
                 ),
+                SizedBox(width: isTablet ? 20 : 12),
                 verticalDottedSeparator,
+                SizedBox(width: isTablet ? 20 : 12),
                 // RIGHT HALF - Expected
                 Expanded(
                   child: Padding(
@@ -2183,6 +2510,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         expectedRow("Lay-by", layby),
                         expectedRow("Sales Order", soQty),
                         expectedRow("Total", totalDisp, bold: true),
+                        if (stock != null && !isTabletLandscape) ...[
+                          SizedBox(height: isTablet ? 24 : 18),
+                          productImage,
+                        ],
                       ],
                     ),
                   ),
@@ -2194,220 +2525,57 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
           const Spacer(),
 
-          Padding(
-            padding: EdgeInsets.only(
-              top: isTablet ? 28 : 22,
-              bottom: 0,
-            ),
-            child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _bcController,
-                      focusNode: txtFieldFocusNode,
-                      scrollPhysics: const ClampingScrollPhysics(),
-                      // Disable autocorrect and predictive text
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black87,
-                        fontSize: 14,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Search Stock',
-                        hintStyle: TextStyle(
-                          color: colors.onSurfaceMuted,
-                          fontSize: 13,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(100),
-                          borderSide: BorderSide(
-                            color: isDark
-                                ? Colors.white24
-                                : kPrimaryColor.withOpacity(0.5),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(100),
-                          borderSide: const BorderSide(
-                            color: kPrimaryColor,
-                            width: 2,
-                          ),
-                        ),
-                        disabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(100),
-                          borderSide: BorderSide(
-                            color: isDark
-                                ? Colors.white24
-                                : kPrimaryColor.withOpacity(0.2),
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: isDark ? Colors.black : Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        suffixIcon: IconButton(
-                          onPressed: () async {
-                            StockVO? selectedStock;
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => StockLookupScreen(
-                                  showBackArrow: true,
-                                  selectionMode: true,
-                                  onStockSelected: (stock) {
-                                    selectedStock = stock;
-                                  },
-                                ),
-                              ),
-                            );
-                            if (selectedStock != null && mounted) {
-                              setState(() {
-                                countingStock = selectedStock;
-                                _bcController.text = selectedStock!.barcode;
-                              });
-                              context.read<ScannerBloc>().add(
-                                SelectDuplicateStock(selected: selectedStock!),
-                              );
-                              qtyFocusNode.requestFocus();
-                              qtyController.selection = TextSelection(
-                                baseOffset: 0,
-                                extentOffset: qtyController.text.length,
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.double_arrow_rounded),
-                          color: kPrimaryColor,
-                          iconSize: 22,
-                        ),
-                      ),
-                      onSubmitted: (value) {
-                        final trimmed = value.trim();
-                        if (trimmed.isNotEmpty) {
-                          context.read<ScannerBloc>().add(
-                            FetchStockDetails(barcode: trimmed),
-                          );
-                        }
-                        qtyFocusNode.requestFocus();
-                        qtyController.selection = TextSelection(
-                          baseOffset: 0,
-                          extentOffset: qtyController.text.length,
-                        );
-                      },
+          if (isTabletLandscape)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 65,
+                  child: Column(
+                    children: [
+                      searchField,
+                      SizedBox(height: isTablet ? 12 : 6),
+                      qtyField,
+                    ],
+                  ),
+                ),
+                SizedBox(width: isTablet ? 20 : 12),
+                Expanded(
+                  flex: 35,
+                  child: Padding(
+                    padding: EdgeInsets.only(top: isTablet ? 28 : 22),
+                    child: Column(
+                      children: [
+                        listButton,
+                        SizedBox(height: isTablet ? 16 : 12),
+                        scanButton,
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
+            )
+          else ...[
+            searchField,
+
+            // Gap between Manual Barcode Entry and Counted Qty
+            SizedBox(height: isTablet ? 12 : 6),
+
+            qtyField,
+            SizedBox(
+              height: isTablet ? 16 : 14,
             ),
 
-          // Gap between Manual Barcode Entry and Counted Qty
-          SizedBox(height: isTablet ? 12 : 6),
-
-          Padding(
-            padding: EdgeInsets.only(
-              top: isTablet ? 0 : 0,
-              bottom: 0,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: listButton),
+                SizedBox(width: isTablet ? 20 : 12),
+                Expanded(child: scanButton),
+              ],
             ),
-            child: TextField(
-              controller: qtyController,
-              focusNode: qtyFocusNode,
-              scrollPhysics: const ClampingScrollPhysics(),
-              style: TextStyle(
-                color: isDark ? Colors.white : Colors.black87,
-                fontSize: 14,
-              ),
-              decoration: InputDecoration(
-                hintText: "Count Qty",
-                hintStyle: TextStyle(
-                  color: colors.onSurfaceMuted,
-                  fontSize: 13,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(100),
-                  borderSide: BorderSide(
-                    color: isDark
-                        ? Colors.white24
-                        : kPrimaryColor.withOpacity(0.5),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(100),
-                  borderSide: const BorderSide(
-                    color: kPrimaryColor,
-                    width: 2,
-                  ),
-                ),
-                disabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(100),
-                  borderSide: BorderSide(
-                    color: isDark
-                        ? Colors.white24
-                        : kPrimaryColor.withOpacity(0.2),
-                  ),
-                ),
-                filled: true,
-                fillColor: isDark ? Colors.black : Colors.white,
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              enabled: isManualCount,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (value) {
-                _submitCount();
-            
-                if (!isScan) {
-                  txtFieldFocusNode.requestFocus();
-                  _bcController.selection = TextSelection(
-                    baseOffset: 0,
-                    extentOffset: _bcController.text.length,
-                  );
-                }
-              },
-            ),
-          ),
-          SizedBox(
-            height: isTablet ? 16 : 14,
-          ),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
-                  builder: (context, state) {
-                    final count = state is StocktakeListLoaded ? state.totalCount : 0;
-                    return CustomStocktakeBtn(
-                      function: () {
-                        context.navigateToNext(const StockTakeListScreen());
-                      },
-                      icon: Icons.list,
-                      bgColor: kPrimaryColor,
-                      name: count > 0 ? "LIST ($count)" : "LIST",
-                    );
-                  },
-                ),
-              ),
-              SizedBox(width: isTablet ? 20 : 12),
-
-              Expanded(
-                child: CustomStocktakeBtn(
-                  function: () {
-                    _toggleScan();
-                  },
-                  icon: Icons.qr_code_scanner,
-                  bgColor: isScan ? Colors.redAccent : Colors.lightGreen,
-                  name: isScan ? "STOP" : "SCAN",
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ]
       ),
     );
   }

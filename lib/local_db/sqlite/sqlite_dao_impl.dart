@@ -1986,6 +1986,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
     required double sell,
     String? custom1,
     String? custom2,
+    String? longDesc,
     PricingRules? pricingRules,
   }) async {
     try {
@@ -2001,6 +2002,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
       }
       if (custom2 != null) {
         valuesToUpdate['custom2'] = custom2;
+      }
+      if (longDesc != null) {
+        valuesToUpdate['longdesc'] = longDesc;
       }
       if (pricingRules != null) {
         valuesToUpdate['pricing_rules'] = jsonEncode(pricingRules.toJson());
@@ -2301,6 +2305,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         final double sell = (payload['sell'] as num?)?.toDouble() ?? 0.0;
         final String? custom1 = payload['custom1'] as String?;
         final String? custom2 = payload['custom2'] as String?;
+        final String? longDesc = payload['longdesc'] as String?;
         final PricingRules? pricingRules = _parsePricingRules(
           payload['pricing_rules'],
         );
@@ -2312,6 +2317,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           sell: sell,
           custom1: custom1,
           custom2: custom2,
+          longDesc: longDesc,
           pricingRules: pricingRules,
         );
       }
