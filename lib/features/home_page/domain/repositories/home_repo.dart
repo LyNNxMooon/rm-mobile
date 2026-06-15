@@ -61,6 +61,11 @@ abstract class HomeRepo {
 
   Future<void> setDarkModeEnabled(bool enabled);
 
+  /// Whether the dashboard should use the white theme palette.
+  Future<bool> getDashboardWhiteThemeEnabled();
+
+  Future<void> setDashboardWhiteThemeEnabled(bool enabled);
+
   /// Returns the dashboard style: "pro" (new) or "default" (old glass drawer)
   Future<String> getDashboardStyle();
 

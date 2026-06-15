@@ -24,6 +24,7 @@ class HomeScreenModels implements HomeRepo {
   static const String _kAutoBackupEnabledKey = "auto_backup_enabled";
   static const String _kLastAutoBackupAtKey = "last_auto_backup_at";
   static const String _kDarkModeEnabledKey = "dark_mode_enabled";
+  static const String _kDashboardWhiteThemeKey = "dashboard_white_theme";
   static const String _kDashboardStyleKey = "dashboard_style";
   static const String _kFontSizeKey = "font_size";
   static const int _defaultAgentPort = 5000;
@@ -178,6 +179,31 @@ class HomeScreenModels implements HomeRepo {
     try {
       await LocalDbDAO.instance.saveAppConfig(
         _kDarkModeEnabledKey,
+        enabled ? "1" : "0",
+      );
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<bool> getDashboardWhiteThemeEnabled() async {
+    try {
+      final raw = await LocalDbDAO.instance.getAppConfig(
+        _kDashboardWhiteThemeKey,
+      );
+      if (raw == null || raw.isEmpty) return false; // Default to off
+      return raw == "1";
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<void> setDashboardWhiteThemeEnabled(bool enabled) async {
+    try {
+      await LocalDbDAO.instance.saveAppConfig(
+        _kDashboardWhiteThemeKey,
         enabled ? "1" : "0",
       );
     } on Exception catch (error) {

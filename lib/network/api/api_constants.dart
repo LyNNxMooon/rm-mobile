@@ -40,6 +40,8 @@ const kEndPointForLayby =
     "/shopfronts/{$kPathParamForShopfrontId}/transactions/layby";
 const kEndPointForPictureUpload =
     "/shopfronts/{$kPathParamForShopfrontId}/pictures/{$kPathParamForStockId}";
+const kEndPointForLastSoldPrice =
+    "/shopfronts/{$kPathParamForShopfrontId}/stock/{$kPathParamForStockId}/lastsoldprice";
 const kEndPointForStocktakeInitCheck =
     "/shopfronts/{$kPathParamForShopfrontId}/stocktake/initcheck";
 const kEndPointForStocktakeCommit =

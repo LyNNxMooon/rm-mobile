@@ -63,6 +63,12 @@ class AddCartItemDirect extends SalesEvent {
   AddCartItemDirect({required this.cartItem});
 }
 
+/// Fetch and store the last sold price for a stock just added to the cart
+class FetchLastSoldPriceForCartItem extends SalesEvent {
+  final StockVO stock;
+  FetchLastSoldPriceForCartItem({required this.stock});
+}
+
 /// Update cart item quantity
 class UpdateCartItemQty extends SalesEvent {
   final int index;

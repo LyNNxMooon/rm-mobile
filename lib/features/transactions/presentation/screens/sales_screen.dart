@@ -1847,8 +1847,8 @@ class _SalesScreenState extends State<SalesScreen>
                       isDark
                           ? 'assets/images/listempty-dark.png'
                           : 'assets/images/listempty-light.png',
-                      width: 80,
-                      height: 80,
+                      width: 100,
+                      height: 100,
                       fit: BoxFit.cover,
                     ),
                     const SizedBox(height: 16),

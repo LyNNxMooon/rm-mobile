@@ -6,6 +6,8 @@ import '../../../../entities/vos/stock_vo.dart';
 import '../../../../utils/tax_calculation_utils.dart';
 import '../../domain/models/low_stock_warning.dart';
 import '../../domain/use_cases/search_stock_for_sale.dart';
+import '../../domain/use_cases/fetch_last_sold_price.dart';
+import '../../domain/use_cases/get_stored_last_sold_price.dart';
 import '../../domain/use_cases/search_customer_for_sale.dart';
 import '../../domain/use_cases/check_low_stock_warning.dart';
 import '../../domain/use_cases/check_stock_availability.dart';
@@ -22,11 +24,14 @@ import '../../domain/use_cases/create_quote.dart';
 import '../../domain/use_cases/create_layby.dart';
 import '../../domain/use_cases/get_cash_drawer_identifier.dart';
 import '../../../customer_lookup/domain/use_cases/update_customer_details.dart';
+import '../../../../utils/log_utils.dart';
 import 'sales_events.dart';
 import 'sales_states.dart';
 
 class SalesBloc extends Bloc<SalesEvent, SalesState> {
   final SearchStockForSale searchStockForSale;
+  final FetchLastSoldPrice fetchLastSoldPrice;
+  final GetStoredLastSoldPrice getStoredLastSoldPrice;
   final SearchCustomerForSale searchCustomerForSale;
   final CheckLowStockWarning checkLowStockWarning;
   final CheckStockAvailability checkStockAvailability;
@@ -48,6 +53,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
 
   SalesBloc({
     required this.searchStockForSale,
+    required this.fetchLastSoldPrice,
+    required this.getStoredLastSoldPrice,
     required this.searchCustomerForSale,
     required this.checkLowStockWarning,
     required this.checkStockAvailability,
@@ -68,6 +75,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     on<SearchStock>(_onSearchStock);
     on<SelectStock>(_onSelectStock);
     on<AddToCart>(_onAddToCart);
+    on<FetchLastSoldPriceForCartItem>(_onFetchLastSoldPriceForCartItem);
     on<AddCartItemDirect>(_onAddCartItemDirect);
     on<UpdateCartItemQty>(_onUpdateCartItemQty);
     on<UpdateCartItemPrice>(_onUpdateCartItemPrice);
@@ -199,6 +207,9 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
           lowStockWarning: warning,
           salesPrompt: added.salesPrompt,
         ));
+
+        logger.d('[LastSoldPrice] _onSearchStock dispatching fetch event');
+        add(FetchLastSoldPriceForCartItem(stock: result.stock!));
         return;
       }
 
@@ -217,6 +228,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   }
 
   Future<void> _onSelectStock(SelectStock event, Emitter<SalesState> emit) async {
+    logger.d('[LastSoldPrice] _onSelectStock entered for stockID=${event.stock.stockID}');
     // Calculate what the total qty would be if added
     final double qtyToAdd = 1.0;
     final double totalQty = _cartQtyForCode(event.stock.barcode) + qtyToAdd;
@@ -280,9 +292,13 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       lowStockWarning: warning,
       salesPrompt: added.salesPrompt,
     ));
+
+    logger.d('[LastSoldPrice] _onSelectStock dispatching fetch event');
+    add(FetchLastSoldPriceForCartItem(stock: event.stock));
   }
 
   Future<void> _onAddToCart(AddToCart event, Emitter<SalesState> emit) async {
+    logger.d('[LastSoldPrice] _onAddToCart entered for stockID=${event.stock.stockID}');
     // Calculate what the total qty would be if added
     final double totalQty = _cartQtyForCode(event.stock.barcode) + event.qty;
     
@@ -334,6 +350,91 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       lowStockWarning: warning,
       salesPrompt: result.salesPrompt,
     ));
+
+    logger.d('[LastSoldPrice] _onAddToCart dispatching fetch event');
+    add(FetchLastSoldPriceForCartItem(stock: event.stock));
+  }
+
+  Future<void> _onFetchLastSoldPriceForCartItem(
+    FetchLastSoldPriceForCartItem event,
+    Emitter<SalesState> emit,
+  ) async {
+    logger.d('[LastSoldPrice] Fetch triggered for stockID=${event.stock.stockID}');
+    final num stockId = event.stock.stockID;
+
+    // Show the locally cached value first (if any) so previously-fetched
+    // stock displays immediately while we refresh from the server.
+    try {
+      final double? cached = await getStoredLastSoldPrice(event.stock);
+      logger.d('[LastSoldPrice] Cached value from DB: $cached');
+      if (cached != null) {
+        bool cachedUpdated = false;
+        for (int i = 0; i < _cartItems.length; i++) {
+          if (_cartItems[i].stock?.stockID == stockId &&
+              _cartItems[i].lastSoldPriceStatus !=
+                  LastSoldPriceStatus.loaded) {
+            _cartItems[i] = _cartItems[i].copyWith(
+              lastSoldPrice: cached,
+              lastSoldPriceStatus: LastSoldPriceStatus.loaded,
+            );
+            cachedUpdated = true;
+          }
+        }
+        if (cachedUpdated) {
+          emit(CartUpdated(
+            cartItems: List.from(_cartItems),
+            selectedCustomer: _selectedCustomer,
+          ));
+        }
+      }
+    } catch (error) {
+      logger.e('[LastSoldPrice] Cached read failed: $error');
+    }
+
+    final double? lastSoldPrice;
+    try {
+      lastSoldPrice = await fetchLastSoldPrice(event.stock);
+      logger.d('[LastSoldPrice] API returned: $lastSoldPrice');
+    } catch (error) {
+      // Last sold price is a non-critical enhancement; mark the lookup as failed.
+      logger.e('[LastSoldPrice] Fetch failed: $error');
+      bool failedUpdated = false;
+      for (int i = 0; i < _cartItems.length; i++) {
+        if (_cartItems[i].stock?.stockID == stockId &&
+            _cartItems[i].lastSoldPriceStatus != LastSoldPriceStatus.loaded) {
+          _cartItems[i] = _cartItems[i].copyWith(
+            lastSoldPriceStatus: LastSoldPriceStatus.failed,
+          );
+          failedUpdated = true;
+        }
+      }
+      if (failedUpdated) {
+        emit(CartUpdated(
+          cartItems: List.from(_cartItems),
+          selectedCustomer: _selectedCustomer,
+        ));
+      }
+      return;
+    }
+
+    bool updated = false;
+    for (int i = 0; i < _cartItems.length; i++) {
+      if (_cartItems[i].stock?.stockID == stockId) {
+        _cartItems[i] = _cartItems[i].copyWith(
+          lastSoldPrice: lastSoldPrice,
+          lastSoldPriceStatus: LastSoldPriceStatus.loaded,
+        );
+        updated = true;
+      }
+    }
+    logger.d('[LastSoldPrice] Updated cart items: $updated (value=$lastSoldPrice)');
+
+    if (updated) {
+      emit(CartUpdated(
+        cartItems: List.from(_cartItems),
+        selectedCustomer: _selectedCustomer,
+      ));
+    }
   }
 
   void _onAddCartItemDirect(AddCartItemDirect event, Emitter<SalesState> emit) {
@@ -502,6 +603,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
         exPrice: exPrice,
         computedCostEx: computedCostEx,
         computedCostInc: computedCostInc,
+        lastSoldPriceStatus: LastSoldPriceStatus.loading,
       );
 
       _cartItems.insert(0, newItem);

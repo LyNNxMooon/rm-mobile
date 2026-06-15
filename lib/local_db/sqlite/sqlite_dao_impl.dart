@@ -291,6 +291,12 @@ class SQLiteDAOImpl extends LocalDbDAO {
         column: 'cso_qty',
         definition: 'REAL',
       );
+      await _addColumnIfMissing(
+        db: _database!,
+        table: 'Stocks',
+        column: 'last_sold_price',
+        definition: 'REAL',
+      );
       logger.d('Successfully initialized SQLite local database!');
     } catch (error) {
       logger.e('Error initializing for SQLite local database: $error');
@@ -2019,6 +2025,52 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error updating stock details in local db: $error');
       return Future.error("Error updating stock details: $error");
+    }
+  }
+
+  @override
+  Future<void> updateStockLastSoldPrice({
+    required int stockId,
+    required String shopfront,
+    required double? lastSoldPrice,
+  }) async {
+    try {
+      final db = _database!;
+      await db.update(
+        'Stocks',
+        {'last_sold_price': lastSoldPrice},
+        where: 'stock_id = ? AND shopfront = ?',
+        whereArgs: [stockId, shopfront],
+      );
+    } catch (error) {
+      logger.e('Error updating stock last sold price in local db: $error');
+      return Future.error("Error updating stock last sold price: $error");
+    }
+  }
+
+  @override
+  Future<double?> getStockLastSoldPrice({
+    required int stockId,
+    required String shopfront,
+  }) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'Stocks',
+        columns: ['last_sold_price'],
+        where: 'stock_id = ? AND shopfront = ?',
+        whereArgs: [stockId, shopfront],
+        limit: 1,
+      );
+
+      if (result.isNotEmpty) {
+        final value = result.first['last_sold_price'];
+        return (value as num?)?.toDouble();
+      }
+      return null;
+    } catch (error) {
+      logger.e('Error reading stock last sold price from local db: $error');
+      return null;
     }
   }
 

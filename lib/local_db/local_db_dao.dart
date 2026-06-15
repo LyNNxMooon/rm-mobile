@@ -298,6 +298,17 @@ abstract class LocalDbDAO {
     PricingRules? pricingRules,
   });
 
+  Future<void> updateStockLastSoldPrice({
+    required int stockId,
+    required String shopfront,
+    required double? lastSoldPrice,
+  });
+
+  Future<double?> getStockLastSoldPrice({
+    required int stockId,
+    required String shopfront,
+  });
+
   Future<int> addPendingStockUpdate({
     required String shopfront,
     required int stockId,

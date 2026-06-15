@@ -55,6 +55,7 @@ const stocksTableCreationQuery = '''
     is_on_promotion INTEGER,
     promotion TEXT,
     serial_numbers TEXT,
+    last_sold_price REAL,
     PRIMARY KEY (stock_id, shopfront)
   )
 ''';

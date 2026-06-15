@@ -20,6 +20,7 @@ import 'package:rmmobile/entities/response/stocktake_commit_response.dart';
 import 'package:rmmobile/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmmobile/entities/response/stocktake_limit_response.dart';
 import 'package:rmmobile/entities/response/stock_metadata_response.dart';
+import 'package:rmmobile/entities/response/last_sold_price_response.dart';
 import 'package:rmmobile/entities/response/stock_ids_response.dart';
 import 'package:rmmobile/entities/response/stock_update_response.dart';
 import 'package:rmmobile/entities/response/stock_activity_response.dart';
@@ -63,6 +64,14 @@ abstract class DataAgent {
     String ip,
     int port,
     String shopfrontId,
+    String apiKey,
+  );
+
+  Future<LastSoldPriceResponse> fetchLastSoldPrice(
+    String ip,
+    int port,
+    String shopfrontId,
+    int stockId,
     String apiKey,
   );
 

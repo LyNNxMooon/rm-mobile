@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_white_theme_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/font_size_cubit.dart';
 //import 'package:rmmobile/features/loading_splash/presentation/screens/loading_screen.dart';
 import 'package:rmmobile/features/onboarding/presentation/screens/onboarding_gate_screen.dart';
@@ -193,6 +194,7 @@ class _MyAppState extends State<MyApp> {
         ),
         BlocProvider<ThemeCubit>(create: (_) => sl<ThemeCubit>()),
         BlocProvider<DashboardStyleCubit>(create: (_) => sl<DashboardStyleCubit>()),
+        BlocProvider<DashboardWhiteThemeCubit>(create: (_) => sl<DashboardWhiteThemeCubit>()),
         BlocProvider<FontSizeCubit>(create: (_) => sl<FontSizeCubit>()),
 
         //Local web server changes

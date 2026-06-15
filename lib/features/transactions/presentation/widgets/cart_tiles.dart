@@ -525,6 +525,15 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                         color: kPrimaryColor,
                       ),
                     ),
+                    // Last sold price - tablet/desktop shows it here (enough room)
+                    if ((isTablet || useDesktopNav) && _shouldShowLastSold)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: _buildLastSoldPriceLabel(
+                          isTablet: isTablet,
+                          useDesktopNav: useDesktopNav,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -722,6 +731,11 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                // Last sold price - phone shows it left of the grade arrows
+                if (_shouldShowLastSold) ...[
+                  _buildLastSoldPriceLabel(isTablet: isTablet),
+                  const SizedBox(width: 8),
+                ],
                 // Grade arrows for mobile
                 _buildGradePickerArrows(
                   isTablet: isTablet,
@@ -951,6 +965,49 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
               ? kPrimaryColor
               : (widget.isDark ? Colors.white30 : Colors.grey.shade400),
         ),
+      ),
+    );
+  }
+
+  /// Whether the last-sold-price label should be shown for this item.
+  /// Shown while loading, when a value was fetched, and when the lookup failed.
+  /// Hidden when never sold or not applicable.
+  bool get _shouldShowLastSold {
+    final status = widget.item.lastSoldPriceStatus;
+    if (status == LastSoldPriceStatus.loading) return true;
+    if (status == LastSoldPriceStatus.failed) return true;
+    if (status == LastSoldPriceStatus.loaded &&
+        widget.item.lastSoldPrice != null) {
+      return true;
+    }
+    return false;
+  }
+
+  Widget _buildLastSoldPriceLabel({
+    required bool isTablet,
+    bool useDesktopNav = false,
+  }) {
+    final status = widget.item.lastSoldPriceStatus;
+    final double? lastSold = widget.item.lastSoldPrice;
+    final double fontSize = useDesktopNav ? 12 : (isTablet ? 13 : 12);
+
+    final String text;
+    if (status == LastSoldPriceStatus.loading) {
+      text = "Last sold: Loading...";
+    } else if (status == LastSoldPriceStatus.failed) {
+      text = "Last sold: Not found";
+    } else if (status == LastSoldPriceStatus.loaded && lastSold != null) {
+      text = "Last sold: ${FormattingUtils.formatCurrencyWithDecimals(lastSold, 2)}";
+    } else {
+      return const SizedBox.shrink();
+    }
+
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w600,
+        color: kPrimaryColor,
       ),
     );
   }

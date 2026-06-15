@@ -19,6 +19,8 @@ import 'package:rmmobile/features/home_page/domain/use_cases/update_auto_backup_
 import 'package:rmmobile/features/home_page/domain/use_cases/update_dark_mode_enabled.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/load_dashboard_style.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_dashboard_style.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/load_dashboard_white_theme.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/update_dashboard_white_theme.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/load_font_size.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_font_size.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/update_retention_days.dart';
@@ -125,6 +127,8 @@ import '../features/stocktake/presentation/BLoC/stocktake_bloc.dart';
 import '../features/stocktake/presentation/BLoC/batch_commit_bloc.dart';
 import '../features/transactions/domain/repositories/sales_repo.dart';
 import '../features/transactions/domain/use_cases/search_stock_for_sale.dart';
+import '../features/transactions/domain/use_cases/fetch_last_sold_price.dart';
+import '../features/transactions/domain/use_cases/get_stored_last_sold_price.dart';
 import '../features/transactions/domain/use_cases/search_customer_for_sale.dart';
 import '../features/transactions/domain/use_cases/check_low_stock_warning.dart';
 import '../features/transactions/domain/use_cases/check_stock_availability.dart';
@@ -151,6 +155,7 @@ import '../features/onboarding/presentation/BLoC/onboarding_bloc.dart';
 import '../features/customer_lookup/domain/use_cases/get_customer_transactions_local.dart';
 import '../features/theme/presentation/bloc/theme_cubit.dart';
 import '../features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
+import '../features/home_page/presentation/BLoC/dashboard_white_theme_cubit.dart';
 import '../features/home_page/presentation/BLoC/font_size_cubit.dart';
 
 final sl = GetIt.instance;
@@ -161,6 +166,8 @@ Future<void> init() async {
   //Blocs
   sl.registerFactory(() => SalesBloc(
     searchStockForSale: sl(),
+    fetchLastSoldPrice: sl(),
+    getStoredLastSoldPrice: sl(),
     searchCustomerForSale: sl(),
     checkLowStockWarning: sl(),
     checkStockAvailability: sl(),
@@ -290,6 +297,12 @@ Future<void> init() async {
     ),
   );
   sl.registerFactory(
+    () => DashboardWhiteThemeCubit(
+      loadDashboardWhiteTheme: sl(),
+      updateDashboardWhiteTheme: sl(),
+    ),
+  );
+  sl.registerFactory(
     () => FontSizeCubit(
       loadFontSize: sl(),
       updateFontSize: sl(),
@@ -367,6 +380,8 @@ Future<void> init() async {
 
   //Use cases
   sl.registerLazySingleton(() => SearchStockForSale(sl()));
+  sl.registerLazySingleton(() => FetchLastSoldPrice(sl()));
+  sl.registerLazySingleton(() => GetStoredLastSoldPrice(sl()));
   sl.registerLazySingleton(() => SearchCustomerForSale(sl()));
   sl.registerLazySingleton(() => CheckLowStockWarning());
   sl.registerLazySingleton(() => CheckStockAvailability());
@@ -441,6 +456,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateDarkModeEnabled(sl()));
   sl.registerLazySingleton(() => LoadDashboardStyle(sl()));
   sl.registerLazySingleton(() => UpdateDashboardStyle(sl()));
+  sl.registerLazySingleton(() => LoadDashboardWhiteTheme(sl()));
+  sl.registerLazySingleton(() => UpdateDashboardWhiteTheme(sl()));
   sl.registerLazySingleton(() => LoadFontSize(sl()));
   sl.registerLazySingleton(() => UpdateFontSize(sl()));
   sl.registerLazySingleton(() => ClearSyncTimestamps(sl()));

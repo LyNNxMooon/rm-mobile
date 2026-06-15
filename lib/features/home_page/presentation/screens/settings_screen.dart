@@ -11,6 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/entities/vos/network_server_vo.dart';
 import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
 //import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_white_theme_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/font_size_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
@@ -1206,6 +1207,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     isDark,
                                     (val) {
                                       context.read<ThemeCubit>().setDarkMode(val);
+                                    },
+                                  );
+                                },
+                              ),
+                              _buildFadedDivider(),
+                              BlocBuilder<DashboardWhiteThemeCubit, bool>(
+                                builder: (context, whiteTheme) {
+                                  return _buildSwitchRow(
+                                    "Change Dashboard to white theme",
+                                    "Use a light dashboard color palette",
+                                    whiteTheme,
+                                    (val) {
+                                      context
+                                          .read<DashboardWhiteThemeCubit>()
+                                          .setWhiteTheme(val);
                                     },
                                   );
                                 },
