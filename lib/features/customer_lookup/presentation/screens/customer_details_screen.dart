@@ -1726,7 +1726,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         },
         child: Scaffold(
           // A slightly deeper grey helps the white cards pop and look solid
-          backgroundColor: isDark ? colors.bg : const Color(0xFFF3EFE8),
+          backgroundColor: isDark ? colors.bg : Colors.white,
           body: Stack(
             children: [
               // Background Gradient Container (Top Half)
@@ -3123,7 +3123,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: isDark ? colors.surfaceAlt : const Color(0xFFFBF7F0),
+        color: isDark ? colors.surfaceAlt : Colors.white,
         borderRadius: BorderRadius.circular(borderRadius),
         // Adding a subtle stroke to give that "solid card" look from modern UI
         border: Border.all(
@@ -3137,8 +3137,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             color: isDark
                 ? colors.cardShadow
                 : const Color(0xFF2B2012).withOpacity(0.07),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+            blurRadius: 5,
+            offset: const Offset(0, 3),
           ),
         ],
       ),

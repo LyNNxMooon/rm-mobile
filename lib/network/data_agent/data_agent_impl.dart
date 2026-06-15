@@ -12,6 +12,7 @@ import 'package:rmmobile/entities/response/picture_upload_response.dart';
 import 'package:rmmobile/entities/response/shopfronts_api_response.dart';
 import 'package:rmmobile/entities/response/stock_lookup_api_response.dart';
 import 'package:rmmobile/entities/response/stock_metadata_response.dart';
+import 'package:rmmobile/entities/response/last_sold_price_response.dart';
 import 'package:rmmobile/entities/response/stock_ids_response.dart';
 import 'package:rmmobile/entities/response/customer_lookup_api_response.dart';
 import 'package:rmmobile/entities/response/customer_metadata_response.dart';
@@ -25,6 +26,7 @@ import 'package:rmmobile/entities/response/stocktake_commit_response.dart';
 import 'package:rmmobile/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmmobile/entities/response/stocktake_limit_response.dart';
 import 'package:rmmobile/entities/response/stock_update_response.dart';
+import 'package:rmmobile/entities/response/stock_activity_response.dart';
 import 'package:rmmobile/entities/response/validate_response.dart';
 import 'package:rmmobile/entities/response/security_groups_response.dart';
 import 'package:rmmobile/entities/response/staff_detail_response.dart';
@@ -281,6 +283,30 @@ class DataAgentImpl implements DataAgent {
   }
 
   @override
+  Future<LastSoldPriceResponse> fetchLastSoldPrice(
+    String ip,
+    int port,
+    String shopfrontId,
+    int stockId,
+    String apiKey,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .fetchLastSoldPrice(shopfrontId, stockId, apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
+    } on Exception catch (error) {
+      logger.e('Error fetching last sold price from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
   Future<StockIdsResponse> fetchStockIds(
     String ip,
     int port,
@@ -324,6 +350,30 @@ class DataAgentImpl implements DataAgent {
       );
     } on Exception catch (error) {
       logger.e('Error updating shopfront stock from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<StockActivityResponse> fetchStockActivity(
+    String ip,
+    int port,
+    String shopfrontId,
+    String apiKey,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .fetchStockActivity(shopfrontId, apiKey, body)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
+    } on Exception catch (error) {
+      logger.e('Error fetching stock activity from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }

@@ -1,6 +1,7 @@
 import 'package:rmmobile/entities/response/stock_search_resposne.dart';
 import 'package:rmmobile/entities/response/customer_search_response.dart';
 import 'package:rmmobile/entities/response/invoice_response.dart';
+import 'package:rmmobile/entities/response/last_sold_price_response.dart';
 import 'package:rmmobile/local_db/local_db_dao.dart';
 import 'package:rmmobile/network/data_agent/data_agent_impl.dart';
 
@@ -16,6 +17,66 @@ class SalesModel implements SalesRepo {
   ) async {
     try {
       return await LocalDbDAO.instance.getStockBySearch(query, shopfront);
+    } catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<double?> fetchAndStoreLastSoldPrice(
+    int stockId,
+    String shopfront,
+  ) async {
+    try {
+      final String resolvedIp =
+          (await LocalDbDAO.instance.getHostIpAddress() ?? '').trim();
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? '').trim()) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? '').trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? '').trim();
+
+      if (resolvedIp.isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty) {
+        return Future.error(
+          "Missing host/shopfront setup. Please reconnect to a host and shopfront.",
+        );
+      }
+
+      final LastSoldPriceResponse response =
+          await DataAgentImpl.instance.fetchLastSoldPrice(
+        resolvedIp,
+        resolvedPort,
+        resolvedShopfrontId,
+        stockId,
+        resolvedApiKey,
+      );
+
+      await LocalDbDAO.instance.updateStockLastSoldPrice(
+        stockId: stockId,
+        shopfront: shopfront,
+        lastSoldPrice: response.lastSoldPrice,
+      );
+
+      return response.lastSoldPrice;
+    } catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
+  Future<double?> getStoredLastSoldPrice(
+    int stockId,
+    String shopfront,
+  ) async {
+    try {
+      return await LocalDbDAO.instance.getStockLastSoldPrice(
+        stockId: stockId,
+        shopfront: shopfront,
+      );
     } catch (error) {
       return Future.error(error);
     }

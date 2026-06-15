@@ -326,6 +326,8 @@ StockVO _stockFromPendingPayload(PendingStockUpdateVO update) {
     quantity: stock.quantity,
     laybyQuantity: stock.laybyQuantity,
     salesOrderQuantity: stock.salesOrderQuantity,
+    purchaseOrderQuantity: stock.purchaseOrderQuantity,
+    csoQuantity: stock.csoQuantity,
     dateCreated: stock.dateCreated,
     orderThreshold: stock.orderThreshold,
     orderQuantity: stock.orderQuantity,

@@ -456,7 +456,7 @@ class _StocktakeHistoryDetailsScreenState
     final double titleFontSize = useDesktopNav ? 12.0 : 14.0;
     final double barcodeFontSize = useDesktopNav ? 11.0 : 12.0;
     final double qtyFontSize = useDesktopNav ? 12.0 : 14.0;
-    final double iconSize = useDesktopNav ? 16.0 : 18.0;
+    final double iconSize = 30;
 
     return InkWell(
       onTap: () {
@@ -475,10 +475,10 @@ class _StocktakeHistoryDetailsScreenState
         decoration: const BoxDecoration(color: Colors.transparent),
         child: Row(
           children: [
-            Icon(
-              Icons.cloud_done_outlined,
-              size: iconSize,
-              color: Colors.green,
+            Image.asset(
+              'assets/images/sync.png',
+              width: iconSize,
+              height: iconSize,
             ),
             SizedBox(width: useDesktopNav ? 10 : 12),
             Expanded(
@@ -510,7 +510,7 @@ class _StocktakeHistoryDetailsScreenState
             Text(
               stock.quantity.toString(),
               style: getSmartTitle(
-                color: Colors.white,
+                color: isDark ? Colors.white : colors.onSurface,
                 fontSize: qtyFontSize,
               ),
             ),

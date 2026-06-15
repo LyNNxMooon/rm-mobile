@@ -21,6 +21,8 @@ const stocksTableCreationQuery = '''
     quantity REAL,
     layby_qty REAL,
     salesorder_qty REAL,
+    purchaseorder_qty REAL,
+    cso_qty REAL,
     date_created TEXT,
     order_threshold REAL,
     order_quantity REAL,
@@ -53,6 +55,7 @@ const stocksTableCreationQuery = '''
     is_on_promotion INTEGER,
     promotion TEXT,
     serial_numbers TEXT,
+    last_sold_price REAL,
     PRIMARY KEY (stock_id, shopfront)
   )
 ''';

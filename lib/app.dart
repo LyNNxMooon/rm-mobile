@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_white_theme_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/font_size_cubit.dart';
 //import 'package:rmmobile/features/loading_splash/presentation/screens/loading_screen.dart';
 import 'package:rmmobile/features/onboarding/presentation/screens/onboarding_gate_screen.dart';
@@ -12,6 +13,7 @@ import 'package:rmmobile/features/onboarding/presentation/BLoC/onboarding_bloc.d
 //import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_bloc.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/BLoC/package_component_bloc.dart';
+import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_activity_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_create_bloc.dart';
 import 'package:rmmobile/features/customer_lookup/presentation/BLoC/customer_transactions_bloc.dart';
@@ -143,6 +145,9 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<PackageComponentBloc>(
           create: (_) => sl<PackageComponentBloc>(),
         ),
+        BlocProvider<StockActivityBloc>(
+          create: (_) => sl<StockActivityBloc>(),
+        ),
         BlocProvider<FilterOptionsBloc>(create: (_) => sl<FilterOptionsBloc>()),
         BlocProvider<FetchCustomerBloc>(create: (_) => sl<FetchCustomerBloc>()),
         BlocProvider<CustomerListBloc>(create: (_) => sl<CustomerListBloc>()),
@@ -189,6 +194,7 @@ class _MyAppState extends State<MyApp> {
         ),
         BlocProvider<ThemeCubit>(create: (_) => sl<ThemeCubit>()),
         BlocProvider<DashboardStyleCubit>(create: (_) => sl<DashboardStyleCubit>()),
+        BlocProvider<DashboardWhiteThemeCubit>(create: (_) => sl<DashboardWhiteThemeCubit>()),
         BlocProvider<FontSizeCubit>(create: (_) => sl<FontSizeCubit>()),
 
         //Local web server changes

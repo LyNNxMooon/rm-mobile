@@ -117,23 +117,20 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
                                           ),
                                         ),
 
-                                        // Inner Filled Circle
+                                        // Inner Circle (no fill, holds the image)
                                         Container(
                                           width: useDesktopNav ? 100 : 130,
                                           height: useDesktopNav ? 100 : 130,
-                                          decoration: BoxDecoration(
+                                          decoration: const BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: isDark
-                                                ? kPrimaryColor.withOpacity(0.25)
-                                                : kPrimaryColor.withOpacity(0.1),
                                           ),
                                           child: Center(
                                             // Using an "Open Box" icon usually signifies "Empty" better than a rocket
                                             child: SizedBox(
-                                              width: useDesktopNav ? 60 : 80,
-                                              height: useDesktopNav ? 60 : 80,
+                                              width: useDesktopNav ? 95 : 120,
+                                              height: useDesktopNav ? 95 : 120,
                                               child: Image.asset(
-                                                "assets/images/box.png",
+                                                "assets/images/empty.png",
                                                 fit: BoxFit.fill,
                                               ),
                                             ),

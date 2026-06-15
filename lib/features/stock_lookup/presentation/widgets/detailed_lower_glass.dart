@@ -1,19 +1,16 @@
-import 'dart:ui';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:languagetool_textfield/languagetool_textfield.dart';
 import 'package:rmmobile/entities/vos/package_component.dart';
 import 'package:rmmobile/entities/vos/pricing_grades.dart';
 import 'package:rmmobile/entities/vos/pricing_rules.dart';
-import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
+//import 'package:rmmobile/features/stock_lookup/presentation/BLoC/stock_lookup_states.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/screens/package_components_screen.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/widgets/price_calculator_dialog.dart';
-import 'package:rmmobile/features/stock_lookup/presentation/widgets/detailed_upper_glass.dart';
-import 'package:rmmobile/features/stock_lookup/presentation/widgets/pricing_button.dart';
+//import 'package:rmmobile/features/stock_lookup/presentation/widgets/detailed_upper_glass.dart';
 import 'package:rmmobile/features/stock_lookup/presentation/widgets/pricing_dialog.dart';
 import '../../../../constants/colors.dart';
-import '../../../../constants/theme_colors.dart';
+//import '../../../../constants/theme_colors.dart';
 import '../../../../utils/responsive_utils.dart';
 import '../../../../utils/tax_calculation_utils.dart';
 import '../BLoC/stock_lookup_bloc.dart';
@@ -259,9 +256,8 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    final bool isDark = colors.isDark;
-    final Color onGlass = isDark ? Colors.white : kSecondaryColor;
+   // final colors = context.appColors;
+    //final bool isDark = colors.isDark;
     final bool isTablet = context.isTablet;
     final bool useDesktopNav = context.useDesktopNav;
     final double textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
@@ -270,498 +266,100 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
         : 1.0;
     
     // Desktop-specific smaller sizes
-    final double containerVertical = useDesktopNav ? 12 : ((isTablet ? 24 : 20) * uiScale);
-    final double containerHorizontal = useDesktopNav ? 10 : ((isTablet ? 14 : 12) * uiScale);
+
     final double rowGap = useDesktopNav ? 8 : ((isTablet ? 18 : 15) * uiScale);
-    final double fieldHeight = useDesktopNav ? 26 : ((isTablet ? 40 : 35) * uiScale);
-    final double buttonVertical = useDesktopNav ? 5 : ((isTablet ? 8 : 6) * uiScale);
+    final double buttonVertical = useDesktopNav ? 12 : ((isTablet ? 16 : 14) * uiScale);
     final double buttonGap = useDesktopNav ? 8 : ((isTablet ? 12 : 10) * uiScale);
-    final double labelFontSize = useDesktopNav ? 12 : 14;
-    final double inputFontSize = useDesktopNav ? 12 : 14;
 
     return Column(
       children: [
-        _buildGlassPanel(
-          colors: colors,
-          isDark: isDark,
-          verticalPadding: containerVertical,
-          horizontalPadding: containerHorizontal,
-          child: Column(
-            children: [
-              if (widget.showCostPrices) ...[
-                StockInfoRow(
-                  image: "assets/images/cost_white.png",
-                  icon: Icons.percent,
-                  iconBgColor: Colors.deepPurpleAccent,
-                  label: "Cost / Sell Tax",
-                  value: "${widget.costTaxLabel} / ${widget.sellTaxLabel}",
-                  fontSize: labelFontSize,
-                ),
-                SizedBox(height: rowGap),
-                StockInfoRow(
-                  image: "assets/images/cost_white.png",
-                  icon: Icons.monetization_on_outlined,
-                  iconBgColor: Colors.pinkAccent,
-                  label: "Ex Cost",
-                  value: widget.exCost.toStringAsFixed(4),
-                  fontSize: labelFontSize,
-                ),
-                SizedBox(height: rowGap),
-                StockInfoRow(
-                  image: "assets/images/cost_white.png",
-                  icon: Icons.monetization_on_outlined,
-                  iconBgColor: Colors.lightBlue,
-                  label: "Inc Cost",
-                  value: widget.incCost.toStringAsFixed(4),
-                  fontSize: labelFontSize,
-                ),
-                SizedBox(height: rowGap),
-              ],
-              if (widget.canUpdateSellPrice)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: useDesktopNav ? 20 : 24,
-                            height: useDesktopNav ? 20 : 24,
-                            decoration: BoxDecoration(
-                              color: isDark ? colors.surface : kSecondaryColor,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: isDark
-                                      ? colors.cardShadow
-                                      : kThirdColor.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Image.asset(
-                                'assets/images/rrp.png',
-                                fit: BoxFit.contain,
-                                color: isDark ? colors.onSurface : Colors.black,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            "Ex RRP",
-                            style: TextStyle(fontSize: labelFontSize, color: onGlass),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 1,
-                      child: SizedBox(
-                        height: fieldHeight,
-                        child: TextField(
-                          enabled: widget.canUpdateSellPrice,
-                          controller: _exRrpController,
-                          focusNode: _exRrpFocus,
-                          scrollPhysics: const ClampingScrollPhysics(),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          textInputAction: TextInputAction.done,
-                          onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                          style: TextStyle(
-                            fontSize: inputFontSize,
-                            color: onGlass,
-                          ),
-                          onEditingComplete: () {
-                            final trimmedValue = _exRrpController.text.trim();
-                            if (_exRrpController.text != trimmedValue) {
-                              _exRrpController.value = _exRrpController.value.copyWith(
-                                text: trimmedValue,
-                                selection: TextSelection.collapsed(offset: trimmedValue.length),
-                              );
-                            }
-                          },
-                          decoration: _inputDecoration(),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              else
-                StockInfoRow(
-                  image: "assets/images/rrp.png",
-                  icon: Icons.sell_outlined,
-                  iconBgColor: Color.fromRGBO(203, 128, 128, 1.0).withOpacity(0.7),
-                  label: "Ex RRP",
-                  value: widget.exSell.toStringAsFixed(4),
-                  fontSize: labelFontSize,
-                ),
-              SizedBox(height: rowGap),
-              if (widget.canUpdateSellPrice)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: useDesktopNav ? 20 : 24,
-                            height: useDesktopNav ? 20 : 24,
-                            decoration: BoxDecoration(
-                              color: isDark ? colors.surface : kSecondaryColor,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: isDark
-                                      ? colors.cardShadow
-                                      : kThirdColor.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Image.asset(
-                                'assets/images/rrp.png',
-                                fit: BoxFit.contain,
-                                color: isDark ? colors.onSurface : Colors.black,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            "Inc RRP",
-                            style: TextStyle(fontSize: labelFontSize, color: onGlass),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 1,
-                      child: SizedBox(
-                        height: fieldHeight,
-                        child: TextField(
-                          enabled: widget.canUpdateSellPrice,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          controller: _rrpController,
-                          focusNode: _rrpFocus,
-                          scrollPhysics: const ClampingScrollPhysics(),
-                          textInputAction: TextInputAction.done,
-                          onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                          style: TextStyle(
-                            fontSize: inputFontSize,
-                            color: onGlass,
-                          ),
-                          onEditingComplete: () {
-                            final trimmedValue = _rrpController.text.trim();
-                            if (_rrpController.text != trimmedValue) {
-                              _rrpController.value = _rrpController.value.copyWith(
-                                text: trimmedValue,
-                                selection: TextSelection.collapsed(offset: trimmedValue.length),
-                              );
-                            }
-                          },
-                          decoration: _inputDecoration(),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              else
-                StockInfoRow(
-                  image: "assets/images/rrp.png",
-                  icon: Icons.sell_outlined,
-                  iconBgColor: Colors.greenAccent.withOpacity(0.7),
-                  label: "Inc RRP",
-                  value: widget.sell.toStringAsFixed(4),
-                  fontSize: labelFontSize,
-                ),
-            ],
-          ),
-        ),
         if (!widget.hideButtons) ...[
           SizedBox(height: rowGap),
-          _buildGlassPanel(
-            colors: colors,
-            isDark: isDark,
-            verticalPadding: containerVertical,
-            horizontalPadding: containerHorizontal,
-            child: Builder(
-              builder: (context) {
-                final viewComponentsButton = InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PackageComponentsScreen(
-                          packageDescription: widget.packageDescription ?? '',
-                        components: widget.packageComponents ?? [],
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: buttonVertical),
-                  decoration: _buttonDecoration(),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.inventory_2_outlined,
-                        color: kPrimaryColor,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            "COMPONENTS",
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: kPrimaryColor,
+          Builder(
+            builder: (context) {
+                // Determine which first button to show
+                final bool showViewComponents = widget.isPackage &&
+                    (widget.packageComponents?.isNotEmpty ?? false);
+                final bool showCalculator =
+                    !widget.isPackage && widget.canUpdateSellPrice;
+
+                final String firstLabel =
+                    showViewComponents ? "COMPONENTS" : "CALCULATOR";
+                final VoidCallback? firstOnTap = showViewComponents
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PackageComponentsScreen(
+                              packageDescription:
+                                  widget.packageDescription ?? '',
+                              components: widget.packageComponents ?? [],
                             ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
+                        );
+                      }
+                    : (widget.canUpdateSellPrice ? _openCalculator : null);
 
-              final calculatorButton = InkWell(
-                onTap: widget.canUpdateSellPrice ? _openCalculator : null,
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: buttonVertical),
-                  decoration: _buttonDecoration(),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.calculate,
-                        color: kPrimaryColor,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "CALCULATOR",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: kPrimaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
+                final bool showFirstButton =
+                    showViewComponents || showCalculator;
 
-              final pricingButton = PricingButton(
-                onTap: _openPricingDialog,
-                verticalPadding: buttonVertical,
-              );
+                final Widget firstButton = _buildPillButton(
+                  label: firstLabel,
+                  filled: false,
+                  onTap: firstOnTap,
+                  verticalPadding: buttonVertical,
+                );
 
-              final updateButton = InkWell(
-                onTap: () {
-                  final sellVal = _resolveEditedSellValue();
+                final Widget pricingButton = _buildPillButton(
+                  label: "PRICING",
+                  filled: true,
+                  onTap: _openPricingDialog,
+                  verticalPadding: buttonVertical,
+                );
 
-                  if (sellVal == null) {
-                    return;
-                  }
-
-                  final updatedDescription = widget.descController.text;
-                  final updatedCustom1 = widget.custom1Controller.text.trim();
-                  final updatedCustom2 = widget.custom2Controller.text.trim();
-
-                  context.read<StockUpdateBloc>().add(
-                    SubmitStockUpdateEvent(
-                      stockId: widget.stockId.toInt(),
-                      description: updatedDescription,
-                      sell: sellVal,
-                      custom1: updatedCustom1.isNotEmpty ? updatedCustom1 : null,
-                      custom2: updatedCustom2.isNotEmpty ? updatedCustom2 : null,
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: buttonVertical),
-                  decoration: _buttonDecoration(),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      BlocBuilder<StockUpdateBloc, StockUpdateState>(
-                        builder: (context, state) {
-                          if (state is StockUpdateLoading) {
-                            return CupertinoActivityIndicator(radius: 10);
-                          } else {
-                            return Icon(
-                              Icons.arrow_circle_up,
-                              color: kPrimaryColor,
-                              size: 20,
-                            );
-                          }
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "UPDATE",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: kPrimaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-
-              // Determine which first button to show
-              final bool showViewComponents = widget.isPackage &&
-                  (widget.packageComponents?.isNotEmpty ?? false);
-              final bool showCalculator = !widget.isPackage && widget.canUpdateSellPrice;
-
-              if (isTablet) {
                 return Row(
                   children: [
-                    if (showViewComponents) ...[
-                      Expanded(child: viewComponentsButton),
-                      SizedBox(width: buttonGap),
-                    ] else if (showCalculator) ...[
-                      Expanded(child: calculatorButton),
+                    if (showFirstButton) ...[
+                      Expanded(child: firstButton),
                       SizedBox(width: buttonGap),
                     ],
                     Expanded(child: pricingButton),
-                    SizedBox(width: buttonGap),
-                    Expanded(child: updateButton),
                   ],
                 );
-              }
-
-              return Column(
-                children: [
-                  if (showViewComponents) ...[
-                    SizedBox(width: double.infinity, child: viewComponentsButton),
-                    SizedBox(height: buttonGap),
-                  ] else if (showCalculator) ...[
-                    SizedBox(width: double.infinity, child: calculatorButton),
-                    SizedBox(height: buttonGap),
-                  ],
-                  SizedBox(width: double.infinity, child: pricingButton),
-                  SizedBox(height: buttonGap),
-                  SizedBox(width: double.infinity, child: updateButton),
-                ],
-              );
-            },
-          ),
-        ),
+              },
+            ),
         ],
       ],
     );
   }
 
-  Widget _buildGlassPanel({
-    required AppThemeColors colors,
-    required bool isDark,
+  Widget _buildPillButton({
+    required String label,
+    required bool filled,
+    required VoidCallback? onTap,
     required double verticalPadding,
-    required double horizontalPadding,
-    required Widget child,
   }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            vertical: verticalPadding,
-            horizontal: horizontalPadding,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            // Asymmetric border: Thicker on top/left, thinner on right/bottom
-            border: Border(
-              top: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
-              left: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
-              right: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
-              bottom: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
-            ),
-            // Glass gradient sweep
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF42A5F5).withOpacity(0.40),
-                Colors.transparent,
-              ],
-              stops: const [0.0, 0.6],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(100),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: verticalPadding),
+        decoration: BoxDecoration(
+          color: filled ? kPrimaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(color: kPrimaryColor, width: 1.5),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: filled ? Colors.white : kPrimaryColor,
             ),
           ),
-          child: child,
         ),
       ),
-    );
-  }
-
-  InputDecoration _inputDecoration() {
-    final colors = context.appColors;
-    final bool isDark = colors.isDark;
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.transparent,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(7),
-        borderSide: BorderSide(
-          color: isDark ? Colors.white : Colors.grey[300]!,
-          width: 0.5,
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(7),
-        borderSide: const BorderSide(color: kPrimaryColor, width: 1),
-      ),
-    );
-  }
-
-  BoxDecoration _buttonDecoration({bool disabled = false}) {
-    final colors = context.appColors;
-    final bool isDark = colors.isDark;
-    return BoxDecoration(
-      gradient: isDark
-          ? colors.glassGradient
-          : LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                kSecondaryColor.withOpacity(disabled ? 0.65 : 0.95),
-                kSecondaryColor.withOpacity(disabled ? 0.45 : 0.70),
-              ],
-            ),
-      borderRadius: BorderRadius.circular(7),
-      border: Border.all(
-        color: isDark
-            ? colors.glassBorder
-            : kSecondaryColor.withOpacity(0.6),
-        width: 1.5,
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: isDark ? colors.cardShadow : kThirdColor.withOpacity(0.05),
-          blurRadius: 15,
-          offset: const Offset(0, 8),
-        ),
-      ],
     );
   }
 

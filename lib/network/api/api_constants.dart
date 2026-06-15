@@ -18,6 +18,8 @@ const kEndPointForStockIds =
     "/shopfronts/{$kPathParamForShopfrontId}/stock/ids";
 const kEndPointForShopfrontStockUpdate =
     "/shopfronts/{$kPathParamForShopfrontId}/stock/update";
+const kEndPointForStockActivity =
+    "/shopfronts/{$kPathParamForShopfrontId}/stock/activity";
 const kEndPointForCustomerLookup = "/shopfronts/{$kPathParamForShopfrontId}/customers";
 const kEndPointForCustomerMetadata =
     "/shopfronts/{$kPathParamForShopfrontId}/customers/metadata";
@@ -38,6 +40,8 @@ const kEndPointForLayby =
     "/shopfronts/{$kPathParamForShopfrontId}/transactions/layby";
 const kEndPointForPictureUpload =
     "/shopfronts/{$kPathParamForShopfrontId}/pictures/{$kPathParamForStockId}";
+const kEndPointForLastSoldPrice =
+    "/shopfronts/{$kPathParamForShopfrontId}/stock/{$kPathParamForStockId}/lastsoldprice";
 const kEndPointForStocktakeInitCheck =
     "/shopfronts/{$kPathParamForShopfrontId}/stocktake/initcheck";
 const kEndPointForStocktakeCommit =

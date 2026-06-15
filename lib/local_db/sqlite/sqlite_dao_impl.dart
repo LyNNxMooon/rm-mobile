@@ -279,6 +279,24 @@ class SQLiteDAOImpl extends LocalDbDAO {
         column: 'sales_prompt',
         definition: 'TEXT',
       );
+      await _addColumnIfMissing(
+        db: _database!,
+        table: 'Stocks',
+        column: 'purchaseorder_qty',
+        definition: 'REAL',
+      );
+      await _addColumnIfMissing(
+        db: _database!,
+        table: 'Stocks',
+        column: 'cso_qty',
+        definition: 'REAL',
+      );
+      await _addColumnIfMissing(
+        db: _database!,
+        table: 'Stocks',
+        column: 'last_sold_price',
+        definition: 'REAL',
+      );
       logger.d('Successfully initialized SQLite local database!');
     } catch (error) {
       logger.e('Error initializing for SQLite local database: $error');
@@ -1974,6 +1992,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
     required double sell,
     String? custom1,
     String? custom2,
+    String? longDesc,
     PricingRules? pricingRules,
   }) async {
     try {
@@ -1990,6 +2009,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
       if (custom2 != null) {
         valuesToUpdate['custom2'] = custom2;
       }
+      if (longDesc != null) {
+        valuesToUpdate['longdesc'] = longDesc;
+      }
       if (pricingRules != null) {
         valuesToUpdate['pricing_rules'] = jsonEncode(pricingRules.toJson());
       }
@@ -2003,6 +2025,52 @@ class SQLiteDAOImpl extends LocalDbDAO {
     } catch (error) {
       logger.e('Error updating stock details in local db: $error');
       return Future.error("Error updating stock details: $error");
+    }
+  }
+
+  @override
+  Future<void> updateStockLastSoldPrice({
+    required int stockId,
+    required String shopfront,
+    required double? lastSoldPrice,
+  }) async {
+    try {
+      final db = _database!;
+      await db.update(
+        'Stocks',
+        {'last_sold_price': lastSoldPrice},
+        where: 'stock_id = ? AND shopfront = ?',
+        whereArgs: [stockId, shopfront],
+      );
+    } catch (error) {
+      logger.e('Error updating stock last sold price in local db: $error');
+      return Future.error("Error updating stock last sold price: $error");
+    }
+  }
+
+  @override
+  Future<double?> getStockLastSoldPrice({
+    required int stockId,
+    required String shopfront,
+  }) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'Stocks',
+        columns: ['last_sold_price'],
+        where: 'stock_id = ? AND shopfront = ?',
+        whereArgs: [stockId, shopfront],
+        limit: 1,
+      );
+
+      if (result.isNotEmpty) {
+        final value = result.first['last_sold_price'];
+        return (value as num?)?.toDouble();
+      }
+      return null;
+    } catch (error) {
+      logger.e('Error reading stock last sold price from local db: $error');
+      return null;
     }
   }
 
@@ -2289,6 +2357,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         final double sell = (payload['sell'] as num?)?.toDouble() ?? 0.0;
         final String? custom1 = payload['custom1'] as String?;
         final String? custom2 = payload['custom2'] as String?;
+        final String? longDesc = payload['longdesc'] as String?;
         final PricingRules? pricingRules = _parsePricingRules(
           payload['pricing_rules'],
         );
@@ -2300,6 +2369,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           sell: sell,
           custom1: custom1,
           custom2: custom2,
+          longDesc: longDesc,
           pricingRules: pricingRules,
         );
       }

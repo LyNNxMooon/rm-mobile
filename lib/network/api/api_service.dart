@@ -15,6 +15,7 @@ import 'package:rmmobile/entities/response/stocktake_initcheck_response.dart';
 import 'package:rmmobile/entities/response/stocktake_limit_response.dart';
 import 'package:rmmobile/entities/response/stock_lookup_api_response.dart';
 import 'package:rmmobile/entities/response/stock_metadata_response.dart';
+import 'package:rmmobile/entities/response/last_sold_price_response.dart';
 import 'package:rmmobile/entities/response/stock_ids_response.dart';
 import 'package:rmmobile/entities/response/customer_lookup_api_response.dart';
 import 'package:rmmobile/entities/response/customer_metadata_response.dart';
@@ -23,6 +24,7 @@ import 'package:rmmobile/entities/response/customer_transactions_response.dart';
 import 'package:rmmobile/entities/response/security_groups_response.dart';
 import 'package:rmmobile/entities/response/stock_list_response.dart';
 import 'package:rmmobile/entities/response/stock_update_response.dart';
+import 'package:rmmobile/entities/response/stock_activity_response.dart';
 import 'package:rmmobile/entities/response/validate_response.dart';
 import 'package:rmmobile/entities/response/staff_detail_response.dart';
 import 'package:rmmobile/entities/response/customer_update_response.dart';
@@ -121,6 +123,17 @@ abstract class ApiService {
     @Header("x-api-key") String apiKey,
   );
 
+  @GET(kEndPointForLastSoldPrice)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<LastSoldPriceResponse> fetchLastSoldPrice(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Path(kPathParamForStockId) int stockId,
+    @Header("x-api-key") String apiKey,
+  );
+
   @POST(kEndPointForStockIds)
   @Headers(<String, dynamic>{
     'Accept': 'application/json',
@@ -138,6 +151,17 @@ abstract class ApiService {
     'Content-Type': 'application/json',
   })
   Future<StockUpdateResponse> updateShopfrontStock(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Header("x-api-key") String apiKey,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST(kEndPointForStockActivity)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<StockActivityResponse> fetchStockActivity(
     @Path(kPathParamForShopfrontId) String shopfrontId,
     @Header("x-api-key") String apiKey,
     @Body() Map<String, dynamic> body,

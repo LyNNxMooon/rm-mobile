@@ -4,6 +4,9 @@ import 'package:rational/rational.dart';
 import 'serial_number_vo.dart';
 import 'stock_vo.dart';
 
+/// Status of the last-sold-price lookup for a cart item.
+enum LastSoldPriceStatus { none, loading, loaded, failed }
+
 /// Value Object for cart items in Sales transactions.
 /// Integrated with real StockVO data from local database.
 class CartItemVO {
@@ -28,6 +31,9 @@ class CartItemVO {
   final double computedCostEx;  // Ex-tax cost (from costEx or derived from cost using goods_tax)
   final double computedCostInc; // Inc-tax cost (from costInc or derived from costEx)
 
+  final double? lastSoldPrice; // Last sold price fetched from server (null if never sold)
+  final LastSoldPriceStatus lastSoldPriceStatus; // Lookup state for last sold price
+
   CartItemVO({
     required this.code,
     required this.description,
@@ -45,6 +51,8 @@ class CartItemVO {
     double? exPrice,
     this.computedCostEx = 0.0,
     this.computedCostInc = 0.0,
+    this.lastSoldPrice,
+    this.lastSoldPriceStatus = LastSoldPriceStatus.none,
   }) : incPrice = incPrice ?? sellPrice,
        exPrice = exPrice ?? sellPrice;
 
@@ -99,6 +107,8 @@ class CartItemVO {
     double? exPrice,
     double? computedCostEx,
     double? computedCostInc,
+    double? lastSoldPrice,
+    LastSoldPriceStatus? lastSoldPriceStatus,
   }) {
     return CartItemVO(
       code: code ?? this.code,
@@ -117,6 +127,8 @@ class CartItemVO {
       exPrice: exPrice ?? this.exPrice,
       computedCostEx: computedCostEx ?? this.computedCostEx,
       computedCostInc: computedCostInc ?? this.computedCostInc,
+      lastSoldPrice: lastSoldPrice ?? this.lastSoldPrice,
+      lastSoldPriceStatus: lastSoldPriceStatus ?? this.lastSoldPriceStatus,
     );
   }
 }

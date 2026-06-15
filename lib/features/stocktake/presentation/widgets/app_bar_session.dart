@@ -114,8 +114,15 @@ class _StocktakeAppbarSessionState extends State<StocktakeAppbarSession> {
 
 class ScanModeSelector extends StatefulWidget {
   final ValueChanged<ScanMode> onModeChanged;
+  final bool vertical;
+  final double fontSize;
 
-  const ScanModeSelector({super.key, required this.onModeChanged});
+  const ScanModeSelector({
+    super.key,
+    required this.onModeChanged,
+    this.vertical = false,
+    this.fontSize = 12.5,
+  });
 
   @override
   State<ScanModeSelector> createState() => _ScanModeSelectorState();
@@ -126,6 +133,23 @@ class _ScanModeSelectorState extends State<ScanModeSelector> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.vertical) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildRadioOption(
+            text: "Scan and Manual Count",
+            value: ScanMode.manualCount,
+          ),
+          const SizedBox(height: 10),
+          _buildRadioOption(
+            text: "Scan and Auto Count",
+            value: ScanMode.autoCount,
+          ),
+        ],
+      );
+    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -191,7 +215,7 @@ class _ScanModeSelectorState extends State<ScanModeSelector> {
               child: Text(
                 text,
                 style: getSmartTitle(
-                  fontSize: 12.5,
+                  fontSize: widget.fontSize,
                   color: isSelected ? colors.onSurface : colors.onSurfaceMuted,
                 ),
                 maxLines: 2,

@@ -11,6 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/entities/vos/network_server_vo.dart';
 import 'package:rmmobile/features/theme/presentation/bloc/theme_cubit.dart';
 //import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_style_cubit.dart';
+import 'package:rmmobile/features/home_page/presentation/BLoC/dashboard_white_theme_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/font_size_cubit.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_bloc.dart';
 import 'package:rmmobile/features/home_page/presentation/BLoC/home_screen_events.dart';
@@ -47,6 +48,9 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   static const int _defaultAgentPort = 5000;
   static const String _kCashDrawerIdentifierKey = "cash_drawer_identifier";
+
+  // Foreground color used over the light-mode settings background (#D0F0FF).
+  static const Color _kLightOnBg = Color(0xFF04233C);
 
   double retentionDays = 30;
   bool backupToLan = true;
@@ -715,7 +719,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ],
       child: Scaffold(
         body: Container(
-          decoration: const BoxDecoration(color: Color.fromRGBO(7, 27, 54, 1)),
+          decoration: BoxDecoration(
+            color: context.appColors.isDark
+                ? const Color.fromRGBO(7, 27, 54, 1)
+                : const Color(0xFFD0F0FF),
+          ),
           child: SafeArea(
             child: Column(
               children: [
@@ -758,9 +766,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           child: Icon(
                                             Icons.dns_outlined,
                                             size: 20,
-                                            color: context.appColors.isDark
-                                                ? Colors.white
-                                                : context.appColors.onHero,
+                                            color: Colors.white,
                                           ),
                                         ),
                                         const SizedBox(width: 15),
@@ -775,7 +781,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                   fontSize: 13,
                                                   color: context.appColors.isDark
                                                       ? Colors.white70
-                                                      : context.appColors.onHero,
+                                                      : _kLightOnBg,
                                                 ),
                                               ),
                                               const SizedBox(height: 2),
@@ -787,7 +793,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                   fontSize: 14,
                                                   color: context.appColors.isDark
                                                       ? Colors.white
-                                                      : context.appColors.onHero,
+                                                      : _kLightOnBg,
                                                 ),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
@@ -809,9 +815,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           child: Icon(
                                             Icons.cloud_outlined,
                                             size: 20,
-                                            color: context.appColors.isDark
-                                                ? Colors.white
-                                                : context.appColors.onHero,
+                                            color: Colors.white,
                                           ),
                                         ),
                                         const SizedBox(width: 15),
@@ -826,7 +830,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                   fontSize: 13,
                                                   color: context.appColors.isDark
                                                       ? Colors.white70
-                                                      : context.appColors.onHero,
+                                                      : _kLightOnBg,
                                                 ),
                                               ),
                                               const SizedBox(height: 2),
@@ -838,7 +842,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                   fontSize: 14,
                                                   color: context.appColors.isDark
                                                       ? Colors.white
-                                                      : context.appColors.onHero,
+                                                      : _kLightOnBg,
                                                 ),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
@@ -882,9 +886,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       child: Icon(
                                         Icons.storefront_outlined,
                                         size: 20,
-                                        color: context.appColors.isDark
-                                            ? Colors.white
-                                            : context.appColors.onHero,
+                                        color: Colors.white,
                                       ),
                                     ),
                                     const SizedBox(width: 15),
@@ -899,7 +901,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               fontSize: 13,
                                               color: context.appColors.isDark
                                                   ? Colors.white70
-                                                  : context.appColors.onHero,
+                                                  : _kLightOnBg,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -911,7 +913,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               fontSize: 14,
                                               color: context.appColors.isDark
                                                   ? Colors.white
-                                                  : context.appColors.onHero,
+                                                  : _kLightOnBg,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -954,9 +956,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                         ? 28
                                                         : 24,
                                                     child:
-                                                        const CircularProgressIndicator(
+                                                        CircularProgressIndicator(
                                                           strokeWidth: 2,
-                                                          color: Colors.white,
+                                                          color: context.appColors.isDark
+                                                              ? Colors.white
+                                                              : _kLightOnBg,
                                                         ),
                                                   )
                                                 : Icon(
@@ -964,7 +968,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                     size: context.isTablet
                                                         ? 28
                                                         : 24,
-                                                    color: Colors.white,
+                                                    color: context.appColors.isDark
+                                                        ? Colors.white
+                                                        : _kLightOnBg,
                                                   ),
                                           ),
                                         ),
@@ -993,7 +999,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             child: Icon(
                                               Icons.settings,
                                               size: context.isTablet ? 28 : 24,
-                                              color: Colors.white,
+                                              color: context.appColors.isDark
+                                                  ? Colors.white
+                                                  : _kLightOnBg,
                                             ),
                                           ),
                                         ),
@@ -1024,7 +1032,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                 size: 14,
                                                 color: context.appColors.isDark
                                                     ? Colors.white54
-                                                    : context.appColors.onHero
+                                                    : _kLightOnBg
                                                         .withOpacity(0.6),
                                               ),
                                               const SizedBox(width: 6),
@@ -1034,7 +1042,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                   fontSize: 12,
                                                   color: context.appColors.isDark
                                                       ? Colors.white54
-                                                      : context.appColors.onHero
+                                                      : _kLightOnBg
                                                           .withOpacity(0.6),
                                                 ),
                                               ),
@@ -1047,8 +1055,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                     color: context
                                                             .appColors.isDark
                                                         ? Colors.white54
-                                                        : context
-                                                            .appColors.onHero
+                                                        : _kLightOnBg
                                                             .withOpacity(0.6),
                                                   ),
                                                 ),
@@ -1063,7 +1070,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                 size: 14,
                                                 color: context.appColors.isDark
                                                     ? Colors.white54
-                                                    : context.appColors.onHero
+                                                    : _kLightOnBg
                                                         .withOpacity(0.6),
                                               ),
                                               const SizedBox(width: 6),
@@ -1073,7 +1080,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                   fontSize: 12,
                                                   color: context.appColors.isDark
                                                       ? Colors.white54
-                                                      : context.appColors.onHero
+                                                      : _kLightOnBg
                                                           .withOpacity(0.6),
                                                 ),
                                               ),
@@ -1086,8 +1093,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                     color: context
                                                             .appColors.isDark
                                                         ? Colors.white54
-                                                        : context
-                                                            .appColors.onHero
+                                                        : _kLightOnBg
                                                             .withOpacity(0.6),
                                                   ),
                                                 ),
@@ -1119,7 +1125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           fontSize: 12,
                                           color: context.appColors.isDark
                                               ? Colors.white54
-                                              : context.appColors.onHero
+                                              : _kLightOnBg
                                                   .withOpacity(0.6),
                                         ),
                                       ),
@@ -1146,7 +1152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           fontSize: 12,
                                           color: context.appColors.isDark
                                               ? Colors.white54
-                                              : context.appColors.onHero
+                                              : _kLightOnBg
                                                   .withOpacity(0.6),
                                         ),
                                       ),
@@ -1211,6 +1217,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 },
                               ),
                               _buildFadedDivider(),
+                              BlocBuilder<DashboardWhiteThemeCubit, bool>(
+                                builder: (context, whiteTheme) {
+                                  return _buildSwitchRow(
+                                    "Change Dashboard to white theme",
+                                    "Use a light dashboard color palette",
+                                    whiteTheme,
+                                    (val) {
+                                      context
+                                          .read<DashboardWhiteThemeCubit>()
+                                          .setWhiteTheme(val);
+                                    },
+                                  );
+                                },
+                              ),
+                              _buildFadedDivider(),
                               BlocBuilder<FontSizeCubit, String>(
                                 builder: (context, fontSize) {
                                   return _buildDropdownRow(
@@ -1262,7 +1283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         const SizedBox(height: 25),
 
-                        _buildSectionTitle("Maintenance", lightOverrideColor: Colors.white),
+                        _buildSectionTitle("Maintenance"),
                         _buildGlassContainer(
                           child: Column(
                             children: [
@@ -1313,7 +1334,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         const SizedBox(height: 25),
 
-                        _buildSectionTitle("Support", lightOverrideColor: Colors.white),
+                        _buildSectionTitle("Support"),
                         _buildGlassContainer(
                           child: Column(
                             children: [
@@ -1344,7 +1365,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: TextStyle(
                             color: colors.isDark
                                 ? Colors.white70
-                                : colors.onHero.withOpacity(0.6),
+                                : _kLightOnBg.withOpacity(0.6),
                             fontSize: 12,
                           ),
                         ),
@@ -1394,7 +1415,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             "Settings",
             style: getSmartTitle(
               fontSize: 18,
-              color: isDark ? Colors.white : colors.onHero,
+              color: isDark ? Colors.white : _kLightOnBg,
             ),
           ),
           const SizedBox(width: 40), // Spacer to balance back button
@@ -1408,7 +1429,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool isDark = colors.isDark;
     final Color effectiveColor = isDark
         ? Colors.white70
-        : (lightOverrideColor ?? colors.onHero.withOpacity(0.7));
+        : (lightOverrideColor ?? _kLightOnBg.withOpacity(0.7));
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, left: 10),
       child: Align(
@@ -1427,6 +1448,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildGlassContainer({required Widget child}) {
+    final bool isDark = context.appColors.isDark;
+    final Color borderColor =
+        isDark ? Colors.white.withOpacity(0.12) : _kLightOnBg.withOpacity(0.12);
+    final Color fillColor =
+        isDark ? Colors.transparent : Colors.white.withOpacity(0.45);
     return ClipRRect(
       borderRadius: BorderRadius.circular(15),
       child: BackdropFilter(
@@ -1437,13 +1463,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             borderRadius: BorderRadius.circular(10),
             // Asymmetric border: Thicker on top/left, thinner on right/bottom
             border: Border(
-              top: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
-              left: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
-              right: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
-              bottom: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
+              top: BorderSide(color: borderColor, width: isDark ? 1.5 : 0.6),
+              left: BorderSide(color: borderColor, width: isDark ? 1.5 : 0.6),
+              right: BorderSide(color: borderColor, width: isDark ? 0.42 : 0.2),
+              bottom: BorderSide(color: borderColor, width: isDark ? 0.42 : 0.2),
             ),
             // Subtle uniform glass fill (no corner shine)
-            color: Colors.transparent,
+            color: fillColor,
           ),
           child: child,
         ),
@@ -1455,7 +1481,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildFadedDivider() {
     final colors = context.appColors;
     final Color lineColor =
-        colors.isDark ? Colors.white : colors.onHero;
+        colors.isDark ? Colors.white : _kLightOnBg;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 15),
       height: 1,
@@ -1497,7 +1523,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Icon(
                 icon,
                 size: 20,
-                color: isDark ? Colors.white : colors.onHero,
+                color: Colors.white,
               ),
             ),
             const SizedBox(width: 15),
@@ -1509,7 +1535,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     label,
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark ? Colors.white70 : colors.onHero,
+                      color: isDark ? Colors.white70 : _kLightOnBg,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1519,7 +1545,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value,
                     style: getSmartTitle(
                       fontSize: 14,
-                      color: isDark ? Colors.white : colors.onHero,
+                      color: isDark ? Colors.white : _kLightOnBg,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1552,9 +1578,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Icon(
               Icons.point_of_sale_outlined,
               size: 20,
-              color: context.appColors.isDark
-                  ? Colors.white
-                  : context.appColors.onHero,
+              color: Colors.white,
             ),
           ),
           const SizedBox(width: 15),
@@ -1566,7 +1590,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   "Active Cash Drawer",
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark ? Colors.white70 : colors.onHero,
+                    color: isDark ? Colors.white70 : _kLightOnBg,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1576,7 +1600,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   "Drawer $_cashDrawerIdentifier",
                   style: getSmartTitle(
                     fontSize: 14,
-                    color: isDark ? Colors.white : colors.onHero,
+                    color: isDark ? Colors.white : _kLightOnBg,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1686,7 +1710,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Icon(
                         Icons.sync,
                         size: 20,
-                        color: isDark ? Colors.white : colors.onHero,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(width: 15),
@@ -1698,7 +1722,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             "Force Full Sync",
                             style: TextStyle(
                               fontSize: 13,
-                              color: isDark ? Colors.white70 : colors.onHero,
+                              color: isDark ? Colors.white70 : _kLightOnBg,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1708,7 +1732,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             "Re-sync all stocks and customers",
                             style: getSmartTitle(
                               fontSize: 14,
-                              color: isDark ? Colors.white : colors.onHero,
+                              color: isDark ? Colors.white : _kLightOnBg,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1729,7 +1753,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Icon(
                         Icons.chevron_right,
                         size: isTablet ? 28 : 24,
-                        color: isDark ? Colors.white54 : colors.onHero.withOpacity(0.5),
+                        color: isDark ? Colors.white54 : _kLightOnBg.withOpacity(0.5),
                       ),
                   ],
                 ),
@@ -1768,7 +1792,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         "Sign Off",
         style: TextStyle(
           fontSize: 14,
-          color: isDark ? Colors.white : colors.onHero,
+          color: isDark ? Colors.white : _kLightOnBg,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -1841,7 +1865,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Text(
                       "Keep Committed Stocktake History",
                       style: TextStyle(
-                        color: isDark ? Colors.white : colors.onHero,
+                        color: isDark ? Colors.white : _kLightOnBg,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
@@ -1858,8 +1882,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       child: Text(
                         "${retentionDays.toInt()} Days",
-                        style: TextStyle(
-                          color: isDark ? Colors.white : colors.onHero,
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1872,7 +1896,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 data: SliderTheme.of(context).copyWith(
                   activeTrackColor: kPrimaryColor,
                   inactiveTrackColor: colors.onSurfaceMuted,
-                  thumbColor: isDark ? Colors.white : colors.onHero,
+                  thumbColor: isDark ? Colors.white : _kLightOnBg,
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: 8.0,
                     elevation: 4,
@@ -1900,7 +1924,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: TextStyle(
                   color: isDark
                       ? Colors.white70
-                      : colors.onHero.withOpacity(0.8),
+                      : _kLightOnBg.withOpacity(0.8),
                   fontSize: 12,
                 ),
               ),
@@ -1931,7 +1955,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   title,
                   style: TextStyle(
-                    color: isDark ? Colors.white : colors.onHero,
+                    color: isDark ? Colors.white : _kLightOnBg,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -1944,7 +1968,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     color: isDark
                         ? Colors.white70
-                        : colors.onHero.withOpacity(0.8),
+                        : _kLightOnBg.withOpacity(0.8),
                     fontSize: 11,
                   ),
                   maxLines: 3, // Prevent overflow
@@ -1986,8 +2010,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : _kLightOnBg,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -1998,7 +2022,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: isDark
+                        ? Colors.white.withOpacity(0.7)
+                        : _kLightOnBg.withOpacity(0.7),
                     fontSize: 12,
                   ),
                   maxLines: 3,
@@ -2011,10 +2037,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white10 : Colors.white.withOpacity(0.2),
+              color: isDark ? Colors.white10 : _kLightOnBg.withOpacity(0.06),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: isDark ? Colors.white24 : Colors.white.withOpacity(0.4),
+                color: isDark ? Colors.white24 : _kLightOnBg.withOpacity(0.25),
               ),
             ),
             child: DropdownButtonHideUnderline(
@@ -2022,14 +2048,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: value,
                 isDense: true,
                 dropdownColor: isDark ? const Color(0xFF2A2A2E) : Colors.white,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: isDark ? Colors.white : _kLightOnBg,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
-                icon: const Icon(
+                icon: Icon(
                   Icons.arrow_drop_down,
-                  color: Colors.white,
+                  color: isDark ? Colors.white : _kLightOnBg,
                 ),
                 selectedItemBuilder: (BuildContext context) {
                   return labels.map<Widget>((String label) {
@@ -2037,8 +2063,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         label,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : _kLightOnBg,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -2091,7 +2117,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Icon(
                 icon,
                 size: 20,
-                color: isDark ? Colors.white : colors.onHero,
+                color: Colors.white,
               ),
             ),
             const SizedBox(width: 15),
@@ -2104,7 +2130,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: isDark ? Colors.white : (titleColor ?? color),
+                      color: isDark
+                          ? Colors.white
+                          : (titleColor == Colors.white
+                              ? _kLightOnBg
+                              : (titleColor ?? color)),
                     ),
                     maxLines: 1, // Prevent overflow
                     overflow: TextOverflow.ellipsis,
@@ -2115,7 +2145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       color: isDark
                           ? Colors.white70
-                          : colors.onHero.withOpacity(0.8),
+                          : _kLightOnBg.withOpacity(0.8),
                       fontSize: 11,
                     ),
                     maxLines: 2, // Prevent overflow
@@ -2127,7 +2157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Icon(
               Icons.arrow_forward_ios,
               size: 14,
-              color: isDark ? Colors.white70 : colors.onHero.withOpacity(0.7),
+              color: isDark ? Colors.white70 : _kLightOnBg.withOpacity(0.7),
             ),
           ],
         ),

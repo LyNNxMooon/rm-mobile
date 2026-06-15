@@ -5,7 +5,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../constants/colors.dart';
 import '../../../../constants/theme_colors.dart';
 
-
 class Scanner extends StatefulWidget {
   const Scanner({
     super.key,
@@ -44,92 +43,105 @@ class _ScannerState extends State<Scanner> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final media = MediaQuery.of(context);
+    final bool isTabletLandscape = media.size.shortestSide >= 600 &&
+        media.orientation == Orientation.landscape;
     return SizedBox(
-      height: widget.constraints.maxHeight * 0.2,
+      height:
+          widget.constraints.maxHeight * (isTabletLandscape ? 0.26 : 0.2),
       child: widget.isScan
-          ? Container(
-              color: isDark ? colors.surface : kThirdColor,
-              child: Stack(
-                children: [
-                  MobileScanner(
-                    controller: widget.controller,
-                    onDetect: (capture) async {
-                      final barcodes = capture.barcodes;
-                      if (barcodes.isEmpty) return;
+          ? ClipRRect(
+              borderRadius:
+                  BorderRadius.circular(isTabletLandscape ? 10 : 0),
+              child: Container(
+                color: isDark ? colors.surface : kThirdColor,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    MobileScanner(
+                      controller: widget.controller,
+                      onDetect: (capture) async {
+                        final barcodes = capture.barcodes;
+                        if (barcodes.isEmpty) return;
 
-                      final String currentBarcode =
-                          barcodes.first.rawValue ?? "";
-                      if (currentBarcode.isEmpty) return;
+                        final String currentBarcode =
+                            barcodes.first.rawValue ?? "";
+                        if (currentBarcode.isEmpty) return;
 
-                      // Debounce: prevent double processing of same frame
-                      final now = DateTime.now();
-                      if (_lastScanTime != null &&
-                          now.difference(_lastScanTime!).inMilliseconds <
-                              1000 &&
-                          currentBarcode == _lastScannedBarcode) {
-                        return;
-                      }
-                      _lastScanTime = now;
+                        // Debounce: prevent double processing of same frame
+                        final now = DateTime.now();
+                        if (_lastScanTime != null &&
+                            now.difference(_lastScanTime!).inMilliseconds <
+                                1000 &&
+                            currentBarcode == _lastScannedBarcode) {
+                          return;
+                        }
+                        _lastScanTime = now;
 
-                      // Feedback
-                      HapticFeedback.vibrate();
-                      HapticFeedback.heavyImpact();
-                      await _audioPlayer.stop();
-                      _audioPlayer.play(_beepSource);
+                        // Feedback
+                        HapticFeedback.vibrate();
+                        HapticFeedback.heavyImpact();
+                        await _audioPlayer.stop();
+                        _audioPlayer.play(_beepSource);
 
-                      // Logic Branching
-                      if (widget.isManualCount) {
-                        // Manual Mode: Just fetch and let user type
-                        widget.onScan(currentBarcode);
-                      } else {
-                        // Auto Count Mode
-                        setState(() {
-                          // Auto Count Logic
-                          // Just trigger the scan callback.
-                          // The logic for "Increment & Save" is now in the Parent's BlocListener
-                          // We reset _lastScannedBarcode only if needed, but for "rapid fire"
-                          // distinct scans, we rely on the debounce above.
-                          _lastScannedBarcode = currentBarcode;
-                          // setState(() {
-
-                          // });
+                        // Logic Branching
+                        if (widget.isManualCount) {
+                          // Manual Mode: Just fetch and let user type
                           widget.onScan(currentBarcode);
-                        });
-                      }
-                    },
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black54,
-                      ),
-                      child: IconButton(
-                        onPressed: widget.onStopScan,
-                        icon: const Icon(Icons.close),
-                        color: Colors.white,
-                        iconSize: 20,
-                        padding: const EdgeInsets.all(6),
-                        constraints: const BoxConstraints(),
-                      ),
+                        } else {
+                          // Auto Count Mode
+                          setState(() {
+                            // Auto Count Logic
+                            // Just trigger the scan callback.
+                            // The logic for "Increment & Save" is now in the Parent's BlocListener
+                            // We reset _lastScannedBarcode only if needed, but for "rapid fire"
+                            // distinct scans, we rely on the debounce above.
+                            _lastScannedBarcode = currentBarcode;
+                            // setState(() {
+
+                            // });
+                            widget.onScan(currentBarcode);
+                          });
+                        }
+                      },
                     ),
-                  ),
-                  Center(
-                    child: Container(
-                      width: MediaQuery.of(context).size.width * 0.6,
-                      height: 130,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: kPrimaryColor.withOpacity(0.7),
-                          width: 2,
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black54,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        child: IconButton(
+                          onPressed: widget.onStopScan,
+                          icon: const Icon(Icons.close),
+                          color: Colors.white,
+                          iconSize: 20,
+                          padding: const EdgeInsets.all(6),
+                          constraints: const BoxConstraints(),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    Center(
+                      child: LayoutBuilder(
+                        builder: (context, boxConstraints) {
+                          return Container(
+                            width: boxConstraints.maxWidth * 0.6,
+                            height: 130,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: kPrimaryColor.withOpacity(0.7),
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             )
           : _scannerPlaceHolder(),
@@ -139,8 +151,12 @@ class _ScannerState extends State<Scanner> {
   Widget _scannerPlaceHolder() {
     final colors = context.appColors;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    final double sidePadding = isTablet ? widget.horizontalPadding : 15.0;
+    final media = MediaQuery.of(context);
+    final bool isTablet = media.size.shortestSide >= 600;
+    final bool isTabletLandscape =
+        isTablet && media.orientation == Orientation.landscape;
+    final double sidePadding =
+        isTabletLandscape ? 0.0 : (isTablet ? widget.horizontalPadding : 15.0);
 
     return GestureDetector(
       onTap: widget.onStartScan,
@@ -152,15 +168,7 @@ class _ScannerState extends State<Scanner> {
           border: Border.all(
             color: isDark ? Colors.white38 : Colors.grey.shade400,
           ),
-          boxShadow: isDark
-              ? null
-              : [
-                  BoxShadow(
-                    color: kThirdColor.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          //
         ),
         child: Center(
           child: SingleChildScrollView(
@@ -174,15 +182,12 @@ class _ScannerState extends State<Scanner> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Scanner Area",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: colors.onSurfaceMuted,
-                  ),
+                  "Tap here to turn your scanner on.",
+                  style: TextStyle(fontSize: 14, color: colors.onSurfaceMuted),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "Camera preview will appear here",
+                  "Your camera is turned off to preserve battery.",
                   style: TextStyle(
                     fontSize: 12,
                     color: colors.onSurfaceMuted.withOpacity(0.7),

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import '../../../../entities/response/paginated_stock_response.dart';
 import '../../../../entities/response/picture_upload_response.dart';
 import '../../../../entities/response/stock_update_response.dart';
+import '../../../../entities/response/stock_activity_response.dart';
 import '../../../../entities/vos/filter_criteria.dart';
 import '../../../../entities/vos/pricing_rules.dart';
 import '../../../../entities/vos/search_mode.dart';
@@ -29,6 +30,8 @@ abstract class StockLookupRepo {
     required int stockId,
     String? barcode,
   });
+
+  Future<StockActivityResponse> fetchStockActivity({required int stockId});
   Future<String?> fetchAndCacheThumbnailPath({
     required String address,
     required String fullPath,
@@ -81,6 +84,7 @@ abstract class StockLookupRepo {
     required double sell,
     String? custom1,
     String? custom2,
+    String? longDesc,
     PricingRules? pricingRules,
   });
 

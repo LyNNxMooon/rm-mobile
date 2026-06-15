@@ -35,6 +35,7 @@ import '../BLoC/home_screen_events.dart';
 import '../BLoC/home_screen_states.dart';
 import '../BLoC/session_counts_cubit.dart';
 import '../BLoC/dashboard_style_cubit.dart';
+import '../BLoC/dashboard_white_theme_cubit.dart';
 //import '../BLoC/font_size_cubit.dart';
 import '../widgets/app_bar_session.dart';
 import '../widgets/network_pc_dialog.dart';
@@ -43,6 +44,16 @@ import '../widgets/glass_drawer.dart';
 import 'staff_login_screen.dart';
 import 'settings_screen.dart';
 import 'coming_soon_screen.dart';
+
+/// Color palette applied to the dashboard when the "white theme" preference
+/// is enabled (Settings > Appearance > Change Dashboard to white theme).
+class _WhiteDashboardPalette {
+  static const Color appBar = Color(0xFF04233C); // App bar / header band
+  static const Color content = Color(0xFFD0F0FF); // Middle content background
+  static const Color card = Color(0xFF69C4EC); // Action & information cards
+  static const Color title = Color(0xFF1B80BB); // Titles & shopfront name
+  static const Color onAppBar = Colors.white; // Staff name & sync pills
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -410,6 +421,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     final colors = context.appColors;
     final bool isTablet = context.isTablet;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool whiteTheme = context.watch<DashboardWhiteThemeCubit>().state;
+    final Color pageBackground = whiteTheme
+        ? _WhiteDashboardPalette.appBar
+        : const Color.fromRGBO(12, 58, 85, 1);
 
     // Desktop layout: NavigationRail on left + content
     if (useDesktopNav) {
@@ -419,7 +434,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
-            color: Color.fromRGBO(12, 58, 85, 1),
+            color: pageBackground,
           ),
           child: Row(
             children: [
@@ -450,8 +465,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: const BoxDecoration(
-            color: Color.fromRGBO(12, 58, 85, 1),
+          decoration: BoxDecoration(
+            color: pageBackground,
           ),
           child: SafeArea(
             child: Row(
@@ -492,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          color: Color.fromRGBO(12, 58, 85, 1),
+          color: pageBackground,
         ),
         child: SafeArea(
           bottom: false,
@@ -557,8 +572,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   label: Text("Home"),
                 ),
                 NavigationRailDestination(
-                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.point_of_sale_outlined)),
-                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.point_of_sale_outlined)),
+                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: ImageIcon(AssetImage("assets/images/transaction.png"))),
+                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: ImageIcon(AssetImage("assets/images/transaction.png"))),
                   label: Text("Transaction"),
                 ),
                 NavigationRailDestination(
@@ -623,8 +638,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   destinations: _desktopNavigationItems
                       .map(
                         (item) => NavigationRailDestination(
-                          icon: Icon(item.icon),
-                          selectedIcon: Icon(item.icon),
+                          icon: item.label == "Transaction"
+                              ? const ImageIcon(
+                                  AssetImage("assets/images/transaction.png"))
+                              : Icon(item.icon),
+                          selectedIcon: item.label == "Transaction"
+                              ? const ImageIcon(
+                                  AssetImage("assets/images/transaction.png"))
+                              : Icon(item.icon),
                           label: Text(item.label),
                         ),
                       )
@@ -839,6 +860,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   Widget _buildHomeBody(BuildContext context, {bool useDesktopNav = false, bool isTabletWithRail = false}) {
     final colors = context.appColors;
     final bool isTablet = context.isTablet;
+    final bool whiteTheme = context.watch<DashboardWhiteThemeCubit>().state;
     final items = _filteredItemsForTab();
 
     // Separate regular items from coming soon items on home tab
@@ -849,6 +871,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     final comingSoonItems = isHomeTab
         ? items.where((item) => item['comingSoon'] == true).toList()
         : <Map<String, dynamic>>[];
+    final informationItems = comingSoonItems
+        .where((item) => item['category'] != 'stockmgt')
+        .toList();
+    final stockMgtItems = comingSoonItems
+        .where((item) => item['category'] == 'stockmgt')
+        .toList();
 
     // Build the main content
     Widget content = Container(
@@ -858,7 +886,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           ? EdgeInsets.zero  // Padding handles the gap on desktop
           : const EdgeInsets.only(top: 12),
       decoration: BoxDecoration(
-        color: Color.fromRGBO(7, 27, 54, 1),
+        color: whiteTheme
+            ? _WhiteDashboardPalette.content
+            : const Color.fromRGBO(7, 27, 54, 1),
         // On desktop: rounded corners on all sides; on mobile: no rounding
         borderRadius: useDesktopNav
             ? BorderRadius.circular(10)
@@ -906,7 +936,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 useDesktopNav: useDesktopNav,
               ),
             ),
-            if (isHomeTab && comingSoonItems.isNotEmpty) ...[
+            if (isHomeTab && informationItems.isNotEmpty) ...[
               _buildSectionHeader(
                 "Information",
                 context,
@@ -914,7 +944,19 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               ),
               _buildInformationGrid(
                 context,
-                comingSoonItems,
+                informationItems,
+                useDesktopNav: useDesktopNav,
+              ),
+            ],
+            if (isHomeTab && stockMgtItems.isNotEmpty) ...[
+              _buildSectionHeader(
+                "Stock Management",
+                context,
+                icon: Icons.inventory_2_outlined,
+              ),
+              _buildInformationGrid(
+                context,
+                stockMgtItems,
                 useDesktopNav: useDesktopNav,
               ),
             ],
@@ -931,6 +973,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   Widget _buildGreetingHeader(BuildContext context) {
    // final colors = context.appColors;
     final bool isTablet = context.isTablet;
+    final bool whiteTheme = context.watch<DashboardWhiteThemeCubit>().state;
     final String shopfront = (AppGlobals.instance.shopfront ?? "").trim();
     final String shopName = shopfront.isEmpty
         ? "Your shopfront"
@@ -956,7 +999,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               shopName,
               style: getSmartTitle(
                 fontSize: isTablet ? 20 : 18,
-                color: Colors.white,
+                color: whiteTheme
+                    ? _WhiteDashboardPalette.title
+                    : Colors.white,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -965,7 +1010,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             Text(
               staffLabel,
               style: TextStyle(
-                color: Colors.white60,
+                color: whiteTheme
+                    ? const Color(0xFF424242)
+                    : Colors.white60,
                 fontSize: isTablet ? 14 : 13,
                 fontWeight: FontWeight.w400,
               ),
@@ -980,6 +1027,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
   Widget _buildStatusRow(BuildContext context) {
     final bool isTablet = context.isTablet;
+    final bool whiteTheme = context.watch<DashboardWhiteThemeCubit>().state;
     return BlocBuilder<FetchStockBloc, FetchStockStates>(
       builder: (context, _) {
         return BlocBuilder<FetchCustomerBloc, FetchCustomerStates>(
@@ -1003,7 +1051,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                       context,
                       label: label,
                       icon: Icons.schedule,
-                      color: kSecondaryColor,
+                      color: whiteTheme ? kThirdColor : kSecondaryColor,
                     );
                   },
                 ),
@@ -1023,6 +1071,13 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }) {
     //final colors = context.appColors;
     final bool isTablet = context.isTablet;
+    final bool whiteTheme = context.watch<DashboardWhiteThemeCubit>().state;
+    final Color pillBorder = whiteTheme
+        ? Colors.black.withOpacity(0.12)
+        : const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5);
+    final Color pillBackground = whiteTheme
+        ? Colors.white
+        : const Color.fromRGBO(12, 58, 85, 1);
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isTablet ? 14 : 10,
@@ -1031,12 +1086,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         border: Border(
-          top: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 1),
-          left: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 1),
-          right: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 0.42),
-          bottom: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 0.42),
+          top: BorderSide(color: pillBorder, width: 1),
+          left: BorderSide(color: pillBorder, width: 1),
+          right: BorderSide(color: pillBorder, width: 0.42),
+          bottom: BorderSide(color: pillBorder, width: 0.42),
         ),
-        color: const Color.fromRGBO(12, 58, 85, 1),
+        color: pillBackground,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1048,7 +1103,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             style: TextStyle(
               fontSize: isTablet ? 13 : 12,
               fontWeight: FontWeight.w400,
-              color: Colors.white70,
+              color: whiteTheme
+                  ? Colors.black87
+                  : Colors.white70,
             ),
           ),
         ],
@@ -1065,7 +1122,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }) {
     //final colors = context.appColors;
     final bool isTablet = context.isTablet;
-    final Color titleColor = color ?? Colors.white;
+    final bool whiteTheme = context.watch<DashboardWhiteThemeCubit>().state;
+    final Color titleColor =
+        color ?? (whiteTheme ? _WhiteDashboardPalette.title : Colors.white);
     final EdgeInsets padding = compact
         ? EdgeInsets.symmetric(horizontal: isTablet ? 22 : 16)
         : EdgeInsets.fromLTRB(
@@ -1097,7 +1156,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           Expanded(
             child: Container(
               height: 0.8,
-              color: Colors.white30,
+              color: whiteTheme
+                  ? _WhiteDashboardPalette.title.withOpacity(0.3)
+                  : Colors.white30,
             ),
           ),
         ],
@@ -1217,6 +1278,10 @@ Widget _buildActionTile(
 }) {
   final bool isTablet = MediaQuery.of(context).size.width > 600;
   final Color itemColor = item['color'] ?? const Color(0xFF0078D4);
+  final bool whiteTheme = context.watch<DashboardWhiteThemeCubit>().state;
+  final Color cardBorder = whiteTheme
+      ? _WhiteDashboardPalette.card
+      : Colors.white.withOpacity(0.12);
 
   return Material(
     color: Colors.transparent,
@@ -1230,19 +1295,24 @@ Widget _buildActionTile(
           borderRadius: BorderRadius.circular(20),
           // 1. The Border: Thicker on top/left, thinner on right/bottom
           border: Border(
-            top: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
-            left: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.5),
-            right: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
-            bottom: BorderSide(color: Colors.white.withOpacity(0.12), width: 0.42),
+            top: BorderSide(color: cardBorder, width: 1.5),
+            left: BorderSide(color: cardBorder, width: 1.5),
+            right: BorderSide(color: cardBorder, width: 0.42),
+            bottom: BorderSide(color: cardBorder, width: 0.42),
           ),
           // 2. The Glass Sweep: More blue, slightly brighter
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF42A5F5).withOpacity(0.40), // Deeper blue with more saturation
-              Colors.transparent,                        // Blends smoothly into background
-            ],
+            colors: whiteTheme
+                ? [
+                    _WhiteDashboardPalette.card,
+                    _WhiteDashboardPalette.card.withOpacity(0.85),
+                  ]
+                : [
+                    const Color(0xFF42A5F5).withOpacity(0.40), // Deeper blue with more saturation
+                    Colors.transparent,                        // Blends smoothly into background
+                  ],
             stops: const [0.0, 0.6], // Smooth fade out across the card
           ),
         ),
@@ -1272,11 +1342,21 @@ Widget _buildActionTile(
                     ),
                   ],
                 ),
-                child: Icon(
-                  item['icon'] as IconData?,
-                  color: Colors.white,
-                  size: isTablet ? 36 : 28,
-                ),
+                child: (item['iconAsset'] as String?) != null
+                    ? Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Image.asset(
+                          item['iconAsset'] as String,
+                          width: isTablet ? 28 : 22,
+                          height: isTablet ? 28 : 22,
+                        ),
+                    )
+                    : Icon(
+                        item['icon'] as IconData?,
+                        color: Colors.white,
+                        weight: 10,
+                        size: isTablet ? 36 : 28,
+                      ),
               ),
 
               SizedBox(height: isTablet ? 20 : 12),
@@ -1304,7 +1384,9 @@ Widget _buildActionTile(
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style:  TextStyle(
-                  color: Color(0xFF7A8B9E), // Muted grey-blue
+                  color: whiteTheme
+                      ? Colors.white.withOpacity(0.75)
+                      : const Color(0xFF7A8B9E), // Muted grey-blue
                   fontSize: isTablet ? 14 : 13,
                   fontWeight: FontWeight.w400,
                 ),
@@ -1313,20 +1395,35 @@ Widget _buildActionTile(
               SizedBox(height: isTablet ? 28 : 12),
 
               // 4. The Underline: Visible and centered
-              Container(
-                height: 1,
-                width: 200, 
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      Colors.white.withOpacity(0.20), // Visible peak in the center
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
-                ),
-              ),
+              whiteTheme
+                  ? Container(
+                      height: 1,
+                      width: 130,
+                     decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            _WhiteDashboardPalette.card,
+                            Colors.white.withOpacity(0.20), // Visible peak in the center
+                            _WhiteDashboardPalette.card
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                    )
+                  : Container(
+                      height: 1,
+                      width: 200,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            Colors.white.withOpacity(0.20), // Visible peak in the center
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                    ),
             ],
           ),
         ),
@@ -1343,9 +1440,15 @@ Widget _buildInformationTile(
   int gradientTotal = 0,
 }) {
   final bool isTablet = MediaQuery.of(context).size.width > 600;
-  
+  final bool whiteTheme = context.watch<DashboardWhiteThemeCubit>().state;
+
   // Use the same color as the app bar / main background
-  final Color cardColor = const Color.fromRGBO(12, 58, 85, 1);
+  final Color cardColor = whiteTheme
+      ? _WhiteDashboardPalette.card
+      : const Color.fromRGBO(12, 58, 85, 1);
+  final Color cardBorder = whiteTheme
+      ? _WhiteDashboardPalette.card
+      : const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5);
 
   // Progressive solid blue per icon: first lighter, second more, third fully blue
   final bool useIconGradient = gradientIndex >= 0 && gradientTotal > 0;
@@ -1367,10 +1470,10 @@ Widget _buildInformationTile(
           borderRadius: BorderRadius.circular(20),
           // 1. The Border: Blue color
           border: Border(
-            top: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 1),
-            left: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 1),
-            right: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 0.42),
-            bottom: BorderSide(color: const Color.fromRGBO(52, 208, 255, 1).withOpacity(0.5), width: 0.42),
+            top: BorderSide(color: cardBorder, width: 1),
+            left: BorderSide(color: cardBorder, width: 1),
+            right: BorderSide(color: cardBorder, width: 0.42),
+            bottom: BorderSide(color: cardBorder, width: 0.42),
           ),
           // 2. The Solid Background
           color: cardColor,
@@ -1401,11 +1504,24 @@ Widget _buildInformationTile(
                     ),
                   ],
                 ),
-                child: Icon(
-                  item['icon'] as IconData?,
-                  color: useIconGradient ? Colors.white : cardColor,
-                  size: isTablet ? 36 : 28,
-                ),
+                child: (item['iconAsset'] as String?) != null
+                    ? Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Image.asset(
+                          item['iconAsset'] as String,
+                          width: isTablet ? 28 : 22,
+                          height: isTablet ? 28 : 22,
+                        ),
+                    )
+                    : Icon(
+                        item['icon'] as IconData?,
+                        color: useIconGradient
+                            ? Colors.white
+                            : (whiteTheme
+                                ? _WhiteDashboardPalette.title
+                                : cardColor),
+                        size: isTablet ? 36 : 28,
+                      ),
               ),
 
               const SizedBox(height: 20),
@@ -1432,7 +1548,9 @@ Widget _buildInformationTile(
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Color(0xFF7A8B9E), // Muted grey-blue
+                  color: whiteTheme
+                      ? Colors.white.withOpacity(0.75)
+                      : const Color(0xFF7A8B9E), // Muted grey-blue
                   fontSize: isTablet ? 14 : 13,
                   fontWeight: FontWeight.w400,
                 ),
@@ -1441,20 +1559,35 @@ Widget _buildInformationTile(
               SizedBox(height: isTablet ? 16 : 12),
 
               // 4. The Underline: Visible and centered (Kept exactly as provided)
-              Container(
-                height: 1,
-                width: 200, 
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      Colors.white.withOpacity(0.20), // Visible peak in the center
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
-                ),
-              ),
+              whiteTheme
+                  ? Container(
+                      height: 1,
+                      width: 130,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            _WhiteDashboardPalette.card,
+                            Colors.white.withOpacity(0.20), // Visible peak in the center
+                            _WhiteDashboardPalette.card
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                    )
+                  : Container(
+                      height: 1,
+                      width: 200,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            Colors.white.withOpacity(0.20), // Visible peak in the center
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                    ),
             ],
           ),
         ),
@@ -1474,7 +1607,7 @@ Widget _buildInformationTile(
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: "Home"),
         BottomNavigationBarItem(
-          icon: Icon(Icons.point_of_sale_outlined),
+          icon: ImageIcon(AssetImage("assets/images/transaction.png")),
           label: "Transaction",
         ),
         BottomNavigationBarItem(
@@ -1826,6 +1959,7 @@ Widget _buildInformationTile(
       "subTitle": "Create Sales",
       "icon": Icons.insights_outlined,
       "color": const Color(0xFF00C8B3),
+       "iconAsset": "assets/images/sell.png",
       "comingSoon": false,
       "action": "sales",
       "category": "transaction",
@@ -1834,6 +1968,7 @@ Widget _buildInformationTile(
       "title": "Goods Received",
       "subTitle": "Comming Soon",
       "icon": Icons.work_outline,
+      "iconAsset": "assets/images/gr.png",
       "color": const Color(0xFF00C0E8),
       "comingSoon": false,
       "action": "coming_soon",
@@ -1843,7 +1978,8 @@ Widget _buildInformationTile(
       "title": "Returned Goods",
       "subTitle": "Comming Soon",
       "icon": Icons.move_to_inbox_outlined,
-      "color": const Color(0xFFD9534F),
+      "iconAsset": "assets/images/rg.png",
+      "color": const Color(0xFFFF3B30),
       "comingSoon": false,
       "action": "coming_soon",
       "category": "transaction",
@@ -1852,6 +1988,7 @@ Widget _buildInformationTile(
       "title": "Purchase Orders",
       "subTitle": "Comming Soon",
       "icon": Icons.local_offer_outlined,
+      "iconAsset": "assets/images/po.png",
       "color": const Color(0xFFF2920C),
       "comingSoon": false,
       "action": "coming_soon",
@@ -1861,7 +1998,8 @@ Widget _buildInformationTile(
       "title": "Debtor Payments",
       "subTitle": "Comming Soon",
       "icon": Icons.account_balance_wallet_outlined,
-      "color": const Color(0xFFC76185),
+      "iconAsset": "assets/images/dbpay.png",
+      "color": const Color(0xFFFA5CB6),
       "comingSoon": false,
       "action": "coming_soon",
       "category": "transaction",
@@ -1870,7 +2008,8 @@ Widget _buildInformationTile(
       "title": "Lay-by Payments",
       "subTitle": "Comming Soon",
       "icon": Icons.savings_outlined,
-      "color": const Color(0xFF3448BC),
+      "iconAsset": "assets/images/laybypay.png",
+      "color": const Color(0xFF6155F5),
       "comingSoon": false,
       "action": "coming_soon",
       "category": "transaction",
@@ -1879,7 +2018,8 @@ Widget _buildInformationTile(
       "title": "SO Payments",
       "subTitle": "Comming Soon",
       "icon": Icons.payments_outlined,
-      "color": const Color(0xFF015A9F),
+      "iconAsset": "assets/images/sopay.png",
+      "color": const Color(0xFF0088FF),
       "comingSoon": false,
       "action": "coming_soon",
       "category": "transaction",
@@ -1888,6 +2028,7 @@ Widget _buildInformationTile(
       "title": "Quote Converter",
       "subTitle": "Comming Soon",
       "icon": Icons.swap_horiz_outlined,
+      "iconAsset": "assets/images/quconvert.png",
       "color": const Color(0xFFE8B30B),
       "comingSoon": false,
       "action": "coming_soon",
@@ -1895,9 +2036,10 @@ Widget _buildInformationTile(
     },
     // Information items (show in Information section on Home)
     {
-      "title": "Stock-Lookup",
+      "title": "Stock",
       "subTitle": "Search inventory",
       "icon": Icons.inventory_2_outlined,
+      "iconAsset": "assets/images/lookup.png",
       "color": kPrimaryColor,
       "comingSoon": true,
       "action": "stock_lookup",
@@ -1907,6 +2049,7 @@ Widget _buildInformationTile(
       "title": "Stocktake",
       "subTitle": "Count inventory",
       "icon": Icons.fact_check_outlined,
+      "iconAsset": "assets/images/stocktake.png",
       "color": const Color(0xFF41A9B9),
       "comingSoon": true,
       "action": "stocktake",
@@ -1917,6 +2060,7 @@ Widget _buildInformationTile(
       "subTitle": "Search customers",
       "icon": Icons.people_outline,
       "color": kPrimaryColor,
+       "iconAsset": "assets/images/cust.png",
       "comingSoon": true,
       "action": "customer_lookup",
       "category": "information",

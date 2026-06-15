@@ -35,11 +35,11 @@ import '../../../../utils/ios_done_bar.dart';
 import '../../../../utils/responsive_utils.dart';
 import '../../../../utils/tax_calculation_utils.dart';
 import '../widgets/detailed_lower_glass.dart';
-import '../widgets/detailed_upper_glass.dart';
 import '../widgets/price_calculator_dialog.dart';
 import '../widgets/pricing_dialog.dart';
 import 'package:rmmobile/entities/vos/pricing_rules.dart';
 import 'package_components_screen.dart';
+import 'stock_activity_screen.dart';
 
 class StockDetailsScreen extends StatefulWidget {
   const StockDetailsScreen({super.key, required this.stock});
@@ -65,9 +65,23 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   int _descriptionCharLimit = 40; // Default limit, changes to 100 for RM 14+
 
   late final LanguageToolController _descriptionController;
+  late final TextEditingController _descriptionEditController;
   late final TextEditingController _custom1Controller;
   late final TextEditingController _custom2Controller;
+  late final TextEditingController _longDescController;
+  late final TextEditingController _incRrpController;
+  late final TextEditingController _exRrpController;
+  final FocusNode _incRrpFocus = FocusNode();
+  final FocusNode _exRrpFocus = FocusNode();
+  bool _isEditing = false;
   List<FocusNode> _priceFocusNodes = [];
+
+  // Mutable copies of the editable text fields so the read-only display can
+  // reflect the latest saved values immediately after the user taps save.
+  late String _displayDescription;
+  late String _displayCustom1;
+  late String _displayCustom2;
+  late String _displayLongDesc;
 
   @override
   void initState() {
@@ -76,6 +90,16 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     _descriptionController = LanguageToolController();
     _descriptionController.text = widget.stock.description;
     _descriptionController.addListener(_enforceDescriptionLimit);
+
+    // Plain controller used for inline editing (LanguageToolController injects
+    // tappable recognizers into its spans, which is illegal inside an editable
+    // TextField and throws a semantics assertion).
+    _descriptionEditController = TextEditingController(
+      text: widget.stock.description,
+    );
+    _descriptionEditController.addListener(
+      () => _enforceCharLimit(_descriptionEditController, _descriptionCharLimit),
+    );
 
     _custom1Controller = TextEditingController(
       text: widget.stock.custom1 ?? "",
@@ -86,6 +110,24 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
       text: widget.stock.custom2 ?? "",
     );
     _custom2Controller.addListener(() => _enforceCharLimit(_custom2Controller, 50));
+
+    _longDescController = TextEditingController(
+      text: widget.stock.longDescription ?? "",
+    );
+
+    _displayDescription = widget.stock.description;
+    _displayCustom1 = widget.stock.custom1 ?? "";
+    _displayCustom2 = widget.stock.custom2 ?? "";
+    _displayLongDesc = widget.stock.longDescription ?? "";
+
+    _incRrpController = TextEditingController(
+      text: widget.stock.sell.toStringAsFixed(4),
+    );
+    _exRrpController = TextEditingController(
+      text: widget.stock.sell.toStringAsFixed(4),
+    );
+    _incRrpController.addListener(_onIncRrpChanged);
+    _exRrpController.addListener(_onExRrpChanged);
     // Old setup disabled:
     // final pic = widget.stock.pictureFileName;
     // if (pic != null && pic.isNotEmpty) {
@@ -143,6 +185,44 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     }
   }
 
+  /// When the Inc RRP field is edited, reflect the value into the Ex RRP field
+  /// (and internal state) using the sell tax percentage.
+  void _onIncRrpChanged() {
+    if (!_incRrpFocus.hasFocus) return;
+    final text = _incRrpController.text;
+    if (text.isEmpty) return;
+    final double incVal = double.tryParse(text) ?? 0.0;
+    final double exVal = sellTaxPercentage > 0
+        ? TaxCalculationUtils.calculateExclusivePrice(incVal, sellTaxPercentage)
+        : incVal;
+    sell = incVal;
+    exSell = exVal;
+    _exRrpController.text = exVal.toStringAsFixed(4);
+  }
+
+  /// When the Ex RRP field is edited, reflect the value into the Inc RRP field
+  /// (and internal state) using the sell tax percentage.
+  void _onExRrpChanged() {
+    if (!_exRrpFocus.hasFocus) return;
+    final text = _exRrpController.text;
+    if (text.isEmpty) return;
+    final double exVal = double.tryParse(text) ?? 0.0;
+    final double incVal = sellTaxPercentage > 0
+        ? TaxCalculationUtils.calculateInclusivePrice(exVal, sellTaxPercentage)
+        : exVal;
+    exSell = exVal;
+    sell = incVal;
+    _incRrpController.text = incVal.toStringAsFixed(4);
+  }
+
+  /// Keeps the Inc/Ex RRP edit controllers in sync with the current [sell] /
+  /// [exSell] state. Skipped while the user is actively editing the fields.
+  void _syncRrpControllers() {
+    if (_incRrpFocus.hasFocus || _exRrpFocus.hasFocus) return;
+    _incRrpController.text = sell.toStringAsFixed(4);
+    _exRrpController.text = exSell.toStringAsFixed(4);
+  }
+
   Future<void> _calculateTaxAsync() async {
     try {
       // Check if server provides pre-calculated values for all prices
@@ -178,6 +258,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
             costTaxType = costResult.taxType;
             _taxLoaded = true;
           });
+          _syncRrpControllers();
         }
         return;
       }
@@ -220,6 +301,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
 
           _taxLoaded = true;
         });
+        _syncRrpControllers();
       }
     } catch (e) {
       logger.e('Error calculating tax: $e');
@@ -567,8 +649,14 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   @override
   void dispose() {
     _descriptionController.dispose();
+    _descriptionEditController.dispose();
     _custom1Controller.dispose();
     _custom2Controller.dispose();
+    _longDescController.dispose();
+    _incRrpController.dispose();
+    _exRrpController.dispose();
+    _incRrpFocus.dispose();
+    _exRrpFocus.dispose();
     super.dispose();
   }
 
@@ -590,26 +678,14 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   : (screenHeight * 0.42).clamp(360.0, 620.0))
             : (screenHeight * 0.42).clamp(250.0, 400.0);
 
-    final double contentTargetHeight = (isTablet || useDesktopNav)
-        ? (screenHeight - imageHeight - (isLandscape || useDesktopNav ? 100 : 150)).clamp(
-            380.0,
-            980.0,
-          )
-        : 0.0;
-    final double upperMinHeight = (isTablet || useDesktopNav)
-        ? (contentTargetHeight * (isLandscape || useDesktopNav ? 0.56 : 0.60)).clamp(
-            useDesktopNav ? 200.0 : 260.0,
-            620.0,
-          )
-        : 0.0;
     final double cardHorizontalPadding = useDesktopNav
         ? (screenWidth * 0.03).clamp(20.0, 40.0)
         : isTablet
             ? (screenWidth * (isLandscape ? 0.045 : 0.04)).clamp(24.0, 56.0)
             : 20.0;
-    final double sectionGap = useDesktopNav ? 12.0 : (isTablet ? (isLandscape ? 16.0 : 20.0) : 20.0);
-    final double bottomSafeArea = MediaQuery.of(context).padding.bottom;
-    final double bottomGap = (useDesktopNav ? 30.0 : (isTablet ? 40.0 : 100.0)) + bottomSafeArea;
+    final double sectionGap = useDesktopNav ? 18.0 : (isTablet ? (isLandscape ? 24.0 : 30.0) : 30.0);
+    //final double bottomSafeArea = MediaQuery.of(context).padding.bottom;
+    //final double bottomGap = (useDesktopNav ? 30.0 : (isTablet ? 40.0 : 100.0)) + bottomSafeArea;
 
     final bool hideCostPrice = AppGlobals.instance.restrictedPermissions
         .contains("Miscellaneous_HideCostPriceAndProfit");
@@ -696,7 +772,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
         child: Scaffold(
           extendBodyBehindAppBar: true,
           extendBody: true,
-          backgroundColor: const Color.fromRGBO(7, 27, 54, 1),
+          backgroundColor: isDark ? Colors.black : Colors.white,
           body: SafeArea(
             bottom: false,
             top: false,
@@ -713,6 +789,21 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                     custom1Label: custom1Label,
                     custom2Label: custom2Label,
                   )
+                : (isTablet && isLandscape)
+                ? _buildTabletLandscapeLayout(
+                    colors: colors,
+                    isDark: isDark,
+                    imageBackground: imageBackground,
+                    screenWidth: screenWidth,
+                    screenHeight: screenHeight,
+                    imageHeight: imageHeight,
+                    sectionGap: sectionGap,
+                    hideCostPrice: hideCostPrice,
+                    lockSellPrice: lockSellPrice,
+                    isPackage: isPackage,
+                    custom1Label: custom1Label,
+                    custom2Label: custom2Label,
+                  )
                 : Column(
               children: [
                 Expanded(
@@ -720,7 +811,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                     width: double.infinity,
                     height: double.infinity,
                     decoration: BoxDecoration(
-                      gradient: colors.heroGradient,
+                      color: isDark ? Colors.black : Colors.white,
                     ),
                     child: Stack(
                       children: [
@@ -834,56 +925,612 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         padding: EdgeInsets.symmetric(
                           horizontal: cardHorizontalPadding,
                         ),
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: upperMinHeight),
-                          child: DetailedUpperGlass(
-                            descController: _descriptionController,
-                            custom1Controller: _custom1Controller,
-                            custom2Controller: _custom2Controller,
-                            custom1Label: custom1Label,
-                            custom2Label: custom2Label,
-                            dept: widget.stock.deptName ?? "-",
-                            barcode: widget.stock.barcode,
-                            qty:
-                                "Qty On-Hand: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
-
-                            cats:
-                                "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
-                            cost: cost,
-                            sell: sell,
-                            layByQty: (widget.stock.laybyQuantity % 1 == 0)
-                                ? widget.stock.laybyQuantity.toInt().toString()
-                                : double.parse(
-                                    widget.stock.laybyQuantity.toStringAsFixed(
-                                      2,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: screenWidth * 0.55,
+                              ),
+                              child: _isEditing
+                                  ? _buildUnderlineField(
+                                      controller: _descriptionEditController,
+                                      textColor: isDark ? Colors.white : kThirdColor,
+                                      fontSize: useDesktopNav ? 22 : 24,
+                                      fontWeight: FontWeight.w300,
+                                      textAlign: TextAlign.right,
+                                      maxLines: null,
+                                    )
+                                  : Text(
+                                      _displayDescription,
+                                      textAlign: TextAlign.start,
+                                      softWrap: true,
+                                      style: TextStyle(
+                                        fontSize: useDesktopNav ? 22 : 24,
+                                        fontWeight: FontWeight.w300,
+                                        color: isDark ? Colors.white : kThirdColor,
+                                      ),
                                     ),
-                                  ).toString(),
-                            soQty: (widget.stock.salesOrderQuantity % 1 == 0)
-                                ? widget.stock.salesOrderQuantity
-                                      .toInt()
-                                      .toString()
-                                : double.parse(
-                                    widget.stock.salesOrderQuantity
-                                        .toStringAsFixed(2),
-                                  ).toString(),
-                            exCost: exCost,
-                            costTaxLabel: _formatTaxLabel(
-                              widget.stock.goodsTax,
-                              costTaxPercentage,
                             ),
-                            sellTaxLabel: _formatTaxLabel(
-                              widget.stock.salesTax,
-                              sellTaxPercentage,
+                             const SizedBox(width: 12),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6.0),
+                              child: Text(
+                                _formatPrice(sell),
+                                style: TextStyle(
+                                  fontSize: useDesktopNav ? 18 : 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : kThirdColor,
+                                ),
+                              ),
                             ),
-                            lastSaleDate: _formatLastSaleDate(
-                              widget.stock.lastSaleDate,
+                           
+                            
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: sectionGap * 0.4),
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.stock.barcode,
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: useDesktopNav ? 14 : 16,
+                                fontWeight: FontWeight.w700,
+                                color:kPrimaryColor,
+                              ),
                             ),
-                            showCostPrices: !hideCostPrice,
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: sectionGap * 0.4),
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            _buildCountBox(
+                              "Qty: ${_formatQty(widget.stock.quantity)}",
+                             // const Color(0xFF34C759),
+                              const Color(0xFF757575),
+                              useDesktopNav,
+                            ),
+                            const SizedBox(width: 8),
+                            _buildCountBox(
+                              "LB: ${_formatQty(widget.stock.laybyQuantity)}",
+                             // const Color(0xFF9C27B0),
+                              const Color(0xFF757575),
+                              useDesktopNav,
+                            ),
+                            const SizedBox(width: 8),
+                            _buildCountBox(
+                              "SO: ${_formatQty(widget.stock.salesOrderQuantity)}",
+                             // kPrimaryColor,
+                              const Color(0xFF757575),
+                              useDesktopNav,
+                            ),
+                            const SizedBox(width: 8),
+                            _buildCountBox(
+                              "PO: ${_formatQty(widget.stock.purchaseOrderQuantity)}",
+                              //const Color(0xFFF2911B),
+                               const Color(0xFF757575),
+                              useDesktopNav,
+                            ),
+                            const SizedBox(width: 8),
+                            _buildCountBox(
+                              "CSO: ${_formatQty(widget.stock.csoQuantity)}",
+                              //const Color(0xFFA0522D),
+                               const Color(0xFF757575),
+                              useDesktopNav,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: sectionGap * 1.6),
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Image.asset(
+                              isDark
+                                  ? 'assets/images/options-black.png'
+                                  : 'assets/images/options-light.png',
+                              width: useDesktopNav ? 60 : 60,
+                              height: useDesktopNav ? 60 : 60,
+                              fit: BoxFit.contain,
+                              alignment: Alignment.topCenter,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    "LAST SALE",
+                                    style: TextStyle(
+                                      fontSize: useDesktopNav ? 11 : 12,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.8,
+                                      color: isDark
+                                          ? Colors.white.withOpacity(0.5)
+                                          : Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _formatLastSaleDate(
+                                      widget.stock.lastSaleDate,
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: useDesktopNav ? 12 : 14,
+                                      color: isDark ? Colors.white : kThirdColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: OutlinedButton(
+                                      onPressed: () {
+                                        context.navigateToNext(
+                                          StockActivityScreen(
+                                            stockId:
+                                                widget.stock.stockID.toInt(),
+                                            stockDescription:
+                                                widget.stock.description,
+                                          ),
+                                        );
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: kPrimaryColor,
+                                        side: const BorderSide(
+                                          color: kPrimaryColor,
+                                          width: 1.5,
+                                        ),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: useDesktopNav ? 10 : 12,
+                                          vertical: useDesktopNav ? 4 : 5,
+                                        ),
+                                        shape: const StadiumBorder(),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            "STOCK ACTIVITY",
+                                            style: TextStyle(
+                                              fontSize: useDesktopNav ? 10 : 11,
+                                                   fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.8,
+                                              
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.arrow_forward_ios_rounded,
+                                            size: useDesktopNav ? 12 : 13,
+                                            color: kPrimaryColor,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      if (_isEditing || _displayLongDesc.trim().isNotEmpty) ...[
+                        SizedBox(height: sectionGap),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: cardHorizontalPadding,
                           ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "EXT DESCRIPTION",
+                                style: TextStyle(
+                                  fontSize: useDesktopNav ? 11 : 12,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8,
+                                  color: isDark
+                                      ? Colors.white.withOpacity(0.5)
+                                      : Colors.grey.shade500,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              _isEditing
+                                  ? _buildUnderlineField(
+                                      controller: _longDescController,
+                                      textColor: isDark ? Colors.white : kThirdColor,
+                                      fontSize: useDesktopNav ? 13 : 14,
+                                      maxLines: null,
+                                    )
+                                  : Text(
+                                      _displayLongDesc.trim(),
+                                      style: TextStyle(
+                                        fontSize: useDesktopNav ? 13 : 14,
+                                        color: isDark ? Colors.white : kThirdColor,
+                                      ),
+                                    ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      SizedBox(height: sectionGap),
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
+                        child: _buildDottedSeparator(
+                          isDark ? Colors.white30 : Colors.black26,
                         ),
                       ),
 
                       SizedBox(height: sectionGap),
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              isDark
+                                  ? 'assets/images/dept-dark.png'
+                                  : 'assets/images/dept-light.png',
+                              width: useDesktopNav ? 60 : 60,
+                              height: useDesktopNav ? 60 : 60,
+                              fit: BoxFit.contain,
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              "Depts  &  Cats",
+                              style: TextStyle(
+                                fontSize: useDesktopNav ? 20 : 22,
+                                  fontWeight: FontWeight.w300,
+                                  color: isDark ? Colors.white : kThirdColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: sectionGap * 0.6),
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
+                        child: Wrap(
+                          spacing: 5,
+                          runSpacing: 5,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            _buildOutlinedPill(
+                              widget.stock.deptName ?? "-",
+                              isDark ? Colors.white : kThirdColor,
+                              useDesktopNav,
+                            ),
+                            Text(
+                              "•",
+                              style: TextStyle(
+                                fontSize: useDesktopNav ? 16 : 18,
+                                color: isDark ? Colors.white70 : kGreyColor,
+                              ),
+                            ),
+                            _buildFilledPill(
+                              widget.stock.category1 ?? "-",
+                              const Color(0xFF94D82D),
+                              useDesktopNav,
+                            ),
+                            _buildFilledPill(
+                              widget.stock.category2 ?? "-",
+                              const Color(0xFFFFCC00),
+                             
+                              useDesktopNav,
+                            ),
+                            _buildFilledPill(
+                              widget.stock.category3 ?? "-",
+                              const Color(0xFF34D0FF),
+                              useDesktopNav,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      if (_isEditing ||
+                          _displayCustom1.trim().isNotEmpty ||
+                          _displayCustom2.trim().isNotEmpty) ...[
+                      SizedBox(height: sectionGap * 1.8),
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              isDark
+                                  ? 'assets/images/custom-dark.png'
+                                  : 'assets/images/custom-light.png',
+                              width: useDesktopNav ? 60 : 60,
+                              height: useDesktopNav ? 60 : 60,
+                              fit: BoxFit.contain,
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              "${custom1Label.trim().isNotEmpty ? custom1Label.trim() : "Custom 1"}  &  ${custom2Label.trim().isNotEmpty ? custom2Label.trim() : "Custom 2"}",
+                              style: TextStyle(
+                                fontSize: useDesktopNav ? 20 : 22,
+                                fontWeight: FontWeight.w300,
+                                color: isDark ? Colors.white : kThirdColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: sectionGap * 0.6),
+
+                      Padding(
+                        padding: EdgeInsets.only(
+                          left: cardHorizontalPadding + 76,
+                          right: cardHorizontalPadding,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Flexible(
+                              child: _isEditing
+                                  ? _buildUnderlineField(
+                                      controller: _custom1Controller,
+                                      textColor: isDark ? Colors.white : kThirdColor,
+                                      fontSize: useDesktopNav ? 14 : 15,
+                                    )
+                                  : Text(
+                                      _displayCustom1.trim().isNotEmpty
+                                          ? _displayCustom1.trim()
+                                          : "N / A ",
+                                      textAlign: TextAlign.start,
+                                      style: TextStyle(
+                                        fontSize: useDesktopNav ? 14 : 15,
+                                        color: isDark ? Colors.white : kThirdColor,
+                                      ),
+                                    ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                "•",
+                                style: TextStyle(
+                                  fontSize: useDesktopNav ? 16 : 18,
+                                  color: isDark ? Colors.white70 : kGreyColor,
+                                ),
+                              ),
+                            ),
+                            Flexible(
+                              child: _isEditing
+                                  ? _buildUnderlineField(
+                                      controller: _custom2Controller,
+                                      textColor: isDark ? Colors.white : kThirdColor,
+                                      fontSize: useDesktopNav ? 14 : 14.5,
+                                    )
+                                  : Text(
+                                      _displayCustom2.trim().isNotEmpty
+                                          ? _displayCustom2.trim()
+                                          : "N / A",
+                                      textAlign: TextAlign.start,
+                                      style: TextStyle(
+                                        fontSize: useDesktopNav ? 14 : 14.5,
+                                        color: isDark ? Colors.white : kThirdColor,
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ],
+
+                     
+                      SizedBox(height: sectionGap),
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
+                        child: _buildDottedSeparator(
+                          isDark ? Colors.white30 : Colors.black26,
+                        ),
+                      ),
+
+                      SizedBox(height: sectionGap * 1.6),
+
+                      // Tax & Prices title - centered
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                        
+                            Text(
+                              "Tax & Prices",
+                              style: TextStyle(
+                                fontSize: useDesktopNav ? 20 : 22,
+                                fontWeight: FontWeight.w300,
+                                color: isDark ? Colors.white : kThirdColor,
+                              ),
+                            ),
+                                const SizedBox(width: 10),
+                            Image.asset(
+                              isDark
+                                  ? 'assets/images/tax-dark.png'
+                                  : 'assets/images/tax-light.png',
+                              width: useDesktopNav ? 32 : 36,
+                              height: useDesktopNav ? 32 : 36,
+                              fit: BoxFit.contain,
+                            ),
+                            
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: sectionGap * 0.8),
+
+                      // Embedded grey table container
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: cardHorizontalPadding,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            //borderRadius: BorderRadius.circular(12),
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: isDark
+                                  ? [
+                                      Colors.white.withOpacity(0.04),
+                                      Colors.white.withOpacity(0.08),
+                                    ]
+                                  : [
+                                      const Color(0xFFF5F5F5),
+                                      const Color(0xFFFBFBFB),
+                                    ],
+                            ),
+                            border: Border.all(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.08)
+                                  : Colors.black.withOpacity(0.08),
+                              width: 1,
+                            ),
+                          ),
+                          child: Builder(
+                            builder: (context) {
+                              final Color dividerColor = isDark
+                                  ? Colors.white24
+                                  : Colors.black26;
+                              final Color textColor = isDark
+                                  ? Colors.white
+                                  : kThirdColor;
+                              final Color labelColor = isDark
+                                  ? Colors.white.withOpacity(0.5)
+                                  : Colors.grey.shade500;
+                              final double rowFontSize =
+                                  useDesktopNav ? 12 : 13;
+                              final double labelFontSize =
+                                  useDesktopNav ? 11 : 12;
+                              final String exCostStr = hideCostPrice
+                                  ? "-"
+                                  : _formatPrice(exCost);
+                              final String incCostStr = hideCostPrice
+                                  ? "-"
+                                  : _formatPrice(cost);
+                              return Column(
+                                children: [
+                                  _buildTaxPriceRow(
+                                    label: "",
+                                    costValue: "C O S T",
+                                    salesValue: "S A L E S",
+                                    dividerColor: dividerColor,
+                                    textColor: textColor,
+                                    labelColor: labelColor,
+                                    fontSize: rowFontSize,
+                                    labelFontSize: labelFontSize,
+                                    isHeader: true,
+                                  ),
+                                  _buildTaxPriceRow(
+                                    label: "T A X   C O D E",
+                                    costValue: _formatTaxLabel(
+                                      widget.stock.goodsTax,
+                                      costTaxPercentage,
+                                    ),
+                                    salesValue: _formatTaxLabel(
+                                      widget.stock.salesTax,
+                                      sellTaxPercentage,
+                                    ),
+                                    dividerColor: dividerColor,
+                                    textColor: textColor,
+                                    labelColor: labelColor,
+                                    fontSize: rowFontSize,
+                                    labelFontSize: labelFontSize,
+                                  ),
+                                  _buildTaxPriceRow(
+                                    label: "E X   T A X",
+                                    costValue: exCostStr,
+                                    salesValue:
+                                        _formatPrice(exSell),
+                                    dividerColor: dividerColor,
+                                    textColor: textColor,
+                                    labelColor: labelColor,
+                                    fontSize: rowFontSize,
+                                    labelFontSize: labelFontSize,
+                                    editableSales: _isEditing && !lockSellPrice && !isPackage,
+                                    salesEditController: _exRrpController,
+                                    salesEditFocus: _exRrpFocus,
+                                  ),
+                                  _buildTaxPriceRow(
+                                    label: "I N C   T A X",
+                                    costValue: incCostStr,
+                                    salesValue:
+                                        _formatPrice(sell),
+                                    dividerColor: dividerColor,
+                                    textColor: textColor,
+                                    labelColor: labelColor,
+                                    fontSize: rowFontSize,
+                                    labelFontSize: labelFontSize,
+                                    editableSales: _isEditing && !lockSellPrice && !isPackage,
+                                    salesEditController: _incRrpController,
+                                    salesEditFocus: _incRrpFocus,
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: sectionGap * 1.6),
 
                       Padding(
                         padding: EdgeInsets.symmetric(
@@ -925,7 +1572,11 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         ),
                       ),
 
-                      SizedBox(height: bottomGap),
+                      SizedBox(height: sectionGap),
+                      if (isTablet)
+                        SizedBox(
+                          height: 20 + MediaQuery.of(context).padding.bottom,
+                        ),
                         ],
                       ),
                       topIconsRow(),
@@ -952,6 +1603,680 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     );
   }
 
+  /// Tablet landscape layout: full-width image on top, then a two-column
+  /// split (faint vertical dotted divider). Left half = all details, right
+  /// half = Tax & Prices + stacked action buttons at the bottom.
+  Widget _buildTabletLandscapeLayout({
+    required AppThemeColors colors,
+    required bool isDark,
+    required Color imageBackground,
+    required double screenWidth,
+    required double screenHeight,
+    required double imageHeight,
+    required double sectionGap,
+    required bool hideCostPrice,
+    required bool lockSellPrice,
+    required bool isPackage,
+    required String custom1Label,
+    required String custom2Label,
+  }) {
+    const double colPad = 18.0;
+    final Color faintDivider = isDark ? Colors.white24 : Colors.black26;
+
+    // ----- LEFT HALF: details -----
+    final Widget leftHalf = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: colPad),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Description (RRP removed)
+          _isEditing
+              ? _buildUnderlineField(
+                  controller: _descriptionEditController,
+                  textColor: isDark ? Colors.white : kThirdColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w300,
+                  maxLines: null,
+                )
+              : Text(
+                  _displayDescription,
+                  softWrap: true,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w300,
+                    color: isDark ? Colors.white : kThirdColor,
+                  ),
+                ),
+
+          SizedBox(height: sectionGap * 0.4),
+
+          // Barcode
+          Text(
+            widget.stock.barcode,
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: kPrimaryColor,
+            ),
+          ),
+
+          SizedBox(height: sectionGap * 0.4),
+
+          // Count boxes
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              _buildCountBox(
+                "Qty: ${_formatQty(widget.stock.quantity)}",
+                const Color(0xFF757575),
+                false,
+              ),
+              _buildCountBox(
+                "LB: ${_formatQty(widget.stock.laybyQuantity)}",
+                const Color(0xFF757575),
+                false,
+              ),
+              _buildCountBox(
+                "SO: ${_formatQty(widget.stock.salesOrderQuantity)}",
+                const Color(0xFF757575),
+                false,
+              ),
+              _buildCountBox(
+                "PO: ${_formatQty(widget.stock.purchaseOrderQuantity)}",
+                const Color(0xFF757575),
+                false,
+              ),
+              _buildCountBox(
+                "CSO: ${_formatQty(widget.stock.csoQuantity)}",
+                const Color(0xFF757575),
+                false,
+              ),
+            ],
+          ),
+
+          SizedBox(height: sectionGap * 1.6),
+
+          // Last sale + Stock Activity
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Image.asset(
+                isDark
+                    ? 'assets/images/options-black.png'
+                    : 'assets/images/options-light.png',
+                width: 60,
+                height: 60,
+                fit: BoxFit.contain,
+                alignment: Alignment.topCenter,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 5),
+                    Text(
+                      "LAST SALE",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: isDark
+                            ? Colors.white.withOpacity(0.5)
+                            : Colors.grey.shade500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatLastSaleDate(widget.stock.lastSaleDate),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white : kThirdColor,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          context.navigateToNext(
+                            StockActivityScreen(
+                              stockId: widget.stock.stockID.toInt(),
+                              stockDescription: widget.stock.description,
+                            ),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: kPrimaryColor,
+                          side: const BorderSide(
+                            color: kPrimaryColor,
+                            width: 1.5,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 5,
+                          ),
+                          shape: const StadiumBorder(),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "STOCK ACTIVITY",
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 13,
+                              color: kPrimaryColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          if (_isEditing || _displayLongDesc.trim().isNotEmpty) ...[
+            SizedBox(height: sectionGap),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "EXT DESCRIPTION",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.5)
+                        : Colors.grey.shade500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                _isEditing
+                    ? _buildUnderlineField(
+                        controller: _longDescController,
+                        textColor: isDark ? Colors.white : kThirdColor,
+                        fontSize: 14,
+                        maxLines: null,
+                      )
+                    : Text(
+                        _displayLongDesc.trim(),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white : kThirdColor,
+                        ),
+                      ),
+              ],
+            ),
+          ],
+
+          SizedBox(height: sectionGap),
+          SizedBox(
+            height: 1.5,
+            width: double.infinity,
+            child: CustomPaint(
+              painter: _HorizontalDottedLinePainter(
+                color: isDark ? Colors.white30 : Colors.black26,
+              ),
+            ),
+          ),
+          SizedBox(height: sectionGap),
+
+          // Depts & Cats
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Image.asset(
+                isDark
+                    ? 'assets/images/dept-dark.png'
+                    : 'assets/images/dept-light.png',
+                width: 60,
+                height: 60,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(width: 16),
+              Text(
+                "Depts  &  Cats",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w300,
+                  color: isDark ? Colors.white : kThirdColor,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: sectionGap * 0.6),
+          Wrap(
+            spacing: 5,
+            runSpacing: 5,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _buildOutlinedPill(
+                widget.stock.deptName ?? "-",
+                isDark ? Colors.white : kThirdColor,
+                false,
+              ),
+              Text(
+                "•",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: isDark ? Colors.white70 : kGreyColor,
+                ),
+              ),
+              _buildFilledPill(
+                widget.stock.category1 ?? "-",
+                const Color(0xFF94D82D),
+                false,
+              ),
+              _buildFilledPill(
+                widget.stock.category2 ?? "-",
+                const Color(0xFFFFCC00),
+                false,
+              ),
+              _buildFilledPill(
+                widget.stock.category3 ?? "-",
+                const Color(0xFF34D0FF),
+                false,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    // ----- Custom session (shown in the right half, below Tax & Prices) -----
+    final Widget customSection =
+        (_isEditing ||
+                _displayCustom1.trim().isNotEmpty ||
+                _displayCustom2.trim().isNotEmpty)
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        isDark
+                            ? 'assets/images/custom-dark.png'
+                            : 'assets/images/custom-light.png',
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.contain,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          "${custom1Label.trim().isNotEmpty ? custom1Label.trim() : "Custom 1"}  &  ${custom2Label.trim().isNotEmpty ? custom2Label.trim() : "Custom 2"}",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w300,
+                            color: isDark ? Colors.white : kThirdColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: sectionGap * 0.6),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 76),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Flexible(
+                          child: _isEditing
+                              ? _buildUnderlineField(
+                                  controller: _custom1Controller,
+                                  textColor: isDark ? Colors.white : kThirdColor,
+                                  fontSize: 15,
+                                )
+                              : Text(
+                                  _displayCustom1.trim().isNotEmpty
+                                      ? _displayCustom1.trim()
+                                      : "N / A ",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: isDark ? Colors.white : kThirdColor,
+                                  ),
+                                ),
+                        ),
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            "•",
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: isDark ? Colors.white70 : kGreyColor,
+                            ),
+                          ),
+                        ),
+                        Flexible(
+                          child: _isEditing
+                              ? _buildUnderlineField(
+                                  controller: _custom2Controller,
+                                  textColor: isDark ? Colors.white : kThirdColor,
+                                  fontSize: 14.5,
+                                )
+                              : Text(
+                                  _displayCustom2.trim().isNotEmpty
+                                      ? _displayCustom2.trim()
+                                      : "N / A",
+                                  style: TextStyle(
+                                    fontSize: 14.5,
+                                    color: isDark ? Colors.white : kThirdColor,
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            : const SizedBox.shrink();
+
+    // ----- RIGHT HALF: Tax & Prices + stacked buttons -----
+    final Color dividerColor = isDark ? Colors.white24 : Colors.black26;
+    final Color textColor = isDark ? Colors.white : kThirdColor;
+    final Color labelColor =
+        isDark ? Colors.white.withOpacity(0.5) : Colors.grey.shade500;
+    const double rowFontSize = 13;
+    const double labelFontSize = 12;
+    final String exCostStr = hideCostPrice ? "-" : _formatPrice(exCost);
+    final String incCostStr = hideCostPrice ? "-" : _formatPrice(cost);
+
+    final bool showViewComponents =
+        isPackage && (widget.stock.packageComponents?.isNotEmpty ?? false);
+    final bool showCalculator = !isPackage && !lockSellPrice;
+
+    Widget actionButton({
+      required String label,
+      required bool filled,
+      required VoidCallback onTap,
+    }) {
+      return SizedBox(
+        width: double.infinity,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(100),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: filled ? kPrimaryColor : Colors.transparent,
+              borderRadius: BorderRadius.circular(100),
+              border: Border.all(color: kPrimaryColor, width: 1.5),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: filled ? Colors.white : kPrimaryColor,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final Widget rightHalf = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: colPad),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Tax & Prices title - centered
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "Tax & Prices",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w300,
+                  color: isDark ? Colors.white : kThirdColor,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Image.asset(
+                isDark
+                    ? 'assets/images/tax-dark.png'
+                    : 'assets/images/tax-light.png',
+                width: 36,
+                height: 36,
+                fit: BoxFit.contain,
+              ),
+            ],
+          ),
+
+          SizedBox(height: sectionGap * 0.8),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDark
+                    ? [
+                        Colors.white.withOpacity(0.04),
+                        Colors.white.withOpacity(0.08),
+                      ]
+                    : [
+                        const Color(0xFFF5F5F5),
+                        const Color(0xFFFBFBFB),
+                      ],
+              ),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withOpacity(0.08)
+                    : Colors.black.withOpacity(0.08),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildTaxPriceRow(
+                  label: "",
+                  costValue: "C O S T",
+                  salesValue: "S A L E S",
+                  dividerColor: dividerColor,
+                  textColor: textColor,
+                  labelColor: labelColor,
+                  fontSize: rowFontSize,
+                  labelFontSize: labelFontSize,
+                  isHeader: true,
+                ),
+                _buildTaxPriceRow(
+                  label: "T A X   C O D E",
+                  costValue: _formatTaxLabel(
+                    widget.stock.goodsTax,
+                    costTaxPercentage,
+                  ),
+                  salesValue: _formatTaxLabel(
+                    widget.stock.salesTax,
+                    sellTaxPercentage,
+                  ),
+                  dividerColor: dividerColor,
+                  textColor: textColor,
+                  labelColor: labelColor,
+                  fontSize: rowFontSize,
+                  labelFontSize: labelFontSize,
+                ),
+                _buildTaxPriceRow(
+                  label: "E X   T A X",
+                  costValue: exCostStr,
+                  salesValue: _formatPrice(exSell),
+                  dividerColor: dividerColor,
+                  textColor: textColor,
+                  labelColor: labelColor,
+                  fontSize: rowFontSize,
+                  labelFontSize: labelFontSize,
+                  editableSales: _isEditing && !lockSellPrice && !isPackage,
+                  salesEditController: _exRrpController,
+                  salesEditFocus: _exRrpFocus,
+                ),
+                _buildTaxPriceRow(
+                  label: "I N C   T A X",
+                  costValue: incCostStr,
+                  salesValue: _formatPrice(sell),
+                  dividerColor: dividerColor,
+                  textColor: textColor,
+                  labelColor: labelColor,
+                  fontSize: rowFontSize,
+                  labelFontSize: labelFontSize,
+                  editableSales: _isEditing && !lockSellPrice && !isPackage,
+                  salesEditController: _incRrpController,
+                  salesEditFocus: _incRrpFocus,
+                ),
+              ],
+            ),
+          ),
+
+          // Custom session below Tax & Prices, then the buttons with a gap
+          SizedBox(height: sectionGap * 1.6),
+          customSection,
+          SizedBox(height: sectionGap * 1.6),
+
+          if (showViewComponents)
+            actionButton(
+              label: 'COMPONENTS',
+              filled: false,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PackageComponentsScreen(
+                      packageDescription: widget.stock.description,
+                      components: widget.stock.packageComponents ?? [],
+                    ),
+                  ),
+                );
+              },
+            )
+          else if (showCalculator)
+            actionButton(
+              label: 'CALCULATOR',
+              filled: false,
+              onTap: _openCalculatorDialog,
+            ),
+          const SizedBox(height: 10),
+          actionButton(
+            label: 'PRICING',
+            filled: true,
+            onTap: _openPricingDialog,
+          ),
+        ],
+      ),
+    );
+
+    return Stack(
+      children: [
+        ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            // Full-width image
+            Hero(
+              tag: 'stock_image_${widget.stock.stockID}',
+              child: Container(
+                width: double.infinity,
+                height: imageHeight,
+                decoration: BoxDecoration(
+                  color: imageBackground,
+                  borderRadius: const BorderRadius.only(
+                    bottomRight: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    bottomRight: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Builder(
+                        builder: (context) {
+                          final String imageUrl =
+                              (widget.stock.imageUrl ?? "").trim();
+                          final String? localImagePath =
+                              _localSelectedImagePath;
+                          if (localImagePath != null &&
+                              localImagePath.isNotEmpty) {
+                            return Image.file(
+                              File(localImagePath),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) =>
+                                  Container(color: imageBackground),
+                            );
+                          } else if (imageUrl.isNotEmpty) {
+                            return CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, _, _) =>
+                                  Container(color: imageBackground),
+                            );
+                          }
+                          return Container(color: imageBackground);
+                        },
+                      ),
+                      BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 9.0, sigmaY: 9.0),
+                        child: Container(
+                          color: Colors.black.withOpacity(0.04),
+                        ),
+                      ),
+                      Center(child: _buildStockImage(imageBackground)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            SizedBox(height: sectionGap * 2.4),
+
+            // Two-column split (60% / 40%)
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(flex: 6, child: leftHalf),
+                  const SizedBox(width: 24),
+                  SizedBox(
+                    width: 1.5,
+                    child: CustomPaint(
+                      painter: _VerticalDottedLinePainter(color: faintDivider),
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(flex: 4, child: rightHalf),
+                ],
+              ),
+            ),
+
+            SizedBox(height: sectionGap * 2.5 + MediaQuery.of(context).padding.bottom),
+          ],
+        ),
+        topIconsRow(),
+      ],
+    );
+  }
+
   /// Desktop layout: Image on left, Details on right (centered)
   Widget _buildDesktopLayout({
     required AppThemeColors colors,
@@ -972,8 +2297,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: const BoxDecoration(
-        color: Color.fromRGBO(7, 27, 54, 1),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black : Colors.white,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1072,34 +2397,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                           bottom: 30,
                         ),
                         children: [
-                          // Upper Glass - Stock info
-                          DetailedUpperGlass(
-                            descController: _descriptionController,
-                            custom1Controller: _custom1Controller,
-                            custom2Controller: _custom2Controller,
-                            custom1Label: custom1Label,
-                            custom2Label: custom2Label,
-                            dept: widget.stock.deptName ?? "-",
-                            barcode: widget.stock.barcode,
-                            qty: "Qty On-Hand: ${(widget.stock.quantity % 1 == 0) ? widget.stock.quantity.toInt().toString() : double.parse(widget.stock.quantity.toStringAsFixed(2)).toString()}",
-                            cats: "${widget.stock.category1 ?? "-"} / ${widget.stock.category2 ?? "-"} / ${widget.stock.category3 ?? "-"}",
-                            cost: cost,
-                            sell: sell,
-                            layByQty: (widget.stock.laybyQuantity % 1 == 0)
-                                ? widget.stock.laybyQuantity.toInt().toString()
-                                : double.parse(widget.stock.laybyQuantity.toStringAsFixed(2)).toString(),
-                            soQty: (widget.stock.salesOrderQuantity % 1 == 0)
-                                ? widget.stock.salesOrderQuantity.toInt().toString()
-                                : double.parse(widget.stock.salesOrderQuantity.toStringAsFixed(2)).toString(),
-                            exCost: exCost,
-                            costTaxLabel: _formatTaxLabel(widget.stock.goodsTax, costTaxPercentage),
-                            sellTaxLabel: _formatTaxLabel(widget.stock.salesTax, sellTaxPercentage),
-                            lastSaleDate: _formatLastSaleDate(widget.stock.lastSaleDate),
-                            showCostPrices: !hideCostPrice,
-                          ),
-                          
-                          const SizedBox(height: 12),
-                          
                           // Lower Glass - Pricing controls (no buttons on desktop)
                           DetailedLowerGlass(
                             descController: _descriptionController,
@@ -1269,6 +2566,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
           exSell = result;
         }
       });
+      _syncRrpControllers();
     }
   }
 
@@ -1296,13 +2594,42 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     );
   }
 
+  /// Resolves the sell value to send to the server based on the sell tax type.
+  /// When [sellTaxType] != 0 the server stores the tax-inclusive price; when it
+  /// is 0 the server stores the tax-exclusive price. Mirrors the logic used by
+  /// the lower-glass pricing editor so updates round-trip correctly after sync.
+  double _resolveEditedSellValue() {
+    final bool expectsInclusive = sellTaxType != 0;
+
+    final double? incValue = double.tryParse(_incRrpController.text.trim());
+    final double? exValue = double.tryParse(_exRrpController.text.trim());
+
+    if (expectsInclusive) {
+      if (incValue != null) return incValue;
+      if (exValue == null) return sell;
+      if (sellTaxPercentage <= 0) return exValue;
+      return TaxCalculationUtils.calculateInclusivePrice(
+        exValue,
+        sellTaxPercentage,
+      );
+    }
+
+    if (exValue != null) return exValue;
+    if (incValue == null) return exSell;
+    if (sellTaxPercentage <= 0) return incValue;
+    return TaxCalculationUtils.calculateExclusivePrice(
+      incValue,
+      sellTaxPercentage,
+    );
+  }
+
   /// Submits pricing rules update
   void _submitPricingUpdate(PricingRules rules) {
     context.read<StockUpdateBloc>().add(
       SubmitStockUpdateEvent(
         stockId: widget.stock.stockID.toInt(),
-        description: _descriptionController.text,
-        sell: sell,
+        description: _descriptionEditController.text,
+        sell: _resolveEditedSellValue(),
         custom1: _custom1Controller.text.trim().isNotEmpty ? _custom1Controller.text.trim() : null,
         custom2: _custom2Controller.text.trim().isNotEmpty ? _custom2Controller.text.trim() : null,
         pricingRules: rules,
@@ -1315,10 +2642,272 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     context.read<StockUpdateBloc>().add(
       SubmitStockUpdateEvent(
         stockId: widget.stock.stockID.toInt(),
-        description: _descriptionController.text,
-        sell: sell,
+        description: _descriptionEditController.text,
+        sell: _resolveEditedSellValue(),
         custom1: _custom1Controller.text.trim().isNotEmpty ? _custom1Controller.text.trim() : null,
         custom2: _custom2Controller.text.trim().isNotEmpty ? _custom2Controller.text.trim() : null,
+        longDesc: _longDescController.text.trim().isNotEmpty ? _longDescController.text.trim() : null,
+      ),
+    );
+  }
+
+  /// Toggles edit mode. When leaving edit mode, resolves the edited Inc/Ex RRP
+  /// values into [sell] / [exSell] and submits the stock update.
+  void _toggleEditMode() {
+    if (_isEditing) {
+      // The Inc/Ex listeners keep [sell]/[exSell] in sync as the user types.
+      // Do a final parse as a safeguard before submitting.
+      final double? incVal = double.tryParse(_incRrpController.text.trim());
+      final double? exVal = double.tryParse(_exRrpController.text.trim());
+      if (incVal != null) {
+        sell = incVal;
+        exSell = sellTaxPercentage > 0
+            ? TaxCalculationUtils.calculateExclusivePrice(incVal, sellTaxPercentage)
+            : incVal;
+      } else if (exVal != null) {
+        exSell = exVal;
+        sell = sellTaxPercentage > 0
+            ? TaxCalculationUtils.calculateInclusivePrice(exVal, sellTaxPercentage)
+            : exVal;
+      }
+      _submitStockUpdate();
+      FocusScope.of(context).unfocus();
+      setState(() {
+        _isEditing = false;
+        _displayDescription = _descriptionEditController.text;
+        _displayCustom1 = _custom1Controller.text;
+        _displayCustom2 = _custom2Controller.text;
+        _displayLongDesc = _longDescController.text;
+      });
+      _syncRrpControllers();
+    } else {
+      setState(() {
+        _isEditing = true;
+      });
+    }
+  }
+
+  String _formatQty(num value) {
+    return (value % 1 == 0)
+        ? value.toInt().toString()
+        : double.parse(value.toStringAsFixed(2)).toString();
+  }
+
+  /// UI-only helper: formats a price for display rounded to 2 decimals.
+  /// Does not affect any stored values or calculations.
+  String _formatPrice(num value) {
+    return "\$${value.toStringAsFixed(2)}";
+  }
+
+  Widget _buildCountBox(String text, Color color, bool useDesktopNav) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: useDesktopNav ? 3 : 5,
+        vertical: useDesktopNav ? 0 : 0,
+      ),
+      decoration: BoxDecoration(
+        //borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color, width: 1.2),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: useDesktopNav ? 11 : 12,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDottedSeparator(Color color) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const double dashWidth = 4;
+        const double dashGap = 4;
+        final int dashCount =
+            (constraints.maxWidth / (dashWidth + dashGap)).floor();
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(
+            dashCount,
+            (_) => SizedBox(
+              width: dashWidth,
+              height: 1.5,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: color),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOutlinedPill(String text, Color color, bool useDesktopNav) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: useDesktopNav ? 10 : 12,
+        vertical: useDesktopNav ? 4 : 5,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color, width: 1),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+           fontSize: useDesktopNav ? 12 : 14,
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilledPill(String text, Color color, bool useDesktopNav) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: useDesktopNav ? 10 : 12,
+        vertical: useDesktopNav ? 4 : 5,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: color,
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+             fontSize: useDesktopNav ? 12 : 14,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  /// Builds a single row of the Tax & Prices table (label | cost | sales)
+  /// Plain underline text field (no box) used for inline editing of stock fields.
+  Widget _buildUnderlineField({
+    required TextEditingController controller,
+    FocusNode? focusNode,
+    required Color textColor,
+    required double fontSize,
+    FontWeight fontWeight = FontWeight.w500,
+    TextAlign textAlign = TextAlign.start,
+    TextInputType? keyboardType,
+    int? maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      textAlign: textAlign,
+      scribbleEnabled: false,
+      stylusHandwritingEnabled: false,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      cursorColor: kPrimaryColor,
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: textColor,
+      ),
+      decoration: InputDecoration(
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(vertical: 4),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: textColor.withOpacity(0.4), width: 1),
+        ),
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaxPriceRow({
+    required String label,
+    required String costValue,
+    required String salesValue,
+    required Color dividerColor,
+    required Color textColor,
+    required Color labelColor,
+    required double fontSize,
+    required double labelFontSize,
+    bool isHeader = false,
+    bool editableSales = false,
+    TextEditingController? salesEditController,
+    FocusNode? salesEditFocus,
+  }) {
+    final TextStyle labelStyle = TextStyle(
+      fontSize: labelFontSize,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.8,
+      color: labelColor,
+    );
+    final TextStyle valueStyle = isHeader
+        ? labelStyle
+        : TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w500,
+            color: textColor,
+          );
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  label,
+                  style: labelStyle,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Center(
+                child: Text(
+                  costValue,
+                  textAlign: TextAlign.center,
+                  style: valueStyle,
+                ),
+              ),
+            ),
+          ),
+          Container(width: 1, color: dividerColor),
+          Expanded(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Center(
+                child: editableSales && salesEditController != null
+                    ? _buildUnderlineField(
+                        controller: salesEditController,
+                        focusNode: salesEditFocus,
+                        textColor: textColor,
+                        fontSize: fontSize,
+                        textAlign: TextAlign.center,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      )
+                    : Text(
+                        salesValue,
+                        textAlign: TextAlign.center,
+                        style: valueStyle,
+                      ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1327,7 +2916,6 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   Widget _buildStockImage(Color imageBackground) {
     final String? localImagePath = _localSelectedImagePath;
     final String imageUrl = (widget.stock.imageUrl ?? "").trim();
-
     if (localImagePath != null && localImagePath.isNotEmpty) {
       return Image.file(
         File(localImagePath),
@@ -1381,10 +2969,26 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   context.navigateBack();
                 },
               ),
-              _buildCircularIcon(
-                // On desktop show gallery icon, on mobile show camera
-                icon: useDesktopNav ? Icons.photo_library_rounded : Icons.camera_alt_rounded,
-                onTap: _onCameraTap,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildCircularIcon(
+                    // On desktop show gallery icon, on mobile show camera
+                    icon: useDesktopNav ? Icons.photo_library_rounded : Icons.camera_alt_rounded,
+                    onTap: _onCameraTap,
+                  ),
+                  SizedBox(width: useDesktopNav ? 10 : 12),
+                  BlocBuilder<StockUpdateBloc, StockUpdateState>(
+                    builder: (context, state) {
+                      final bool isUpdating = state is StockUpdateLoading;
+                      return _buildCircularIcon(
+                        icon: _isEditing ? Icons.save_outlined : Icons.edit_outlined,
+                        onTap: isUpdating ? () {} : _toggleEditMode,
+                        loading: isUpdating,
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -1396,12 +3000,13 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
   Widget _buildCircularIcon({
     required IconData icon,
     required VoidCallback onTap,
+    bool loading = false,
   }) {
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool useDesktopNav = context.useDesktopNav;
-    final double iconBoxSize = useDesktopNav ? 30 : 35;
-    final double iconSize = useDesktopNav ? 14 : 16;
+    final double iconBoxSize = useDesktopNav ? 38 : 44;
+    final double iconSize = useDesktopNav ? 19 : 22;
     
     return InkWell(
       onTap: onTap,
@@ -1419,12 +3024,87 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
             ),
           ],
         ),
-        child: Icon(
-          icon,
-          color: isDark ? colors.onSurface : kThirdColor,
-          size: iconSize,
-        ),
+        child: loading
+            ? Center(
+                child: SizedBox(
+                  width: iconSize,
+                  height: iconSize,
+                  child: CupertinoActivityIndicator(
+                    radius: iconSize / 2.4,
+                    color: isDark ? colors.onSurface : kThirdColor,
+                  ),
+                ),
+              )
+            : Icon(
+                icon,
+                color: isDark ? colors.onSurface : kThirdColor,
+                size: iconSize,
+              ),
       ),
     );
   }
+}
+
+/// Paints a vertical dotted line. Used as the faint divider between the two
+/// halves of the tablet landscape layout (works inside IntrinsicHeight).
+class _VerticalDottedLinePainter extends CustomPainter {
+  final Color color;
+
+  _VerticalDottedLinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double dashHeight = 4;
+    const double dashGap = 4;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+    final double x = size.width / 2;
+    double startY = 0;
+    while (startY < size.height) {
+      canvas.drawLine(
+        Offset(x, startY),
+        Offset(x, startY + dashHeight),
+        paint,
+      );
+      startY += dashHeight + dashGap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _VerticalDottedLinePainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+/// Paints a horizontal dotted line. Safe to use inside IntrinsicHeight (unlike
+/// the LayoutBuilder-based separator).
+class _HorizontalDottedLinePainter extends CustomPainter {
+  final Color color;
+
+  _HorizontalDottedLinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double dashWidth = 4;
+    const double dashGap = 4;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+    final double y = size.height / 2;
+    double startX = 0;
+    while (startX < size.width) {
+      canvas.drawLine(
+        Offset(startX, y),
+        Offset(startX + dashWidth, y),
+        paint,
+      );
+      startX += dashWidth + dashGap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _HorizontalDottedLinePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
