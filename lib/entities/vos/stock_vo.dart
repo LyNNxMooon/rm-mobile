@@ -161,6 +161,8 @@ class StockVO {
       "quantity": _asNum(item["quantity"]),
       "layby_qty": _asNum(item["layby_qty"]),
       "salesorder_qty": _asNum(item["salesorder_qty"]),
+      "purchaseorder_qty": _asNum(item["purchaseorder_qty"]),
+      "cso_qty": _asNum(item["cso_qty"]),
       "date_created": _asString(item["date_created"]),
       "order_threshold": _asNum(item["order_threshold"]),
       "order_quantity": _asNum(item["order_quantity"]),

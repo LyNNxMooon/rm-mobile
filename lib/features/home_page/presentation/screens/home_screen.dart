@@ -572,8 +572,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   label: Text("Home"),
                 ),
                 NavigationRailDestination(
-                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.point_of_sale_outlined)),
-                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Icon(Icons.point_of_sale_outlined)),
+                  icon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: ImageIcon(AssetImage("assets/images/transaction.png"))),
+                  selectedIcon: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: ImageIcon(AssetImage("assets/images/transaction.png"))),
                   label: Text("Transaction"),
                 ),
                 NavigationRailDestination(
@@ -638,8 +638,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   destinations: _desktopNavigationItems
                       .map(
                         (item) => NavigationRailDestination(
-                          icon: Icon(item.icon),
-                          selectedIcon: Icon(item.icon),
+                          icon: item.label == "Transaction"
+                              ? const ImageIcon(
+                                  AssetImage("assets/images/transaction.png"))
+                              : Icon(item.icon),
+                          selectedIcon: item.label == "Transaction"
+                              ? const ImageIcon(
+                                  AssetImage("assets/images/transaction.png"))
+                              : Icon(item.icon),
                           label: Text(item.label),
                         ),
                       )
@@ -1336,11 +1342,21 @@ Widget _buildActionTile(
                     ),
                   ],
                 ),
-                child: Icon(
-                  item['icon'] as IconData?,
-                  color: Colors.white,
-                  size: isTablet ? 36 : 28,
-                ),
+                child: (item['iconAsset'] as String?) != null
+                    ? Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Image.asset(
+                          item['iconAsset'] as String,
+                          width: isTablet ? 28 : 22,
+                          height: isTablet ? 28 : 22,
+                        ),
+                    )
+                    : Icon(
+                        item['icon'] as IconData?,
+                        color: Colors.white,
+                        weight: 10,
+                        size: isTablet ? 36 : 28,
+                      ),
               ),
 
               SizedBox(height: isTablet ? 20 : 12),
@@ -1488,15 +1504,24 @@ Widget _buildInformationTile(
                     ),
                   ],
                 ),
-                child: Icon(
-                  item['icon'] as IconData?,
-                  color: useIconGradient
-                      ? Colors.white
-                      : (whiteTheme
-                          ? _WhiteDashboardPalette.title
-                          : cardColor),
-                  size: isTablet ? 36 : 28,
-                ),
+                child: (item['iconAsset'] as String?) != null
+                    ? Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Image.asset(
+                          item['iconAsset'] as String,
+                          width: isTablet ? 28 : 22,
+                          height: isTablet ? 28 : 22,
+                        ),
+                    )
+                    : Icon(
+                        item['icon'] as IconData?,
+                        color: useIconGradient
+                            ? Colors.white
+                            : (whiteTheme
+                                ? _WhiteDashboardPalette.title
+                                : cardColor),
+                        size: isTablet ? 36 : 28,
+                      ),
               ),
 
               const SizedBox(height: 20),
@@ -1582,7 +1607,7 @@ Widget _buildInformationTile(
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: "Home"),
         BottomNavigationBarItem(
-          icon: Icon(Icons.point_of_sale_outlined),
+          icon: ImageIcon(AssetImage("assets/images/transaction.png")),
           label: "Transaction",
         ),
         BottomNavigationBarItem(
@@ -1934,6 +1959,7 @@ Widget _buildInformationTile(
       "subTitle": "Create Sales",
       "icon": Icons.insights_outlined,
       "color": const Color(0xFF00C8B3),
+       "iconAsset": "assets/images/sell.png",
       "comingSoon": false,
       "action": "sales",
       "category": "transaction",
@@ -1942,6 +1968,7 @@ Widget _buildInformationTile(
       "title": "Goods Received",
       "subTitle": "Comming Soon",
       "icon": Icons.work_outline,
+      "iconAsset": "assets/images/gr.png",
       "color": const Color(0xFF00C0E8),
       "comingSoon": false,
       "action": "coming_soon",
@@ -1951,6 +1978,7 @@ Widget _buildInformationTile(
       "title": "Returned Goods",
       "subTitle": "Comming Soon",
       "icon": Icons.move_to_inbox_outlined,
+      "iconAsset": "assets/images/rg.png",
       "color": const Color(0xFFFF3B30),
       "comingSoon": false,
       "action": "coming_soon",
@@ -1960,6 +1988,7 @@ Widget _buildInformationTile(
       "title": "Purchase Orders",
       "subTitle": "Comming Soon",
       "icon": Icons.local_offer_outlined,
+      "iconAsset": "assets/images/po.png",
       "color": const Color(0xFFF2920C),
       "comingSoon": false,
       "action": "coming_soon",
@@ -1969,6 +1998,7 @@ Widget _buildInformationTile(
       "title": "Debtor Payments",
       "subTitle": "Comming Soon",
       "icon": Icons.account_balance_wallet_outlined,
+      "iconAsset": "assets/images/dbpay.png",
       "color": const Color(0xFFFA5CB6),
       "comingSoon": false,
       "action": "coming_soon",
@@ -1978,6 +2008,7 @@ Widget _buildInformationTile(
       "title": "Lay-by Payments",
       "subTitle": "Comming Soon",
       "icon": Icons.savings_outlined,
+      "iconAsset": "assets/images/laybypay.png",
       "color": const Color(0xFF6155F5),
       "comingSoon": false,
       "action": "coming_soon",
@@ -1987,6 +2018,7 @@ Widget _buildInformationTile(
       "title": "SO Payments",
       "subTitle": "Comming Soon",
       "icon": Icons.payments_outlined,
+      "iconAsset": "assets/images/sopay.png",
       "color": const Color(0xFF0088FF),
       "comingSoon": false,
       "action": "coming_soon",
@@ -1996,6 +2028,7 @@ Widget _buildInformationTile(
       "title": "Quote Converter",
       "subTitle": "Comming Soon",
       "icon": Icons.swap_horiz_outlined,
+      "iconAsset": "assets/images/quconvert.png",
       "color": const Color(0xFFE8B30B),
       "comingSoon": false,
       "action": "coming_soon",
@@ -2006,6 +2039,7 @@ Widget _buildInformationTile(
       "title": "Stock",
       "subTitle": "Search inventory",
       "icon": Icons.inventory_2_outlined,
+      "iconAsset": "assets/images/lookup.png",
       "color": kPrimaryColor,
       "comingSoon": true,
       "action": "stock_lookup",
@@ -2015,6 +2049,7 @@ Widget _buildInformationTile(
       "title": "Stocktake",
       "subTitle": "Count inventory",
       "icon": Icons.fact_check_outlined,
+      "iconAsset": "assets/images/stocktake.png",
       "color": const Color(0xFF41A9B9),
       "comingSoon": true,
       "action": "stocktake",
@@ -2025,6 +2060,7 @@ Widget _buildInformationTile(
       "subTitle": "Search customers",
       "icon": Icons.people_outline,
       "color": kPrimaryColor,
+       "iconAsset": "assets/images/cust.png",
       "comingSoon": true,
       "action": "customer_lookup",
       "category": "information",

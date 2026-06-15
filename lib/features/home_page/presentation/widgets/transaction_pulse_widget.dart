@@ -13,6 +13,7 @@ class TransactionCategory {
   final String label;
   final String pendingLabel;
   final IconData icon;
+  final String? iconAsset;
   final Color color;
   final int count;
   final String? analysisLine1;
@@ -23,6 +24,7 @@ class TransactionCategory {
     required this.label,
     required this.pendingLabel,
     required this.icon,
+    this.iconAsset,
     required this.color,
     required this.count,
     this.analysisLine1,
@@ -113,6 +115,7 @@ class TransactionPulseWidget extends StatelessWidget {
         label: 'Sales',
         pendingLabel: 'Sales',
         icon: Icons.insights_outlined,
+        iconAsset: 'assets/images/sell.png',
         color: const Color(0xFF00C8B3),
         count: salesCount,
         analysisLine1: _formatTotalValue(salesSummary?.totalValue),
@@ -518,11 +521,17 @@ class TransactionPulseWidget extends StatelessWidget {
                   color: category.color,
                   borderRadius: BorderRadius.circular(30),
                 ),
-                child: Icon(
-                  category.icon,
-                  color: Colors.white,
-                  size: isTablet ? 28 : 18,
-                ),
+                child: category.iconAsset != null
+                    ? Image.asset(
+                        category.iconAsset!,
+                        width: isTablet ? 24 : 16,
+                        height: isTablet ? 24 : 16,
+                      )
+                    : Icon(
+                        category.icon,
+                        color: Colors.white,
+                        size: isTablet ? 28 : 18,
+                      ),
               ),
             ),
             SizedBox(width: isTablet ? 12 : 8),

@@ -433,11 +433,11 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     final bool useDesktopNav = context.useDesktopNav;
 
     // Desktop sizing
-    final double tilePaddingH = useDesktopNav ? 12.0 : 16.0;
+    final double tilePaddingH = useDesktopNav ? 6.0 : 10.0;
     final double tilePaddingV = useDesktopNav ? 8.0 : 10.0;
     final double titleFontSize = useDesktopNav ? 12.0 : 14.0;
     final double barcodeFontSize = useDesktopNav ? 11.0 : 12.0;
-    final double iconSize = useDesktopNav ? 16.0 : 18.0;
+    final double iconSize = 30;
     final double borderRadius = useDesktopNav ? 8.0 : 10.0;
 
     return AnimationConfiguration.staggeredList(
@@ -488,12 +488,14 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
                 decoration: const BoxDecoration(color: Colors.transparent),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.cloud_done_outlined,
-                      size: iconSize,
-                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                    Image.asset(
+                      isDark
+                          ? 'assets/images/unsync-dark.png'
+                          : 'assets/images/unsync-light.png',
+                      width: iconSize,
+                      height: iconSize,
                     ),
-                    SizedBox(width: useDesktopNav ? 12 : 15),
+                    SizedBox(width: useDesktopNav ? 8 : 12),
 
                     Expanded(
                       child: Column(

@@ -444,6 +444,14 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       cartItems: List.from(_cartItems),
       selectedCustomer: _selectedCustomer,
     ));
+
+    // Items added directly (e.g. when restoring a saved sale session) still
+    // need their last sold price resolved so it shows in the edit view.
+    final stock = event.cartItem.stock;
+    if (stock != null &&
+        event.cartItem.lastSoldPriceStatus != LastSoldPriceStatus.loaded) {
+      add(FetchLastSoldPriceForCartItem(stock: stock));
+    }
   }
 
   double _cartQtyForCode(String code) {

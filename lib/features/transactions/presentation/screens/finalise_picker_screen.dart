@@ -140,25 +140,29 @@ class _FinalisePickerScreenState extends State<FinalisePickerScreen> {
           label: 'Account',
           value: 'Account Sales',
           icon: Icons.contact_page_outlined,
-          color: Color(0xFFD59BF5),
+          iconAsset: 'assets/images/Account.png',
+          color: Color(0xFFF7A8D0),
         ),
       const _TxType(
         label: 'Sales Order',
         value: 'Sales Order',
         icon: Icons.shopping_cart_outlined,
+        iconAsset: 'assets/images/So.png',
         color: Color(0xFF91E2E6),
       ),
       const _TxType(
         label: 'Quote',
         value: 'Quotes',
         icon: Icons.edit_document,
+        iconAsset: 'assets/images/qu.png',
         color: Color(0xFFFFDE94),
       ),
       const _TxType(
         label: 'Lay-by',
         value: 'Lay-bys',
         icon: Icons.folder_open_rounded,
-        color: Color(0xFF7F26B3),
+        iconAsset: 'assets/images/layby.png',
+        color: Color(0xFFC8A8E9),
       ),
     ];
 
@@ -358,12 +362,14 @@ class _TxType {
   final String label;
   final String value;
   final IconData icon;
+  final String? iconAsset;
   final Color color;
 
   const _TxType({
     required this.label,
     required this.value,
     required this.icon,
+    this.iconAsset,
     required this.color,
   });
 }
@@ -421,11 +427,19 @@ class _TypeCard extends StatelessWidget {
                   color: type.color,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  type.icon,
-                  color: Colors.black,
-                  size: glyphSize,
-                ),
+                child: type.iconAsset != null
+                    ? Center(
+                        child: Image.asset(
+                          type.iconAsset!,
+                          width: glyphSize,
+                          height: glyphSize,
+                        ),
+                      )
+                    : Icon(
+                        type.icon,
+                        color: Colors.black,
+                        size: glyphSize,
+                      ),
               ),
               SizedBox(width: gap),
               Expanded(
