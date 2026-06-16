@@ -305,6 +305,15 @@ class HomeScreenModels implements HomeRepo {
   }
 
   @override
+  Future<Map<String, dynamic>> getStocktakeSessionSummary(String shopfront) async {
+    try {
+      return await LocalDbDAO.instance.getStocktakeSessionSummary(shopfront);
+    } on Exception catch (error) {
+      return Future.error(error);
+    }
+  }
+
+  @override
   Future<DiscoverResponse> discoverHost(String ip, int port) async {
     try {
       final response = await DataAgentImpl.instance.discoverHost(ip, port);

@@ -521,7 +521,8 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: codeFontSize,
-                        fontWeight: FontWeight.w900,
+                        fontWeight:
+                            FontWeight.bold,
                         color: kPrimaryColor,
                       ),
                     ),
@@ -1508,7 +1509,7 @@ class MobileCartTile extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: codeFontSize,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.bold,
                     color: kPrimaryColor,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -1629,7 +1630,7 @@ class MobileCartTile extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'monospace',
                       fontSize: codeFontSize,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.bold,
                       color: kPrimaryColor,
                     ),
                   ),
@@ -1799,7 +1800,7 @@ class TabletCartTile extends StatelessWidget {
                   item.code,
                   style: TextStyle(
                     fontFamily: 'monospace',
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.bold,
                     color: kPrimaryColor,
                     fontSize: codeFontSize,
                   ),
@@ -1935,7 +1936,7 @@ class TabletCartTile extends StatelessWidget {
                 item.code,
                 style: TextStyle(
                   fontFamily: 'monospace',
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.bold,
                   color: kPrimaryColor,
                   fontSize: codeFontSize,
                 ),
@@ -2092,7 +2093,7 @@ class CompactCartTile extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 11,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.bold,
                         color: kPrimaryColor,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -2210,7 +2211,7 @@ class CompactCartTile extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: isTablet ? 13 : 11,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.bold,
                     color: kPrimaryColor,
                   ),
                   overflow: TextOverflow.ellipsis,

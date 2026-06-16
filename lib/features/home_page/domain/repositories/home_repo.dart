@@ -152,6 +152,8 @@ abstract class HomeRepo {
   Future<Map<String, int>> getSaleSessionCounts(String shopfront);
 
   Future<Map<String, Map<String, dynamic>>> getSaleSessionSummaries(String shopfront);
+
+  Future<Map<String, dynamic>> getStocktakeSessionSummary(String shopfront);
 }
 
 class SavedConnectionInfo {

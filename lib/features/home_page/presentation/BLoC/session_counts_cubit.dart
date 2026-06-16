@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rmmobile/utils/global_var_utils.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/get_sale_session_counts.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/get_sale_session_summaries.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/get_stocktake_session_summary.dart';
 
 /// Summary data for a session type
 class SessionSummary {
@@ -72,10 +73,12 @@ class SessionCountsCubit extends Cubit<SessionCountsState> {
   SessionCountsCubit({
     required this.getSaleSessionCounts,
     required this.getSaleSessionSummaries,
+    required this.getStocktakeSessionSummary,
   }) : super(const SessionCountsState());
 
   final GetSaleSessionCounts getSaleSessionCounts;
   final GetSaleSessionSummaries getSaleSessionSummaries;
+  final GetStocktakeSessionSummary getStocktakeSessionSummary;
 
   Future<void> loadSessionCounts() async {
     final shopfront = AppGlobals.instance.shopfront;
@@ -86,14 +89,29 @@ class SessionCountsCubit extends Cubit<SessionCountsState> {
     try {
       final counts = await getSaleSessionCounts(shopfront);
       final summariesRaw = await getSaleSessionSummaries(shopfront);
-      
+
       final summaries = <String, SessionSummary>{};
       for (final entry in summariesRaw.entries) {
         summaries[entry.key] = SessionSummary.fromMap(entry.value);
       }
-      
+
+      // Merge in the in-progress (uncommitted) stocktake summary.
+      final stocktakeRaw = await getStocktakeSessionSummary(shopfront);
+      final int stocktakeItemCount = stocktakeRaw['count'] as int? ?? 0;
+      // Badge/pending count is a fixed 1 when a stocktake is in progress
+      // (not the item count).
+      final Map<String, int> mergedCounts = {
+        ...counts,
+        'Stocktake': stocktakeItemCount > 0 ? 1 : 0,
+      };
+      summaries['Stocktake'] = SessionSummary.fromMap({
+        'count': stocktakeItemCount,
+        'itemCount': stocktakeItemCount,
+        'oldestDate': stocktakeRaw['oldestDate'],
+      });
+
       emit(state.copyWith(
-        counts: counts,
+        counts: mergedCounts,
         summaries: summaries,
         isLoading: false,
       ));
