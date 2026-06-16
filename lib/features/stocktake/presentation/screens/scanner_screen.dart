@@ -83,6 +83,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   // Key for the mobile "Count Qty" field, used to scroll it into view on focus.
   final GlobalKey _qtyFieldKey = GlobalKey();
+  // Key for the row holding the LIST / SCAN buttons (phone layout), used to
+  // scroll far enough that the buttons under the qty field stay visible.
+  final GlobalKey _qtyActionsKey = GlobalKey();
+  // True while a RetailManager Question dialog is open, so the focus-change
+  // handler doesn't restart the paused scanner.
+  bool _isDialogShowing = false;
 
   String? _lastAutoBarcode;
   int _autoQty = 0;
@@ -124,6 +130,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
       if (isScan) {
         scannerController.stop();
       }
+      _isDialogShowing = true;
       showDialog(
         context: context,
         builder: (context) => StocktakeQuestionDialog(
@@ -139,7 +146,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
           },
         ),
       ).whenComplete(() {
-        if (isScan) {
+        _isDialogShowing = false;
+        if (isScan && mounted) {
           scannerController.start();
         }
       });
@@ -258,14 +266,30 @@ class _ScannerScreenState extends State<ScannerScreen> {
       return;
     }
 
+    // Pause the live camera immediately (before the async DB lookup) so it is
+    // not still running while we decide whether to show the dialog.
+    final bool wasScanning = isScan;
+    if (wasScanning) {
+      _isDialogShowing = true;
+      await scannerController.stop();
+    }
+
     final Map<String, dynamic>? info = await LocalDbDAO.instance
         .getExistingStocktakeCount(
           stockId: stock.stockID.toInt(),
           shopfront: AppGlobals.instance.shopfront ?? "",
         );
-    if (!mounted) return;
+    if (!mounted) {
+      _isDialogShowing = false;
+      return;
+    }
 
     if (info == null) {
+      // No repeat: nothing to ask, resume scanning and proceed.
+      _isDialogShowing = false;
+      if (wasScanning) {
+        scannerController.start();
+      }
       proceed();
       return;
     }
@@ -274,9 +298,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     final String source = fromHistory ? 'sent to the shopfront' : 'counted';
     final num qty = info['quantity'] as num;
 
-    if (isScan) {
-      scannerController.stop();
-    }
+    _isDialogShowing = true;
     showDialog(
       context: context,
       builder: (dialogContext) => StocktakeQuestionDialog(
@@ -293,7 +315,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
         },
       ),
     ).whenComplete(() {
-      if (isScan) {
+      _isDialogShowing = false;
+      if (wasScanning && mounted) {
         scannerController.start();
       }
     });
@@ -309,22 +332,28 @@ class _ScannerScreenState extends State<ScannerScreen> {
     if (qtyFocusNode.hasFocus && isScan) {
       // Pause scanning while user enters count
       scannerController.stop();
-    } else if (!qtyFocusNode.hasFocus && isScan) {
-      // Resume scanning when qty field loses focus
+    } else if (!qtyFocusNode.hasFocus && isScan && !_isDialogShowing) {
+      // Resume scanning when qty field loses focus (but not while a dialog is up)
       scannerController.start();
     }
 
-    // When the count qty field gains focus, scroll it into view so it isn't
-    // hidden behind the keyboard.
+    // When the count qty field gains focus, scroll so the field AND the
+    // LIST/SCAN buttons below it remain visible above the keyboard.
     if (qtyFocusNode.hasFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final ctx = _qtyFieldKey.currentContext;
+      // Wait for the keyboard to animate in so the viewport inset is applied
+      // before measuring/scrolling.
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (!mounted) return;
+        // Prefer the buttons row (phone layout) so it scrolls far enough to
+        // reveal the two buttons; fall back to the qty field otherwise.
+        final ctx =
+            _qtyActionsKey.currentContext ?? _qtyFieldKey.currentContext;
         if (ctx != null) {
           Scrollable.ensureVisible(
             ctx,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            alignment: 0.5,
+            alignment: 1.0,
           );
         }
       });
@@ -2602,6 +2631,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              key: _qtyActionsKey,
               children: [
                 Expanded(child: listButton),
                 SizedBox(width: isTablet ? 20 : 12),
