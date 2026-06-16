@@ -81,6 +81,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
   final FocusNode qtyFocusNode = FocusNode();
   final FocusNode txtFieldFocusNode = FocusNode();
 
+  // Key for the mobile "Count Qty" field, used to scroll it into view on focus.
+  final GlobalKey _qtyFieldKey = GlobalKey();
+
   String? _lastAutoBarcode;
   int _autoQty = 0;
   bool _isSearchLoading = false;
@@ -118,6 +121,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
     if (countingStock == null) return;
 
     if (countingStock!.barcode == qtyText) {
+      if (isScan) {
+        scannerController.stop();
+      }
       showDialog(
         context: context,
         builder: (context) => StocktakeQuestionDialog(
@@ -132,7 +138,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
             context.navigateBack();
           },
         ),
-      );
+      ).whenComplete(() {
+        if (isScan) {
+          scannerController.start();
+        }
+      });
       return;
     }
 
@@ -264,6 +274,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
     final String source = fromHistory ? 'sent to the shopfront' : 'counted';
     final num qty = info['quantity'] as num;
 
+    if (isScan) {
+      scannerController.stop();
+    }
     showDialog(
       context: context,
       builder: (dialogContext) => StocktakeQuestionDialog(
@@ -279,7 +292,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
           onCancel?.call();
         },
       ),
-    );
+    ).whenComplete(() {
+      if (isScan) {
+        scannerController.start();
+      }
+    });
   }
 
   void _onFocusChange() {
@@ -296,7 +313,23 @@ class _ScannerScreenState extends State<ScannerScreen> {
       // Resume scanning when qty field loses focus
       scannerController.start();
     }
-    
+
+    // When the count qty field gains focus, scroll it into view so it isn't
+    // hidden behind the keyboard.
+    if (qtyFocusNode.hasFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _qtyFieldKey.currentContext;
+        if (ctx != null) {
+          Scrollable.ensureVisible(
+            ctx,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: 0.5,
+          );
+        }
+      });
+    }
+
     if (mounted) {
       setState(() {});
     }
@@ -2234,6 +2267,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
 
     final Widget qtyField = Padding(
+      key: _qtyFieldKey,
       padding: EdgeInsets.only(
         top: isTablet ? 0 : 0,
         bottom: 0,

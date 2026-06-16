@@ -16,6 +16,7 @@ class TransactionCategory {
   final String? iconAsset;
   final Color color;
   final int count;
+  final String? statusLabel;
   final String? analysisLine1;
   final String? analysisLine2;
 
@@ -27,6 +28,7 @@ class TransactionCategory {
     this.iconAsset,
     required this.color,
     required this.count,
+    this.statusLabel,
     this.analysisLine1,
     this.analysisLine2,
   });
@@ -36,10 +38,12 @@ class TransactionCategory {
 /// Shows intelligent states based on data availability
 class TransactionPulseWidget extends StatelessWidget {
   final VoidCallback? onSalesTap;
+  final VoidCallback? onStocktakeTap;
 
   const TransactionPulseWidget({
     super.key,
     this.onSalesTap,
+    this.onStocktakeTap,
   });
 
   @override
@@ -120,6 +124,17 @@ class TransactionPulseWidget extends StatelessWidget {
         count: salesCount,
         analysisLine1: _formatTotalValue(salesSummary?.totalValue),
         analysisLine2: _formatSummaryDetails(salesSummary, 'sale'),
+      ),
+      TransactionCategory(
+        key: 'Stocktake',
+        label: 'Stocktake',
+        pendingLabel: 'Stocktake',
+        icon: Icons.inventory_2_outlined,
+        iconAsset: 'assets/images/stocktake.png',
+        color: kPrimaryColor,
+        count: counts['Stocktake'] ?? 0,
+        statusLabel: 'In Progress',
+        analysisLine2: _formatSummaryDetails(summaries['Stocktake'], 'item'),
       ),
     ];
   }
@@ -488,7 +503,11 @@ class TransactionPulseWidget extends StatelessWidget {
     TransactionCategory category, {
     required bool isCompact,
   }) {
-    final VoidCallback? onTap = category.key == 'Sales' ? onSalesTap : null;
+    final VoidCallback? onTap = category.key == 'Sales'
+        ? onSalesTap
+        : category.key == 'Stocktake'
+            ? onStocktakeTap
+            : null;
     final bool whiteTheme = context.watch<DashboardWhiteThemeCubit>().state;
 
     return InkWell(
@@ -564,6 +583,20 @@ class TransactionPulseWidget extends StatelessWidget {
                       color: category.color,
                     ),
                   ),
+                  // Status label (e.g. "In Progress")
+                  if (category.statusLabel != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      category.statusLabel!,
+                      style: TextStyle(
+                        fontSize: isTablet ? 11 : 11,
+                        fontWeight: FontWeight.w600,
+                        color: category.color,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                   // Analysis data - Total value (green)
                   if (category.analysisLine1 != null) ...[
                     const SizedBox(height: 2),

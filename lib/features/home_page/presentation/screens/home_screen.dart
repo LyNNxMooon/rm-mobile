@@ -26,6 +26,7 @@ import '../../../customer_lookup/presentation/screens/customer_lookup_screen.dar
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import '../../../stocktake/presentation/screens/scanner_screen.dart';
+import '../../../stocktake/presentation/screens/stock_take_list_screen.dart';
 import '../../../transactions/presentation/BLoC/sales_bloc.dart';
 import '../../../transactions/presentation/screens/sales_screen.dart';
 import '../../domain/use_cases/discover_host.dart';
@@ -921,6 +922,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             if (isHomeTab)
               TransactionPulseWidget(
                 onSalesTap: () => _handleActionTap('sales'),
+                onStocktakeTap: () =>
+                    context.navigateToNext(const StockTakeListScreen()),
               ),
             _buildSectionHeader(
               _tabTitleForIndex(_selectedTabIndex),

@@ -4,6 +4,7 @@ import 'package:rmmobile/features/home_page/domain/use_cases/cleanup_history.dar
 import 'package:rmmobile/features/home_page/domain/use_cases/clear_sync_timestamps.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/get_sale_session_counts.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/get_sale_session_summaries.dart';
+import 'package:rmmobile/features/home_page/domain/use_cases/get_stocktake_session_summary.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/discover_host.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/authenticate_staff.dart';
 import 'package:rmmobile/features/home_page/domain/use_cases/load_dark_mode_enabled.dart';
@@ -312,6 +313,7 @@ Future<void> init() async {
     () => SessionCountsCubit(
       getSaleSessionCounts: sl(),
       getSaleSessionSummaries: sl(),
+      getStocktakeSessionSummary: sl(),
     ),
   );
   sl.registerFactory(() => DiscoverHostBloc(discoverHost: sl()));
@@ -463,6 +465,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ClearSyncTimestamps(sl()));
   sl.registerLazySingleton(() => GetSaleSessionCounts(sl()));
   sl.registerLazySingleton(() => GetSaleSessionSummaries(sl()));
+  sl.registerLazySingleton(() => GetStocktakeSessionSummary(sl()));
   sl.registerLazySingleton(() => home_use_cases.GetCashDrawerIdentifier(sl()));
   sl.registerLazySingleton(() => SaveCashDrawerIdentifier(sl()));
   sl.registerLazySingleton(() => ExportDatabaseFile(sl()));

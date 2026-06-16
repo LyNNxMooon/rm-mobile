@@ -4817,6 +4817,34 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
+  @override
+  Future<Map<String, dynamic>> getStocktakeSessionSummary(
+    String shopfront,
+  ) async {
+    try {
+      final db = _database!;
+      final result = await db.rawQuery(
+        '''
+        SELECT
+          COUNT(*) as count,
+          MIN(stocktake_date) as oldest_date
+        FROM Stocktake
+        WHERE shopfront = ?
+        ''',
+        [shopfront],
+      );
+
+      final row = result.first;
+      return {
+        'count': (row['count'] as int?) ?? 0,
+        'oldestDate': row['oldest_date'] as String?,
+      };
+    } catch (error) {
+      logger.e('Error getting stocktake session summary: $error');
+      return {'count': 0, 'oldestDate': null};
+    }
+  }
+
   // ===========================================================================
   // SECTION 13: TAX CODES (Sale Configuration)
   // ===========================================================================
