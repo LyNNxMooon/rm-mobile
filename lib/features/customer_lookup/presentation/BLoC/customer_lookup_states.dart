@@ -1,5 +1,6 @@
 import 'package:rmmobile/entities/vos/filter_criteria.dart';
 import 'package:rmmobile/entities/response/staff_detail_response.dart';
+import 'package:rmmobile/entities/response/customer_balance_response.dart';
 import 'package:rmmobile/entities/vos/pending_customer_creation_vo.dart';
 import 'package:rmmobile/entities/vos/pending_customer_update_vo.dart';
 import 'package:rmmobile/entities/vos/search_mode.dart';
@@ -143,6 +144,24 @@ class StaffDetailError extends StaffDetailState {
   final String message;
 
   StaffDetailError(this.message);
+}
+
+abstract class CustomerBalanceState {}
+
+class CustomerBalanceInitial extends CustomerBalanceState {}
+
+class CustomerBalanceLoading extends CustomerBalanceState {}
+
+class CustomerBalanceLoaded extends CustomerBalanceState {
+  final CustomerBalanceResponse balance;
+
+  CustomerBalanceLoaded(this.balance);
+}
+
+class CustomerBalanceError extends CustomerBalanceState {
+  final String message;
+
+  CustomerBalanceError(this.message);
 }
 
 abstract class CustomerUpdateState {}

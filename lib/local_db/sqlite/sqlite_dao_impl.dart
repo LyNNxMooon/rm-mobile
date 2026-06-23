@@ -126,6 +126,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           await db.execute(pendingCustomerCreationsTableCreationQuery);
           await db.execute(pendingCustomerCreationAddressesTableCreationQuery);
           await db.execute(customerPurchasesTableCreationQuery);
+          await db.execute(customerBalancesTableCreationQuery);
           await db.execute(customerCreditTableCreationQuery);
           await db.execute(customerInvoicesTableCreationQuery);
           await db.execute(customerIvPayTableCreationQuery);
@@ -297,6 +298,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
         column: 'last_sold_price',
         definition: 'REAL',
       );
+      // Create CustomerBalances table for existing installs without bumping version
+      await _database!.execute(customerBalancesTableCreationQuery);
       logger.d('Successfully initialized SQLite local database!');
     } catch (error) {
       logger.e('Error initializing for SQLite local database: $error');
@@ -2070,6 +2073,64 @@ class SQLiteDAOImpl extends LocalDbDAO {
       return null;
     } catch (error) {
       logger.e('Error reading stock last sold price from local db: $error');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> upsertCustomerBalance({
+    required int customerId,
+    required String shopfront,
+    required num owingAmount,
+    required num creditLimit,
+    required num remainingCredit,
+  }) async {
+    try {
+      final db = _database!;
+      await db.insert(
+        'CustomerBalances',
+        {
+          'customer_id': customerId,
+          'shopfront': shopfront,
+          'owing_amount': owingAmount,
+          'credit_limit': creditLimit,
+          'remaining_credit': remainingCredit,
+          'updated_at': DateTime.now().toIso8601String(),
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (error) {
+      logger.e('Error saving customer balance in local db: $error');
+      return Future.error("Error saving customer balance: $error");
+    }
+  }
+
+  @override
+  Future<({num owingAmount, num creditLimit, num remainingCredit})?>
+  getCustomerBalance({
+    required int customerId,
+    required String shopfront,
+  }) async {
+    try {
+      final db = _database!;
+      final result = await db.query(
+        'CustomerBalances',
+        columns: ['owing_amount', 'credit_limit', 'remaining_credit'],
+        where: 'customer_id = ? AND shopfront = ?',
+        whereArgs: [customerId, shopfront],
+        limit: 1,
+      );
+
+      if (result.isEmpty) return null;
+
+      final row = result.first;
+      return (
+        owingAmount: (row['owing_amount'] as num?) ?? 0,
+        creditLimit: (row['credit_limit'] as num?) ?? 0,
+        remainingCredit: (row['remaining_credit'] as num?) ?? 0,
+      );
+    } catch (error) {
+      logger.e('Error reading customer balance from local db: $error');
       return null;
     }
   }

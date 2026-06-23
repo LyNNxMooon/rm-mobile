@@ -2,6 +2,7 @@ import 'package:rmmobile/entities/response/paginated_customer_response.dart';
 import 'package:rmmobile/entities/response/staff_detail_response.dart';
 import 'package:rmmobile/entities/response/customer_update_response.dart';
 import 'package:rmmobile/entities/response/customer_create_response.dart';
+import 'package:rmmobile/entities/response/customer_balance_response.dart';
 import 'package:rmmobile/entities/vos/customer_vo.dart';
 import 'package:rmmobile/entities/vos/search_mode.dart';
 import 'dart:math' as math;
@@ -369,6 +370,87 @@ class CustomerLookupModels implements CustomerLookupRepo {
     } on Exception catch (error) {
       return Future.error(error);
     }
+  }
+
+  @override
+  Future<CustomerBalanceResponse> fetchCustomerBalance({
+    required int customerId,
+  }) async {
+    if (customerId <= 0) {
+      return Future.error("Invalid customer id: $customerId");
+    }
+
+    final String resolvedShopfrontName =
+        (await LocalDbDAO.instance.getShopfrontName() ?? "").trim();
+
+    // 1) Try to fetch the latest balance from the API and store it locally.
+    try {
+      final String resolvedIp =
+          (await LocalDbDAO.instance.getHostIpAddress() ?? "").trim();
+      final int resolvedPort =
+          int.tryParse((await LocalDbDAO.instance.getHostPort() ?? "").trim()) ??
+          5000;
+      final String resolvedApiKey =
+          (await LocalDbDAO.instance.getApiKey() ?? "").trim();
+      final String resolvedShopfrontId =
+          (await LocalDbDAO.instance.getShopfrontId() ?? "").trim();
+
+      if (resolvedIp.isEmpty ||
+          resolvedApiKey.isEmpty ||
+          resolvedShopfrontId.isEmpty) {
+        throw Exception(
+          "Missing host/shopfront setup. Please reconnect to a host and shopfront.",
+        );
+      }
+
+      final response = await DataAgentImpl.instance.fetchCustomerBalance(
+        resolvedIp,
+        resolvedPort,
+        resolvedShopfrontId,
+        customerId,
+        resolvedApiKey,
+      );
+
+      // Store the freshly fetched balance for offline use.
+      if (resolvedShopfrontName.isNotEmpty) {
+        await LocalDbDAO.instance.upsertCustomerBalance(
+          customerId: customerId,
+          shopfront: resolvedShopfrontName,
+          owingAmount: response.owingAmount,
+          creditLimit: response.creditLimit,
+          remainingCredit: response.remainingCredit,
+        );
+      } else {
+        // No shopfront name to key the local cache; return the fresh response.
+        return response;
+      }
+    } catch (error) {
+      // Offline / API failure: fall through and present from local DB.
+      logger.e(
+        'Error fetching customer balance from network, using local cache: $error',
+      );
+    }
+
+    // 2) Always present by drawing from the local DB.
+    if (resolvedShopfrontName.isNotEmpty) {
+      final cached = await LocalDbDAO.instance.getCustomerBalance(
+        customerId: customerId,
+        shopfront: resolvedShopfrontName,
+      );
+      if (cached != null) {
+        return CustomerBalanceResponse(
+          success: true,
+          message: null,
+          shopfrontId: null,
+          customerId: customerId,
+          owingAmount: cached.owingAmount,
+          creditLimit: cached.creditLimit,
+          remainingCredit: cached.remainingCredit,
+        );
+      }
+    }
+
+    return Future.error("Unable to load customer balance.");
   }
 
   @override

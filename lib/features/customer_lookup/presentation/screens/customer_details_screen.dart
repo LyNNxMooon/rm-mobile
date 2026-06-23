@@ -294,6 +294,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ownerId: widget.customer.ownerId,
         ),
       );
+      context.read<CustomerBalanceBloc>().add(
+        LoadCustomerBalanceEvent(customerId: widget.customer.customerId),
+      );
     });
   }
 
@@ -2730,6 +2733,83 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        BlocBuilder<CustomerBalanceBloc, CustomerBalanceState>(
+          builder: (context, state) {
+            String owing = "-";
+            String remainingCredit = "-";
+
+            if (state is CustomerBalanceLoading) {
+              owing = "Loading...";
+              remainingCredit = "Loading...";
+            } else if (state is CustomerBalanceLoaded) {
+              owing = FormattingUtils.formatCurrencyWithDecimals(
+                state.balance.owingAmount.toDouble(),
+                2,
+              );
+              remainingCredit = FormattingUtils.formatCurrencyWithDecimals(
+                state.balance.remainingCredit.toDouble(),
+                2,
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Owing",
+                        style: TextStyle(
+                          fontSize: smallSize,
+                          color: isDark
+                              ? colors.onSurfaceMuted
+                              : Colors.grey[500],
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        owing,
+                        style: TextStyle(
+                          fontSize: baseSize,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? colors.onSurface : Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Remaining Credit",
+                        style: TextStyle(
+                          fontSize: smallSize,
+                          color: isDark
+                              ? colors.onSurfaceMuted
+                              : Colors.grey[500],
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        remainingCredit,
+                        style: TextStyle(
+                          fontSize: baseSize,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? colors.onSurface : Colors.black87,
+                        ),
+                      ),
                     ],
                   ),
                 ),

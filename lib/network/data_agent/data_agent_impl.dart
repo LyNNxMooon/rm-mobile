@@ -13,6 +13,7 @@ import 'package:rmmobile/entities/response/shopfronts_api_response.dart';
 import 'package:rmmobile/entities/response/stock_lookup_api_response.dart';
 import 'package:rmmobile/entities/response/stock_metadata_response.dart';
 import 'package:rmmobile/entities/response/last_sold_price_response.dart';
+import 'package:rmmobile/entities/response/customer_balance_response.dart';
 import 'package:rmmobile/entities/response/stock_ids_response.dart';
 import 'package:rmmobile/entities/response/customer_lookup_api_response.dart';
 import 'package:rmmobile/entities/response/customer_metadata_response.dart';
@@ -302,6 +303,30 @@ class DataAgentImpl implements DataAgent {
       );
     } on Exception catch (error) {
       logger.e('Error fetching last sold price from network: $error');
+      return Future.error(throwExceptionForAPIErrors(error));
+    }
+  }
+
+  @override
+  Future<CustomerBalanceResponse> fetchCustomerBalance(
+    String ip,
+    int port,
+    String shopfrontId,
+    int customerId,
+    String apiKey,
+  ) async {
+    try {
+      final apiService = _createApiService(ip, port);
+      return await _callWithReconnect(
+        ip,
+        () => apiService
+            .fetchCustomerBalance(shopfrontId, customerId, apiKey)
+            .asStream()
+            .map((event) => event)
+            .first,
+      );
+    } on Exception catch (error) {
+      logger.e('Error fetching customer balance from network: $error');
       return Future.error(throwExceptionForAPIErrors(error));
     }
   }

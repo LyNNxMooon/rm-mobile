@@ -5,6 +5,7 @@ import 'package:rmmobile/features/customer_lookup/domain/use_cases/fetch_custome
 import 'package:rmmobile/features/customer_lookup/domain/use_cases/get_customer_filter_options.dart';
 import 'package:rmmobile/features/customer_lookup/domain/use_cases/get_paginated_customers.dart';
 import 'package:rmmobile/features/customer_lookup/domain/use_cases/get_staff_detail.dart';
+import 'package:rmmobile/features/customer_lookup/domain/use_cases/fetch_customer_balance.dart';
 import 'package:rmmobile/features/customer_lookup/domain/use_cases/update_customer_details.dart';
 import 'package:rmmobile/features/customer_lookup/domain/use_cases/get_pending_customer_updates.dart';
 import 'package:rmmobile/features/customer_lookup/domain/use_cases/get_pending_customer_updates_count.dart';
@@ -227,6 +228,35 @@ class StaffDetailBloc extends Bloc<StaffDetailEvents, StaffDetailState> {
     }
 
     emit(StaffDetailLoaded(openedBy: openedBy, ownerAccount: ownerAccount));
+  }
+}
+
+class CustomerBalanceBloc
+    extends Bloc<CustomerBalanceEvents, CustomerBalanceState> {
+  final FetchCustomerBalance fetchCustomerBalance;
+
+  CustomerBalanceBloc({required this.fetchCustomerBalance})
+      : super(CustomerBalanceInitial()) {
+    on<LoadCustomerBalanceEvent>(_onLoadCustomerBalance);
+  }
+
+  Future<void> _onLoadCustomerBalance(
+    LoadCustomerBalanceEvent event,
+    Emitter<CustomerBalanceState> emit,
+  ) async {
+    if (event.customerId <= 0) {
+      emit(CustomerBalanceError("Invalid customer id"));
+      return;
+    }
+
+    emit(CustomerBalanceLoading());
+
+    try {
+      final response = await fetchCustomerBalance(event.customerId);
+      emit(CustomerBalanceLoaded(response));
+    } catch (e) {
+      emit(CustomerBalanceError(e.toString()));
+    }
   }
 }
 

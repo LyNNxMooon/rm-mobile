@@ -576,16 +576,33 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                       color: widget.colors.onSurfaceMuted,
                     ),
                   ),
-                  Text(
-                    FormattingUtils.formatCurrencyWithDecimals(
-                      _displayExtension,
-                      2,
-                    ),
-                    style: TextStyle(
-                      fontSize: totalFontSize,
-                      fontWeight: FontWeight.bold,
-                      color: widget.isDark ? Colors.white : Colors.black87,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (hasPromotion) ...[
+                        Text(
+                          "(*Promotion)",
+                          style: TextStyle(
+                            fontSize: totalLabelFontSize,
+                            color: kErrorColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        FormattingUtils.formatCurrencyWithDecimals(
+                          _displayExtension,
+                          2,
+                        ),
+                        style: TextStyle(
+                          fontSize: totalFontSize,
+                          fontWeight: FontWeight.bold,
+                          color: widget.isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -665,19 +682,6 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                                   },
                                 ),
                               ),
-                              if (hasPromotion)
-                                Positioned(
-                                  left: 2,
-                                  top: useDesktopNav ? -10 : (isTablet ? -14 : -10),
-                                  child: Text(
-                                    "(*Promotion)",
-                                    style: TextStyle(
-                                      fontSize: useDesktopNav ? 9 : (isTablet ? 11 : 9),
-                                      color: kErrorColor,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
                             ],
                           ),
                         ),
@@ -690,7 +694,7 @@ class _ExpandedEditCartTileState extends State<ExpandedEditCartTile> {
                         onTap: widget.allowPriceEdit ? () => _openPriceCalculator(context) : null,
                         isTablet: isTablet,
                         enabled: widget.allowPriceEdit,
-                        useDesktopNav: useDesktopNav,
+                        useDesktopNav: useDesktopNav
                       ),
                       SizedBox(width: useDesktopNav ? 20 : (isTablet ? 6 : 4)),
 

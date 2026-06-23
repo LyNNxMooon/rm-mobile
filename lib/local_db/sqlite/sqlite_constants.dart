@@ -258,6 +258,18 @@ const customerPurchasesTableCreationQuery = '''
   )
 ''';
 
+const customerBalancesTableCreationQuery = '''
+  CREATE TABLE IF NOT EXISTS CustomerBalances (
+    customer_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    owing_amount REAL,
+    credit_limit REAL,
+    remaining_credit REAL,
+    updated_at TEXT,
+    PRIMARY KEY (customer_id, shopfront)
+  )
+''';
+
 const customerCreditTableCreationQuery = '''
   CREATE TABLE CustomerCredit (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
