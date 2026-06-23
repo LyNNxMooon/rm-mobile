@@ -2007,7 +2007,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     ],
                     const SizedBox(height: 4),
                     Text(
-                      "Customer ID: ${widget.customer.barcode}",
+                      "Customer No: ${widget.customer.barcode}",
                       style: TextStyle(
                         fontSize: smallSize,
                         color:

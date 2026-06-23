@@ -173,9 +173,9 @@ class TransactionPulseWidget extends StatelessWidget {
       } else if (summary.ageInDays < 7) {
         parts.add('${summary.ageInDays} days old');
       } else if (summary.ageInDays < 30) {
-        parts.add('${(summary.ageInDays / 7).floor()}w old');
+        parts.add('${(summary.ageInDays / 7).floor()}w(s) old');
       } else {
-        parts.add('${(summary.ageInDays / 30).floor()}mo old');
+        parts.add('${(summary.ageInDays / 30).floor()}mo(s) old');
       }
     }
     

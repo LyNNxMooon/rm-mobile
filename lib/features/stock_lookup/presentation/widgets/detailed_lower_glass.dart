@@ -42,6 +42,7 @@ class DetailedLowerGlass extends StatefulWidget {
     this.pricingGradesGlobal,
     this.onFocusNodesReady,
     this.hideButtons = false,
+    this.onSellPriceChanged,
   });
 
   final double sell;
@@ -69,6 +70,11 @@ class DetailedLowerGlass extends StatefulWidget {
   final void Function(List<FocusNode> focusNodes)? onFocusNodesReady;
   /// If true, hides the action buttons (Calculator, Pricing, Update) - used for desktop layout
   final bool hideButtons;
+
+  /// Called with the new tax-inclusive sell price when the user applies a value
+  /// from the calculator, so the parent screen can reflect it in its INC TAX
+  /// field and internal pricing state.
+  final void Function(double newSell)? onSellPriceChanged;
 
   @override
   State<DetailedLowerGlass> createState() => _DetailedLowerGlassState();
@@ -205,6 +211,9 @@ class _DetailedLowerGlassState extends State<DetailedLowerGlass> {
           _exRrpController.text = result.toStringAsFixed(4);
         }
       });
+
+      // Reflect the new sell price back to the parent screen (INC TAX field).
+      widget.onSellPriceChanged?.call(result);
     }
   }
 

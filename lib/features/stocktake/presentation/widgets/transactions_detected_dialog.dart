@@ -6,19 +6,18 @@ import 'package:rmmobile/features/stocktake/presentation/BLoC/batch_commit_bloc.
 import 'package:rmmobile/features/stocktake/presentation/BLoC/stocktake_events.dart';
 import 'package:rmmobile/features/stocktake/presentation/utils/transaction_type_helper.dart';
 import 'package:rmmobile/constants/colors.dart';
-import 'package:rmmobile/constants/standard_dialog.dart';
 import 'package:rmmobile/constants/theme_colors.dart';
 import 'package:rmmobile/utils/responsive_utils.dart';
 
-/// Dialog to display detected transactions during stocktake commit.
+/// Full screen to display detected transactions during stocktake commit.
 /// Allows user to select which items to apply adjustments for.
-class TransactionsDetectedDialog extends StatefulWidget {
+class TransactionsDetectedScreen extends StatefulWidget {
   final List<AuditWithStockVO> rows;
   final bool isBatchMode;
   final int? currentBatchNumber;
   final int? totalBatches;
 
-  const TransactionsDetectedDialog({
+  const TransactionsDetectedScreen({
     super.key,
     required this.rows,
     this.isBatchMode = false,
@@ -27,12 +26,12 @@ class TransactionsDetectedDialog extends StatefulWidget {
   });
 
   @override
-  State<TransactionsDetectedDialog> createState() =>
-      _TransactionsDetectedDialogState();
+  State<TransactionsDetectedScreen> createState() =>
+      _TransactionsDetectedScreenState();
 }
 
-class _TransactionsDetectedDialogState
-    extends State<TransactionsDetectedDialog> {
+class _TransactionsDetectedScreenState
+    extends State<TransactionsDetectedScreen> {
   late Set<int> _selectedIndices;
 
   @override
@@ -102,12 +101,7 @@ class _TransactionsDetectedDialogState
     final colors = context.appColors;
     final bool isDark = colors.isDark;
     final bool useDesktopNav = context.useDesktopNav;
-    final screenSize = MediaQuery.of(context).size;
 
-    // Calculate dialog dimensions - desktop uses fixed width, mobile uses percentage
-    final double dialogWidth = useDesktopNav ? 700.0 : screenSize.width * 0.92;
-    final double dialogHeight = useDesktopNav ? screenSize.height * 0.85 : screenSize.height * 0.95;
-    
     // Desktop-specific sizing
     final double descFontSize = useDesktopNav ? 12.0 : 13.0;
     final double selectAllPaddingH = useDesktopNav ? 10.0 : 12.0;
@@ -115,7 +109,6 @@ class _TransactionsDetectedDialogState
     final double checkboxSize = useDesktopNav ? 20.0 : 24.0;
     final double selectAllFontSize = useDesktopNav ? 12.0 : 14.0;
     final double countBadgeFontSize = useDesktopNav ? 11.0 : 12.0;
-    final double borderRadius = useDesktopNav ? 8.0 : 12.0;
 
     final subtitle = widget.isBatchMode &&
             widget.currentBatchNumber != null &&
@@ -123,71 +116,133 @@ class _TransactionsDetectedDialogState
         ? "Batch ${widget.currentBatchNumber} of ${widget.totalBatches}"
         : null;
 
-    return StandardDialog(
-      title: "Transactions Detected",
-      subtitle: subtitle,
-      colors: colors,
-      isDark: isDark,
-      maxWidth: dialogWidth,
-      content: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: dialogHeight),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.only(bottom: useDesktopNav ? 6 : 8),
-              child: Text(
-                widget.isBatchMode
-                    ? "The following items in batch ${widget.currentBatchNumber} were modified recently. Select items to apply adjustments:"
-                    : "The following items were modified recently. Select items to apply adjustments:",
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: colors.bg,
+        appBar: AppBar(
+          backgroundColor: kPrimaryColor,
+          automaticallyImplyLeading: false,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Transactions Detected",
                 style: TextStyle(
-                  fontSize: descFontSize,
-                  color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-            _buildSelectAllRow(colors, isDark, useDesktopNav, selectAllPaddingH, selectAllPaddingV, checkboxSize, selectAllFontSize, countBadgeFontSize),
-            SizedBox(height: useDesktopNav ? 6 : 8),
-            Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isDark ? Colors.white24 : colors.divider,
+              if (subtitle != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(borderRadius),
                 ),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: widget.rows.length,
-                  separatorBuilder: (context, index) =>
-                      Divider(height: 1, indent: useDesktopNav ? 50 : 60),
-                  itemBuilder: (context, i) =>
-                      _buildAuditTile(widget.rows[i], i, colors, isDark, useDesktopNav),
-                ),
-              ),
+            ],
+          ),
+        ),
+        body: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: useDesktopNav ? 12 : 8,
+              vertical: 16,
             ),
-          ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(bottom: useDesktopNav ? 6 : 8),
+                  child: Text(
+                    widget.isBatchMode
+                        ? "The following items in batch ${widget.currentBatchNumber} were modified recently. Select items to apply adjustments:"
+                        : "The following items were modified recently. Select items to apply adjustments:",
+                    style: TextStyle(
+                      fontSize: descFontSize,
+                      color: isDark ? Colors.white70 : colors.onSurfaceMuted,
+                    ),
+                  ),
+                ),
+                _buildSelectAllRow(colors, isDark, useDesktopNav, selectAllPaddingH, selectAllPaddingV, checkboxSize, selectAllFontSize, countBadgeFontSize),
+                SizedBox(height: useDesktopNav ? 6 : 8),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: widget.rows.length,
+                    separatorBuilder: (context, index) =>
+                        Divider(height: 1, indent: useDesktopNav ? 50 : 60),
+                    itemBuilder: (context, i) =>
+                        _buildAuditTile(widget.rows[i], i, colors, isDark, useDesktopNav),
+                  ),
+                ),
+                SizedBox(height: useDesktopNav ? 12 : 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _onAdjustAndCommit,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: kPrimaryColor,
+                          minimumSize: const Size.fromHeight(48),
+                          side: const BorderSide(
+                            color: kPrimaryColor,
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                        ),
+                        child: Text(
+                          _noneSelected
+                              ? "Adjust & Commit"
+                              : "Adjust (${_selectedIndices.length}) & Commit",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _onIgnoreAndCommit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryColor,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(48),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                        ),
+                        child: const Text(
+                          "Ignore & Commit",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      actions: [
-        DialogActionsRow(
-          actions: [
-            DialogTextAction(
-              label: _noneSelected
-                  ? "Adjust & Commit"
-                  : "Adjust (${_selectedIndices.length}) & Commit",
-              style: DialogActionStyle.outline,
-              onPressed: _onAdjustAndCommit,
-            ),
-            DialogTextAction(
-              label: "Ignore & Commit",
-              style: DialogActionStyle.primary,
-              onPressed: _onIgnoreAndCommit,
-            ),
-          ],
-        ),
-      ],
     );
   }
 
