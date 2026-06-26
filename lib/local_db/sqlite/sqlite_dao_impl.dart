@@ -80,6 +80,7 @@ import 'package:rmmobile/local_db/local_db_dao.dart';
 import 'package:rmmobile/local_db/sqlite/sqlite_constants.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../entities/vos/filter_criteria.dart';
+import '../../utils/barcode_utils.dart';
 import '../../utils/log_utils.dart';
 
 class SQLiteDAOImpl extends LocalDbDAO {
@@ -489,7 +490,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
-  Future<List<CountedStockVO>> getStocktakeItemsToCommit(String shopfront) async {
+  Future<List<CountedStockVO>> getStocktakeItemsToCommit(
+    String shopfront,
+  ) async {
     try {
       final db = _database!;
       final List<Map<String, dynamic>> result = await db.query(
@@ -583,19 +586,31 @@ class SQLiteDAOImpl extends LocalDbDAO {
       // Calculate barcode variations for cross-platform compatibility (iOS/Android)
       // iOS (Apple Vision) reads UPC-A as 13-digit EAN-13 with leading zero
       // Android (ML Kit) reads UPC-A as 12 digits
-      final withoutLeadingZero = (trimmed.length == 13 && trimmed.startsWith('0'))
+      final withoutLeadingZero =
+          (trimmed.length == 13 && trimmed.startsWith('0'))
           ? trimmed.substring(1)
           : trimmed;
-      final withLeadingZero = (trimmed.length == 12)
-          ? '0$trimmed'
-          : trimmed;
+      final withLeadingZero = (trimmed.length == 12) ? '0$trimmed' : trimmed;
+
+      // Numeric-only variation: if the scanned value is digits-only, strip ALL
+      // leading zeros (e.g. "001234" -> "1234"). For alphanumeric values this
+      // returns the value unchanged, so it is effectively searched as-is.
+      final numericOnly = BarcodeUtils.numericOnly(trimmed);
 
       // 1) Barcode exact match (case-insensitive, ALL matches) - exclude default stock
-      // Check all three variations: original, without leading zero, with leading zero
+      // Check all variations: original, without leading zero, with leading zero,
+      // and numeric-only (all leading zeros stripped).
       final barcodeRows = await db.query(
         'Stocks',
-        where: '(Barcode = ? OR Barcode = ? OR Barcode = ?) COLLATE NOCASE AND shopfront = ? AND stock_id != 0',
-        whereArgs: [trimmed, withoutLeadingZero, withLeadingZero, shopfront],
+        where:
+            '(Barcode = ? OR Barcode = ? OR Barcode = ? OR Barcode = ?) COLLATE NOCASE AND shopfront = ? AND stock_id != 0',
+        whereArgs: [
+          trimmed,
+          withoutLeadingZero,
+          withLeadingZero,
+          numericOnly,
+          shopfront,
+        ],
       );
 
       if (barcodeRows.isNotEmpty) {
@@ -618,8 +633,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
       );
 
       if (descriptionExactRows.isNotEmpty) {
-        final matches =
-            descriptionExactRows.map((e) => StockVO.fromJson(e)).toList();
+        final matches = descriptionExactRows
+            .map((e) => StockVO.fromJson(e))
+            .toList();
 
         if (matches.length == 1) {
           return StockSearchResult.found(matches.first);
@@ -636,12 +652,14 @@ class SQLiteDAOImpl extends LocalDbDAO {
       );
 
       if (descriptionRows.isNotEmpty) {
-        final matches = descriptionRows.map((e) => StockVO.fromJson(e)).toList();
-        
+        final matches = descriptionRows
+            .map((e) => StockVO.fromJson(e))
+            .toList();
+
         if (matches.length == 1) {
           return StockSearchResult.found(matches.first);
         }
-        
+
         return StockSearchResult.duplicates(matches);
       }
 
@@ -654,11 +672,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       if (custom1Rows.isNotEmpty) {
         final matches = custom1Rows.map((e) => StockVO.fromJson(e)).toList();
-        
+
         if (matches.length == 1) {
           return StockSearchResult.found(matches.first);
         }
-        
+
         return StockSearchResult.duplicates(matches);
       }
 
@@ -671,11 +689,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       if (custom2Rows.isNotEmpty) {
         final matches = custom2Rows.map((e) => StockVO.fromJson(e)).toList();
-        
+
         if (matches.length == 1) {
           return StockSearchResult.found(matches.first);
         }
-        
+
         return StockSearchResult.duplicates(matches);
       }
 
@@ -804,12 +822,16 @@ class SQLiteDAOImpl extends LocalDbDAO {
       }
 
       if (q.isEmpty) {
-        return runQuery(whereClause: baseWhere, args: baseArgs, matchedColumn: null);
+        return runQuery(
+          whereClause: baseWhere,
+          args: baseArgs,
+          matchedColumn: null,
+        );
       }
 
       // Determine search pattern based on search mode
       final String searchPattern = searchMode == SearchMode.prefix
-          ? '$q%'  // Prefix search: matches start of string
+          ? '$q%' // Prefix search: matches start of string
           : '%$q%'; // Partial search: matches anywhere in string
 
       // Search priority is always:
@@ -841,7 +863,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return null;
       }
 
-      final matchClause = searchPriority.map((col) => '$col LIKE ?').join(' OR ');
+      final matchClause = searchPriority
+          .map((col) => '$col LIKE ?')
+          .join(' OR ');
       final whereClause = '$baseWhere AND ($matchClause)';
       final whereArgs = [
         ...baseArgs,
@@ -1120,9 +1144,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         whereArgs: [shopfront, fromId, toId],
         orderBy: 'stock_id ASC',
       );
-      return rows
-          .map((row) => (row['stock_id'] as num).toInt())
-          .toList();
+      return rows.map((row) => (row['stock_id'] as num).toInt()).toList();
     } catch (error) {
       logger.e('Error getting stock ids for $shopfront: $error');
       return Future.error("Error getting stock ids: $error");
@@ -1303,7 +1325,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
       List<Map<String, dynamic>> result;
 
       if (q.isEmpty) {
-        result = await db.rawQuery('''
+        result = await db.rawQuery(
+          '''
           SELECT 
             st.stocktake_date,
             st.stock_id,
@@ -1320,10 +1343,13 @@ class SQLiteDAOImpl extends LocalDbDAO {
           WHERE st.shopfront = ?
           ORDER BY st.stocktake_date ASC
           LIMIT ? OFFSET ?
-        ''', [shopfront, limit, offset]);
+        ''',
+          [shopfront, limit, offset],
+        );
       } else {
         final like = '%$q%';
-        result = await db.rawQuery('''
+        result = await db.rawQuery(
+          '''
           SELECT 
             st.stocktake_date,
             st.stock_id,
@@ -1340,14 +1366,18 @@ class SQLiteDAOImpl extends LocalDbDAO {
           WHERE st.shopfront = ? AND (st.barcode LIKE ? OR st.description LIKE ?)
           ORDER BY st.stocktake_date ASC
           LIMIT ? OFFSET ?
-        ''', [shopfront, like, like, limit, offset]);
+        ''',
+          [shopfront, like, like, limit, offset],
+        );
       }
 
       return result.map((map) {
         return CountedStockVO.fromJson(map);
       }).toList();
     } catch (e) {
-      return Future.error("Error retrieving paged stocktake items to commit: $e");
+      return Future.error(
+        "Error retrieving paged stocktake items to commit: $e",
+      );
     }
   }
 
@@ -2087,18 +2117,14 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }) async {
     try {
       final db = _database!;
-      await db.insert(
-        'CustomerBalances',
-        {
-          'customer_id': customerId,
-          'shopfront': shopfront,
-          'owing_amount': owingAmount,
-          'credit_limit': creditLimit,
-          'remaining_credit': remainingCredit,
-          'updated_at': DateTime.now().toIso8601String(),
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await db.insert('CustomerBalances', {
+        'customer_id': customerId,
+        'shopfront': shopfront,
+        'owing_amount': owingAmount,
+        'credit_limit': creditLimit,
+        'remaining_credit': remainingCredit,
+        'updated_at': DateTime.now().toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (error) {
       logger.e('Error saving customer balance in local db: $error');
       return Future.error("Error saving customer balance: $error");
@@ -2179,10 +2205,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         final Map<String, dynamic> current = Map<String, dynamic>.from(
           jsonDecode(row['payload_json'] as String) as Map,
         );
-        final Map<String, dynamic> combined = {
-          ...current,
-          ...mergedPayload,
-        };
+        final Map<String, dynamic> combined = {...current, ...mergedPayload};
 
         await db.update(
           'PendingStockUpdates',
@@ -2318,21 +2341,26 @@ class SQLiteDAOImpl extends LocalDbDAO {
       final pending = await getPendingStockUpdates(shopfront);
       if (pending.isEmpty) return;
 
-      logger.d('Detecting conflicts for ${pending.length} pending stock updates');
+      logger.d(
+        'Detecting conflicts for ${pending.length} pending stock updates',
+      );
 
       final List<int> conflictIds = [];
       final List<int> noConflictIds = [];
 
       for (final entry in pending) {
         final payload = entry.payload;
-        final int stockId = (payload['stock_id'] as num?)?.toInt() ??
+        final int stockId =
+            (payload['stock_id'] as num?)?.toInt() ??
             (payload['stockId'] as num?)?.toInt() ??
             entry.stockId;
 
         // Get the pending update's date_modified from payload
         final String? pendingDateModified = payload['date_modified'] as String?;
-        logger.d('Stock #$stockId - Pending date_modified: $pendingDateModified');
-        
+        logger.d(
+          'Stock #$stockId - Pending date_modified: $pendingDateModified',
+        );
+
         if (pendingDateModified == null || pendingDateModified.isEmpty) {
           // No date_modified in pending update, skip conflict detection
           logger.d('Stock #$stockId - No date_modified in pending, skipping');
@@ -2359,7 +2387,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
         final String? dbDateModified = rows.first['date_modified'] as String?;
         logger.d('Stock #$stockId - DB date_modified: $dbDateModified');
-        
+
         if (dbDateModified == null || dbDateModified.isEmpty) {
           // No date_modified in DB, no conflict
           logger.d('Stock #$stockId - No date_modified in DB, no conflict');
@@ -2380,7 +2408,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
         // If DB record was modified after the pending update was created,
         // mark as conflict
         if (dbDate.isAfter(pendingDate)) {
-          logger.d('Stock #$stockId - CONFLICT: DB ($dbDateModified) is newer than pending ($pendingDateModified)');
+          logger.d(
+            'Stock #$stockId - CONFLICT: DB ($dbDateModified) is newer than pending ($pendingDateModified)',
+          );
           conflictIds.add(entry.id);
         } else {
           logger.d('Stock #$stockId - No conflict: pending is newer or equal');
@@ -2388,7 +2418,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
         }
       }
 
-      logger.d('Conflict detection complete: ${conflictIds.length} conflicts, ${noConflictIds.length} ok');
+      logger.d(
+        'Conflict detection complete: ${conflictIds.length} conflicts, ${noConflictIds.length} ok',
+      );
 
       // Update conflict status
       if (conflictIds.isNotEmpty) {
@@ -2411,7 +2443,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       for (final entry in pending) {
         final payload = entry.payload;
-        final int stockId = (payload['stock_id'] as num?)?.toInt() ??
+        final int stockId =
+            (payload['stock_id'] as num?)?.toInt() ??
             (payload['stockId'] as num?)?.toInt() ??
             entry.stockId;
         final String description = (payload['description'] as String?) ?? '';
@@ -2495,7 +2528,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
       final db = _database!;
       final existing = await db.query(
         'PendingCustomerUpdates',
-        where: 'shopfront = ? AND customer_id = ? AND action = ? AND status = 0',
+        where:
+            'shopfront = ? AND customer_id = ? AND action = ? AND status = 0',
         whereArgs: [shopfront, customerId, action],
         limit: 1,
       );
@@ -2525,10 +2559,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
             ? Map<String, dynamic>.from(newItems.first as Map)
             : <String, dynamic>{};
 
-        final Map<String, dynamic> combinedItem = {
-          ...currentItem,
-          ...newItem,
-        };
+        final Map<String, dynamic> combinedItem = {...currentItem, ...newItem};
 
         if (!newItem.containsKey('addresses') &&
             currentItem.containsKey('addresses')) {
@@ -2609,8 +2640,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
     for (final raw in addresses) {
       final map = Map<String, dynamic>.from(raw as Map);
       final int addressId = _readAddressInt(map, 'addressId', 'address_id');
-      final int addressNumber =
-          _readAddressInt(map, 'addressNumber', 'address_number');
+      final int addressNumber = _readAddressInt(
+        map,
+        'addressNumber',
+        'address_number',
+      );
       final int resolvedCustomerId = _readAddressInt(
         map,
         'customerId',
@@ -2808,40 +2842,50 @@ class SQLiteDAOImpl extends LocalDbDAO {
   @override
   Future<void> detectPendingCustomerConflicts(String shopfront) async {
     try {
-      final pending = await getPendingCustomerUpdates(shopfront, action: 'update');
+      final pending = await getPendingCustomerUpdates(
+        shopfront,
+        action: 'update',
+      );
       if (pending.isEmpty) return;
 
-      logger.d('Detecting conflicts for ${pending.length} pending customer updates');
+      logger.d(
+        'Detecting conflicts for ${pending.length} pending customer updates',
+      );
 
       final List<int> conflictIds = [];
       final List<int> noConflictIds = [];
 
       for (final entry in pending) {
         final payload = entry.payload;
-        
+
         // Extract item from payload - date_modified is inside items[0]
         final items = payload['items'];
         final Map<String, dynamic>? item = (items is List && items.isNotEmpty)
             ? Map<String, dynamic>.from(items.first as Map)
             : null;
-        
-        final int customerId = (item?['customer_id'] as num?)?.toInt() ??
-          (item?['customerId'] as num?)?.toInt() ??
-          (payload['customer_id'] as num?)?.toInt() ??
-          (payload['customerId'] as num?)?.toInt() ??
-          entry.customerId;
+
+        final int customerId =
+            (item?['customer_id'] as num?)?.toInt() ??
+            (item?['customerId'] as num?)?.toInt() ??
+            (payload['customer_id'] as num?)?.toInt() ??
+            (payload['customerId'] as num?)?.toInt() ??
+            entry.customerId;
         final String barcode =
-          (item?['barcode'] as String?) ??
-          (payload['barcode'] as String?) ??
-          '';
+            (item?['barcode'] as String?) ??
+            (payload['barcode'] as String?) ??
+            '';
 
         // Get the pending update's date_modified from payload item
         final String? pendingDateModified = item?['date_modified'] as String?;
-        logger.d('Customer #$customerId - Pending date_modified: $pendingDateModified');
-        
+        logger.d(
+          'Customer #$customerId - Pending date_modified: $pendingDateModified',
+        );
+
         if (pendingDateModified == null || pendingDateModified.isEmpty) {
           // No date_modified in pending update, skip conflict detection
-          logger.d('Customer #$customerId - No date_modified in pending, skipping');
+          logger.d(
+            'Customer #$customerId - No date_modified in pending, skipping',
+          );
           noConflictIds.add(entry.id);
           continue;
         }
@@ -2878,10 +2922,12 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
         final String? dbDateModified = rows.first['date_modified'] as String?;
         logger.d('Customer #$customerId - DB date_modified: $dbDateModified');
-        
+
         if (dbDateModified == null || dbDateModified.isEmpty) {
           // No date_modified in DB, no conflict
-          logger.d('Customer #$customerId - No date_modified in DB, no conflict');
+          logger.d(
+            'Customer #$customerId - No date_modified in DB, no conflict',
+          );
           noConflictIds.add(entry.id);
           continue;
         }
@@ -2891,7 +2937,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
         final DateTime? dbDate = DateTime.tryParse(dbDateModified);
 
         if (pendingDate == null || dbDate == null) {
-          logger.d('Customer #$customerId - Failed to parse dates, no conflict');
+          logger.d(
+            'Customer #$customerId - Failed to parse dates, no conflict',
+          );
           noConflictIds.add(entry.id);
           continue;
         }
@@ -2899,15 +2947,21 @@ class SQLiteDAOImpl extends LocalDbDAO {
         // If DB record was modified after the pending update was created,
         // mark as conflict
         if (dbDate.isAfter(pendingDate)) {
-          logger.d('Customer #$customerId - CONFLICT: DB ($dbDateModified) is newer than pending ($pendingDateModified)');
+          logger.d(
+            'Customer #$customerId - CONFLICT: DB ($dbDateModified) is newer than pending ($pendingDateModified)',
+          );
           conflictIds.add(entry.id);
         } else {
-          logger.d('Customer #$customerId - No conflict: pending is newer or equal');
+          logger.d(
+            'Customer #$customerId - No conflict: pending is newer or equal',
+          );
           noConflictIds.add(entry.id);
         }
       }
 
-      logger.d('Conflict detection complete: ${conflictIds.length} conflicts, ${noConflictIds.length} ok');
+      logger.d(
+        'Conflict detection complete: ${conflictIds.length} conflicts, ${noConflictIds.length} ok',
+      );
 
       // Update conflict status
       if (conflictIds.isNotEmpty) {
@@ -2988,10 +3042,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         final Map<String, dynamic> current = Map<String, dynamic>.from(
           jsonDecode(row['payload_json'] as String) as Map,
         );
-        final Map<String, dynamic> combined = {
-          ...current,
-          ...mergedPayload,
-        };
+        final Map<String, dynamic> combined = {...current, ...mergedPayload};
 
         await db.update(
           'PendingCustomerCreations',
@@ -3058,8 +3109,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
     for (final raw in addresses) {
       final map = Map<String, dynamic>.from(raw as Map);
       final int addressId = _readAddressInt(map, 'addressId', 'address_id');
-      final int addressNumber =
-          _readAddressInt(map, 'addressNumber', 'address_number');
+      final int addressNumber = _readAddressInt(
+        map,
+        'addressNumber',
+        'address_number',
+      );
       final int resolvedCustomerId = _readAddressInt(
         map,
         'customerId',
@@ -3252,15 +3306,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
         final Map<int, int> addressNumberToId = {};
         for (final addrRow in addressRows) {
           nextAddressId += 1;
-          final int addressNumber =
-              (addrRow['address_number'] as int?) ?? 0;
+          final int addressNumber = (addrRow['address_number'] as int?) ?? 0;
           addressNumberToId[addressNumber] = nextAddressId;
           await db.update(
             'pending_customer_creation_addresses',
-            {
-              'customer_id': maxId,
-              'address_id': nextAddressId,
-            },
+            {'customer_id': maxId, 'address_id': nextAddressId},
             where: 'id = ?',
             whereArgs: [addrRow['id'] as int],
           );
@@ -3292,10 +3342,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
         await db.update(
           'PendingCustomerCreations',
-          {
-            'customer_id': maxId,
-            'payload_json': jsonEncode(payloadMap),
-          },
+          {'customer_id': maxId, 'payload_json': jsonEncode(payloadMap)},
           where: 'id = ?',
           whereArgs: [row['id'] as int],
         );
@@ -3325,7 +3372,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
     Map<String, dynamic> item,
     String shopfront,
   ) async {
-    final int customerId = (item['customerId'] as num?)?.toInt() ??
+    final int customerId =
+        (item['customerId'] as num?)?.toInt() ??
         (item['customer_id'] as num?)?.toInt() ??
         0;
 
@@ -3337,17 +3385,18 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
 
     final dynamic rawDateModified =
-      item['date_modified'] ?? item['dateModified'];
+        item['date_modified'] ?? item['dateModified'];
     final String incomingDateModified = rawDateModified == null
-      ? ''
-      : rawDateModified.toString().trim();
+        ? ''
+        : rawDateModified.toString().trim();
     final String resolvedDateModified = incomingDateModified.isNotEmpty
-      ? incomingDateModified
-      : existing.dateModified;
+        ? incomingDateModified
+        : existing.dateModified;
 
     final Map<String, dynamic> updateData = {
       'surname': item['surname'] ?? existing.surname,
-      'given_names': item['givenNames'] ?? item['given_names'] ?? existing.givenNames,
+      'given_names':
+          item['givenNames'] ?? item['given_names'] ?? existing.givenNames,
       'grade': item['grade'] ?? existing.grade,
       'company': item['company'] ?? existing.company,
       'position': item['position'] ?? existing.position,
@@ -3370,7 +3419,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
       'email': item['email'] ?? existing.email,
       'opened_id': item['openedId'] ?? item['opened_id'] ?? existing.openedId,
       'owner_id': item['ownerId'] ?? item['owner_id'] ?? existing.ownerId,
-      'from_eom': _asDbBool(item['fromEOM'] ?? item['from_eom'] ?? existing.fromEOM),
+      'from_eom': _asDbBool(
+        item['fromEOM'] ?? item['from_eom'] ?? existing.fromEOM,
+      ),
       'days': item['days'] ?? existing.days,
       'limit': item['limit'] ?? existing.limit,
       'default_delivery_address':
@@ -3397,27 +3448,23 @@ class SQLiteDAOImpl extends LocalDbDAO {
       final addresses = item['addresses'] as List;
       for (final raw in addresses) {
         final map = Map<String, dynamic>.from(raw as Map);
-        await db.insert(
-          'CustomerAddresses',
-          {
-            'address_id': map['addressId'] ?? 0,
-            'customer_id': map['customerId'] ?? customerId,
-            'shopfront': shopfront,
-            'address_number': map['addressNumber'] ?? 0,
-            'addr1': map['addr1'] ?? '',
-            'addr2': map['addr2'] ?? '',
-            'addr3': map['addr3'] ?? '',
-            'suburb': map['suburb'] ?? '',
-            'state': map['state'] ?? '',
-            'postcode': map['postcode'] ?? '',
-            'country': map['country'] ?? '',
-            'phone': map['phone'] ?? '',
-            'fax': map['fax'] ?? '',
-            'mobile': map['mobile'] ?? '',
-            'email': map['email'] ?? '',
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        await db.insert('CustomerAddresses', {
+          'address_id': map['addressId'] ?? 0,
+          'customer_id': map['customerId'] ?? customerId,
+          'shopfront': shopfront,
+          'address_number': map['addressNumber'] ?? 0,
+          'addr1': map['addr1'] ?? '',
+          'addr2': map['addr2'] ?? '',
+          'addr3': map['addr3'] ?? '',
+          'suburb': map['suburb'] ?? '',
+          'state': map['state'] ?? '',
+          'postcode': map['postcode'] ?? '',
+          'country': map['country'] ?? '',
+          'phone': map['phone'] ?? '',
+          'fax': map['fax'] ?? '',
+          'mobile': map['mobile'] ?? '',
+          'email': map['email'] ?? '',
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
       }
     }
   }
@@ -3623,12 +3670,16 @@ class SQLiteDAOImpl extends LocalDbDAO {
       }
 
       if (q.isEmpty) {
-        return runQuery(whereClause: baseWhere, args: baseArgs, matchedColumn: null);
+        return runQuery(
+          whereClause: baseWhere,
+          args: baseArgs,
+          matchedColumn: null,
+        );
       }
 
       // Determine search pattern based on search mode
       final String searchPattern = searchMode == SearchMode.prefix
-          ? '$q%'  // Prefix search: matches start of string
+          ? '$q%' // Prefix search: matches start of string
           : '%$q%'; // Partial search: matches anywhere in string
 
       // Search priority: barcode → given_names → surname → company → phone → fax → mobile → email
@@ -3662,7 +3713,9 @@ class SQLiteDAOImpl extends LocalDbDAO {
         return null;
       }
 
-      final matchClause = searchPriority.map((col) => '$col LIKE ?').join(' OR ');
+      final matchClause = searchPriority
+          .map((col) => '$col LIKE ?')
+          .join(' OR ');
       final whereClause = '$baseWhere AND ($matchClause)';
       final whereArgs = [
         ...baseArgs,
@@ -3910,9 +3963,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         whereArgs: [shopfront, fromId, toId],
         orderBy: 'customer_id ASC',
       );
-      return rows
-          .map((row) => (row['customer_id'] as num).toInt())
-          .toList();
+      return rows.map((row) => (row['customer_id'] as num).toInt()).toList();
     } catch (error) {
       logger.e('Error getting customer ids for $shopfront: $error');
       return Future.error("Error getting customer ids: $error");
@@ -3976,7 +4027,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
       if (results.isEmpty) {
         results = await db.query(
           'Customers',
-          where: 'shopfront = ? AND (phone LIKE ? OR mobile LIKE ? OR fax LIKE ?)',
+          where:
+              'shopfront = ? AND (phone LIKE ? OR mobile LIKE ? OR fax LIKE ?)',
           whereArgs: [shopfront, '%$q%', '%$q%', '%$q%'],
           limit: 10,
         );
@@ -3996,7 +4048,8 @@ class SQLiteDAOImpl extends LocalDbDAO {
       if (results.isEmpty) {
         results = await db.query(
           'Customers',
-          where: 'shopfront = ? AND (addr1 LIKE ? OR suburb LIKE ? OR postcode LIKE ?)',
+          where:
+              'shopfront = ? AND (addr1 LIKE ? OR suburb LIKE ? OR postcode LIKE ?)',
           whereArgs: [shopfront, '%$q%', '%$q%', '%$q%'],
           limit: 10,
         );
@@ -4010,7 +4063,11 @@ class SQLiteDAOImpl extends LocalDbDAO {
       final List<CustomerVO> customers = [];
       for (final row in results) {
         final customerId = row['customer_id'] as int;
-        final addresses = await _getCustomerAddresses(db, customerId, shopfront);
+        final addresses = await _getCustomerAddresses(
+          db,
+          customerId,
+          shopfront,
+        );
         customers.add(_customerFromRow(row, addresses));
       }
 
@@ -4191,7 +4248,6 @@ class SQLiteDAOImpl extends LocalDbDAO {
     }
   }
 
-
   // ===========================================================================
   // SECTION 11: CUSTOMER TRANSACTIONS (Customer Details Screen)
   // ===========================================================================
@@ -4355,8 +4411,12 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       await batch.commit(noResult: true);
     } catch (error) {
-      logger.e('Error replacing customer $transactionType transactions: $error');
-      return Future.error("Error replacing customer $transactionType transactions: $error");
+      logger.e(
+        'Error replacing customer $transactionType transactions: $error',
+      );
+      return Future.error(
+        "Error replacing customer $transactionType transactions: $error",
+      );
     }
   }
 
@@ -4396,8 +4456,12 @@ class SQLiteDAOImpl extends LocalDbDAO {
 
       await batch.commit(noResult: true);
     } catch (error) {
-      logger.e('Error appending customer $transactionType transactions: $error');
-      return Future.error("Error appending customer $transactionType transactions: $error");
+      logger.e(
+        'Error appending customer $transactionType transactions: $error',
+      );
+      return Future.error(
+        "Error appending customer $transactionType transactions: $error",
+      );
     }
   }
 
@@ -4673,12 +4737,12 @@ class SQLiteDAOImpl extends LocalDbDAO {
       final db = _database!;
       String where = 'shopfront = ?';
       List<dynamic> whereArgs = [shopfront];
-      
+
       if (sessionType != null) {
         where += ' AND session_type = ?';
         whereArgs.add(sessionType);
       }
-      
+
       final result = await db.query(
         'SaleSessions',
         where: where,
@@ -4715,7 +4779,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
       // Remove id if it's provided - let SQLite auto-generate it
       final data = Map<String, dynamic>.from(session);
       data.remove('id');
-      
+
       final id = await db.insert('SaleSessions', data);
       logger.d('Saved sale session with id: $id');
       return id;
@@ -4734,7 +4798,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         logger.e('Cannot update sale session without id');
         return;
       }
-      
+
       await db.update(
         'SaleSessions',
         session,
@@ -4751,11 +4815,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
   Future<void> deleteSaleSession(int id) async {
     try {
       final db = _database!;
-      await db.delete(
-        'SaleSessions',
-        where: 'id = ?',
-        whereArgs: [id],
-      );
+      await db.delete('SaleSessions', where: 'id = ?', whereArgs: [id]);
       logger.d('Deleted sale session: $id');
     } catch (error) {
       logger.e('Error deleting sale session: $error');
@@ -4763,16 +4823,19 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
-  Future<void> deleteAllSaleSessions({String? shopfront, String? sessionType}) async {
+  Future<void> deleteAllSaleSessions({
+    String? shopfront,
+    String? sessionType,
+  }) async {
     try {
       final db = _database!;
       String? where;
       List<dynamic>? whereArgs;
-      
+
       if (shopfront != null || sessionType != null) {
         final conditions = <String>[];
         whereArgs = <dynamic>[];
-        
+
         if (shopfront != null) {
           conditions.add('shopfront = ?');
           whereArgs.add(shopfront);
@@ -4781,12 +4844,14 @@ class SQLiteDAOImpl extends LocalDbDAO {
           conditions.add('session_type = ?');
           whereArgs.add(sessionType);
         }
-        
+
         where = conditions.join(' AND ');
       }
-      
+
       await db.delete('SaleSessions', where: where, whereArgs: whereArgs);
-      logger.d('Deleted all sale sessions (shopfront: $shopfront, type: $sessionType)');
+      logger.d(
+        'Deleted all sale sessions (shopfront: $shopfront, type: $sessionType)',
+      );
     } catch (error) {
       logger.e('Error deleting all sale sessions: $error');
     }
@@ -4800,7 +4865,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         'SELECT session_type, COUNT(*) as count FROM SaleSessions WHERE shopfront = ? GROUP BY session_type',
         [shopfront],
       );
-      
+
       final counts = <String, int>{};
       for (final row in result) {
         final sessionType = row['session_type'] as String;
@@ -4815,10 +4880,13 @@ class SQLiteDAOImpl extends LocalDbDAO {
   }
 
   @override
-  Future<Map<String, Map<String, dynamic>>> getSaleSessionSummaries(String shopfront) async {
+  Future<Map<String, Map<String, dynamic>>> getSaleSessionSummaries(
+    String shopfront,
+  ) async {
     try {
       final db = _database!;
-      final result = await db.rawQuery('''
+      final result = await db.rawQuery(
+        '''
         SELECT 
           session_type,
           COUNT(*) as count,
@@ -4828,8 +4896,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
         FROM SaleSessions 
         WHERE shopfront = ? 
         GROUP BY session_type
-      ''', [shopfront]);
-      
+      ''',
+        [shopfront],
+      );
+
       final summaries = <String, Map<String, dynamic>>{};
       for (final row in result) {
         final sessionType = row['session_type'] as String;
@@ -4840,7 +4910,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           'customerCount': row['customer_count'] as int? ?? 0,
         };
       }
-      
+
       // Get item counts separately (from cart_items_json)
       for (final sessionType in summaries.keys) {
         final sessions = await db.query(
@@ -4849,7 +4919,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           where: 'shopfront = ? AND session_type = ?',
           whereArgs: [shopfront, sessionType],
         );
-        
+
         int totalItems = 0;
         for (final session in sessions) {
           final cartJson = session['cart_items_json'] as String?;
@@ -4857,7 +4927,10 @@ class SQLiteDAOImpl extends LocalDbDAO {
             try {
               // Count items in cart - look for common patterns
               // Try multiple patterns to catch different JSON structures
-              final stockCodeMatches = RegExp(r'"stockCode"|"stock_code"|"StockCode"', caseSensitive: false).allMatches(cartJson);
+              final stockCodeMatches = RegExp(
+                r'"stockCode"|"stock_code"|"StockCode"',
+                caseSensitive: false,
+              ).allMatches(cartJson);
               if (stockCodeMatches.isNotEmpty) {
                 totalItems += stockCodeMatches.length;
               } else {
@@ -4870,7 +4943,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
         }
         summaries[sessionType]!['itemCount'] = totalItems;
       }
-      
+
       return summaries;
     } catch (error) {
       logger.e('Error getting sale session summaries: $error');
@@ -4930,7 +5003,7 @@ class SQLiteDAOImpl extends LocalDbDAO {
           where: 'shopfront = ?',
           whereArgs: [shopfront],
         );
-        
+
         // Insert new tax codes
         for (final taxCode in taxCodes) {
           await txn.insert(

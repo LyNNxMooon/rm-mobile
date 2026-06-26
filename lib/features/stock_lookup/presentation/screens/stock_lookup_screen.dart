@@ -20,6 +20,7 @@ import 'package:rmmobile/features/stock_lookup/presentation/widgets/stock_thumbn
 import 'package:rmmobile/utils/formatting_utils.dart';
 import 'package:rmmobile/utils/navigation_extension.dart';
 import 'package:rmmobile/utils/text_highlight_utils.dart';
+import 'package:rmmobile/utils/barcode_utils.dart';
 import '../../../../../../constants/colors.dart';
 import '../../../../../../constants/theme_colors.dart';
 import '../../../../constants/global_widgets.dart';
@@ -592,8 +593,13 @@ class _StockLookupScreenState extends State<StockLookupScreen> {
             ? StockLookupScanner(
                 key: const ValueKey('scanner'),
                 function: (capture) async {
-                  final String currentBarcode =
+                  final String rawBarcode =
                       capture.barcodes.first.rawValue ?? "";
+                  // Match the scan behaviour used elsewhere: digit-only barcodes
+                  // are searched with leading zeros stripped (e.g. "001234" ->
+                  // "1234"); alphanumeric values are searched as-is.
+                  final String currentBarcode =
+                      BarcodeUtils.numericOnly(rawBarcode);
 
                   final barcodes = capture.barcodes;
                   if (barcodes.isEmpty) return;
