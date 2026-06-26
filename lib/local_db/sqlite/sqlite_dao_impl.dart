@@ -600,14 +600,20 @@ class SQLiteDAOImpl extends LocalDbDAO {
       // 1) Barcode exact match (case-insensitive, ALL matches) - exclude default stock
       // Check all variations: original, without leading zero, with leading zero,
       // and numeric-only (all leading zeros stripped).
+      //
+      // The final term `LTRIM(Barcode, '0') = ?` strips leading zeros from the
+      // STORED barcode as well, so a stock saved with its own leading zeros
+      // (e.g. "000007") still matches when the scanned sticker is the long form
+      // ("000000000007" -> numericOnly "7" -> LTRIM("000007",'0') "7").
       final barcodeRows = await db.query(
         'Stocks',
         where:
-            '(Barcode = ? OR Barcode = ? OR Barcode = ? OR Barcode = ?) COLLATE NOCASE AND shopfront = ? AND stock_id != 0',
+            "(Barcode = ? OR Barcode = ? OR Barcode = ? OR Barcode = ? OR LTRIM(Barcode, '0') = ?) COLLATE NOCASE AND shopfront = ? AND stock_id != 0",
         whereArgs: [
           trimmed,
           withoutLeadingZero,
           withLeadingZero,
+          numericOnly,
           numericOnly,
           shopfront,
         ],
