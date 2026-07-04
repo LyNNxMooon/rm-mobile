@@ -215,7 +215,7 @@ class _StockActivityScreenState extends State<StockActivityScreen> {
           headerCell('Tran #', 2, TextAlign.center),
           headerCell('Qty', 2, TextAlign.center),
           headerCell('Date', 3, TextAlign.right),
-          headerCell('Days', 2, TextAlign.right),
+          headerCell('Day(s)', 2, TextAlign.right),
         ],
       ),
     );

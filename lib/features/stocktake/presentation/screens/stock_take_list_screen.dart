@@ -302,15 +302,15 @@ class _StockTakeListScreenState extends State<StockTakeListScreen> {
     return BlocConsumer<BatchCommitBloc, BatchCommitState>(
       listener: (context, state) {
         if (state is BatchCommitAwaitingAuditDecision) {
-          // Show audit decision dialog for current batch
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => TransactionsDetectedDialog(
-              rows: state.audits,
-              isBatchMode: true,
-              currentBatchNumber: state.currentBatchNumber,
-              totalBatches: state.totalBatches,
+          // Show audit decision screen for current batch
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => TransactionsDetectedScreen(
+                rows: state.audits,
+                isBatchMode: true,
+                currentBatchNumber: state.currentBatchNumber,
+                totalBatches: state.totalBatches,
+              ),
             ),
           );
         } else if (state is BatchCommitEmpty) {

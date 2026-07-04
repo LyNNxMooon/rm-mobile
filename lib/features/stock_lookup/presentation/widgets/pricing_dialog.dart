@@ -306,10 +306,10 @@ class _PricingDialogState extends State<PricingDialog> {
                           ),
                     const SizedBox(height: 12),
                     Text(
-                      "This is the pricing grades at Stock Level Only! If you need to view other Depts/Cats & Global level pricing rules, please refer to your RetailManager System.",
+                      "This modification is the pricing grades at Stock Level Only! If you need to modify other Depts/Cats & Global level pricing rules, please refer to your RetailManager System.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: useDesktopNav ? 9 : (isTablet ? 11 : 9.5),
+                        fontSize: useDesktopNav ? 9 : 11,
                         color: mutedText,
                         fontWeight: FontWeight.w600,
                         height: 1.3,

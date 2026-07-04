@@ -164,6 +164,7 @@ const String kSalesDisplayCustomerMessagesKey = "sales_display_customer_messages
 const String kSalesScanIndividualUnitsForFractionalKey = "sales_scan_individual_units_for_fractional";
 const String kSalesPromptScanIndividualFractionalKey = "sales_prompt_scan_individual_fractional";
 const String kSalesIsCompactViewKey = "sales_is_compact_view";
+const String kSalesIsTilesViewKey = "sales_is_tiles_view";
 const String kSalesHideBarcodeKey = "sales_hide_barcode";
 const String kSalesHideCategoriesKey = "sales_hide_categories";
 const String kSalesHideTaxCodeKey = "sales_hide_tax_code";
@@ -254,6 +255,18 @@ const customerPurchasesTableCreationQuery = '''
     price_inc REAL,
     stock_id INTEGER,
     goods_tax TEXT
+  )
+''';
+
+const customerBalancesTableCreationQuery = '''
+  CREATE TABLE IF NOT EXISTS CustomerBalances (
+    customer_id INTEGER NOT NULL,
+    shopfront TEXT NOT NULL,
+    owing_amount REAL,
+    credit_limit REAL,
+    remaining_credit REAL,
+    updated_at TEXT,
+    PRIMARY KEY (customer_id, shopfront)
   )
 ''';
 

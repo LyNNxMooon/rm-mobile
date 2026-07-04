@@ -30,6 +30,8 @@ const kEndPointForCustomerUpdate =
     "/shopfronts/{$kPathParamForShopfrontId}/customers/update";
 const kEndPointForCustomerTransactions =
     "/shopfronts/{$kPathParamForShopfrontId}/customers/{$kPathParamForCustomerId}/transactions";
+const kEndPointForCustomerBalance =
+    "/shopfronts/{$kPathParamForShopfrontId}/customers/{$kPathParamForCustomerId}/balance";
 const kEndPointForInvoice =
     "/shopfronts/{$kPathParamForShopfrontId}/transactions/invoice";
 const kEndPointForSalesOrder =

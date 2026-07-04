@@ -102,6 +102,7 @@ import '../features/customer_lookup/domain/use_cases/create_customer.dart';
 import '../features/customer_lookup/domain/use_cases/get_paginated_customers.dart';
 import '../features/customer_lookup/domain/use_cases/get_staff_by_barcode.dart';
 import '../features/customer_lookup/domain/use_cases/get_staff_detail.dart';
+import '../features/customer_lookup/domain/use_cases/fetch_customer_balance.dart';
 import '../features/customer_lookup/domain/use_cases/update_customer_details.dart';
 import '../features/customer_lookup/domain/use_cases/get_pending_customer_updates.dart';
 import '../features/customer_lookup/domain/use_cases/get_pending_customer_updates_count.dart';
@@ -231,6 +232,7 @@ Future<void> init() async {
   sl.registerFactory(() => CustomerListBloc(getPaginatedCustomers: sl()));
   sl.registerFactory(() => CustomerFilterOptionsBloc(getCustomerFilterOptions: sl()));
   sl.registerFactory(() => StaffDetailBloc(getStaffDetail: sl()));
+  sl.registerFactory(() => CustomerBalanceBloc(fetchCustomerBalance: sl()));
   sl.registerFactory(() => CustomerUpdateBloc(updateCustomerDetails: sl()));
   sl.registerFactory(
     () => CustomerTransactionsBloc(
@@ -437,6 +439,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetNextCustomerAddressId(sl()));
   sl.registerLazySingleton(() => GetStaffByBarcode(sl()));
   sl.registerLazySingleton(() => GetStaffDetail(sl()));
+  sl.registerLazySingleton(() => FetchCustomerBalance(sl()));
   sl.registerLazySingleton(() => UpdateCustomerDetails(sl()));
   sl.registerLazySingleton(() => GetFilterOptions(sl()));
   sl.registerLazySingleton(() => FetchCountingStock(sl()));

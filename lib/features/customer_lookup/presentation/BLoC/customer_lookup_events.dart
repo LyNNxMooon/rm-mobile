@@ -45,6 +45,14 @@ class LoadStaffDetailsEvent extends StaffDetailEvents {
   LoadStaffDetailsEvent({required this.openedId, required this.ownerId});
 }
 
+abstract class CustomerBalanceEvents {}
+
+class LoadCustomerBalanceEvent extends CustomerBalanceEvents {
+  final int customerId;
+
+  LoadCustomerBalanceEvent({required this.customerId});
+}
+
 abstract class CustomerUpdateEvent {}
 
 class SubmitCustomerUpdateEvent extends CustomerUpdateEvent {

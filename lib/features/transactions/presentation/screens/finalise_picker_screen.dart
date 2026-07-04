@@ -147,7 +147,7 @@ class _FinalisePickerScreenState extends State<FinalisePickerScreen> {
         label: 'Sales Order',
         value: 'Sales Order',
         icon: Icons.shopping_cart_outlined,
-        iconAsset: 'assets/images/So.png',
+        iconAsset: 'assets/images/so.png',
         color: Color(0xFF91E2E6),
       ),
       const _TxType(
@@ -431,8 +431,8 @@ class _TypeCard extends StatelessWidget {
                     ? Center(
                         child: Image.asset(
                           type.iconAsset!,
-                          width: glyphSize,
-                          height: glyphSize,
+                          width: isTablet ? 42 : 32,
+                          height: isTablet ? 42 : 32,
                         ),
                       )
                     : Icon(
@@ -834,11 +834,13 @@ class _OptionalActionsSectionState extends State<_OptionalActionsSection> {
     }
   }
 
-  Widget _action(String label, IconData icon, bool filled) {
+  Widget _action(String label, IconData icon, bool filled,
+      {String? iconAsset}) {
     return Expanded(
       child: _ActionCard(
         label: label,
         icon: icon,
+        iconAsset: iconAsset,
         filled: filled,
         isTablet: widget.isTablet,
         onTap: _editing ? () => widget.onAction(label) : null,
@@ -877,7 +879,8 @@ class _OptionalActionsSectionState extends State<_OptionalActionsSection> {
                 _action('Survey', Icons.poll_outlined, false),
                 _action('Comment', Icons.comment_outlined, false),
                 _action('Delivery', Icons.local_shipping_outlined, true),
-                _action('Discount', Icons.discount_outlined, true),
+                _action('Discount', Icons.discount_outlined, true,
+                    iconAsset: 'assets/images/discount.png'),
               ],
             ),
           ),
@@ -985,6 +988,7 @@ class _OptionalActionsSectionState extends State<_OptionalActionsSection> {
 class _ActionCard extends StatelessWidget {
   final String label;
   final IconData icon;
+  final String? iconAsset;
   final bool filled;
   final bool isTablet;
   final VoidCallback? onTap;
@@ -992,6 +996,7 @@ class _ActionCard extends StatelessWidget {
   const _ActionCard({
     required this.label,
     required this.icon,
+    this.iconAsset,
     required this.filled,
     this.isTablet = false,
     this.onTap,
@@ -1026,11 +1031,17 @@ class _ActionCard extends StatelessWidget {
                     ? null
                     : Border.all(color: const Color(0xFF9CE5A6), width: 1.5),
               ),
-              child: Icon(
-                icon,
-                size: glyphSize,
-                color: iconColor,
-              ),
+              child: iconAsset != null
+                  ? Image.asset(
+                      iconAsset!,
+                      width: isTablet ? 32 : 28,
+                      height: isTablet ? 32 : 28,
+                    )
+                  : Icon(
+                      icon,
+                      size: glyphSize,
+                      color: iconColor,
+                    ),
             ),
             SizedBox(height: isTablet ? 10 : 8),
             Text(

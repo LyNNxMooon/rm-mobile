@@ -34,6 +34,11 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
   bool _percentMode = false;
   double? _percentBase;
 
+  // True while the display is being set programmatically (e.g. when a cost
+  // checkbox loads a value), so the change listener does not treat it as the
+  // user typing and clear the cost selection.
+  bool _programmatic = false;
+
   @override
   void initState() {
     super.initState();
@@ -72,7 +77,7 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
     }
     _display = sanitized.isEmpty ? "0" : sanitized;
 
-    if (_isCostSelected) {
+    if (!_programmatic && _isCostSelected) {
       _isCostSelected = false;
       _isExclusiveSelected = false;
     }
@@ -97,10 +102,12 @@ class _PriceCalculatorDialogState extends State<PriceCalculatorDialog> {
   void _setDisplay(String value) {
     _display = value;
     if (_displayController.text != value) {
+      _programmatic = true;
       _displayController.value = TextEditingValue(
         text: value,
         selection: TextSelection.collapsed(offset: value.length),
       );
+      _programmatic = false;
     }
   }
 

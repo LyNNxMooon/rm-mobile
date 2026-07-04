@@ -1466,12 +1466,22 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                               final String incCostStr = hideCostPrice
                                   ? "-"
                                   : _formatPrice(cost);
+                              final double egpDollar = exSell - exCost;
+                              final double egpPercent = exSell != 0
+                                  ? (egpDollar / exSell) * 100
+                                  : 0;
+                              final String egpDollarStr = hideCostPrice
+                                  ? "-"
+                                  : _formatPrice(egpDollar);
+                              final String egpPercentStr = hideCostPrice
+                                  ? "-"
+                                  : "${egpPercent.toStringAsFixed(2)}%";
                               return Column(
                                 children: [
                                   _buildTaxPriceRow(
                                     label: "",
-                                    costValue: "C O S T",
-                                    salesValue: "S A L E S",
+                                    costValue: "COST",
+                                    salesValue: "SELL(RRP)",
                                     dividerColor: dividerColor,
                                     textColor: textColor,
                                     labelColor: labelColor,
@@ -1480,7 +1490,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                     isHeader: true,
                                   ),
                                   _buildTaxPriceRow(
-                                    label: "T A X   C O D E",
+                                    label: "TAX CODE",
                                     costValue: _formatTaxLabel(
                                       widget.stock.goodsTax,
                                       costTaxPercentage,
@@ -1496,7 +1506,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                     labelFontSize: labelFontSize,
                                   ),
                                   _buildTaxPriceRow(
-                                    label: "E X   T A X",
+                                    label: "EX TAX",
                                     costValue: exCostStr,
                                     salesValue:
                                         _formatPrice(exSell),
@@ -1510,7 +1520,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                     salesEditFocus: _exRrpFocus,
                                   ),
                                   _buildTaxPriceRow(
-                                    label: "I N C   T A X",
+                                    label: "INC TAX",
                                     costValue: incCostStr,
                                     salesValue:
                                         _formatPrice(sell),
@@ -1523,6 +1533,28 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                                     salesEditController: _incRrpController,
                                     salesEditFocus: _incRrpFocus,
                                   ),
+                                  _buildTaxPriceRow(
+                                    label: "",
+                                    costValue: "eGP\$",
+                                    salesValue: "eGP%",
+                                    dividerColor: dividerColor,
+                                    textColor: textColor,
+                                    labelColor: labelColor,
+                                    fontSize: rowFontSize,
+                                    labelFontSize: labelFontSize,
+                                    isHeader: true,
+                                    showDivider: false,
+                                  ),
+                                  _buildTaxPriceRow(
+                                    label: "eGP",
+                                    costValue: egpDollarStr,
+                                    salesValue: egpPercentStr,
+                                    dividerColor: dividerColor,
+                                    textColor: textColor,
+                                    labelColor: labelColor,
+                                    fontSize: rowFontSize,
+                                    labelFontSize: labelFontSize,
+                                  ),
                                 ],
                               );
                             },
@@ -1530,7 +1562,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                         ),
                       ),
 
-                      SizedBox(height: sectionGap * 1.6),
+                      SizedBox(height: sectionGap * 0.8),
 
                       Padding(
                         padding: EdgeInsets.symmetric(
@@ -1569,14 +1601,16 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                               _priceFocusNodes = nodes;
                             });
                           },
+                          onSellPriceChanged: _applyCalculatedSell,
                         ),
                       ),
 
                       SizedBox(height: sectionGap),
-                      if (isTablet)
-                        SizedBox(
-                          height: 20 + MediaQuery.of(context).padding.bottom,
-                        ),
+                      SizedBox(
+                        height:
+                            (isTablet ? 20.0 : 24.0) +
+                            MediaQuery.of(context).padding.bottom,
+                      ),
                         ],
                       ),
                       topIconsRow(),
@@ -1595,6 +1629,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   }
                 },
               ),
+
+             
               ],
             ),
           ),
@@ -1997,6 +2033,11 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     const double labelFontSize = 12;
     final String exCostStr = hideCostPrice ? "-" : _formatPrice(exCost);
     final String incCostStr = hideCostPrice ? "-" : _formatPrice(cost);
+    final double egpDollar = exSell - exCost;
+    final double egpPercent = exSell != 0 ? (egpDollar / exSell) * 100 : 0;
+    final String egpDollarStr = hideCostPrice ? "-" : _formatPrice(egpDollar);
+    final String egpPercentStr =
+        hideCostPrice ? "-" : "${egpPercent.toStringAsFixed(2)}%";
 
     final bool showViewComponents =
         isPackage && (widget.stock.packageComponents?.isNotEmpty ?? false);
@@ -2092,8 +2133,8 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
               children: [
                 _buildTaxPriceRow(
                   label: "",
-                  costValue: "C O S T",
-                  salesValue: "S A L E S",
+                  costValue: "COST",
+                  salesValue: "SELL(RRP)",
                   dividerColor: dividerColor,
                   textColor: textColor,
                   labelColor: labelColor,
@@ -2102,7 +2143,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   isHeader: true,
                 ),
                 _buildTaxPriceRow(
-                  label: "T A X   C O D E",
+                  label: "TAX CODE",
                   costValue: _formatTaxLabel(
                     widget.stock.goodsTax,
                     costTaxPercentage,
@@ -2118,7 +2159,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   labelFontSize: labelFontSize,
                 ),
                 _buildTaxPriceRow(
-                  label: "E X   T A X",
+                  label: "EX TAX",
                   costValue: exCostStr,
                   salesValue: _formatPrice(exSell),
                   dividerColor: dividerColor,
@@ -2131,7 +2172,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   salesEditFocus: _exRrpFocus,
                 ),
                 _buildTaxPriceRow(
-                  label: "I N C   T A X",
+                  label: "INC TAX",
                   costValue: incCostStr,
                   salesValue: _formatPrice(sell),
                   dividerColor: dividerColor,
@@ -2143,13 +2184,33 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
                   salesEditController: _incRrpController,
                   salesEditFocus: _incRrpFocus,
                 ),
+                _buildTaxPriceRow(
+                  label: "",
+                  costValue: "eGP\$",
+                  salesValue: "eGP%",
+                  dividerColor: dividerColor,
+                  textColor: textColor,
+                  labelColor: labelColor,
+                  fontSize: rowFontSize,
+                  labelFontSize: labelFontSize,
+                  isHeader: true,
+                  showDivider: false,
+                ),
+                _buildTaxPriceRow(
+                  label: "eGP",
+                  costValue: egpDollarStr,
+                  salesValue: egpPercentStr,
+                  dividerColor: dividerColor,
+                  textColor: textColor,
+                  labelColor: labelColor,
+                  fontSize: rowFontSize,
+                  labelFontSize: labelFontSize,
+                ),
               ],
             ),
           ),
 
-          // Custom session below Tax & Prices, then the buttons with a gap
-          SizedBox(height: sectionGap * 1.6),
-          customSection,
+          // Buttons (custom fields are now shown under Depts & Cats on the left)
           SizedBox(height: sectionGap * 1.6),
 
           if (showViewComponents)
@@ -2255,7 +2316,25 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(flex: 6, child: leftHalf),
+                  Expanded(
+                    flex: 6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        leftHalf,
+                        if (_isEditing ||
+                            _displayCustom1.trim().isNotEmpty ||
+                            _displayCustom2.trim().isNotEmpty) ...[
+                          SizedBox(height: sectionGap * 1.8),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: colPad),
+                            child: customSection,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   const SizedBox(width: 24),
                   SizedBox(
                     width: 1.5,
@@ -2557,17 +2636,26 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     );
 
     if (result != null && mounted) {
-      setState(() {
-        sell = result;
-        // Calculate ex sell based on tax
-        if (sellTaxPercentage > 0) {
-          exSell = TaxCalculationUtils.calculateExclusivePrice(result, sellTaxPercentage);
-        } else {
-          exSell = result;
-        }
-      });
-      _syncRrpControllers();
+      _applyCalculatedSell(result);
     }
+  }
+
+  /// Applies a tax-inclusive sell price (from the calculator) to the screen
+  /// state and the editable INC/EX TAX fields.
+  void _applyCalculatedSell(double result) {
+    setState(() {
+      sell = result;
+      // Calculate ex sell based on tax
+      if (sellTaxPercentage > 0) {
+        exSell = TaxCalculationUtils.calculateExclusivePrice(
+          result,
+          sellTaxPercentage,
+        );
+      } else {
+        exSell = result;
+      }
+    });
+    _syncRrpControllers();
   }
 
   /// Opens the pricing dialog
@@ -2835,6 +2923,7 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
     required double fontSize,
     required double labelFontSize,
     bool isHeader = false,
+    bool showDivider = true,
     bool editableSales = false,
     TextEditingController? salesEditController,
     FocusNode? salesEditFocus,
@@ -2882,7 +2971,9 @@ class _StockDetailsScreenState extends State<StockDetailsScreen> {
               ),
             ),
           ),
-          Container(width: 1, color: dividerColor),
+          showDivider
+              ? Container(width: 1, color: dividerColor)
+              : const SizedBox(width: 1),
           Expanded(
             flex: 4,
             child: Padding(

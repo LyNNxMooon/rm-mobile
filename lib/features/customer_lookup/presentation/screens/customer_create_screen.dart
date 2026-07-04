@@ -1382,7 +1382,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                         child: Column(
                           children: [
                             _buildSectionCard(
-                              title: "Barcode",
+                              title: "Customer No.",
                               children: [
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1397,7 +1397,7 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
                                               : Colors.black87,
                                         ),
                                         decoration: _minimalInputDecoration(
-                                          hintText: 'Enter a barcode (Leave empty to auto-generate)',
+                                          hintText: 'Enter a Customer No. (Leave empty to auto-generate)',
                                         ).copyWith(
                                           hintStyle: TextStyle(
                                             color: isDark

@@ -10,12 +10,16 @@ class StocktakeQuestionDialog extends StatelessWidget {
     required this.onYesPressed,
     this.title = "Are you sure?",
     this.onNoPressed,
+    this.yesLabel = "Yes",
+    this.noLabel = "No",
   });
 
   final String title;
   final String message;
   final VoidCallback onYesPressed;
   final VoidCallback? onNoPressed;
+  final String yesLabel;
+  final String noLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +63,7 @@ class StocktakeQuestionDialog extends StatelessWidget {
       ),
       actions: [
         DialogTextAction(
-          label: "No",
+          label: noLabel,
           style: DialogActionStyle.outline,
           onPressed: () {
             if (onNoPressed != null) {
@@ -70,7 +74,7 @@ class StocktakeQuestionDialog extends StatelessWidget {
           },
         ),
         DialogTextAction(
-          label: "Yes",
+          label: yesLabel,
           style: DialogActionStyle.primary,
           onPressed: onYesPressed,
         ),

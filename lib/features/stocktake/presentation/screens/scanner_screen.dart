@@ -294,8 +294,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
       return;
     }
 
-    final bool fromHistory = info['source'] == 'history';
-    final String source = fromHistory ? 'sent to the shopfront' : 'counted';
     final num qty = info['quantity'] as num;
 
     _isDialogShowing = true;
@@ -304,14 +302,22 @@ class _ScannerScreenState extends State<ScannerScreen> {
       builder: (dialogContext) => StocktakeQuestionDialog(
         title: "RetailManager Question",
         message:
-            "This item has already been $source with a count of $qty. Are you sure you want to count it again?",
-        onYesPressed: () {
+            "This item has already been counted with a count of $qty in your list, on this device. How would you like to proceed?",
+        noLabel: "Add",
+        yesLabel: "Replace",
+        // Add: keep the existing count and add the new count on top of it.
+        onNoPressed: () {
           Navigator.of(dialogContext).pop();
           proceed();
         },
-        onNoPressed: () {
+        // Replace: clear the existing count first, then apply the new count.
+        onYesPressed: () async {
           Navigator.of(dialogContext).pop();
-          onCancel?.call();
+          await LocalDbDAO.instance.deleteStocktake(
+            stock.stockID.toInt(),
+            AppGlobals.instance.shopfront ?? "",
+          );
+          proceed();
         },
       ),
     ).whenComplete(() {
@@ -1400,14 +1406,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
     return BlocListener<BatchCommitBloc, BatchCommitState>(
       listener: (context, state) {
         if (state is BatchCommitAwaitingAuditDecision) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => TransactionsDetectedDialog(
-              rows: state.audits,
-              isBatchMode: true,
-              currentBatchNumber: state.currentBatchNumber,
-              totalBatches: state.totalBatches,
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => TransactionsDetectedScreen(
+                rows: state.audits,
+                isBatchMode: true,
+                currentBatchNumber: state.currentBatchNumber,
+                totalBatches: state.totalBatches,
+              ),
             ),
           );
         } else if (state is BatchCommitEmpty) {

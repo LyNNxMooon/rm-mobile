@@ -309,6 +309,20 @@ abstract class LocalDbDAO {
     required String shopfront,
   });
 
+  Future<void> upsertCustomerBalance({
+    required int customerId,
+    required String shopfront,
+    required num owingAmount,
+    required num creditLimit,
+    required num remainingCredit,
+  });
+
+  Future<({num owingAmount, num creditLimit, num remainingCredit})?>
+  getCustomerBalance({
+    required int customerId,
+    required String shopfront,
+  });
+
   Future<int> addPendingStockUpdate({
     required String shopfront,
     required int stockId,

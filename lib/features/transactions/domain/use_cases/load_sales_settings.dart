@@ -14,6 +14,7 @@ class SalesSettingsResult {
   final bool scanIndividualUnitsForFractional;
   final bool promptScanIndividualFractional;
   final bool isCompactView;
+  final bool isTilesView;
   final bool hideBarcode;
   final bool hideCategories;
   final bool hideTaxCode;
@@ -32,6 +33,7 @@ class SalesSettingsResult {
     required this.scanIndividualUnitsForFractional,
     required this.promptScanIndividualFractional,
     required this.isCompactView,
+    required this.isTilesView,
     required this.hideBarcode,
     required this.hideCategories,
     required this.hideTaxCode,
@@ -77,6 +79,9 @@ class LoadSalesSettings {
     final isCompactView = await LocalDbDAO.instance.getAppConfig(
       kSalesIsCompactViewKey,
     );
+    final isTilesView = await LocalDbDAO.instance.getAppConfig(
+      kSalesIsTilesViewKey,
+    );
     final hideBarcode = await LocalDbDAO.instance.getAppConfig(
       kSalesHideBarcodeKey,
     );
@@ -114,6 +119,7 @@ class LoadSalesSettings {
       scanIndividualUnitsForFractional: scanIndividualUnitsForFractional == 'true',
       promptScanIndividualFractional: promptScanIndividualFractional == 'true',
       isCompactView: isCompactView == 'true',
+      isTilesView: isTilesView == 'true',
       hideBarcode: hideBarcode == 'true',
       hideCategories: hideCategories == 'true',
       hideTaxCode: hideTaxCode == 'true',

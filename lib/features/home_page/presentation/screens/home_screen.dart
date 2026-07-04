@@ -27,6 +27,9 @@ import '../../../customer_lookup/presentation/BLoC/customer_lookup_bloc.dart';
 import '../../../customer_lookup/presentation/BLoC/customer_lookup_states.dart';
 import '../../../stocktake/presentation/screens/scanner_screen.dart';
 import '../../../stocktake/presentation/screens/stock_take_list_screen.dart';
+import '../../../stocktake/presentation/BLoC/stocktake_bloc.dart';
+import '../../../stocktake/presentation/BLoC/stocktake_states.dart';
+import '../../../stocktake/presentation/BLoC/stocktake_events.dart';
 import '../../../transactions/presentation/BLoC/sales_bloc.dart';
 import '../../../transactions/presentation/screens/sales_screen.dart';
 import '../../domain/use_cases/discover_host.dart';
@@ -85,6 +88,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     _sessionCountsCubit = di.sl<SessionCountsCubit>();
     _sessionCountsCubit.loadSessionCounts();
     _startSessionCountsRefresh();
+    context
+        .read<FetchingStocktakeListBloc>()
+        .add(FetchStocktakeListEvent(reset: true));
 
     final currentParamState = context
         .read<NetworkSavedPathValidationBloc>()
@@ -123,6 +129,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   @override
   void didPopNext() {
     _sessionCountsCubit.loadSessionCounts();
+    context
+        .read<FetchingStocktakeListBloc>()
+        .add(FetchStocktakeListEvent(reset: true));
   }
 
   @override
@@ -1347,11 +1356,11 @@ Widget _buildActionTile(
                 ),
                 child: (item['iconAsset'] as String?) != null
                     ? Padding(
-                      padding: const EdgeInsets.all(10.0),
+                      padding: const EdgeInsets.all(8.0),
                       child: Image.asset(
                           item['iconAsset'] as String,
-                          width: isTablet ? 28 : 22,
-                          height: isTablet ? 28 : 22,
+                          width: isTablet ? 34 : 28,
+                          height: isTablet ? 34 : 28,
                         ),
                     )
                     : Icon(
@@ -1461,6 +1470,11 @@ Widget _buildInformationTile(
           0.55 + (0.45 * ((gradientIndex + 1) / gradientTotal)))!
       : Colors.white;
 
+  final String? action = item['action'] as String?;
+  final bool showSyncBadge =
+      action == 'stock_lookup' || action == 'customer_lookup';
+  final bool showStocktakeBadge = action == 'stocktake';
+
   return Material(
     color: Colors.transparent,
     child: InkWell(
@@ -1468,7 +1482,10 @@ Widget _buildInformationTile(
         _handleActionTap(item['action'] as String?);
       },
       borderRadius: BorderRadius.circular(20),
-      child: Container(
+      child: Stack(
+        children: [
+          Container(
+        width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           // 1. The Border: Blue color
@@ -1509,11 +1526,11 @@ Widget _buildInformationTile(
                 ),
                 child: (item['iconAsset'] as String?) != null
                     ? Padding(
-                      padding: const EdgeInsets.all(10.0),
+                      padding: const EdgeInsets.all(8.0),
                       child: Image.asset(
                           item['iconAsset'] as String,
-                          width: isTablet ? 28 : 22,
-                          height: isTablet ? 28 : 22,
+                          width: isTablet ? 34 : 28,
+                          height: isTablet ? 34 : 28,
                         ),
                     )
                     : Icon(
@@ -1594,6 +1611,20 @@ Widget _buildInformationTile(
             ],
           ),
         ),
+      ),
+          if (showSyncBadge)
+            Positioned(
+              top: 10,
+              right: 12,
+              child: _buildCardSyncBadge(action, whiteTheme),
+            ),
+          if (showStocktakeBadge)
+            Positioned(
+              top: 10,
+              right: 12,
+              child: _buildStocktakeCountBadge(),
+            ),
+        ],
       ),
     ),
   );
@@ -1786,17 +1817,120 @@ Widget _buildInformationTile(
   String _formatRelativeTime(DateTime timestamp) {
     final Duration diff = DateTime.now().difference(timestamp);
     if (diff.inMinutes < 1) return "just now";
-    if (diff.inMinutes < 60) return "${diff.inMinutes} min ago";
-    if (diff.inHours < 24) return "${diff.inHours} hr ago";
+    if (diff.inMinutes < 60) return "${diff.inMinutes} min(s) ago";
+    if (diff.inHours < 24) return "${diff.inHours} hr(s) ago";
     if (diff.inDays < 7) {
       return "${diff.inDays} day${diff.inDays == 1 ? '' : 's'} ago";
     }
     final int weeks = (diff.inDays / 7).floor();
     if (weeks < 5) return "$weeks wk${weeks == 1 ? '' : 's'} ago";
     final int months = (diff.inDays / 30).floor();
-    if (months < 12) return "$months mo ago";
+    if (months < 12) return "$months mo(s) ago";
     final int years = (diff.inDays / 365).floor();
     return "$years yr${years == 1 ? '' : 's'} ago";
+  }
+
+  // Loads the last sync time for a single information card (Stock or
+  // Customers), which sync independently. Returns null when not applicable or
+  // never synced.
+  Future<String?> _loadCardSyncLabel(String? action) async {
+    if (action != 'stock_lookup' && action != 'customer_lookup') return null;
+    try {
+      final String? shopfrontId = await LocalDbDAO.instance.getShopfrontId();
+      if (shopfrontId == null || shopfrontId.trim().isEmpty) return null;
+      final String key = action == 'stock_lookup'
+          ? 'stock_sync_timestamp_$shopfrontId'
+          : 'customer_sync_timestamp_$shopfrontId';
+      final String? value = await LocalDbDAO.instance.getAppConfig(key);
+      if (value == null || value.trim().isEmpty) return null;
+      final DateTime? ts = DateTime.tryParse(value.trim());
+      if (ts == null) return null;
+      return _formatRelativeShort(ts);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Compact relative time (e.g. "12 hr(s)") for the per-card sync badge.
+  String _formatRelativeShort(DateTime timestamp) {
+    final Duration diff = DateTime.now().difference(timestamp);
+    if (diff.inMinutes < 1) return "now";
+    if (diff.inMinutes < 60) return "${diff.inMinutes} min(s)";
+    if (diff.inHours < 24) return "${diff.inHours} hr(s)";
+    if (diff.inDays < 7) return "${diff.inDays} day(s)";
+    final int weeks = (diff.inDays / 7).floor();
+    if (weeks < 5) return "$weeks wk(s)";
+    final int months = (diff.inDays / 30).floor();
+    if (months < 12) return "$months mo(s)";
+    final int years = (diff.inDays / 365).floor();
+    return "$years yr(s)";
+  }
+
+  // Top-right corner sync indicator for the Stock / Customers cards.
+  Widget _buildCardSyncBadge(String? action, bool whiteTheme) {
+    return FutureBuilder<String?>(
+      future: _loadCardSyncLabel(action),
+      builder: (context, snapshot) {
+        final String? label = snapshot.data;
+        if (label == null) return const SizedBox.shrink();
+        final Color color = kSecondaryColor;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(color: color.withOpacity(0.5), width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.sync, size: 12, color: color),
+              const SizedBox(width: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Top-right corner item-count badge for the Stocktake card.
+  Widget _buildStocktakeCountBadge() {
+    return BlocBuilder<FetchingStocktakeListBloc, StocktakeListStates>(
+      builder: (context, state) {
+        final int count = state is StocktakeListLoaded ? state.totalCount : 0;
+        if (count <= 0) return const SizedBox.shrink();
+        final Color color = kSecondaryColor;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(color: color.withOpacity(0.5), width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.inventory_2_outlined, size: 12, color: color),
+              const SizedBox(width: 3),
+              Text(
+                "$count item${count == 1 ? '' : 's'}",
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   int _badgeCountForAction(String? action, Map<String, int> sessionCounts) {
@@ -2072,6 +2206,7 @@ Widget _buildInformationTile(
       "title": "Suppliers",
       "subTitle": "Comming Soon",
       "icon": Icons.business_outlined,
+      "iconAsset": "assets/images/supplier.png",
       "color": Colors.grey,
       "comingSoon": true,
       "action": "coming_soon",

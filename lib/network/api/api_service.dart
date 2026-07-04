@@ -16,6 +16,7 @@ import 'package:rmmobile/entities/response/stocktake_limit_response.dart';
 import 'package:rmmobile/entities/response/stock_lookup_api_response.dart';
 import 'package:rmmobile/entities/response/stock_metadata_response.dart';
 import 'package:rmmobile/entities/response/last_sold_price_response.dart';
+import 'package:rmmobile/entities/response/customer_balance_response.dart';
 import 'package:rmmobile/entities/response/stock_ids_response.dart';
 import 'package:rmmobile/entities/response/customer_lookup_api_response.dart';
 import 'package:rmmobile/entities/response/customer_metadata_response.dart';
@@ -131,6 +132,17 @@ abstract class ApiService {
   Future<LastSoldPriceResponse> fetchLastSoldPrice(
     @Path(kPathParamForShopfrontId) String shopfrontId,
     @Path(kPathParamForStockId) int stockId,
+    @Header("x-api-key") String apiKey,
+  );
+
+  @GET(kEndPointForCustomerBalance)
+  @Headers(<String, dynamic>{
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  })
+  Future<CustomerBalanceResponse> fetchCustomerBalance(
+    @Path(kPathParamForShopfrontId) String shopfrontId,
+    @Path(kPathParamForCustomerId) int customerId,
     @Header("x-api-key") String apiKey,
   );
 
